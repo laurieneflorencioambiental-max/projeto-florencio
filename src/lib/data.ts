@@ -74,6 +74,7 @@ export const initialLeads: Lead[] = [
     email: 'eduarda.ferreira@aprendermais.com',
     whatsapp: '51987653456',
     status: 'Desistência',
+    rejectionReason: 'Cliente optou por outra empresa com proposta mais detalhada em outro escopo.',
     createdAt: new Date(new Date().setMonth(new Date().getMonth() - 3)),
   },
   {

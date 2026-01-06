@@ -24,11 +24,11 @@ import {
   UserCheck,
   Pencil,
   Trash2,
+  AlertCircle,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '../ui/scroll-area';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -124,6 +124,14 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
                     ))}
                     </div>
                 </div>
+                {(lead.status === 'Rejeitado' || lead.status === 'Desistência') && lead.rejectionReason && (
+                    <div className="flex items-start gap-2 mt-4 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
+                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-destructive-foreground/80">
+                            <span className="font-semibold text-destructive-foreground">Motivo:</span> {lead.rejectionReason}
+                        </p>
+                    </div>
+                )}
                 <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
                     <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
@@ -148,9 +156,10 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
               size="sm"
               className="w-full"
               onClick={() => setIsFollowUpModalOpen(true)}
+              disabled={!lead.rejectionReason}
             >
               <MessageSquarePlus className="mr-2 h-4 w-4" />
-              Gerar Follow-up
+              Gerar Follow-up com IA
             </Button>
           </CardFooter>
         )}

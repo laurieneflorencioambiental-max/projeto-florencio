@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getFollowUpMessageAction } from '@/app/actions';
 import type { Lead } from '@/lib/types';
@@ -33,8 +33,8 @@ export default function FollowUpModal({
   const [hasCopied, setHasCopied] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (isOpen && lead.rejectionReason) {
+  const generateMessage = () => {
+    if (lead.rejectionReason) {
       setIsLoading(true);
       setMessage('');
       setHasCopied(false);
@@ -56,7 +56,13 @@ export default function FollowUpModal({
           setIsLoading(false);
         });
     }
-  }, [isOpen, lead, toast]);
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      generateMessage();
+    }
+  }, [isOpen, lead]);
 
   const handleCopy = () => {
     if (message) {
@@ -75,6 +81,7 @@ export default function FollowUpModal({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="font-headline">
+            <Sparkles className="inline-block mr-2 text-primary" />
             Sugestão de Follow-up para {lead.company}
           </DialogTitle>
           <DialogDescription>
@@ -90,21 +97,29 @@ export default function FollowUpModal({
               <Skeleton className="h-[120px] w-full" />
             </div>
           ) : (
-            <Textarea value={message} readOnly rows={8} className="bg-muted" />
+            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={8} className="bg-muted" />
           )}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fechar
-          </Button>
-          <Button onClick={handleCopy} disabled={isLoading || !message}>
-            {hasCopied ? (
-              <Check className="mr-2 h-4 w-4" />
-            ) : (
-              <Copy className="mr-2 h-4 w-4" />
-            )}
-            {hasCopied ? 'Copiado' : 'Copiar'}
-          </Button>
+        <DialogFooter className='justify-between'>
+          <div>
+            <Button variant="ghost" onClick={generateMessage} disabled={isLoading}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Gerar Novamente
+            </Button>
+          </div>
+          <div className='flex gap-2'>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
+            <Button onClick={handleCopy} disabled={isLoading || !message}>
+              {hasCopied ? (
+                <Check className="mr-2 h-4 w-4" />
+              ) : (
+                <Copy className="mr-2 h-4 w-4" />
+              )}
+              {hasCopied ? 'Copiado' : 'Copiar'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
