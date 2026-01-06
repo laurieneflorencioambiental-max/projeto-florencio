@@ -76,7 +76,10 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
-              <CardDescription>{lead.name}</CardDescription>
+              <CardDescription>
+                {lead.name}
+                {lead.role && <span className="text-xs text-muted-foreground">, {lead.role}</span>}
+              </CardDescription>
             </div>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>

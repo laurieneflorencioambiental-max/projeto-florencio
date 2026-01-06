@@ -35,6 +35,7 @@ export const paymentMethodSchema = z.object({
 export const leadSchema = z.object({
   id: z.string(),
   name: z.string().min(2, 'O nome é obrigatório.'),
+  role: z.string().optional(),
   company: z.string().min(2, 'O nome da empresa é obrigatório.'),
   cnpj: z.string().min(14, 'O CNPJ deve ter 14 dígitos.'),
   proposalSummary: z.string().min(10, 'O resumo deve ter pelo menos 10 caracteres.'),

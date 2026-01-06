@@ -4,6 +4,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-1',
     name: 'Ana Silva',
+    role: 'Gerente de Compras',
     company: 'Construtora Segura',
     cnpj: '12.345.678/0001-99',
     proposalSummary: 'Consultoria completa em segurança do trabalho para nova obra.',
@@ -18,6 +19,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-2',
     name: 'Bruno Costa',
+    role: 'Diretor Industrial',
     company: 'Indústria Têxtil Faria',
     cnpj: '98.765.432/0001-11',
     proposalSummary: 'Treinamento de NR-12 para equipe de produção.',
@@ -32,6 +34,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-3',
     name: 'Carla Dias',
+    role: 'Coordenadora de RH',
     company: 'Metalúrgica Diniz',
     cnpj: '45.678.912/0001-33',
     proposalSummary: 'Laudo de periculosidade e insalubridade.',
@@ -46,6 +49,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-4',
     name: 'Daniel Martins',
+    role: 'Diretor Administrativo',
     company: 'Hospital Vida Plena',
     cnpj: '78.912.345/0001-55',
     proposalSummary: 'Implementação de CIPA e elaboração de mapa de riscos.',
@@ -60,6 +64,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-5',
     name: 'Eduarda Ferreira',
+    role: 'Diretora Pedagógica',
     company: 'Escola Aprender Mais',
     cnpj: '15.935.782/0001-77',
     proposalSummary: 'AVCB e treinamento de brigada de incêndio.',
@@ -74,6 +79,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-6',
     name: 'Fábio Gomes',
+    role: 'Gerente de Operações',
     company: 'Supermercado Central',
     cnpj: '82.468.135/0001-99',
     proposalSummary: 'PGR e PCMSO para todas as unidades.',
@@ -89,6 +95,7 @@ export const initialLeads: Lead[] = [
   {
     id: 'lead-7',
     name: 'Gabriela Lima',
+    role: 'CTO',
     company: 'Tecnologia Inova',
     cnpj: '36.925.814/0001-21',
     proposalSummary: 'Análise Ergonômica do Trabalho (AET) para o setor de desenvolvimento.',
