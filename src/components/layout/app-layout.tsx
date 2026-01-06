@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Gestão de Orçamentos
           </h1>
         </header>
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="p-4 sm:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
