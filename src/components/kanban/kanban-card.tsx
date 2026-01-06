@@ -45,10 +45,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 
 type KanbanCardProps = {
   lead: Lead;
+  allLeads: Lead[];
   onUpdateLead: (lead: Lead) => void;
 };
 
-export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
+export default function KanbanCard({ lead, allLeads, onUpdateLead }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
@@ -245,6 +246,7 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
       />
       <ProposalModal
         lead={lead}
+        allLeads={allLeads}
         isOpen={isProposalModalOpen}
         onOpenChange={setIsProposalModalOpen}
         onUpdateLead={onUpdateLead}

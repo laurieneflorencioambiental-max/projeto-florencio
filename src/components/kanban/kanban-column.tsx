@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 type KanbanColumnProps = {
   status: Status;
+  allLeads: Lead[];
   leads: Lead[];
   onDrop: (e: React.DragEvent<HTMLDivElement>, status: Status) => void;
   onUpdateLead: (lead: Lead) => void;
@@ -16,6 +17,7 @@ type KanbanColumnProps = {
 
 export default function KanbanColumn({
   status,
+  allLeads,
   leads,
   onDrop,
   onUpdateLead,
@@ -70,7 +72,7 @@ export default function KanbanColumn({
       <ScrollArea className="flex-1">
         <CardContent className="flex flex-col gap-4 p-2 md:p-4 h-full">
           {leads.map(lead => (
-            <KanbanCard key={lead.id} lead={lead} onUpdateLead={onUpdateLead} />
+            <KanbanCard key={lead.id} lead={lead} allLeads={allLeads} onUpdateLead={onUpdateLead} />
           ))}
         </CardContent>
       </ScrollArea>

@@ -24,10 +24,10 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { proposalTemplates } from '@/lib/proposal-templates';
-import { initialLeads } from '@/lib/data';
 
 type ProposalModalProps = {
   lead: Lead;
+  allLeads: Lead[];
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onUpdateLead: (lead: Lead) => void;
@@ -35,6 +35,7 @@ type ProposalModalProps = {
 
 export default function ProposalModal({
   lead,
+  allLeads,
   isOpen,
   onOpenChange,
   onUpdateLead,
@@ -51,7 +52,7 @@ export default function ProposalModal({
 
       if (!currentProposalNumber) {
         // This is a simplified way to get the next number. In a real multi-user app, this should be handled by a backend.
-        const highestProposalNumber = Math.max(0, ...initialLeads.map(l => l.proposalNumber || 0));
+        const highestProposalNumber = Math.max(0, ...allLeads.map(l => l.proposalNumber || 0));
         currentProposalNumber = highestProposalNumber + 1;
       }
       
@@ -68,7 +69,7 @@ export default function ProposalModal({
         });
       }
     }
-  }, [isOpen, lead, onUpdateLead]);
+  }, [isOpen, lead, allLeads, onUpdateLead]);
 
 
   const handleTemplateChange = (templateId: string) => {

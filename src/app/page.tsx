@@ -49,12 +49,7 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   label: ptBR.localize?.month(i, { width: 'wide' }),
 }));
 
-const defaultSellers = [
-    'Carlos aaaa',
-    'Juliana Paiva',
-    'Fernando Lima',
-    'Mariana Costa',
-];
+const defaultSellers: string[] = [];
 
 export default function Home() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -320,7 +315,7 @@ export default function Home() {
             </DropdownMenu>
         </div>
       </div>
-      <KanbanBoard leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} />
+      <KanbanBoard allLeads={leads} leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
         <LostLeadsChart leads={filteredLeads} />
