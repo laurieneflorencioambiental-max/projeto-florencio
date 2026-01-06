@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -62,6 +63,10 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
     );
   };
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   return (
     <>
       <Card
@@ -88,49 +93,54 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pb-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-            <span className="font-mono text-xs">{lead.cnpj}</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground mt-1" />
-            <p className="flex-1">{lead.proposalSummary}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <p className="text-base font-bold text-primary">
-              {formatCurrency(lead.value)}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="font-medium text-sm">Formas de Pagamento:</p>
-            <div className="flex flex-wrap gap-2">
-              {lead.paymentMethods.map(pm => (
-                <Badge variant="secondary" key={pm.method} className="flex gap-2 items-center">
-                  {pm.method === 'Boleto' ? <Barcode /> : <CreditCard />}
-                  <span>{pm.method}</span>
-                  {pm.method === 'Cartão de Crédito/Débito' && pm.cardFee && (
-                    <span className="text-xs opacity-75">({pm.cardFee}% taxa)</span>
-                  )}
-                </Badge>
-              ))}
+          <ScrollArea className="w-full whitespace-nowrap">
+             <div className="pr-4">
+                <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-mono text-xs">{lead.cnpj}</span>
+                </div>
+                <div className="flex items-start gap-2 mt-4">
+                    <FileText className="h-4 w-4 text-muted-foreground mt-1" />
+                    <p className="flex-1 whitespace-normal">{lead.proposalSummary}</p>
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <p className="text-base font-bold text-primary">
+                    {formatCurrency(lead.value)}
+                    </p>
+                </div>
+                <div className="flex flex-col gap-2 mt-4">
+                    <p className="font-medium text-sm">Formas de Pagamento:</p>
+                    <div className="flex flex-wrap gap-2">
+                    {lead.paymentMethods.map(pm => (
+                        <Badge variant="secondary" key={pm.method} className="flex gap-2 items-center">
+                        {pm.method === 'Boleto' ? <Barcode /> : <CreditCard />}
+                        <span>{pm.method}</span>
+                        {pm.method === 'Cartão de Crédito/Débito' && pm.cardFee && (
+                            <span className="text-xs opacity-75">({pm.cardFee}% taxa)</span>
+                        )}
+                        </Badge>
+                    ))}
+                    </div>
+                </div>
+                <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a href={`mailto:${lead.email}`} className="text-sm text-muted-foreground hover:underline">
+                        {lead.email}
+                    </a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a href={`https://wa.me/${lead.whatsapp}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
+                        {lead.whatsapp}
+                    </a>
+                    </div>
+                    {getContactSourceInfo()}
+                </div>
             </div>
-          </div>
-          <div className="border-t border-border pt-4 flex flex-col gap-3">
-             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <a href={`mailto:${lead.email}`} className="text-sm text-muted-foreground hover:underline">
-                {lead.email}
-              </a>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-               <a href={`https://wa.me/${lead.whatsapp}`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:underline">
-                {lead.whatsapp}
-              </a>
-            </div>
-            {getContactSourceInfo()}
-          </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </CardContent>
         {lead.status === 'Rejeitado' && (
           <CardFooter>
