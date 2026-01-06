@@ -127,8 +127,8 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
                 {(lead.status === 'Rejeitado' || lead.status === 'Desistência') && lead.rejectionReason && (
                     <div className="flex items-start gap-2 mt-4 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
                         <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-destructive-foreground/80">
-                            <span className="font-semibold text-destructive-foreground">Motivo:</span> {lead.rejectionReason}
+                        <p className="text-xs text-destructive/80">
+                            <span className="font-semibold text-destructive">Motivo:</span> {lead.rejectionReason}
                         </p>
                     </div>
                 )}
