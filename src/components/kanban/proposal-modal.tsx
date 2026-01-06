@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { proposalTemplates } from '@/lib/proposal-templates';
+import { initialLeads } from '@/lib/data';
 
 type ProposalModalProps = {
   lead: Lead;
