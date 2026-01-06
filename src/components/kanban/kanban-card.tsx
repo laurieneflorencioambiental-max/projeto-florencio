@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -92,8 +91,7 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4 pb-4 text-sm">
-          <ScrollArea className="w-full whitespace-nowrap">
+        <CardContent className="flex flex-col gap-4 pb-4 text-sm overflow-x-auto">
              <div className="pr-4">
                 <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -139,8 +137,6 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
                     {getContactSourceInfo()}
                 </div>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
         </CardContent>
         {lead.status === 'Rejeitado' && (
           <CardFooter>
