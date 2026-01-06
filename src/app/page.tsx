@@ -3,7 +3,7 @@ import { initialLeads } from '@/lib/data';
 
 export default function Home() {
   return (
-    <div className="-m-4 sm:-m-6">
+    <div>
       <KanbanBoard initialLeads={initialLeads} />
     </div>
   );
