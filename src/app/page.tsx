@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle } from 'lucide-react';
+import { ListFilter, PlusCircle, Search } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -49,6 +49,7 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 export default function Home() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [filter, setFilter] = useState<FilterPeriod>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [visibleStatuses, setVisibleStatuses] = useState<Status[]>([
@@ -72,36 +73,58 @@ export default function Home() {
 
   const filteredLeads = useMemo(() => {
     const now = new Date();
+    
+    let timeFilteredLeads: Lead[];
+
     if (filter === 'all') {
-      return leads;
+      timeFilteredLeads = leads;
+    } else {
+      timeFilteredLeads = leads.filter(lead => {
+        const leadDate = lead.createdAt;
+        switch (filter) {
+          case 'today':
+            return isWithinInterval(leadDate, {
+              start: startOfDay(now),
+              end: endOfDay(now),
+            });
+          case 'week':
+            return isWithinInterval(leadDate, {
+              start: startOfWeek(now),
+              end: endOfWeek(now),
+            });
+          case 'month':
+             return getMonth(leadDate) === selectedMonth && getYear(leadDate) === getYear(now);
+          case 'year':
+            return getYear(leadDate) === selectedYear;
+          default:
+            return true;
+        }
+      });
     }
-    return leads.filter(lead => {
-      const leadDate = lead.createdAt;
-      switch (filter) {
-        case 'today':
-          return isWithinInterval(leadDate, {
-            start: startOfDay(now),
-            end: endOfDay(now),
-          });
-        case 'week':
-          return isWithinInterval(leadDate, {
-            start: startOfWeek(now),
-            end: endOfWeek(now),
-          });
-        case 'month':
-           return getMonth(leadDate) === selectedMonth && getYear(leadDate) === getYear(now);
-        case 'year':
-          return getYear(leadDate) === selectedYear;
-        default:
-          return true;
-      }
-    });
-  }, [filter, selectedMonth, selectedYear, leads]);
+
+    if (!searchTerm) {
+      return timeFilteredLeads;
+    }
+
+    return timeFilteredLeads.filter(lead => 
+      lead.company.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className='flex items-center gap-4 flex-wrap'>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Buscar por empresa..."
+                    className="w-full rounded-lg bg-background pl-9 md:w-[200px] lg:w-[320px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
             <div className="flex items-center gap-2">
             <label htmlFor="period-filter" className="text-sm font-medium">
                 Filtrar por:
