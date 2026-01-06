@@ -66,7 +66,7 @@ export default function EditLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof leadSchema>) => {
-    onSave({ ...lead, ...values });
+    onSave({ ...lead, ...values, editCount: (lead.editCount || 0) + 1 });
     onOpenChange(false);
     toast({
       title: 'Lead Atualizado!',
@@ -298,7 +298,7 @@ export default function EditLeadModal({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value=" ">Nenhum</SelectItem>
+                          <SelectItem value="">Nenhum</SelectItem>
                           {rejectionReasons.map(reason => (
                             <SelectItem key={reason} value={reason}>{reason}</SelectItem>
                           ))}

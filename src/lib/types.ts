@@ -67,6 +67,11 @@ export const leadSchema = z.object({
   status: z.enum(statuses),
   rejectionReason: z.enum(rejectionReasons).optional().nullable(),
   createdAt: z.coerce.date(),
+  createdBy: z.string(),
+  proposalGeneratedCount: z.number().default(0),
+  whatsappSentCount: z.number().default(0),
+  editCount: z.number().default(0),
+  previousStatus: z.enum(statuses).optional().nullable(),
 });
 
 

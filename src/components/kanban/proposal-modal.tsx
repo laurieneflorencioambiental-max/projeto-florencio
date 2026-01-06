@@ -20,12 +20,14 @@ type ProposalModalProps = {
   lead: Lead;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onUpdateLead: (lead: Lead) => void;
 };
 
 export default function ProposalModal({
   lead,
   isOpen,
   onOpenChange,
+  onUpdateLead,
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +41,7 @@ export default function ProposalModal({
   const handleDownloadPdf = () => {
     const input = proposalRef.current;
     if (input) {
+      onUpdateLead({ ...lead, proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1 });
       html2canvas(input, { scale: 2 }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -51,6 +54,7 @@ export default function ProposalModal({
   };
 
   const handleSendWhatsApp = () => {
+    onUpdateLead({ ...lead, whatsappSentCount: (lead.whatsappSentCount || 0) + 1 });
     const message = `Olá ${lead.name}, segue a proposta para a empresa ${lead.company}. Estamos à disposição para qualquer esclarecimento.`;
     const whatsappUrl = `https://wa.me/${lead.whatsapp}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

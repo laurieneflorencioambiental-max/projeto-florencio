@@ -23,7 +23,7 @@ export default function KanbanBoard({ leads, setLeads, visibleStatuses }: Kanban
 
     setLeads(prevLeads =>
       prevLeads.map(lead =>
-        lead.id === leadId ? { ...lead, status: newStatus } : lead
+        lead.id === leadId ? { ...lead, status: newStatus, previousStatus: lead.status } : lead
       )
     );
   };

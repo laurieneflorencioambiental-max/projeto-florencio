@@ -41,7 +41,7 @@ type AddLeadModalProps = {
   onSave: (lead: Lead) => void;
 };
 
-const newLeadSchema = leadSchema.omit({ id: true, createdAt: true, status: true });
+const newLeadSchema = leadSchema.omit({ id: true, createdAt: true, status: true, createdBy: true, proposalGeneratedCount: true, whatsappSentCount: true, editCount: true, previousStatus: true });
 
 export default function AddLeadModal({
   isOpen,
@@ -77,6 +77,11 @@ export default function AddLeadModal({
       id: `lead-${Date.now()}`,
       createdAt: new Date(),
       status: 'Novos',
+      createdBy: 'Usuário Padrão', // Hardcoded for now
+      proposalGeneratedCount: 0,
+      whatsappSentCount: 0,
+      editCount: 0,
+      previousStatus: null,
     };
     onSave(newLead);
     onOpenChange(false);
@@ -311,7 +316,7 @@ export default function AddLeadModal({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value=" ">Nenhum</SelectItem>
+                          <SelectItem value="">Nenhum</SelectItem>
                           {rejectionReasons.map(reason => (
                             <SelectItem key={reason} value={reason}>{reason}</SelectItem>
                           ))}
