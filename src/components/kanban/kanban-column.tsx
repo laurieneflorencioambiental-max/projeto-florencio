@@ -11,12 +11,14 @@ type KanbanColumnProps = {
   status: Status;
   leads: Lead[];
   onDrop: (e: React.DragEvent<HTMLDivElement>, status: Status) => void;
+  onUpdateLead: (lead: Lead) => void;
 };
 
 export default function KanbanColumn({
   status,
   leads,
   onDrop,
+  onUpdateLead,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
 
@@ -68,7 +70,7 @@ export default function KanbanColumn({
       <ScrollArea className="flex-1">
         <CardContent className="flex flex-col gap-4 p-2 md:p-4 h-full">
           {leads.map(lead => (
-            <KanbanCard key={lead.id} lead={lead} />
+            <KanbanCard key={lead.id} lead={lead} onUpdateLead={onUpdateLead} />
           ))}
         </CardContent>
       </ScrollArea>

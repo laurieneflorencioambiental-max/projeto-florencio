@@ -26,14 +26,17 @@ import {
   Trash2,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
+import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
 
 type KanbanCardProps = {
   lead: Lead;
+  onUpdateLead: (lead: Lead) => void;
 };
 
-export default function KanbanCard({ lead }: KanbanCardProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -62,10 +65,6 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
     );
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
     <>
       <Card
@@ -80,7 +79,7 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
               <CardDescription>{lead.name}</CardDescription>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
                 <Pencil className="h-4 w-4" />
                 <span className="sr-only">Editar</span>
               </Button>
@@ -144,7 +143,7 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setIsFollowUpModalOpen(true)}
             >
               <MessageSquarePlus className="mr-2 h-4 w-4" />
               Gerar Follow-up
@@ -155,10 +154,16 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
       {lead.status === 'Rejeitado' && (
         <FollowUpModal
           lead={lead}
-          isOpen={isModalOpen}
-          onOpenChange={setIsModalOpen}
+          isOpen={isFollowUpModalOpen}
+          onOpenChange={setIsFollowUpModalOpen}
         />
       )}
+      <EditLeadModal 
+        lead={lead}
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSave={onUpdateLead}
+      />
     </>
   );
 }

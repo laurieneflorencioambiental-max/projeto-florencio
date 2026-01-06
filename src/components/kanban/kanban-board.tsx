@@ -28,6 +28,12 @@ export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
     );
   };
 
+  const handleUpdateLead = (updatedLead: Lead) => {
+    setLeads(prevLeads =>
+      prevLeads.map(lead => (lead.id === updatedLead.id ? updatedLead : lead))
+    );
+  };
+
   return (
     <ScrollArea className="w-full whitespace-nowrap">
       <div className="flex w-max space-x-4 p-4">
@@ -37,6 +43,7 @@ export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
             status={status}
             leads={leads.filter(lead => lead.status === status)}
             onDrop={handleDrop}
+            onUpdateLead={handleUpdateLead}
           />
         ))}
       </div>
