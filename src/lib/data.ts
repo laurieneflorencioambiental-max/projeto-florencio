@@ -1,12 +1,5 @@
 import type { Lead } from './types';
 
-export const sellers = [
-  'Carlos aaaa',
-  'Juliana Paiva',
-  'Fernando Lima',
-  'Mariana Costa',
-];
-
 export const initialLeads: Lead[] = [
   {
     id: 'lead-1',

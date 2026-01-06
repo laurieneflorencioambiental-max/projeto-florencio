@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import { initialLeads, sellers } from '@/lib/data';
+import { initialLeads } from '@/lib/data';
 import type { Lead, Status } from '@/lib/types';
 import { statuses } from '@/lib/types';
 import {
@@ -36,10 +36,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
+import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -47,6 +48,13 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   value: i,
   label: ptBR.localize?.month(i, { width: 'wide' }),
 }));
+
+const defaultSellers = [
+    'Carlos aaaa',
+    'Juliana Paiva',
+    'Fernando Lima',
+    'Mariana Costa',
+];
 
 export default function Home() {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
@@ -62,20 +70,51 @@ export default function Home() {
     'Rejeitado',
   ]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isManageSellersModalOpen, setIsManageSellersModalOpen] = useState(false);
+
+  // Seller Management State
+  const [sellers, setSellers] = useState<string[]>([]);
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
+  // Load sellers from localStorage on mount
   useEffect(() => {
-    const savedSeller = localStorage.getItem('currentSeller');
-    if (savedSeller) {
-      setCurrentSeller(savedSeller);
-    } else if (sellers.length > 0) {
-      setCurrentSeller(sellers[0]);
+    try {
+      const savedSellers = localStorage.getItem('sellers');
+      if (savedSellers) {
+        setSellers(JSON.parse(savedSellers));
+      } else {
+        setSellers(defaultSellers);
+      }
+
+      const savedCurrentSeller = localStorage.getItem('currentSeller');
+      if (savedCurrentSeller) {
+        setCurrentSeller(savedCurrentSeller);
+      }
+    } catch (error) {
+      console.error("Failed to access localStorage:", error);
+      setSellers(defaultSellers);
     }
   }, []);
 
+  // Persist sellers to localStorage
+  useEffect(() => {
+    try {
+        if (sellers.length > 0) {
+            localStorage.setItem('sellers', JSON.stringify(sellers));
+        }
+    } catch (error) {
+        console.error("Failed to save sellers to localStorage:", error);
+    }
+  }, [sellers]);
+
+
   const handleSellerChange = (seller: string) => {
     setCurrentSeller(seller);
-    localStorage.setItem('currentSeller', seller);
+    try {
+        localStorage.setItem('currentSeller', seller);
+    } catch (error) {
+        console.error("Failed to save current seller to localStorage:", error);
+    }
   };
 
 
@@ -131,6 +170,21 @@ export default function Home() {
     );
 
   }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
+  
+  // Ensure currentSeller is valid
+  useEffect(() => {
+    if (sellers.length > 0 && !sellers.includes(currentSeller)) {
+      const newCurrentSeller = sellers[0];
+      setCurrentSeller(newCurrentSeller);
+      try {
+        localStorage.setItem('currentSeller', newCurrentSeller);
+      } catch (error) {
+        console.error("Failed to update current seller in localStorage:", error);
+      }
+    } else if (sellers.length === 0) {
+        setCurrentSeller('');
+    }
+  }, [sellers, currentSeller]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -143,6 +197,7 @@ export default function Home() {
              <Select
                 value={currentSeller}
                 onValueChange={handleSellerChange}
+                disabled={sellers.length === 0}
             >
                 <SelectTrigger className="w-[180px]" id="seller-select">
                 <SelectValue placeholder="Selecione um vendedor" />
@@ -153,6 +208,10 @@ export default function Home() {
                 ))}
                 </SelectContent>
             </Select>
+             <Button variant="ghost" size="icon" onClick={() => setIsManageSellersModalOpen(true)}>
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">Gerenciar Vendedores</span>
+            </Button>
         </div>
         <div>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!currentSeller}>
@@ -264,6 +323,12 @@ export default function Home() {
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}
         seller={currentSeller}
+      />
+      <ManageSellersModal
+        isOpen={isManageSellersModalOpen}
+        onOpenChange={setIsManageSellersModalOpen}
+        sellers={sellers}
+        setSellers={setSellers}
       />
     </div>
   );
