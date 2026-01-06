@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import { initialLeads } from '@/lib/data';
+import { initialLeads, sellers } from '@/lib/data';
 import type { Lead, Status } from '@/lib/types';
 import { statuses } from '@/lib/types';
 import {
@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
@@ -61,7 +61,23 @@ export default function Home() {
     'Desistência',
     'Rejeitado',
   ]);
-   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [currentSeller, setCurrentSeller] = useState<string>('');
+
+  useEffect(() => {
+    const savedSeller = localStorage.getItem('currentSeller');
+    if (savedSeller) {
+      setCurrentSeller(savedSeller);
+    } else if (sellers.length > 0) {
+      setCurrentSeller(sellers[0]);
+    }
+  }, []);
+
+  const handleSellerChange = (seller: string) => {
+    setCurrentSeller(seller);
+    localStorage.setItem('currentSeller', seller);
+  };
+
 
   const handleStatusChange = (status: Status) => {
     setVisibleStatuses(prev =>
@@ -118,6 +134,33 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4">
+       <div className='flex items-center justify-between gap-4 flex-wrap bg-card p-3 rounded-lg border'>
+        <div className='flex items-center gap-2'>
+            <User className='h-5 w-5 text-primary' />
+            <label htmlFor="seller-select" className="text-sm font-medium">
+                Vendedor(a):
+            </label>
+             <Select
+                value={currentSeller}
+                onValueChange={handleSellerChange}
+            >
+                <SelectTrigger className="w-[180px]" id="seller-select">
+                <SelectValue placeholder="Selecione um vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                {sellers.map(seller => (
+                    <SelectItem key={seller} value={seller}>{seller}</SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+        </div>
+        <div>
+            <Button onClick={() => setIsAddModalOpen(true)} disabled={!currentSeller}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Novo Orçamento
+            </Button>
+        </div>
+      </div>
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className='flex items-center gap-4 flex-wrap'>
             <div className="relative">
@@ -210,12 +253,6 @@ export default function Home() {
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
-        <div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Novo Orçamento
-            </Button>
-        </div>
       </div>
       <KanbanBoard leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
@@ -226,6 +263,7 @@ export default function Home() {
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}
+        seller={currentSeller}
       />
     </div>
   );

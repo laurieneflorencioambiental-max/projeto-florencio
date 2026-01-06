@@ -39,6 +39,7 @@ type AddLeadModalProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (lead: Lead) => void;
+  seller: string;
 };
 
 const newLeadSchema = leadSchema.omit({ id: true, createdAt: true, status: true, createdBy: true, proposalGeneratedCount: true, whatsappSentCount: true, editCount: true, previousStatus: true });
@@ -47,6 +48,7 @@ export default function AddLeadModal({
   isOpen,
   onOpenChange,
   onSave,
+  seller,
 }: AddLeadModalProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof newLeadSchema>>({
@@ -77,7 +79,7 @@ export default function AddLeadModal({
       id: `lead-${Date.now()}`,
       createdAt: new Date(),
       status: 'Novos',
-      createdBy: 'Usuário Padrão', // Hardcoded for now
+      createdBy: seller,
       proposalGeneratedCount: 0,
       whatsappSentCount: 0,
       editCount: 0,
@@ -88,7 +90,7 @@ export default function AddLeadModal({
     form.reset();
     toast({
       title: 'Lead Adicionado!',
-      description: `O orçamento para ${values.company} foi criado.`,
+      description: `O orçamento para ${values.company} foi criado por ${seller}.`,
     });
   };
 

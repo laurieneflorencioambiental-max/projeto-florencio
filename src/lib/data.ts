@@ -1,5 +1,12 @@
 import type { Lead } from './types';
 
+export const sellers = [
+  'Carlos aaaa',
+  'Juliana Paiva',
+  'Fernando Lima',
+  'Mariana Costa',
+];
+
 export const initialLeads: Lead[] = [
   {
     id: 'lead-1',
@@ -16,7 +23,7 @@ export const initialLeads: Lead[] = [
     status: 'Novos',
     rejectionReason: null,
     createdAt: new Date(),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Carlos aaaa',
     proposalGeneratedCount: 0,
     whatsappSentCount: 0,
     editCount: 0,
@@ -37,7 +44,7 @@ export const initialLeads: Lead[] = [
     status: 'Novos',
     rejectionReason: null,
     createdAt: new Date(new Date().setDate(new Date().getDate() - 3)),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Juliana Paiva',
     proposalGeneratedCount: 1,
     whatsappSentCount: 0,
     editCount: 1,
@@ -58,7 +65,7 @@ export const initialLeads: Lead[] = [
     status: 'Pendente/Em negociação',
     rejectionReason: null,
     createdAt: new Date(new Date().setDate(new Date().getDate() - 10)),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Fernando Lima',
     proposalGeneratedCount: 2,
     whatsappSentCount: 1,
     editCount: 2,
@@ -79,7 +86,7 @@ export const initialLeads: Lead[] = [
     status: 'Aprovado',
     rejectionReason: null,
     createdAt: new Date(new Date().setMonth(new Date().getMonth() - 2)),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Carlos aaaa',
     proposalGeneratedCount: 3,
     whatsappSentCount: 2,
     editCount: 1,
@@ -100,7 +107,7 @@ export const initialLeads: Lead[] = [
     status: 'Desistência',
     rejectionReason: 'Concorrência com melhor oferta',
     createdAt: new Date(new Date().setMonth(new Date().getMonth() - 3)),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Mariana Costa',
     proposalGeneratedCount: 1,
     whatsappSentCount: 0,
     editCount: 0,
@@ -121,7 +128,7 @@ export const initialLeads: Lead[] = [
     status: 'Rejeitado',
     rejectionReason: 'Preço elevado',
     createdAt: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Juliana Paiva',
     proposalGeneratedCount: 2,
     whatsappSentCount: 1,
     editCount: 1,
@@ -142,7 +149,7 @@ export const initialLeads: Lead[] = [
     status: 'Rejeitado',
     rejectionReason: 'Cliente optou por solução interna',
     createdAt: new Date(),
-    createdBy: 'Usuário Padrão',
+    createdBy: 'Carlos aaaa',
     proposalGeneratedCount: 1,
     whatsappSentCount: 0,
     editCount: 0,
