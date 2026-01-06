@@ -47,12 +47,6 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
 
   }, [leads]);
 
-  const yAxisLabelLength = useMemo(() => {
-    if (!chartData.length) return 0;
-    return Math.max(...chartData.map(d => d.reason.length));
-  }, [chartData]);
-
-
   if (chartData.length === 0) {
     return (
         <Card>
@@ -80,8 +74,8 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
             data={chartData}
             layout="vertical"
             margin={{
-              left: yAxisLabelLength * 4, // Dynamic margin
-              right: 10
+              left: 10,
+              right: 10,
             }}
           >
             <YAxis
@@ -91,7 +85,7 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
               axisLine={false}
               className="text-xs"
               interval={0}
-              width={0}
+              width={150} 
               tick={{ transform: 'translate(-10, 0)' }}
             />
             <XAxis dataKey="count" type="number" hide />
