@@ -28,11 +28,13 @@ import {
   Calendar,
   MousePointer,
   Tablet,
+  FileSignature,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import ProposalModal from './proposal-modal';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -42,6 +44,7 @@ type KanbanCardProps = {
 export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -166,20 +169,29 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
                 </div>
             </div>
         </CardContent>
-        {lead.status === 'Rejeitado' && (
-          <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => setIsFollowUpModalOpen(true)}
-              disabled={!lead.rejectionReason}
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setIsProposalModalOpen(true)}
             >
-              <MessageSquarePlus className="mr-2 h-4 w-4" />
-              Gerar Follow-up com IA
+                <FileSignature className="mr-2 h-4 w-4" />
+                Gerar Proposta
             </Button>
-          </CardFooter>
-        )}
+            {lead.status === 'Rejeitado' && (
+                <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setIsFollowUpModalOpen(true)}
+                disabled={!lead.rejectionReason}
+                >
+                <MessageSquarePlus className="mr-2 h-4 w-4" />
+                Gerar Follow-up com IA
+                </Button>
+            )}
+        </CardFooter>
       </Card>
       {lead.status === 'Rejeitado' && (
         <FollowUpModal
@@ -193,6 +205,11 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
         isOpen={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         onSave={onUpdateLead}
+      />
+      <ProposalModal
+        lead={lead}
+        isOpen={isProposalModalOpen}
+        onOpenChange={setIsProposalModalOpen}
       />
     </>
   );

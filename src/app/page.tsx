@@ -58,6 +58,8 @@ export default function Home() {
     'Novos',
     'Pendente/Em negociação',
     'Aprovado',
+    'Desistência',
+    'Rejeitado',
   ]);
    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
