@@ -311,7 +311,6 @@ export default function AddLeadModal({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                           <SelectItem value="" disabled>Selecione o motivo</SelectItem>
                           {rejectionReasons.map(reason => (
                             <SelectItem key={reason} value={reason}>{reason}</SelectItem>
                           ))}
