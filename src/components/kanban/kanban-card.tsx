@@ -22,6 +22,8 @@ import {
   Barcode,
   Users,
   UserCheck,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import { Badge } from '@/components/ui/badge';
@@ -68,8 +70,22 @@ export default function KanbanCard({ lead }: KanbanCardProps) {
         className="cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-shadow bg-card w-full"
       >
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
-          <CardDescription>{lead.name}</CardDescription>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
+              <CardDescription>{lead.name}</CardDescription>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Editar</span>
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Excluir</span>
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pb-4 text-sm">
           <div className="flex items-center gap-2">
