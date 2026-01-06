@@ -76,3 +76,9 @@ export const leadSchema = z.object({
 
 
 export type Lead = z.infer<typeof leadSchema>;
+
+export type ProposalTemplate = {
+  id: string;
+  name: string;
+  content: string;
+};
