@@ -25,6 +25,10 @@ const chartConfig = {
     label: 'Total',
     color: 'hsl(var(--chart-5))',
   },
+  highlight: {
+    label: 'Maior Motivo',
+    color: 'hsl(var(--destructive))',
+  }
 };
 
 export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
@@ -39,11 +43,16 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
       return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(reasonCounts).map(([reason, count]) => ({
-      reason,
-      count,
-      fill: 'var(--color-count)',
-    })).sort((a, b) => b.count - a.count);
+    return Object.entries(reasonCounts)
+      .map(([reason, count]) => ({
+        reason,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .map((item, index) => ({
+        ...item,
+        fill: index === 0 ? 'var(--color-highlight)' : 'var(--color-count)',
+      }));
 
   }, [leads]);
 
