@@ -19,7 +19,7 @@ export const paymentMethods = ['Boleto', 'Cartão de Crédito/Débito'] as const
 export type PaymentMethod = (typeof paymentMethods)[number];
 
 export const contactSources = [
-  'Meta',
+  'Instagram',
   'Google',
   'Indicação',
   'BNI',
@@ -59,7 +59,7 @@ export const leadSchema = z.object({
   email: z.string().email('Email inválido.'),
   whatsapp: z.string().min(10, 'Número de WhatsApp inválido.'),
   status: z.enum(statuses),
-  rejectionReason: z.enum(rejectionReasons).optional(),
+  rejectionReason: z.enum(rejectionReasons).optional().nullable(),
   createdAt: z.date(),
 });
 

@@ -14,6 +14,7 @@ export const initialLeads: Lead[] = [
     email: 'ana.silva@construtorasegura.com.br',
     whatsapp: '11987654321',
     status: 'Novos',
+    rejectionReason: null,
     createdAt: new Date(),
   },
   {
@@ -29,6 +30,7 @@ export const initialLeads: Lead[] = [
     email: 'bruno.costa@faria.ind.br',
     whatsapp: '21998765432',
     status: 'Novos',
+    rejectionReason: null,
     createdAt: new Date(new Date().setDate(new Date().getDate() - 3)),
   },
   {
@@ -44,6 +46,7 @@ export const initialLeads: Lead[] = [
     email: 'carla.dias@metalurgicadiniz.com',
     whatsapp: '31987651234',
     status: 'Pendente/Em negociação',
+    rejectionReason: null,
     createdAt: new Date(new Date().setDate(new Date().getDate() - 10)),
   },
   {
@@ -55,10 +58,11 @@ export const initialLeads: Lead[] = [
     proposalSummary: 'Implementação de CIPA e elaboração de mapa de riscos.',
     value: 35000,
     paymentMethods: [{ method: 'Boleto' }],
-    contactSource: { source: 'Meta' },
+    contactSource: { source: 'Instagram' },
     email: 'daniel.martins@vidaplena.com',
     whatsapp: '41998762345',
     status: 'Aprovado',
+    rejectionReason: null,
     createdAt: new Date(new Date().setMonth(new Date().getMonth() - 2)),
   },
   {
