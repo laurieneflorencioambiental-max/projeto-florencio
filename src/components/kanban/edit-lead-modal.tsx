@@ -291,14 +291,14 @@ export default function EditLeadModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select onValueChange={field.onChange} value={field.value || ''}>
+                       <Select onValueChange={value => field.onChange(value || undefined)} value={field.value || ''}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o motivo da perda" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
                           {rejectionReasons.map(reason => (
                             <SelectItem key={reason} value={reason}>{reason}</SelectItem>
                           ))}
