@@ -15,7 +15,13 @@ export const statuses: Status[] = [
   'Rejeitado',
 ];
 
-export const paymentMethods = ['Boleto', 'Cartão de Crédito/Débito'] as const;
+export const paymentMethods = [
+  'Boleto',
+  'Cartão de Crédito (Link)',
+  'Cartão de Crédito (Maquininha)',
+  'Cartão de Débito (Link)',
+  'Cartão de Débito (Maquininha)',
+] as const;
 export type PaymentMethod = (typeof paymentMethods)[number];
 
 export const contactSources = [

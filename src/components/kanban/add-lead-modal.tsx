@@ -235,7 +235,7 @@ export default function AddLeadModal({
                             </FormItem>
                           )}
                         />
-                      {form.watch(`paymentMethods.${index}.method`) === 'Cartão de Crédito/Débito' && (
+                      {form.watch(`paymentMethods.${index}.method`)?.includes('Cartão de Crédito') && (
                           <FormField
                             control={form.control}
                             name={`paymentMethods.${index}.cardFee`}
@@ -304,13 +304,14 @@ export default function AddLeadModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o motivo da perda" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value=" ">Nenhum</SelectItem>
                           {rejectionReasons.map(reason => (
                             <SelectItem key={reason} value={reason}>{reason}</SelectItem>
                           ))}

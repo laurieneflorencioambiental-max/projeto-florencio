@@ -26,6 +26,8 @@ import {
   Trash2,
   AlertCircle,
   Calendar,
+  MousePointer,
+  Tablet,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
@@ -66,6 +68,13 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
         <span className="text-sm text-muted-foreground">{text}</span>
       </div>
     );
+  };
+
+  const getPaymentMethodIcon = (method: string) => {
+    if (method.includes('Boleto')) return <Barcode />;
+    if (method.includes('Link')) return <MousePointer />;
+    if (method.includes('Maquininha')) return <Tablet />;
+    return <CreditCard />;
   };
 
   return (
@@ -123,9 +132,9 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
                     <div className="flex flex-wrap gap-2">
                     {lead.paymentMethods.map(pm => (
                         <Badge variant="secondary" key={pm.method} className="flex gap-2 items-center">
-                        {pm.method === 'Boleto' ? <Barcode /> : <CreditCard />}
-                        <span>{pm.method}</span>
-                        {pm.method === 'Cartão de Crédito/Débito' && pm.cardFee && (
+                        {getPaymentMethodIcon(pm.method)}
+                        <span>{pm.method.replace(' (Link)', '').replace(' (Maquininha)', '')}</span>
+                        {pm.method.includes('Crédito') && pm.cardFee && (
                             <span className="text-xs opacity-75">({pm.cardFee}% taxa)</span>
                         )}
                         </Badge>
