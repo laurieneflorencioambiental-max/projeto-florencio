@@ -23,13 +23,6 @@ type LostLeadsChartProps = {
 const chartConfig = {
   count: {
     label: 'Total',
-  },
-  Desistência: {
-    label: 'Desistência',
-    color: 'hsl(var(--chart-4))',
-  },
-  Rejeitado: {
-    label: 'Rejeitado',
     color: 'hsl(var(--chart-5))',
   },
 };
@@ -37,56 +30,74 @@ const chartConfig = {
 export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
   const chartData = useMemo(() => {
     const lostLeads = leads.filter(
-      lead => lead.status === 'Desistência' || lead.status === 'Rejeitado'
+      lead => (lead.status === 'Desistência' || lead.status === 'Rejeitado') && lead.rejectionReason
     );
 
-    const statusCounts = lostLeads.reduce((acc, lead) => {
-      acc[lead.status] = (acc[lead.status] || 0) + 1;
+    const reasonCounts = lostLeads.reduce((acc, lead) => {
+      const reason = lead.rejectionReason || 'Motivo não especificado';
+      acc[reason] = (acc[reason] || 0) + 1;
       return acc;
-    }, {} as Record<'Desistência' | 'Rejeitado', number>);
+    }, {} as Record<string, number>);
 
-    return [
-      {
-        status: 'Desistência',
-        count: statusCounts['Desistência'] || 0,
-        fill: 'var(--color-Desistência)',
-      },
-      {
-        status: 'Rejeitado',
-        count: statusCounts['Rejeitado'] || 0,
-        fill: 'var(--color-Rejeitado)',
-      },
-    ];
+    return Object.entries(reasonCounts).map(([reason, count]) => ({
+      reason,
+      count,
+      fill: 'var(--color-count)',
+    })).sort((a, b) => b.count - a.count);
+
   }, [leads]);
+
+  const yAxisLabelLength = useMemo(() => {
+    if (!chartData.length) return 0;
+    return Math.max(...chartData.map(d => d.reason.length));
+  }, [chartData]);
+
+
+  if (chartData.length === 0) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Análise de Orçamentos Perdidos</CardTitle>
+                <CardDescription>Principais motivos de desistências e rejeições</CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-[300px]">
+                <p className="text-muted-foreground">Nenhum dado de orçamento perdido com motivo para exibir.</p>
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Análise de Orçamentos Perdidos</CardTitle>
-        <CardDescription>Contagem de desistências e rejeições</CardDescription>
+        <CardDescription>Principais motivos de desistências e rejeições</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="max-h-[300px]">
+        <ChartContainer config={chartConfig} className="max-h-[300px] h-full w-full">
           <BarChart
             accessibilityLayer
             data={chartData}
             layout="vertical"
             margin={{
-              left: 10,
+              left: yAxisLabelLength * 4, // Dynamic margin
+              right: 10
             }}
           >
             <YAxis
-              dataKey="status"
+              dataKey="reason"
               type="category"
               tickLine={false}
-              tickMargin={10}
               axisLine={false}
-              className="text-sm"
+              className="text-xs"
+              interval={0}
+              width={0}
+              tick={{ transform: 'translate(-10, 0)' }}
             />
             <XAxis dataKey="count" type="number" hide />
             <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+                cursor={false}
+                content={<ChartTooltipContent labelKey="reason" hideIndicator />}
             />
             <Bar dataKey="count" layout="vertical" radius={5} />
           </BarChart>
