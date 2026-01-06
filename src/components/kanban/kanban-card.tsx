@@ -25,10 +25,12 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  Calendar,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -77,9 +79,15 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
-              <CardDescription>
-                {lead.name}
-                {lead.role && <span className="text-xs text-muted-foreground">, {lead.role}</span>}
+              <CardDescription className='space-y-1'>
+                <p>
+                  {lead.name}
+                  {lead.role && <span className="text-xs text-muted-foreground">, {lead.role}</span>}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span>{format(new Date(lead.createdAt), 'dd/MM/yyyy')}</span>
+                </div>
               </CardDescription>
             </div>
             <div className="flex items-center gap-1">
@@ -127,8 +135,8 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
                 {(lead.status === 'Rejeitado' || lead.status === 'Desistência') && lead.rejectionReason && (
                     <div className="flex items-start gap-2 mt-4 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
                         <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-destructive/80">
-                            <span className="font-semibold text-destructive">Motivo:</span> {lead.rejectionReason}
+                        <p className="text-xs text-destructive">
+                            <span className="font-semibold">Motivo:</span> {lead.rejectionReason}
                         </p>
                     </div>
                 )}
