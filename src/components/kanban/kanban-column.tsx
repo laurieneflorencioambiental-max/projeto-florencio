@@ -50,7 +50,7 @@ export default function KanbanColumn({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex flex-col h-[calc(100vh-10rem)] w-[320px] rounded-lg bg-muted/50 transition-colors',
+        'flex flex-col h-[calc(100vh-12rem)] w-[320px] rounded-lg bg-muted/50 transition-colors',
         isOver && 'bg-primary/20'
       )}
     >
