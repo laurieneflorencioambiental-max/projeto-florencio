@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Lead, Status } from '@/lib/types';
 import { statuses } from '@/lib/types';
 import KanbanColumn from './kanban-column';
@@ -12,6 +12,11 @@ type KanbanBoardProps = {
 
 export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
+
+  useEffect(() => {
+    setLeads(initialLeads);
+  }, [initialLeads]);
+
 
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
@@ -36,7 +41,7 @@ export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
 
   return (
     <ScrollArea className="w-full whitespace-nowrap">
-      <div className="flex w-max space-x-4 p-4">
+      <div className="flex w-max space-x-4 pb-4">
         {statuses.map(status => (
           <KanbanColumn
             key={status}

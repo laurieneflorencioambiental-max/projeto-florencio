@@ -48,6 +48,7 @@ export const leadSchema = z.object({
   whatsapp: z.string().min(10, 'Número de WhatsApp inválido.'),
   status: z.enum(statuses),
   rejectionReason: z.string().optional(),
+  createdAt: z.date(),
 });
 
 

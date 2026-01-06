@@ -13,6 +13,7 @@ export const initialLeads: Lead[] = [
     email: 'ana.silva@construtorasegura.com.br',
     whatsapp: '11987654321',
     status: 'Novos',
+    createdAt: new Date(),
   },
   {
     id: 'lead-2',
@@ -26,6 +27,7 @@ export const initialLeads: Lead[] = [
     email: 'bruno.costa@faria.ind.br',
     whatsapp: '21998765432',
     status: 'Novos',
+    createdAt: new Date(new Date().setDate(new Date().getDate() - 3)),
   },
   {
     id: 'lead-3',
@@ -39,6 +41,7 @@ export const initialLeads: Lead[] = [
     email: 'carla.dias@metalurgicadiniz.com',
     whatsapp: '31987651234',
     status: 'Pendente',
+    createdAt: new Date(new Date().setDate(new Date().getDate() - 10)),
   },
   {
     id: 'lead-4',
@@ -52,6 +55,7 @@ export const initialLeads: Lead[] = [
     email: 'daniel.martins@vidaplena.com',
     whatsapp: '41998762345',
     status: 'Aprovado',
+    createdAt: new Date(new Date().setMonth(new Date().getMonth() - 2)),
   },
   {
     id: 'lead-5',
@@ -65,6 +69,7 @@ export const initialLeads: Lead[] = [
     email: 'eduarda.ferreira@aprendermais.com',
     whatsapp: '51987653456',
     status: 'Desistência',
+    createdAt: new Date(new Date().setMonth(new Date().getMonth() - 3)),
   },
   {
     id: 'lead-6',
@@ -79,6 +84,7 @@ export const initialLeads: Lead[] = [
     whatsapp: '61998764567',
     status: 'Rejeitado',
     rejectionReason: 'O preço está acima do nosso orçamento atual.',
+    createdAt: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
   },
   {
     id: 'lead-7',
@@ -93,5 +99,6 @@ export const initialLeads: Lead[] = [
     whatsapp: '71987655678',
     status: 'Rejeitado',
     rejectionReason: 'Decidimos por uma solução interna para gestão de segurança.',
+    createdAt: new Date(),
   },
 ];
