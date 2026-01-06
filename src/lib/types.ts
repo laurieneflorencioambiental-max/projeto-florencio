@@ -27,6 +27,17 @@ export const contactSources = [
 ] as const;
 export type ContactSource = (typeof contactSources)[number];
 
+export const rejectionReasons = [
+  'Preço elevado',
+  'Concorrência com melhor oferta',
+  'Escopo não atendido',
+  'Cliente sem urgência/prioridade',
+  'Cliente optou por solução interna',
+  'Falta de resposta (Follow-up)',
+] as const;
+export type RejectionReason = (typeof rejectionReasons)[number];
+
+
 export const paymentMethodSchema = z.object({
   method: z.enum(paymentMethods),
   cardFee: z.number().optional(),
@@ -48,7 +59,7 @@ export const leadSchema = z.object({
   email: z.string().email('Email inválido.'),
   whatsapp: z.string().min(10, 'Número de WhatsApp inválido.'),
   status: z.enum(statuses),
-  rejectionReason: z.string().optional(),
+  rejectionReason: z.enum(rejectionReasons).optional(),
   createdAt: z.date(),
 });
 

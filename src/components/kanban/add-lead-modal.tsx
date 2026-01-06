@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Lead } from '@/lib/types';
-import { leadSchema, paymentMethods, contactSources } from '@/lib/types';
+import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -62,7 +62,7 @@ export default function AddLeadModal({
       value: 0,
       paymentMethods: [{ method: 'Boleto' }],
       contactSource: { source: 'Google', indicatedBy: '' },
-      rejectionReason: '',
+      rejectionReason: undefined,
     },
   });
 
@@ -303,10 +303,20 @@ export default function AddLeadModal({
                   name="rejectionReason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Motivo da Rejeição (se aplicável)</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Descreva o motivo" {...field} />
-                      </FormControl>
+                      <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o motivo da perda" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="" disabled>Selecione o motivo</SelectItem>
+                          {rejectionReasons.map(reason => (
+                            <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

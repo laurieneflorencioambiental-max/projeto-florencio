@@ -74,7 +74,7 @@ export const initialLeads: Lead[] = [
     email: 'eduarda.ferreira@aprendermais.com',
     whatsapp: '51987653456',
     status: 'Desistência',
-    rejectionReason: 'Cliente optou por outra empresa com proposta mais detalhada em outro escopo.',
+    rejectionReason: 'Concorrência com melhor oferta',
     createdAt: new Date(new Date().setMonth(new Date().getMonth() - 3)),
   },
   {
@@ -90,7 +90,7 @@ export const initialLeads: Lead[] = [
     email: 'fabio.gomes@supercentral.com',
     whatsapp: '61998764567',
     status: 'Rejeitado',
-    rejectionReason: 'O preço está acima do nosso orçamento atual.',
+    rejectionReason: 'Preço elevado',
     createdAt: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
   },
   {
@@ -106,7 +106,7 @@ export const initialLeads: Lead[] = [
     email: 'gabriela.lima@tecinova.com.br',
     whatsapp: '71987655678',
     status: 'Rejeitado',
-    rejectionReason: 'Decidimos por uma solução interna para gestão de segurança.',
+    rejectionReason: 'Cliente optou por solução interna',
     createdAt: new Date(),
   },
 ];
