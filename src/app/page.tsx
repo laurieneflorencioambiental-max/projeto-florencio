@@ -36,7 +36,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter } from 'lucide-react';
+import { ListFilter, PlusCircle } from 'lucide-react';
+import AddLeadModal from '@/components/kanban/add-lead-modal';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -46,6 +47,7 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 export default function Home() {
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -54,6 +56,7 @@ export default function Home() {
     'Pendente',
     'Aprovado',
   ]);
+   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const handleStatusChange = (status: Status) => {
     setVisibleStatuses(prev =>
@@ -62,13 +65,17 @@ export default function Home() {
         : [...prev, status]
     );
   };
+  
+  const handleAddLead = (newLead: Lead) => {
+    setLeads(prevLeads => [newLead, ...prevLeads]);
+  };
 
   const filteredLeads = useMemo(() => {
     const now = new Date();
     if (filter === 'all') {
-      return initialLeads;
+      return leads;
     }
-    return initialLeads.filter(lead => {
+    return leads.filter(lead => {
       const leadDate = lead.createdAt;
       switch (filter) {
         case 'today':
@@ -89,93 +96,106 @@ export default function Home() {
           return true;
       }
     });
-  }, [filter, selectedMonth, selectedYear]);
+  }, [filter, selectedMonth, selectedYear, leads]);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-start gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <label htmlFor="period-filter" className="text-sm font-medium">
-            Filtrar por:
-          </label>
-          <Select
-            value={filter}
-            onValueChange={value => setFilter(value as FilterPeriod)}
-          >
-            <SelectTrigger className="w-[180px]" id="period-filter">
-              <SelectValue placeholder="Selecione o período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="today">Hoje</SelectItem>
-              <SelectItem value="week">Esta Semana</SelectItem>
-              <SelectItem value="month">Mês Específico</SelectItem>
-              <SelectItem value="year">Ano Específico</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {filter === 'month' && (
-           <div className="flex items-center gap-2">
-            <label htmlFor="month-filter" className="text-sm font-medium">
-              Mês:
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className='flex items-center gap-4 flex-wrap'>
+            <div className="flex items-center gap-2">
+            <label htmlFor="period-filter" className="text-sm font-medium">
+                Filtrar por:
             </label>
             <Select
-                value={selectedMonth.toString()}
-                onValueChange={value => setSelectedMonth(Number(value))}
+                value={filter}
+                onValueChange={value => setFilter(value as FilterPeriod)}
             >
-                <SelectTrigger className="w-[180px]" id="month-filter">
-                    <SelectValue placeholder="Selecione o mês" />
+                <SelectTrigger className="w-[180px]" id="period-filter">
+                <SelectValue placeholder="Selecione o período" />
                 </SelectTrigger>
                 <SelectContent>
-                    {months.map(month => (
-                        <SelectItem key={month.value} value={month.value.toString()}>
-                            {month.label}
-                        </SelectItem>
-                    ))}
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="today">Hoje</SelectItem>
+                <SelectItem value="week">Esta Semana</SelectItem>
+                <SelectItem value="month">Mês Específico</SelectItem>
+                <SelectItem value="year">Ano Específico</SelectItem>
                 </SelectContent>
             </Select>
-           </div>
-        )}
+            </div>
 
-        {filter === 'year' && (
-           <div className="flex items-center gap-2">
-             <label htmlFor="year-filter" className="text-sm font-medium">
-              Ano:
-            </label>
-            <Input
-                id="year-filter"
-                type="number"
-                value={selectedYear}
-                onChange={e => setSelectedYear(Number(e.target.value))}
-                className="w-[120px]"
-                placeholder="Ex: 2024"
-            />
-           </div>
-        )}
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                    <ListFilter className="mr-2 h-4 w-4" />
-                    Filtrar Status
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuLabel>Exibir Colunas</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {statuses.map(status => (
-                    <DropdownMenuCheckboxItem
-                        key={status}
-                        checked={visibleStatuses.includes(status)}
-                        onCheckedChange={() => handleStatusChange(status)}
-                    >
-                        {status}
-                    </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
+            {filter === 'month' && (
+            <div className="flex items-center gap-2">
+                <label htmlFor="month-filter" className="text-sm font-medium">
+                Mês:
+                </label>
+                <Select
+                    value={selectedMonth.toString()}
+                    onValueChange={value => setSelectedMonth(Number(value))}
+                >
+                    <SelectTrigger className="w-[180px]" id="month-filter">
+                        <SelectValue placeholder="Selecione o mês" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {months.map(month => (
+                            <SelectItem key={month.value} value={month.value.toString()}>
+                                {month.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            )}
+
+            {filter === 'year' && (
+            <div className="flex items-center gap-2">
+                <label htmlFor="year-filter" className="text-sm font-medium">
+                Ano:
+                </label>
+                <Input
+                    id="year-filter"
+                    type="number"
+                    value={selectedYear}
+                    onChange={e => setSelectedYear(Number(e.target.value))}
+                    className="w-[120px]"
+                    placeholder="Ex: 2024"
+                />
+            </div>
+            )}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                        <ListFilter className="mr-2 h-4 w-4" />
+                        Filtrar Status
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuLabel>Exibir Colunas</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {statuses.map(status => (
+                        <DropdownMenuCheckboxItem
+                            key={status}
+                            checked={visibleStatuses.includes(status)}
+                            onCheckedChange={() => handleStatusChange(status)}
+                        >
+                            {status}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+        <div>
+            <Button onClick={() => setIsAddModalOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Novo Orçamento
+            </Button>
+        </div>
       </div>
-      <KanbanBoard initialLeads={filteredLeads} visibleStatuses={visibleStatuses} />
+      <KanbanBoard leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} />
+      <AddLeadModal
+        isOpen={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onSave={handleAddLead}
+      />
     </div>
   );
 }

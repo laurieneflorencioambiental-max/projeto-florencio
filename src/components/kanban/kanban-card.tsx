@@ -28,6 +28,7 @@ import {
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '../ui/scroll-area';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -94,14 +95,14 @@ export default function KanbanCard({ lead, onUpdateLead }: KanbanCardProps) {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pb-4 text-sm overflow-x-auto">
-             <div className="pr-4">
+             <div className="pr-4 whitespace-normal">
                 <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                     <span className="font-mono text-xs">{lead.cnpj}</span>
                 </div>
                 <div className="flex items-start gap-2 mt-4">
-                    <FileText className="h-4 w-4 text-muted-foreground mt-1" />
-                    <p className="flex-1 whitespace-normal">{lead.proposalSummary}</p>
+                    <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                    <p className="flex-1">{lead.proposalSummary}</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                     <DollarSign className="h-4 w-4 text-primary" />

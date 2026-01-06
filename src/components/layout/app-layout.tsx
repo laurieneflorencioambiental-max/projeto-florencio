@@ -11,8 +11,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Briefcase, Home } from 'lucide-react';
+import { Briefcase, Home, PlusCircle } from 'lucide-react';
 import React from 'react';
+import { Button } from '../ui/button';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   // We can use a more specific path if needed, for now let's assume root is the active page.
@@ -47,13 +48,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
-          <SidebarTrigger className="md:hidden" />
-          <h1 className="text-lg font-headline font-semibold md:text-xl">
-            Gestão de Orçamentos
-          </h1>
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="md:hidden" />
+            <h1 className="text-lg font-headline font-semibold md:text-xl">
+              Gestão de Orçamentos
+            </h1>
+          </div>
         </header>
-        <main className="p-4 sm:p-6 overflow-x-auto">{children}</main>
+        <main className="p-4 sm:p-6 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

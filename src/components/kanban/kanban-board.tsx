@@ -6,17 +6,12 @@ import KanbanColumn from './kanban-column';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanBoardProps = {
-  initialLeads: Lead[];
+  leads: Lead[];
+  setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   visibleStatuses: Status[];
 };
 
-export default function KanbanBoard({ initialLeads, visibleStatuses }: KanbanBoardProps) {
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
-
-  useEffect(() => {
-    setLeads(initialLeads);
-  }, [initialLeads]);
-
+export default function KanbanBoard({ leads, setLeads, visibleStatuses }: KanbanBoardProps) {
 
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
