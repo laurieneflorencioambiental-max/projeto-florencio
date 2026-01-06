@@ -34,7 +34,7 @@ export default function FollowUpModal({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && lead.rejectionReason) {
       setIsLoading(true);
       setMessage('');
       setHasCopied(false);
@@ -59,15 +59,15 @@ export default function FollowUpModal({
   }, [isOpen, lead, toast]);
 
   const handleCopy = () => {
-    if(!message) return;
-    navigator.clipboard.writeText(message);
-    setHasCopied(true);
-    toast({
-      title: 'Copiado!',
-      description:
-        'A mensagem de follow-up foi copiada para a área de transferência.',
-    });
-    setTimeout(() => setHasCopied(false), 2000);
+    if (message) {
+      navigator.clipboard.writeText(message);
+      setHasCopied(true);
+      toast({
+        title: 'Copiado!',
+        description: 'A mensagem foi copiada para a área de transferência.',
+      });
+      setTimeout(() => setHasCopied(false), 2000);
+    }
   };
 
   return (
@@ -75,7 +75,7 @@ export default function FollowUpModal({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="font-headline">
-            Sugestão de Follow-up para {lead.name}
+            Sugestão de Follow-up para {lead.company}
           </DialogTitle>
           <DialogDescription>
             A IA gerou a seguinte mensagem com base no motivo da rejeição: "

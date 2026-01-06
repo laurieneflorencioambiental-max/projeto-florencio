@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Lead, Status } from '@/lib/types';
 import { statuses } from '@/lib/types';
 import KanbanColumn from './kanban-column';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanBoardProps = {
   initialLeads: Lead[];
@@ -28,15 +29,18 @@ export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
-      {statuses.map(status => (
-        <KanbanColumn
-          key={status}
-          status={status}
-          leads={leads.filter(lead => lead.status === status)}
-          onDrop={handleDrop}
-        />
-      ))}
-    </div>
+    <ScrollArea className="w-full whitespace-nowrap">
+      <div className="flex w-max space-x-4 p-4">
+        {statuses.map(status => (
+          <KanbanColumn
+            key={status}
+            status={status}
+            leads={leads.filter(lead => lead.status === status)}
+            onDrop={handleDrop}
+          />
+        ))}
+      </div>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }
