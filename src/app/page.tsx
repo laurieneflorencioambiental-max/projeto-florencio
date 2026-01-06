@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
 import { initialLeads } from '@/lib/data';
-import type { Lead } from '@/lib/types';
+import type { Lead, Status } from '@/lib/types';
+import { statuses } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,16 @@ import {
   getMonth,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { ListFilter } from 'lucide-react';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -38,6 +49,19 @@ export default function Home() {
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [visibleStatuses, setVisibleStatuses] = useState<Status[]>([
+    'Novos',
+    'Pendente',
+    'Aprovado',
+  ]);
+
+  const handleStatusChange = (status: Status) => {
+    setVisibleStatuses(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
 
   const filteredLeads = useMemo(() => {
     const now = new Date();
@@ -129,8 +153,29 @@ export default function Home() {
             />
            </div>
         )}
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Filtrar Status
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuLabel>Exibir Colunas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {statuses.map(status => (
+                    <DropdownMenuCheckboxItem
+                        key={status}
+                        checked={visibleStatuses.includes(status)}
+                        onCheckedChange={() => handleStatusChange(status)}
+                    >
+                        {status}
+                    </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <KanbanBoard initialLeads={filteredLeads} />
+      <KanbanBoard initialLeads={filteredLeads} visibleStatuses={visibleStatuses} />
     </div>
   );
 }

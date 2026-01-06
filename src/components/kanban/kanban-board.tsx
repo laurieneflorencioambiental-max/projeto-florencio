@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import type { Lead, Status } from '@/lib/types';
-import { statuses } from '@/lib/types';
 import KanbanColumn from './kanban-column';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanBoardProps = {
   initialLeads: Lead[];
+  visibleStatuses: Status[];
 };
 
-export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
+export default function KanbanBoard({ initialLeads, visibleStatuses }: KanbanBoardProps) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function KanbanBoard({ initialLeads }: KanbanBoardProps) {
   return (
     <ScrollArea className="w-full whitespace-nowrap">
       <div className="flex w-max space-x-4 pb-4">
-        {statuses.map(status => (
+        {visibleStatuses.map(status => (
           <KanbanColumn
             key={status}
             status={status}
