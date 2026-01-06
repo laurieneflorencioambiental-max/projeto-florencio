@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button';
 import { ListFilter, PlusCircle, Search } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
+import LostLeadsChart from '@/components/charts/lost-leads-chart';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -215,8 +216,9 @@ export default function Home() {
         </div>
       </div>
       <KanbanBoard leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} />
-      <div className='mt-8'>
+      <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
+        <LostLeadsChart leads={filteredLeads} />
       </div>
       <AddLeadModal
         isOpen={isAddModalOpen}
