@@ -38,7 +38,7 @@ export default function KanbanColumn({
 
   const statusColors: { [key in Status]: string } = {
     Novos: 'bg-blue-500/10 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
-    Pendente: 'bg-yellow-500/10 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+    'Pendente/Em negociação': 'bg-yellow-500/10 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
     Aprovado: 'bg-green-500/10 text-green-800 dark:bg-green-900/50 dark:text-green-300',
     Desistência: 'bg-orange-500/10 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300',
     Rejeitado: 'bg-red-500/10 text-red-800 dark:bg-red-900/50 dark:text-red-300',

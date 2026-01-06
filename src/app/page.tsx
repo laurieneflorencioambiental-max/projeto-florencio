@@ -54,7 +54,7 @@ export default function Home() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [visibleStatuses, setVisibleStatuses] = useState<Status[]>([
     'Novos',
-    'Pendente',
+    'Pendente/Em negociação',
     'Aprovado',
   ]);
    const [isAddModalOpen, setIsAddModalOpen] = useState(false);

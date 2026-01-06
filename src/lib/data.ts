@@ -43,7 +43,7 @@ export const initialLeads: Lead[] = [
     contactSource: { source: 'BNI' },
     email: 'carla.dias@metalurgicadiniz.com',
     whatsapp: '31987651234',
-    status: 'Pendente',
+    status: 'Pendente/Em negociação',
     createdAt: new Date(new Date().setDate(new Date().getDate() - 10)),
   },
   {

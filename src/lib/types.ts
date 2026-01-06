@@ -2,14 +2,14 @@ import { z } from 'zod';
 
 export type Status =
   | 'Novos'
-  | 'Pendente'
+  | 'Pendente/Em negociação'
   | 'Aprovado'
   | 'Desistência'
   | 'Rejeitado';
 
 export const statuses: Status[] = [
   'Novos',
-  'Pendente',
+  'Pendente/Em negociação',
   'Aprovado',
   'Desistência',
   'Rejeitado',
