@@ -66,7 +66,12 @@ export default function EditLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof leadSchema>) => {
-    onSave({ ...lead, ...values, editCount: (lead.editCount || 0) + 1 });
+    onSave({ 
+      ...lead, 
+      ...values, 
+      editCount: (lead.editCount || 0) + 1,
+      proposalVersion: (lead.proposalVersion || 0) + 1,
+    });
     onOpenChange(false);
     toast({
       title: 'Lead Atualizado!',
@@ -291,7 +296,7 @@ export default function EditLeadModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select onValueChange={value => field.onChange(value || undefined)} value={field.value || ''}>
+                       <Select onValueChange={value => field.onChange(value === 'none' ? undefined : value)} value={field.value || 'none'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o motivo da perda" />
@@ -316,7 +321,7 @@ export default function EditLeadModal({
               </Button>
               <Button type="submit">Salvar Alterações</Button>
             </DialogFooter>
-          </form>
+          </form>        
         </Form>
       </DialogContent>
     </Dialog>

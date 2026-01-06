@@ -21,6 +21,8 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 0,
     editCount: 0,
     previousStatus: null,
+    proposalNumber: null,
+    proposalVersion: 0,
   },
   {
     id: 'lead-2',
@@ -42,6 +44,8 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 0,
     editCount: 1,
     previousStatus: 'Novos',
+    proposalNumber: 1,
+    proposalVersion: 1,
   },
   {
     id: 'lead-3',
@@ -63,6 +67,8 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 1,
     editCount: 2,
     previousStatus: 'Novos',
+    proposalNumber: 2,
+    proposalVersion: 2,
   },
   {
     id: 'lead-4',
@@ -84,6 +90,8 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 2,
     editCount: 1,
     previousStatus: 'Pendente/Em negociação',
+    proposalNumber: 3,
+    proposalVersion: 1,
   },
   {
     id: 'lead-5',
@@ -105,6 +113,8 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 0,
     editCount: 0,
     previousStatus: 'Pendente/Em negociação',
+    proposalNumber: 4,
+    proposalVersion: 0,
   },
   {
     id: 'lead-6',
@@ -126,6 +136,8 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 1,
     editCount: 1,
     previousStatus: 'Pendente/Em negociação',
+    proposalNumber: 5,
+    proposalVersion: 1,
   },
   {
     id: 'lead-7',
@@ -147,5 +159,7 @@ export const initialLeads: Lead[] = [
     whatsappSentCount: 0,
     editCount: 0,
     previousStatus: 'Novos',
+    proposalNumber: 6,
+    proposalVersion: 0,
   },
 ];

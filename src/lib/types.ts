@@ -72,6 +72,8 @@ export const leadSchema = z.object({
   whatsappSentCount: z.number().default(0),
   editCount: z.number().default(0),
   previousStatus: z.enum(statuses).optional().nullable(),
+  proposalNumber: z.number().nullable().optional(),
+  proposalVersion: z.number().default(0),
 });
 
 

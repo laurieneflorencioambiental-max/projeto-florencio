@@ -40,12 +40,35 @@ export default function ProposalModal({
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [proposalBody, setProposalBody] = useState(lead.proposalSummary);
+  const [fullProposalNumber, setFullProposalNumber] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setProposalBody(lead.proposalSummary);
+
+      let currentProposalNumber = lead.proposalNumber;
+
+      if (!currentProposalNumber) {
+        // This is a simplified way to get the next number. In a real multi-user app, this should be handled by a backend.
+        const highestProposalNumber = Math.max(0, ...initialLeads.map(l => l.proposalNumber || 0));
+        currentProposalNumber = highestProposalNumber + 1;
+      }
+      
+      const paddedNumber = String(currentProposalNumber).padStart(3, '0');
+      const version = lead.proposalVersion || 0;
+      const proposalId = `PTC-FLO-SST-${paddedNumber}.${version}`;
+      setFullProposalNumber(proposalId);
+      
+      // Update lead state if a new number was generated
+      if(!lead.proposalNumber) {
+        onUpdateLead({
+          ...lead,
+          proposalNumber: currentProposalNumber,
+        });
+      }
     }
-  }, [isOpen, lead.proposalSummary]);
+  }, [isOpen, lead, onUpdateLead]);
+
 
   const handleTemplateChange = (templateId: string) => {
     const template = proposalTemplates.find(t => t.id === templateId);
@@ -143,6 +166,9 @@ export default function ProposalModal({
               </div>
               <div className="text-right">
                 <h2 className="text-xl font-semibold">Proposta Comercial</h2>
+                 <p className="text-sm">
+                  {fullProposalNumber}
+                </p>
                 <p className="text-sm">
                   Data: {new Date().toLocaleDateString('pt-BR')}
                 </p>

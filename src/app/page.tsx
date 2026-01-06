@@ -185,6 +185,13 @@ export default function Home() {
         setCurrentSeller('');
     }
   }, [sellers, currentSeller]);
+  
+  const handleUpdateLead = (updatedLead: Lead) => {
+    setLeads(prevLeads =>
+      prevLeads.map(lead => (lead.id === updatedLead.id ? updatedLead : lead))
+    );
+  };
+
 
   return (
     <div className="flex flex-col gap-4">
@@ -313,7 +320,7 @@ export default function Home() {
             </DropdownMenu>
         </div>
       </div>
-      <KanbanBoard leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} />
+      <KanbanBoard leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
         <LostLeadsChart leads={filteredLeads} />

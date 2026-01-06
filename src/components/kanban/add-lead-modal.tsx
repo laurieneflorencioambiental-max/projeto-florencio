@@ -42,7 +42,7 @@ type AddLeadModalProps = {
   seller: string;
 };
 
-const newLeadSchema = leadSchema.omit({ id: true, createdAt: true, status: true, createdBy: true, proposalGeneratedCount: true, whatsappSentCount: true, editCount: true, previousStatus: true });
+const newLeadSchema = leadSchema.omit({ id: true, createdAt: true, status: true, createdBy: true, proposalGeneratedCount: true, whatsappSentCount: true, editCount: true, previousStatus: true, proposalNumber: true, proposalVersion: true });
 
 export default function AddLeadModal({
   isOpen,
@@ -84,6 +84,8 @@ export default function AddLeadModal({
       whatsappSentCount: 0,
       editCount: 0,
       previousStatus: null,
+      proposalNumber: null,
+      proposalVersion: 0,
     };
     onSave(newLead);
     onOpenChange(false);
@@ -311,7 +313,7 @@ export default function AddLeadModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select onValueChange={value => field.onChange(value === 'none' ? undefined : value)} value={field.value || ''}>
+                       <Select onValueChange={value => field.onChange(value === 'none' ? undefined : value)} value={field.value || 'none'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o motivo da perda" />

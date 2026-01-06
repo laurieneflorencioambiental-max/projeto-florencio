@@ -9,9 +9,10 @@ type KanbanBoardProps = {
   leads: Lead[];
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   visibleStatuses: Status[];
+  onUpdateLead: (lead: Lead) => void;
 };
 
-export default function KanbanBoard({ leads, setLeads, visibleStatuses }: KanbanBoardProps) {
+export default function KanbanBoard({ leads, setLeads, visibleStatuses, onUpdateLead }: KanbanBoardProps) {
 
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
@@ -28,12 +29,6 @@ export default function KanbanBoard({ leads, setLeads, visibleStatuses }: Kanban
     );
   };
 
-  const handleUpdateLead = (updatedLead: Lead) => {
-    setLeads(prevLeads =>
-      prevLeads.map(lead => (lead.id === updatedLead.id ? updatedLead : lead))
-    );
-  };
-
   return (
     <ScrollArea className="w-full whitespace-nowrap">
       <div className="flex w-max space-x-4 pb-4">
@@ -43,7 +38,7 @@ export default function KanbanBoard({ leads, setLeads, visibleStatuses }: Kanban
             status={status}
             leads={leads.filter(lead => lead.status === status)}
             onDrop={handleDrop}
-            onUpdateLead={handleUpdateLead}
+            onUpdateLead={onUpdateLead}
           />
         ))}
       </div>
