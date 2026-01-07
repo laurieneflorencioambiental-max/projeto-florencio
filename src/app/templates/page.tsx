@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ProposalTemplate, Plan } from '@/lib/types';
 import {
   proposalTemplates as defaultProposalTemplates,
@@ -97,6 +97,7 @@ export default function ManageTemplatesPage() {
   const { toast } = useToast();
   const [templates, setTemplates] = useState<ProposalTemplate[]>([]);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const formCardRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof templateFormSchema>>({
     resolver: zodResolver(templateFormSchema),
@@ -174,7 +175,8 @@ export default function ManageTemplatesPage() {
 
   const handleStartEditing = (template: ProposalTemplate) => {
     setEditingTemplateId(template.id);
-    form.reset(template);
+    form.reset({ ...template, plans: template.plans || [] });
+    formCardRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleCancelEditing = () => {
@@ -230,7 +232,7 @@ export default function ManageTemplatesPage() {
   
   return (
     <div className="flex flex-col gap-8">
-      <Card>
+      <Card ref={formCardRef}>
         <CardHeader>
           <CardTitle>
             {editingTemplateId ? 'Editar Modelo' : 'Adicionar Novo Modelo'}
