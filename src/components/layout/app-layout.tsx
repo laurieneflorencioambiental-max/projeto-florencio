@@ -13,10 +13,11 @@ import {
 } from '@/components/ui/sidebar';
 import { Briefcase, Home, FileText } from 'lucide-react';
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const getPageTitle = () => {
     if (pathname === '/') return 'Gestão de Orçamentos';
@@ -43,13 +44,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/" isActive={pathname === '/'} tooltip="Orçamentos">
+              <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Orçamentos">
                 <Home />
                 <span>Orçamentos</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/templates" isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
+              <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
                 <FileText />
                 <span>Modelos de Proposta</span>
               </SidebarMenuButton>
