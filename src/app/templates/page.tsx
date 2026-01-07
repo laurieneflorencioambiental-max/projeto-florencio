@@ -50,8 +50,11 @@ const getSavedTemplates = (): ProposalTemplate[] => {
     const savedTemplates = localStorage.getItem('proposalTemplates');
     if (savedTemplates) {
       const parsed = JSON.parse(savedTemplates);
-      // Ensure plans array exists
-      return parsed.map((t: ProposalTemplate) => ({ ...t, plans: t.plans || [] }));
+      // Ensure plans array exists and plans have IDs
+      return parsed.map((t: ProposalTemplate) => ({ 
+          ...t, 
+          plans: t.plans ? t.plans.map((p, index) => ({...p, id: p.id || `plan-${t.id}-${index}`})) : [] 
+        }));
     }
   } catch (error) {
     console.error('Failed to parse templates from localStorage:', error);
@@ -141,17 +144,21 @@ export default function ManageTemplatesPage() {
   const handleSaveTemplate = (data: z.infer<typeof templateFormSchema>) => {
     const currentTemplates = getSavedTemplates();
     let updatedTemplates;
+    
+    // Ensure new plans get a unique ID
+    const plansWithIds = data.plans.map(p => ({ ...p, id: p.id || `plan-${Date.now()}-${Math.random()}` }));
+    const formDataWithPlanIds = { ...data, plans: plansWithIds };
 
     if (editingTemplateId) {
       updatedTemplates = currentTemplates.map(t =>
-        t.id === editingTemplateId ? { ...t, ...data, id: t.id } : t
+        t.id === editingTemplateId ? { ...t, ...formDataWithPlanIds } : t
       );
       toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
       const newId = `template-${Date.now()}`;
       const newFullTemplate: ProposalTemplate = {
         id: newId,
-        ...data,
+        ...formDataWithPlanIds,
       };
       updatedTemplates = [...currentTemplates, newFullTemplate];
       toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
@@ -402,4 +409,5 @@ export default function ManageTemplatesPage() {
   );
 }
 
+    
     
