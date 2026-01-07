@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate } from '@/lib/types';
+import type { Lead, ProposalTemplate, Plan } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -45,15 +45,7 @@ type ProposalModalProps = {
   proposalTemplates: ProposalTemplate[];
 };
 
-type ProposalState = {
-    proposalObject: string;
-    serviceScope: string;
-    clientResponsibilities: string;
-    contractorResponsibilities: string;
-    deadline: string;
-    investment: string;
-    strategicVision: string;
-}
+type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>
 
 export default function ProposalModal({
   lead,
@@ -73,7 +65,8 @@ export default function ProposalModal({
       contractorResponsibilities: 'A ser definido na proposta.',
       deadline: 'A ser definido na proposta.',
       investment: 'A ser definido na proposta.',
-      strategicVision: 'A ser definido na proposta.'
+      strategicVision: 'A ser definido na proposta.',
+      plans: [],
   });
 
   useEffect(() => {
@@ -86,7 +79,8 @@ export default function ProposalModal({
         contractorResponsibilities: 'A ser definido na proposta.',
         deadline: 'A ser definido na proposta.',
         investment: 'A ser definido na proposta.',
-        strategicVision: 'A ser definido na proposta.'
+        strategicVision: 'A ser definido na proposta.',
+        plans: [],
       });
 
       let currentProposalNumber = lead.proposalNumber;
@@ -125,7 +119,8 @@ export default function ProposalModal({
           contractorResponsibilities: template.contractorResponsibilities,
           deadline: template.deadline,
           investment: template.investment,
-          strategicVision: template.strategicVision
+          strategicVision: template.strategicVision,
+          plans: template.plans || [],
       });
     }
   };
@@ -142,11 +137,11 @@ export default function ProposalModal({
     if (input) {
       const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
 
-      // Ensure PDF captures the latest state
+      // Ensure PDF captures the latest state by updating the innerHTML from the state
       editableDivs.forEach(div => {
         const field = div.getAttribute('data-field') as keyof ProposalState | null;
-        if(field && proposalState[field]) {
-          div.innerHTML = proposalState[field].replace(/\n/g, '<br />');
+        if(field && typeof proposalState[field] === 'string') {
+          div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans'>] as string).replace(/\n/g, '<br />');
         }
       });
       
@@ -191,8 +186,6 @@ export default function ProposalModal({
       lead.whatsapp
     }?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-    // Idealmente, aqui você também anexaria o PDF, o que é complexo via link direto.
-    // Uma alternativa é primeiro salvar o PDF e depois enviá-lo manualmente.
   };
 
   const serviceAreas = [
@@ -201,41 +194,40 @@ export default function ProposalModal({
     { icon: ClipboardList, label: 'eSocial SST' },
     { icon: SearchCheck, label: 'Auditorias e Inspeções' },
   ];
-
+  
   const EditableDiv = ({
+    field,
     children,
     className,
-    field,
+    isHtml = false,
   }: {
+    field: keyof Omit<ProposalState, 'plans'>;
     children?: React.ReactNode;
     className?: string;
-    field?: keyof ProposalState;
+    isHtml?: boolean;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-      if (field) {
-        setProposalState(prevState => ({
-          ...prevState,
-          [field]: e.currentTarget.innerText
-        }));
-      }
+      setProposalState(prevState => ({
+        ...prevState,
+        [field]: isHtml ? e.currentTarget.innerHTML : e.currentTarget.innerText,
+      }));
     };
   
-    const commonProps: any = {
-      contentEditable: true,
-      suppressContentEditableWarning: true,
-      className: cn(
-        'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
-        className
-      ),
-      onBlur: handleBlur,
-    };
+    const content = proposalState[field] || '';
   
-    if (field) {
-      return <div {...commonProps} data-field={field} dangerouslySetInnerHTML={{ __html: (proposalState[field] || '').replace(/\n/g, '<br />') }} />;
-    }
-  
-    return <div {...commonProps}>{children}</div>;
+    return (
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
+        onBlur={handleBlur}
+        dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
+      >
+        {/* Children are not used when dangerouslySetInnerHTML is set */}
+      </div>
+    );
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -282,7 +274,7 @@ export default function ProposalModal({
                   <p className="text-sm">Soluções em Segurança do Trabalho</p>
                 </div>
                 <div className="text-right">
-                  <h2 className="text-xl font-semibold">Proposta Comercial</h2>
+                  <h2 className="text-xl font-semibold" style={{ color: '#596371' }}>Proposta Comercial</h2>
                   <p className="text-sm">{fullProposalNumber}</p>
                   <p className="text-sm">
                     Data: {new Date().toLocaleDateString('pt-BR')}
@@ -295,7 +287,7 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Para:
                 </h3>
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <p className="font-bold">{lead.company}</p>
                   <p>
                     A/C: {lead.name}
@@ -304,12 +296,12 @@ export default function ProposalModal({
                   <p>CNPJ: {lead.cnpj}</p>
                   <p>Email: {lead.email}</p>
                   <p>WhatsApp: {lead.whatsapp}</p>
-                </EditableDiv>
+                </div>
               </section>
 
               {/* Sobre Nós */}
               <section className="my-8 space-y-6">
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
                     Sobre nós
                   </h3>
@@ -338,7 +330,7 @@ export default function ProposalModal({
                       Grupo Florêncio
                     </footer>
                   </blockquote>
-                </EditableDiv>
+                </div>
 
                 <h4 className="text-md font-semibold text-center" style={{ color: '#596371' }}>
                   Temos uma equipe especializada para oferecer as melhores
@@ -356,7 +348,7 @@ export default function ProposalModal({
                 </div>
                 <div className="border-b"></div>
 
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
                     Objetivo
                   </h3>
@@ -382,12 +374,12 @@ export default function ProposalModal({
                     acordo com as diretrizes técnicas, para esta conceituada
                     empresa.
                   </p>
-                </EditableDiv>
+                </div>
               </section>
 
               {/* Localização Estratégica */}
               <section className="my-8">
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
                     <div className="bg-primary/20 text-center p-2 rounded-t-lg">
                       <h3 className="font-bold text-primary">
@@ -414,7 +406,7 @@ export default function ProposalModal({
                       </p>
                     </div>
                   </div>
-                </EditableDiv>
+                </div>
               </section>
 
               {/* Corpo da Proposta */}
@@ -451,19 +443,46 @@ export default function ProposalModal({
 
               </section>
 
-              {/* Investimento */}
-              <section className="my-8">
+              {/* Investimento com Planos */}
+               <section className="my-8">
                  <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
-                  Investimento
+                  5. Investimentos - Opções
                 </h3>
-                <EditableDiv field="investment">
-                  <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-                    <p className="text-lg">Valor Total:</p>
+                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md">
+                   <p className="text-sm">Abaixo seguem as opções dos Planos, de acordo com a estratégia financeira da sua empresa.</p>
+                </EditableDiv>
+                <div className="mt-4 overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr className="bg-primary/90 text-primary-foreground">
+                                <th className="p-3 text-left font-semibold">Planos</th>
+                                <th className="p-3 text-left font-semibold">Faixa de Funcionários</th>
+                                <th className="p-3 text-left font-semibold">Serviços Inclusos</th>
+                                <th className="p-3 text-left font-semibold">Investimento</th>
+                                <th className="p-3 text-center font-semibold">PG Único</th>
+                                <th className="p-3 text-center font-semibold">PG Mensal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {proposalState.plans.map((plan, index) => (
+                                <tr key={plan.id} className={cn("border-b border-primary/20", index % 2 === 0 ? "bg-primary/5" : "bg-primary/10")}>
+                                    <td className="p-3 align-top">{plan.name}</td>
+                                    <td className="p-3 align-top">{plan.employeeRange}</td>
+                                    <td className="p-3 align-top whitespace-pre-wrap">{plan.servicesIncluded}</td>
+                                    <td className="p-3 align-top">{formatCurrency(plan.investment)}</td>
+                                    <td className="p-3 text-center align-top">{plan.paymentType === 'unique' ? 'X' : ''}</td>
+                                    <td className="p-3 text-center align-top">{plan.paymentType === 'monthly' ? 'X' : ''}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                 <div className="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                    <p className="text-lg">Valor Total do Lead:</p>
                     <p className="text-2xl font-bold text-primary">
                       {formatCurrency(lead.value)}
                     </p>
                   </div>
-                </EditableDiv>
               </section>
 
               {/* Condições de Pagamento */}
@@ -471,7 +490,7 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Condições de Pagamento
                 </h3>
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <ul className="list-disc list-inside space-y-2">
                     {lead.paymentMethods.map((pm, index) => (
                       <li key={index}>
@@ -485,14 +504,14 @@ export default function ProposalModal({
                       </li>
                     ))}
                   </ul>
-                </EditableDiv>
+                </div>
               </section>
 
               <div className="border-b my-8" />
 
               {/* Missão, Visão, Valores */}
               <section className="my-8">
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <div className="grid md:grid-cols-3 gap-8">
                     <div className="flex items-start gap-4">
                       <div className="text-primary mt-1">
@@ -528,18 +547,18 @@ export default function ProposalModal({
                       </div>
                     </div>
                   </div>
-                </EditableDiv>
+                </div>
               </section>
 
               {/* Rodapé */}
               <footer className="text-center pt-8 border-t mt-8">
-                <EditableDiv>
+                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
                   <p className="font-bold">Grupo Florencio</p>
                   <p className="text-xs">
                     comercial@grupoflorencio.com.br | +55 (21) 96453-9493
                   </p>
                   <p className="text-xs">www.grupoflorencio.com.br</p>
-                </EditableDiv>
+                </div>
               </footer>
             </div>
           </div>

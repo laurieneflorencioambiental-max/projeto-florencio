@@ -49,6 +49,15 @@ export const paymentMethodSchema = z.object({
   cardFee: z.number().optional(),
 });
 
+export const planSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, 'O nome do plano é obrigatório.'),
+    employeeRange: z.string().min(1, 'A faixa de funcionários é obrigatória.'),
+    servicesIncluded: z.string().min(1, 'Os serviços inclusos são obrigatórios.'),
+    investment: z.number().positive('O valor do investimento deve ser positivo.'),
+    paymentType: z.enum(['unique', 'monthly']),
+});
+
 export const leadSchema = z.object({
   id: z.string(),
   name: z.string().min(2, 'O nome é obrigatório.'),
@@ -78,6 +87,7 @@ export const leadSchema = z.object({
 
 
 export type Lead = z.infer<typeof leadSchema>;
+export type Plan = z.infer<typeof planSchema>;
 
 export type ProposalTemplate = {
   id: string;
@@ -89,6 +99,7 @@ export type ProposalTemplate = {
   deadline: string;
   strategicVision: string;
   investment: string;
+  plans: Plan[];
 };
 
 const defaultText = 'A ser definido na proposta.';
@@ -109,6 +120,7 @@ export const proposalTemplates: ProposalTemplate[] = [
     deadline: defaultText,
     strategicVision: defaultText,
     investment: defaultText,
+    plans: [],
   },
   {
     id: 'treinamento-nr12',
@@ -127,6 +139,7 @@ Conteúdo Programático:
     deadline: defaultText,
     strategicVision: defaultText,
     investment: defaultText,
+    plans: [],
   },
   {
     id: 'avcb',
@@ -141,5 +154,6 @@ Conteúdo Programático:
     deadline: defaultText,
     strategicVision: defaultText,
     investment: defaultText,
+    plans: [],
   },
 ];
