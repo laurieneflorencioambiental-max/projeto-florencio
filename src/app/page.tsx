@@ -36,12 +36,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings, FileText } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
-import ManageTemplatesModal from '@/components/kanban/manage-templates-modal';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -67,13 +66,12 @@ export default function Home() {
   ]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManageSellersModalOpen, setIsManageSellersModalOpen] = useState(false);
-  const [isManageTemplatesModalOpen, setIsManageTemplatesModalOpen] = useState(false);
   
   // Seller Management State
   const [sellers, setSellers] = useState<string[]>([]);
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
-  // Template Management State
+  // Template Management State - Now only reads from localStorage
   const [proposalTemplates, setProposalTemplates] = useState<ProposalTemplate[]>([]);
 
   // Load sellers & templates from localStorage on mount
@@ -96,6 +94,7 @@ export default function Home() {
         setProposalTemplates(JSON.parse(savedTemplates));
       } else {
         setProposalTemplates(initialProposalTemplates);
+        localStorage.setItem('proposalTemplates', JSON.stringify(initialProposalTemplates));
       }
     } catch (error) {
       console.error("Failed to access localStorage:", error);
@@ -104,17 +103,16 @@ export default function Home() {
     }
   }, []);
 
-  // Persist sellers & templates to localStorage
+  // Persist sellers to localStorage
   useEffect(() => {
     try {
         if (sellers.length > 0) {
             localStorage.setItem('sellers', JSON.stringify(sellers));
         }
-        localStorage.setItem('proposalTemplates', JSON.stringify(proposalTemplates));
     } catch (error) {
-        console.error("Failed to save to localStorage:", error);
+        console.error("Failed to save sellers to localStorage:", error);
     }
-  }, [sellers, proposalTemplates]);
+  }, [sellers]);
 
 
   const handleSellerChange = (seller: string) => {
@@ -230,10 +228,6 @@ export default function Home() {
             </Button>
         </div>
         <div className='flex items-center gap-2'>
-            <Button variant="outline" onClick={() => setIsManageTemplatesModalOpen(true)}>
-                <FileText className="mr-2 h-4 w-4" />
-                Gerenciar Modelos
-            </Button>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!currentSeller}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Novo Orçamento
@@ -349,12 +343,6 @@ export default function Home() {
         onOpenChange={setIsManageSellersModalOpen}
         sellers={sellers}
         setSellers={setSellers}
-      />
-      <ManageTemplatesModal
-        isOpen={isManageTemplatesModalOpen}
-        onOpenChange={setIsManageTemplatesModalOpen}
-        templates={proposalTemplates}
-        setTemplates={setProposalTemplates}
       />
     </div>
   );

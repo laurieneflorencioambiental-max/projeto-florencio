@@ -11,13 +11,18 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Briefcase, Home, PlusCircle } from 'lucide-react';
+import { Briefcase, Home, FileText } from 'lucide-react';
 import React from 'react';
-import { Button } from '../ui/button';
+import { usePathname } from 'next/navigation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // We can use a more specific path if needed, for now let's assume root is the active page.
-  const isActive = true;
+  const pathname = usePathname();
+
+  const getPageTitle = () => {
+    if (pathname === '/') return 'Gestão de Orçamentos';
+    if (pathname === '/templates') return 'Modelos de Proposta';
+    return 'Comercial Florencio';
+  };
 
   return (
     <SidebarProvider>
@@ -38,12 +43,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/" isActive={isActive} tooltip="Orçamentos">
+              <SidebarMenuButton href="/" isActive={pathname === '/'} tooltip="Orçamentos">
                 <Home />
                 <span>Orçamentos</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {/* Future menu items will go here */}
+            <SidebarMenuItem>
+              <SidebarMenuButton href="/templates" isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
+                <FileText />
+                <span>Modelos de Proposta</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -52,7 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <SidebarTrigger className="md:hidden" />
             <h1 className="text-lg font-headline font-semibold md:text-xl">
-              Gestão de Orçamentos
+              {getPageTitle()}
             </h1>
           </div>
         </header>
