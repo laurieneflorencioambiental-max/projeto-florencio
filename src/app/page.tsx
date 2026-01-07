@@ -74,22 +74,22 @@ export default function Home() {
   // Template Management State
   const [currentProposalTemplates, setCurrentProposalTemplates] = useState<ProposalTemplate[]>([]);
 
-  // Load sellers & templates from localStorage on mount
+  // Load sellers, current seller, and templates from localStorage on initial mount
   useEffect(() => {
     try {
       const savedSellers = localStorage.getItem('sellers');
-      if (savedSellers) {
-        setSellers(JSON.parse(savedSellers));
-      } else {
-        setSellers(defaultSellers);
-      }
-
       const savedCurrentSeller = localStorage.getItem('currentSeller');
-      if (savedCurrentSeller) {
+      const savedTemplates = localStorage.getItem('proposalTemplates');
+
+      const initialSellers = savedSellers ? JSON.parse(savedSellers) : defaultSellers;
+      setSellers(initialSellers);
+
+      if (savedCurrentSeller && initialSellers.includes(savedCurrentSeller)) {
         setCurrentSeller(savedCurrentSeller);
+      } else if (initialSellers.length > 0) {
+        setCurrentSeller(initialSellers[0]);
       }
       
-      const savedTemplates = localStorage.getItem('proposalTemplates');
       // This page now only READS. It does not write default templates.
       // The /templates page is responsible for initialization.
       if (savedTemplates) {
@@ -98,7 +98,7 @@ export default function Home() {
         setCurrentProposalTemplates([]); // Start with empty if none are saved
       }
     } catch (error) {
-      console.error("Failed to access localStorage:", error);
+      console.error("Failed to access localStorage on initial load:", error);
       setSellers(defaultSellers);
       setCurrentProposalTemplates([]);
     }
@@ -107,22 +107,26 @@ export default function Home() {
   // Persist sellers to localStorage
   useEffect(() => {
     try {
-        if (sellers.length > 0) {
-            localStorage.setItem('sellers', JSON.stringify(sellers));
-        }
+        localStorage.setItem('sellers', JSON.stringify(sellers));
     } catch (error) {
         console.error("Failed to save sellers to localStorage:", error);
     }
   }, [sellers]);
 
+  // Persist currentSeller to localStorage
+  useEffect(() => {
+    try {
+      if (currentSeller) {
+        localStorage.setItem('currentSeller', currentSeller);
+      }
+    } catch (error) {
+      console.error("Failed to save current seller to localStorage:", error);
+    }
+  }, [currentSeller]);
+
 
   const handleSellerChange = (seller: string) => {
     setCurrentSeller(seller);
-    try {
-        localStorage.setItem('currentSeller', seller);
-    } catch (error) {
-        console.error("Failed to save current seller to localStorage:", error);
-    }
   };
 
 
@@ -179,20 +183,6 @@ export default function Home() {
 
   }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
   
-  // Ensure currentSeller is valid
-  useEffect(() => {
-    if (sellers.length > 0 && !sellers.includes(currentSeller)) {
-      const newCurrentSeller = sellers[0];
-      setCurrentSeller(newCurrentSeller);
-      try {
-        localStorage.setItem('currentSeller', newCurrentSeller);
-      } catch (error) {
-        console.error("Failed to update current seller in localStorage:", error);
-      }
-    } else if (sellers.length === 0) {
-        setCurrentSeller('');
-    }
-  }, [sellers, currentSeller]);
   
   const handleUpdateLead = (updatedLead: Lead) => {
     setLeads(prevLeads =>
@@ -348,5 +338,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

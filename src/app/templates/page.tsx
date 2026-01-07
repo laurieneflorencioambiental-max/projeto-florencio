@@ -31,6 +31,7 @@ export default function ManageTemplatesPage() {
   const [editingTemplate, setEditingTemplate] =
     useState<ProposalTemplate | null>(null);
 
+  // Load templates from localStorage on initial mount
   useEffect(() => {
     try {
       const savedTemplates = localStorage.getItem('proposalTemplates');
@@ -47,6 +48,7 @@ export default function ManageTemplatesPage() {
     }
   }, []);
 
+  // Save templates to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem('proposalTemplates', JSON.stringify(templates));
