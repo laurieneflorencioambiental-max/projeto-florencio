@@ -213,7 +213,7 @@ export default function ProposalModal({
     { icon: SearchCheck, label: 'Auditorias e Inspeções' },
   ];
   
- const EditableDiv = ({
+  const EditableDiv = ({
     field,
     className,
     children,
@@ -223,40 +223,36 @@ export default function ProposalModal({
     children?: React.ReactNode;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-        if (field) {
-            setProposalState(prevState => ({
-                ...prevState,
-                [field]: e.currentTarget.innerHTML,
-            }));
-        }
+      if (field) {
+        setProposalState(prevState => ({
+          ...prevState,
+          [field]: e.currentTarget.innerHTML,
+        }));
+      }
     };
-
-    const content = field ? proposalState[field] : undefined;
-    
-    // Render with dangerouslySetInnerHTML if field is provided and there are no children
-    if (content !== undefined && !children) {
-        return (
-            <div
-                contentEditable
-                suppressContentEditableWarning
-                data-field={field}
-                className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
-                onBlur={handleBlur}
-                dangerouslySetInnerHTML={{ __html: String(content).replace(/\n/g, '<br />') }}
-            />
-        );
-    }
-
-    // Render children if provided, which may themselves contain editable divs
-    return (
-        <div
-            contentEditable={false} // Container should not be editable
-            className={className}
-        >
-            {children}
+  
+    // Render children if provided
+    if (children) {
+      return (
+        <div contentEditable={false} className={className}>
+          {children}
         </div>
+      );
+    }
+  
+    // Render with dangerouslySetInnerHTML if field is provided
+    const content = field ? proposalState[field] : '';
+    return (
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        data-field={field}
+        className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
+        onBlur={handleBlur}
+        dangerouslySetInnerHTML={{ __html: String(content).replace(/\n/g, '<br />') }}
+      />
     );
-};
+  };
 
 
   return (
@@ -287,7 +283,7 @@ export default function ProposalModal({
           </Select>
         </div>
 
-        <ScrollArea className="flex-1 bg-white dark:bg-gray-900 rounded-md">
+        <ScrollArea className="flex-1 bg-white rounded-md">
           <div
             ref={proposalRef}
             className="p-0"
@@ -333,7 +329,7 @@ export default function ProposalModal({
 
               {/* Sobre Nós e Missão, Visão, Valores */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-4">
+                <h3 className="text-lg font-semibold mb-2">
                   Sobre nós
                 </h3>
                 <EditableDiv>
@@ -616,7 +612,7 @@ export default function ProposalModal({
                 <EditableDiv>
                   <p className="font-bold" style={{ color: '#1b7689' }}>Grupo Florencio</p>
                   <p className="text-xs">
-                    comercial@grupoflorencio.com.br | +55 (21) 96453-9493
+                    comercial@grupoflorencio.com.br | +55 (21) 96453-9493 | @grupoflorencio
                   </p>
                   <p className="text-xs">www.grupoflorencio.com.br</p>
                 </EditableDiv>
