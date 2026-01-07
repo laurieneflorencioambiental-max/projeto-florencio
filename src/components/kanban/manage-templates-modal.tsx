@@ -14,14 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Trash2, PlusCircle, Save, Pencil } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
 
 type ManageTemplatesModalProps = {
   isOpen: boolean;
@@ -77,7 +72,12 @@ export default function ManageTemplatesModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        setEditingTemplate(null);
+      }
+      onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-2xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-headline">Gerenciar Modelos de Proposta</DialogTitle>
@@ -113,25 +113,22 @@ export default function ManageTemplatesModal({
            {templates.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum modelo cadastrado.</p>
            ): (
-          <Accordion type="single" collapsible className="w-full">
-            {templates.map(template => (
-              <AccordionItem value={template.id} key={template.id}>
-                <AccordionTrigger>{template.name}</AccordionTrigger>
-                <AccordionContent>
+            <div className="space-y-4">
+              {templates.map(template => (
+                <div key={template.id} className="p-4 border rounded-lg bg-card">
                   {editingTemplate?.id === template.id ? (
                      <div className="flex flex-col gap-2">
                         <label className='text-sm font-medium'>Nome do Modelo</label>
                         <Input
                             value={editingTemplate.name}
                             onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
-                            className="font-bold"
                         />
                         <label className='text-sm font-medium mt-2'>Conteúdo do Modelo (Objeto da Proposta)</label>
                         <Textarea
                             value={editingTemplate.content}
                             onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })}
                             rows={10}
-                            className="prose dark:prose-invert max-w-none focus:outline-none focus:ring-2 focus:ring-primary bg-muted/30"
+                            className="bg-muted/50"
                         />
                         <div className="flex justify-end gap-2 mt-2">
                             <Button variant="ghost" onClick={handleCancelEditing}>Cancelar</Button>
@@ -140,8 +137,11 @@ export default function ManageTemplatesModal({
                      </div>
                   ) : (
                     <div className="flex flex-col gap-4">
-                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap p-4 rounded-md bg-muted/50 border">
-                        {template.content}
+                      <div>
+                        <h4 className="font-semibold">{template.name}</h4>
+                        <p className="text-sm text-muted-foreground mt-2 p-4 rounded-md bg-muted/50 border whitespace-pre-wrap">
+                          {template.content}
+                        </p>
                       </div>
                       <div className="flex justify-end gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleStartEditing(template)}>
@@ -155,10 +155,9 @@ export default function ManageTemplatesModal({
                       </div>
                     </div>
                   )}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                </div>
+              ))}
+            </div>
            )}
         </ScrollArea>
 
