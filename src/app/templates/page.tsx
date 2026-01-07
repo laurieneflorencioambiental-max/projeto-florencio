@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ProposalTemplate, Plan } from '@/lib/types';
+import type { ProposalTemplate, Plan, Exam } from '@/lib/types';
 import {
   proposalTemplates as defaultProposalTemplates,
   planSchema,
+  examSchema,
 } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,10 +51,11 @@ const getSavedTemplates = (): ProposalTemplate[] => {
     const savedTemplates = localStorage.getItem('proposalTemplates');
     if (savedTemplates) {
       const parsed = JSON.parse(savedTemplates);
-      // Ensure plans array exists and plans have IDs
+      // Ensure arrays exist and items have IDs
       return parsed.map((t: ProposalTemplate) => ({ 
           ...t, 
-          plans: t.plans ? t.plans.map((p, index) => ({...p, id: p.id || `plan-${t.id}-${index}`})) : [] 
+          plans: t.plans ? t.plans.map((p, index) => ({...p, id: p.id || `plan-${t.id}-${index}`})) : [],
+          exams: t.exams ? t.exams.map((e, index) => ({...e, id: e.id || `exam-${t.id}-${index}`})) : [],
         }));
     }
   } catch (error) {
@@ -61,15 +63,15 @@ const getSavedTemplates = (): ProposalTemplate[] => {
   }
   // If nothing is saved, initialize with default and save it.
   try {
-    const defaultWithPlans = defaultProposalTemplates.map(t => ({...t, plans: t.plans || []}));
+    const defaultWithArrays = defaultProposalTemplates.map(t => ({...t, plans: t.plans || [], exams: t.exams || []}));
     localStorage.setItem(
       'proposalTemplates',
-      JSON.stringify(defaultWithPlans)
+      JSON.stringify(defaultWithArrays)
     );
   } catch (error) {
     console.error('Failed to save default templates to localStorage:', error);
   }
-  return defaultProposalTemplates.map(t => ({...t, plans: t.plans || []}));
+  return defaultProposalTemplates.map(t => ({...t, plans: t.plans || [], exams: t.exams || []}));
 };
 
 const saveTemplates = (templates: ProposalTemplate[]) => {
@@ -90,6 +92,7 @@ const templateFormSchema = z.object({
     investment: z.string(),
     strategicVision: z.string(),
     plans: z.array(planSchema),
+    exams: z.array(examSchema).optional(),
 });
 
 
@@ -111,12 +114,18 @@ export default function ManageTemplatesPage() {
       investment: '',
       strategicVision: '',
       plans: [],
+      exams: [],
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields: planFields, append: appendPlan, remove: removePlan } = useFieldArray({
     control: form.control,
     name: 'plans',
+  });
+
+  const { fields: examFields, append: appendExam, remove: removeExam } = useFieldArray({
+    control: form.control,
+    name: 'exams',
   });
 
   const loadTemplates = useCallback(() => {
@@ -138,6 +147,7 @@ export default function ManageTemplatesPage() {
         investment: '',
         strategicVision: '',
         plans: [],
+        exams: [],
     });
     setEditingTemplateId(null);
   };
@@ -147,25 +157,22 @@ export default function ManageTemplatesPage() {
     let updatedTemplates;
     
     const plansWithIds = data.plans.map(p => ({ ...p, id: p.id || `plan-${Date.now()}-${Math.random()}` }));
+    const examsWithIds = data.exams?.map(e => ({ ...e, id: e.id || `exam-${Date.now()}-${Math.random()}` })) || [];
     
+    const fullTemplateData: Omit<ProposalTemplate, 'id'> = {
+        ...data,
+        plans: plansWithIds,
+        exams: examsWithIds,
+    };
+
     if (editingTemplateId) {
-        const fullTemplateData: ProposalTemplate = {
-            id: editingTemplateId,
-            ...data,
-            plans: plansWithIds,
-        };
         updatedTemplates = currentTemplates.map(t =>
-            t.id === editingTemplateId ? fullTemplateData : t
+            t.id === editingTemplateId ? { ...fullTemplateData, id: editingTemplateId } : t
         );
         toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
         const newId = `template-${Date.now()}`;
-        const newFullTemplate: ProposalTemplate = {
-            id: newId,
-            ...data,
-            plans: plansWithIds,
-        };
-        updatedTemplates = [...currentTemplates, newFullTemplate];
+        updatedTemplates = [...currentTemplates, { ...fullTemplateData, id: newId }];
         toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
     }
     saveTemplates(updatedTemplates);
@@ -175,8 +182,10 @@ export default function ManageTemplatesPage() {
 
   const handleStartEditing = (template: ProposalTemplate) => {
     setEditingTemplateId(template.id);
-    form.reset({ ...template, plans: template.plans || [] });
-    formCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+    form.reset({ ...template, plans: template.plans || [], exams: template.exams || [] });
+    if (formCardRef.current) {
+        formCardRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleCancelEditing = () => {
@@ -211,7 +220,7 @@ export default function ManageTemplatesPage() {
     });
   };
 
-  const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id' | 'name' | 'plans'>) => (
+  const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id' | 'name' | 'plans' | 'exams'>) => (
     <FormField
         control={form.control}
         name={fieldName}
@@ -268,9 +277,9 @@ export default function ManageTemplatesPage() {
                         <CardTitle className="text-lg">Planos de Investimento</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {fields.map((field, index) => (
+                        {planFields.map((field, index) => (
                             <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
-                                <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => remove(index)}>
+                                <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removePlan(index)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -284,8 +293,32 @@ export default function ManageTemplatesPage() {
                                 </div>
                             </div>
                         ))}
-                         <Button type="button" variant="outline" onClick={() => append({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, paymentType: 'unique' })}>
+                         <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, paymentType: 'unique' })}>
                             <Plus className="mr-2 h-4 w-4" /> Adicionar Plano
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Exams Section */}
+                <Card className="pt-4">
+                    <CardHeader className="py-0">
+                        <CardTitle className="text-lg">Investimentos - Exames</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {examFields.map((field, index) => (
+                            <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
+                                <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeExam(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                     <FormField control={form.control} name={`exams.${index}.service`} render={({ field }) => (<FormItem><Label>Serviço</Label><FormControl><Input placeholder="Ex: ASO" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                     <FormField control={form.control} name={`exams.${index}.description`} render={({ field }) => (<FormItem><Label>Descrição</Label><FormControl><Input placeholder="Ex: Clínico" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                     <FormField control={form.control} name={`exams.${index}.value`} render={({ field }) => (<FormItem><Label>Valor (R$)</Label><FormControl><Input type="number" placeholder="50.60" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                                </div>
+                            </div>
+                        ))}
+                         <Button type="button" variant="outline" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}>
+                            <Plus className="mr-2 h-4 w-4" /> Adicionar Exame
                         </Button>
                     </CardContent>
                 </Card>

@@ -49,6 +49,13 @@ export const paymentMethodSchema = z.object({
   cardFee: z.number().optional(),
 });
 
+export const examSchema = z.object({
+    id: z.string(),
+    service: z.string().min(1, 'O serviço é obrigatório.'),
+    description: z.string().min(1, 'A descrição é obrigatória.'),
+    value: z.number().min(0, 'O valor deve ser zero ou maior.'),
+});
+
 export const planSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'O nome do plano é obrigatório.'),
@@ -88,6 +95,7 @@ export const leadSchema = z.object({
 
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
+export type Exam = z.infer<typeof examSchema>;
 
 export type ProposalTemplate = {
   id: string;
@@ -100,6 +108,7 @@ export type ProposalTemplate = {
   strategicVision: string;
   investment: string;
   plans: Plan[];
+  exams: Exam[];
 };
 
 const defaultText = 'A ser definido na proposta.';
@@ -121,6 +130,7 @@ export const proposalTemplates: ProposalTemplate[] = [
     strategicVision: defaultText,
     investment: defaultText,
     plans: [],
+    exams: [],
   },
   {
     id: 'treinamento-nr12',
@@ -140,6 +150,7 @@ Conteúdo Programático:
     strategicVision: defaultText,
     investment: defaultText,
     plans: [],
+    exams: [],
   },
   {
     id: 'avcb',
@@ -155,5 +166,6 @@ Conteúdo Programático:
     strategicVision: defaultText,
     investment: defaultText,
     plans: [],
+    exams: [],
   },
 ];
