@@ -293,18 +293,18 @@ export default function ProposalModal({
             className="p-0 bg-white"
             id="proposal-container"
           >
-            <div className="a4-page p-8 text-sm text-proposal-text-secondary" id="proposal-content">
+            <div className="a4-page p-8 text-sm min-h-full" style={{ color: '#596371' }} id="proposal-content">
               {/* Cabeçalho da Proposta */}
               <header className="flex justify-between items-center pb-4 border-b">
                 <div>
-                  <h1 className="text-2xl font-bold text-primary">
+                  <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
                     Grupo Florencio
                   </h1>
                   <p className="text-sm">Saúde Ocupacional Estratégica</p>
                   <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
                 </div>
                 <div className="text-right">
-                  <h2 className="text-xl font-semibold text-proposal-text-secondary">Proposta Comercial</h2>
+                  <h2 className="text-xl font-semibold">Proposta Comercial</h2>
                   <p className="text-sm">{fullProposalNumber}</p>
                   <p className="text-sm">
                     Data: {new Date().toLocaleDateString('pt-BR')}
@@ -314,7 +314,7 @@ export default function ProposalModal({
 
               {/* Informações do Cliente */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Para:
                 </h3>
                 <EditableDiv>
@@ -333,7 +333,7 @@ export default function ProposalModal({
 
               {/* Sobre Nós e Missão, Visão, Valores */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-4 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-4">
                   Sobre nós
                 </h3>
                 <EditableDiv>
@@ -349,7 +349,7 @@ export default function ProposalModal({
                     nossa experiência para alcançar resultados valiosos e
                     duradouros.
                   </p>
-                  <blockquote className="border-l-4 border-primary pl-4 py-2 my-4">
+                  <blockquote className="border-l-4 pl-4 py-2 my-4" style={{ borderColor: '#1b7689' }}>
                     <p className="text-sm italic">
                       "Nossos serviços são investimentos, onde trazemos benefícios
                       que superam qualquer custo, pois não é sobre preço, é sobre
@@ -367,33 +367,33 @@ export default function ProposalModal({
                     <EditableDiv>
                       <div className="grid md:grid-cols-3 gap-8">
                         <div className="flex items-start gap-4">
-                          <div className="text-primary mt-1">
+                          <div className="mt-1" style={{ color: '#1b7689' }}>
                             <Target className="h-6 w-6" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-lg text-proposal-text-secondary">Missão</h4>
+                            <h4 className="font-bold text-lg">Missão</h4>
                             <p className="text-sm leading-relaxed">
                               Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
                             </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-4">
-                          <div className="text-primary mt-1">
+                          <div className="mt-1" style={{ color: '#1b7689' }}>
                             <Eye className="h-6 w-6" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-lg text-proposal-text-secondary">Visão</h4>
+                            <h4 className="font-bold text-lg">Visão</h4>
                             <p className="text-sm leading-relaxed">
                               Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
                             </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-4">
-                          <div className="text-primary mt-1">
+                          <div className="mt-1" style={{ color: '#1b7689' }}>
                             <Gem className="h-6 w-6" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-lg text-proposal-text-secondary">Valores</h4>
+                            <h4 className="font-bold text-lg">Valores</h4>
                             <p className="text-sm leading-relaxed">
                               Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
                             </p>
@@ -402,14 +402,14 @@ export default function ProposalModal({
                       </div>
                     </EditableDiv>
                 </div>
-                <h4 className="text-md font-semibold text-center mt-6 text-proposal-text-secondary">
+                <h4 className="text-md font-semibold text-center mt-6">
                   Temos uma equipe especializada para oferecer as melhores
                   soluções em:
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center my-6">
                   {serviceAreas.map((area, index) => (
                     <div key={index} className="flex flex-col items-center">
-                      <div className="bg-primary/10 text-primary rounded-full p-4 mb-2">
+                      <div className="bg-primary/10 rounded-full p-4 mb-2" style={{ color: '#1b7689' }}>
                         <area.icon className="h-8 w-8" />
                       </div>
                       <span className="text-xs font-semibold">{area.label}</span>
@@ -419,7 +419,7 @@ export default function ProposalModal({
                 <div className="border-b"></div>
 
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold mt-6 text-proposal-text-secondary">
+                  <h3 className="text-lg font-semibold mt-6">
                     Objetivo
                   </h3>
                   <p className="text-sm leading-relaxed mt-4">
@@ -452,7 +452,7 @@ export default function ProposalModal({
                 <EditableDiv>
                   <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
                     <div className="bg-primary/20 text-center p-2 rounded-t-lg">
-                      <h3 className="font-bold text-primary">
+                      <h3 className="font-bold" style={{ color: '#1b7689' }}>
                         Nossa Localização Estratégica
                       </h3>
                     </div>
@@ -481,32 +481,32 @@ export default function ProposalModal({
 
               {/* Corpo da Proposta */}
               <section className="my-8 space-y-6">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Objeto da Proposta
                 </h3>
                 <EditableDiv field="proposalObject" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Escopo do Serviço
                 </h3>
                 <EditableDiv field="serviceScope" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Da Contratante
                 </h3>
                 <EditableDiv field="clientResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Da Contratada
                 </h3>
                 <EditableDiv field="contractorResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
                 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Prazo para Realização dos Serviços
                 </h3>
                 <EditableDiv field="deadline" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Nossa Visão Estratégica
                 </h3>
                 <EditableDiv field="strategicVision" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
@@ -515,7 +515,7 @@ export default function ProposalModal({
 
               {/* Investimento com Planos */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Investimento
                 </h3>
                 <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md" />
@@ -524,7 +524,7 @@ export default function ProposalModal({
                   <div className="mt-4 overflow-x-auto">
                       <table className="w-full border-collapse text-sm">
                           <thead>
-                              <tr className="bg-primary/90 text-primary-foreground">
+                              <tr style={{ backgroundColor: '#1b7689' }} className="text-white">
                                   <th className="p-3 text-left font-semibold">Planos</th>
                                   <th className="p-3 text-left font-semibold">Faixa de Funcionários</th>
                                   <th className="p-3 text-left font-semibold">Serviços Inclusos</th>
@@ -535,7 +535,7 @@ export default function ProposalModal({
                           </thead>
                           <tbody>
                               {proposalState.plans.map((plan, index) => (
-                                  <tr key={plan.id} className={cn("border-b border-primary/20", index % 2 === 0 ? "bg-primary/5" : "bg-primary/10")}>
+                                  <tr key={plan.id} className={cn("border-b", index % 2 === 0 ? "bg-blue-50" : "bg-blue-100")} style={{ borderColor: 'rgba(27, 118, 137, 0.2)' }}>
                                       <td className="p-3 align-top">{plan.name}</td>
                                       <td className="p-3 align-top">{plan.employeeRange}</td>
                                       <td className="p-3 align-top whitespace-pre-wrap">{plan.servicesIncluded}</td>
@@ -552,7 +552,7 @@ export default function ProposalModal({
 
               {/* Condições de Pagamento */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-proposal-text-secondary">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Condições de Pagamento
                 </h3>
                 <EditableDiv>
@@ -578,12 +578,12 @@ export default function ProposalModal({
                {/* Termo de Aprovação */}
               <section className="my-8" style={{ breakBefore: 'page' }}>
                  <EditableDiv>
-                  <h3 className="text-lg font-semibold mb-4 text-proposal-text-secondary">
+                  <h3 className="text-lg font-semibold mb-4">
                     Termo de aprovação:
                   </h3>
 
-                  <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-                      <h4 className="font-bold text-center text-primary mb-2">Aprovação do Serviço</h4>
+                  <div className="p-4 rounded-lg border" style={{ backgroundColor: 'rgba(27, 118, 137, 0.1)', borderColor: 'rgba(27, 118, 137, 0.2)' }}>
+                      <h4 className="font-bold text-center mb-2" style={{ color: '#1b7689' }}>Aprovação do Serviço</h4>
                       <p className="text-center text-xs">
                           Esta Proposta Técnica Comercial será APROVADA, mediante a sua devolução via e-mail, assinada e datada por pessoa responsável da CONTRATANTE.
                       </p>
@@ -614,7 +614,7 @@ export default function ProposalModal({
               {/* Rodapé */}
               <footer className="text-center pt-8 border-t mt-8">
                 <EditableDiv>
-                  <p className="font-bold">Grupo Florencio</p>
+                  <p className="font-bold" style={{ color: '#1b7689' }}>Grupo Florencio</p>
                   <p className="text-xs">
                     comercial@grupoflorencio.com.br | +55 (21) 96453-9493
                   </p>
