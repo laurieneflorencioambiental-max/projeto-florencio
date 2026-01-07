@@ -12,7 +12,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send, ClipboardCheck, Recycle, ClipboardList, SearchCheck } from 'lucide-react';
+import {
+  Download,
+  Send,
+  ClipboardCheck,
+  Recycle,
+  ClipboardList,
+  SearchCheck,
+} from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -32,7 +39,6 @@ type ProposalModalProps = {
   onUpdateLead: (lead: Lead) => void;
   proposalTemplates: ProposalTemplate[];
 };
-
 
 export default function ProposalModal({
   lead,
@@ -54,17 +60,20 @@ export default function ProposalModal({
 
       if (!currentProposalNumber) {
         // This is a simplified way to get the next number. In a real multi-user app, this should be handled by a backend.
-        const highestProposalNumber = Math.max(0, ...allLeads.map(l => l.proposalNumber || 0));
+        const highestProposalNumber = Math.max(
+          0,
+          ...allLeads.map(l => l.proposalNumber || 0)
+        );
         currentProposalNumber = highestProposalNumber + 1;
       }
-      
+
       const paddedNumber = String(currentProposalNumber).padStart(3, '0');
       const version = lead.proposalVersion || 0;
       const proposalId = `PTC-FLO-SST-${paddedNumber}.${version}`;
       setFullProposalNumber(proposalId);
-      
+
       // Update lead state if a new number was generated
-      if(!lead.proposalNumber) {
+      if (!lead.proposalNumber) {
         onUpdateLead({
           ...lead,
           proposalNumber: currentProposalNumber,
@@ -72,7 +81,6 @@ export default function ProposalModal({
       }
     }
   }, [isOpen, lead, allLeads, onUpdateLead]);
-
 
   const handleTemplateChange = (templateId: string) => {
     const template = proposalTemplates.find(t => t.id === templateId);
@@ -92,11 +100,19 @@ export default function ProposalModal({
     const input = proposalRef.current;
     if (input) {
       // Temporarily set the content of the editable div for PDF generation
-      const editableDiv = input.querySelector('[contenteditable]');
-      if (editableDiv) {
-        editableDiv.innerHTML = proposalBody.replace(/\n/g, '<br />');
-      }
+      const editableDivs = input.querySelectorAll('[contenteditable]');
+      
+      const originalContents: {element: Element, content: string}[] = [];
 
+      // Since we are now using onBlur to update state for multiple editable elements,
+      // we need to make sure the PDF captures the latest state, not what's on the DOM from innerHTML.
+      // This is a bit of a workaround because html2canvas reads the DOM.
+      // The best way would be to manage state for all editable fields, but for a quick fix, let's just make sure the object is up-to-date.
+      const objectContainer = input.querySelector('#object-container');
+      if(objectContainer) {
+        objectContainer.innerHTML = proposalBody.replace(/\n/g, '<br />');
+      }
+      
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -134,6 +150,16 @@ export default function ProposalModal({
     { icon: ClipboardList, label: 'eSocial SST' },
     { icon: SearchCheck, label: 'Auditorias e Inspeções' },
   ];
+
+  const EditableDiv = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+    <div
+      contentEditable
+      suppressContentEditableWarning
+      className={cn("focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm", className)}
+    >
+      {children}
+    </div>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -177,9 +203,7 @@ export default function ProposalModal({
               </div>
               <div className="text-right">
                 <h2 className="text-xl font-semibold">Proposta Comercial</h2>
-                 <p className="text-sm">
-                  {fullProposalNumber}
-                </p>
+                <p className="text-sm">{fullProposalNumber}</p>
                 <p className="text-sm">
                   Data: {new Date().toLocaleDateString('pt-BR')}
                 </p>
@@ -191,73 +215,127 @@ export default function ProposalModal({
               <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                 Para:
               </h3>
-              <p className="font-bold">{lead.company}</p>
-              <p>
-                A/C: {lead.name}
-                {lead.role && `, ${lead.role}`}
-              </p>
-              <p>CNPJ: {lead.cnpj}</p>
-              <p>Email: {lead.email}</p>
-              <p>WhatsApp: {lead.whatsapp}</p>
+              <EditableDiv>
+                <p className="font-bold">{lead.company}</p>
+                <p>
+                  A/C: {lead.name}
+                  {lead.role && `, ${lead.role}`}
+                </p>
+                <p>CNPJ: {lead.cnpj}</p>
+                <p>Email: {lead.email}</p>
+                <p>WhatsApp: {lead.whatsapp}</p>
+              </EditableDiv>
             </section>
 
-             {/* Sobre Nós */}
+            {/* Sobre Nós */}
             <section className="my-8 space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Sobre nós</h3>
+              <EditableDiv>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  Sobre nós
+                </h3>
                 <p className="text-sm leading-relaxed">
-                Somos apaixonados há mais de uma década por transformar ambientes de trabalho. O Grupo Florêncio se consolidou como referência em Saúde e Segurança do Trabalho. Nossa equipe, especializada e eficiente, atua com cuidado e comprometimento para criar espaços corporativos mais seguros, sustentáveis e alinhados às Normas Regulamentadoras. Com transparência e expertise, proporcionamos a confiança que sua empresa precisa para elevar seus padrões de segurança e eficiência. Confie em nossa experiência para alcançar resultados valiosos e duradouros.
+                  Somos apaixonados há mais de uma década por transformar
+                  ambientes de trabalho. O Grupo Florêncio se consolidou como
+                  referência em Saúde e Segurança do Trabalho. Nossa equipe,
+                  especializada e eficiente, atua com cuidado e comprometimento
+                  para criar espaços corporativos mais seguros, sustentáveis e
+                  alinhados às Normas Regulamentadoras. Com transparência e
+                  expertise, proporcionamos a confiança que sua empresa precisa
+                  para elevar seus padrões de segurança e eficiência. Confie em
+                  nossa experiência para alcançar resultados valiosos e
+                  duradouros.
                 </p>
                 <blockquote className="border-l-4 border-primary pl-4 py-2 my-4">
-                    <p className="text-sm italic">"Nossos serviços são investimentos, onde trazemos benefícios que superam qualquer custo, pois não é sobre preço, é sobre entregar resultados valiosos. Comprometemo-nos integralmente a proporcionar excelência em Saúde e Segurança do Trabalho, impulsionados pela nossa especialização e dedicação incansável.”</p>
-                    <footer className="text-right text-xs font-medium mt-2">Grupo Florêncio</footer>
+                  <p className="text-sm italic">
+                    "Nossos serviços são investimentos, onde trazemos benefícios
+                    que superam qualquer custo, pois não é sobre preço, é sobre
+                    entregar resultados valiosos. Comprometemo-nos
+                    integralmente a proporcionar excelência em Saúde e Segurança
+                    do Trabalho, impulsionados pela nossa especialização e
+                    dedicação incansável.”
+                  </p>
+                  <footer className="text-right text-xs font-medium mt-2">
+                    Grupo Florêncio
+                  </footer>
                 </blockquote>
+              </EditableDiv>
 
-                <h4 className="text-md font-semibold text-center text-gray-800 dark:text-gray-200">Temos uma equipe especializada para oferecer as melhores soluções em:</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center my-6">
-                    {serviceAreas.map((area, index) => (
-                        <div key={index} className="flex flex-col items-center">
-                            <div className="bg-primary/10 text-primary rounded-full p-4 mb-2">
-                                <area.icon className="h-8 w-8" />
-                            </div>
-                            <span className="text-xs font-semibold">{area.label}</span>
-                        </div>
-                    ))}
-                </div>
-                <div className='border-b'></div>
-
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Objetivo</h3>
+              <h4 className="text-md font-semibold text-center text-gray-800 dark:text-gray-200">
+                Temos uma equipe especializada para oferecer as melhores
+                soluções em:
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center my-6">
+                {serviceAreas.map((area, index) => (
+                  <div key={index} className="flex flex-col items-center">
+                    <div className="bg-primary/10 text-primary rounded-full p-4 mb-2">
+                      <area.icon className="h-8 w-8" />
+                    </div>
+                    <span className="text-xs font-semibold">{area.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-b"></div>
+              
+              <EditableDiv>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
+                  Objetivo
+                </h3>
                 <p className="text-sm leading-relaxed">
-                Temos por objetivo o compromisso em oferecer serviços de Saúde Ocupacional e Segurança do Trabalho com excelência e em conformidade com a legislação, promovendo ambientes corporativos seguros, saudáveis e produtivos.
+                  Temos por objetivo o compromisso em oferecer serviços de Saúde
+                  Ocupacional e Segurança do Trabalho com excelência e em
+                  conformidade com a legislação, promovendo ambientes
+                  corporativos seguros, saudáveis e produtivos.
                 </p>
-                <div className='border-b'></div>
+                <div className="border-b my-6"></div>
                 <p className="text-sm leading-relaxed">
-                Esta Proposta Comercial está com valores compatíveis de Negociação para o atendimento da Prestação de Serviços de QSMS - Qualidade, Segurança, Meio Ambiente e Saúde. Gostaríamos de salientar o grande interesse que temos em trabalhar em parceria com a sua empresa, pois a nossa missão é oferecer serviços em gestão através de uma visão estratégica buscando a satisfação do cliente e melhorias para a  sociedade.
+                  Esta Proposta Comercial está com valores compatíveis de
+                  Negociação para o atendimento da Prestação de Serviços de QSMS
+                  - Qualidade, Segurança, Meio Ambiente e Saúde. Gostaríamos de
+                  salientar o grande interesse que temos em trabalhar em parceria
+                  com a sua empresa, pois a nossa missão é oferecer serviços em
+                  gestão através de uma visão estratégica buscando a satisfação
+                  do cliente e melhorias para a sociedade.
                 </p>
-                 <p className="text-sm leading-relaxed">
-                Para tal, encaminhamos ao V. Sr. (a)., a presente Proposta de Preços para a realização dos serviços conforme descritos, de acordo com as diretrizes técnicas, para esta conceituada empresa.
+                <p className="text-sm leading-relaxed mt-4">
+                  Para tal, encaminhamos ao V. Sr. (a)., a presente Proposta de
+                  Preços para a realização dos serviços conforme descritos, de
+                  acordo com as diretrizes técnicas, para esta conceituada
+                  empresa.
                 </p>
+              </EditableDiv>
             </section>
 
-             {/* Localização Estratégica */}
+            {/* Localização Estratégica */}
             <section className="my-8">
+              <EditableDiv>
                 <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
-                    <div className="bg-primary/20 text-primary-foreground text-center p-2 rounded-t-lg">
-                        <h3 className="font-bold text-primary">Nossa Localização Estratégica</h3>
-                    </div>
-                    <div className="p-6 bg-card rounded-b-lg">
-                        <p className="text-sm leading-relaxed mb-4">
-                            Nossas unidades de atendimento em medicina do trabalho estão estrategicamente distribuídas para estar próximas tanto dos seus funcionários quanto da sua empresa, facilitando o fluxo de atendimento e otimizando a logística dos serviços. 
-                        </p>
-                        <p className="text-sm leading-relaxed mb-4">
-                            <span className="font-bold">Localizadas no:</span> Centro do RJ, Nova Iguaçu, Duque de Caxias, Vila Kosmos – Vila da Penha, Barra da Tijuca, Niterói, Macaé.
-                        </p>
-                        <p className="text-sm leading-relaxed mb-6">
-                            Cada unidade foi planejada para proporcionar agilidade e eficiência na realização de exames, consultas e demais procedimentos essenciais.
-                        </p>
-                    </div>
+                  <div className="bg-primary/20 text-primary-foreground text-center p-2 rounded-t-lg">
+                    <h3 className="font-bold text-primary">
+                      Nossa Localização Estratégica
+                    </h3>
+                  </div>
+                  <div className="p-6 bg-card rounded-b-lg">
+                    <p className="text-sm leading-relaxed mb-4">
+                      Nossas unidades de atendimento em medicina do trabalho
+                      estão estrategicamente distribuídas para estar próximas
+                      tanto dos seus funcionários quanto da sua empresa,
+                      facilitando o fluxo de atendimento e otimizando a
+                      logística dos serviços.
+                    </p>
+                    <p className="text-sm leading-relaxed mb-4">
+                      <span className="font-bold">Localizadas no:</span> Centro
+                      do RJ, Nova Iguaçu, Duque de Caxias, Vila Kosmos – Vila da
+                      Penha, Barra da Tijuca, Niterói, Macaé.
+                    </p>
+                    <p className="text-sm leading-relaxed mb-6">
+                      Cada unidade foi planejada para proporcionar agilidade e
+                      eficiência na realização de exames, consultas e demais
+                      procedimentos essenciais.
+                    </p>
+                  </div>
                 </div>
+              </EditableDiv>
             </section>
-
 
             {/* Corpo da Proposta */}
             <section className="my-8">
@@ -265,6 +343,7 @@ export default function ProposalModal({
                 Objeto da Proposta
               </h3>
               <div
+                id="object-container"
                 contentEditable
                 suppressContentEditableWarning
                 className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -293,35 +372,39 @@ export default function ProposalModal({
               <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                 Condições de Pagamento
               </h3>
-              <ul className="list-disc list-inside space-y-2">
-                {lead.paymentMethods.map((pm, index) => (
-                  <li key={index}>
-                    {pm.method}
-                    {pm.method.includes('Crédito') && pm.cardFee && (
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {' '}
-                        (taxa de {pm.cardFee}% inclusa)
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <EditableDiv>
+                <ul className="list-disc list-inside space-y-2">
+                  {lead.paymentMethods.map((pm, index) => (
+                    <li key={index}>
+                      {pm.method}
+                      {pm.method.includes('Crédito') && pm.cardFee && (
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {' '}
+                          (taxa de {pm.cardFee}% inclusa)
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </EditableDiv>
             </section>
 
             {/* Rodapé */}
             <footer className="text-center pt-8 border-t mt-8">
-              <p className="font-bold">Grupo Florencio</p>
-              <p className="text-xs">
-                comercial@grupoflorencio.com.br | +55 (21) 96453-9493
-              </p>
-              <p className="text-xs">www.grupoflorencio.com.br</p>
+              <EditableDiv>
+                <p className="font-bold">Grupo Florencio</p>
+                <p className="text-xs">
+                  comercial@grupoflorencio.com.br | +55 (21) 96453-9493
+                </p>
+                <p className="text-xs">www.grupoflorencio.com.br</p>
+              </EditableDiv>
             </footer>
           </div>
         </ScrollArea>
 
         <DialogFooter className="pt-4 flex-wrap">
           <p className="text-xs text-muted-foreground text-left flex-1 mr-auto">
-            O objeto da proposta é editável. Clique no texto para alterar.
+            Clique em qualquer texto para editar antes de gerar o PDF.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleDownloadPdf}>
