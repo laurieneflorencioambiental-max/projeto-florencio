@@ -22,6 +22,7 @@ import {
   Target,
   Eye,
   Gem,
+  Mail,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -207,6 +208,25 @@ export default function ProposalModal({
       lead.whatsapp
     }?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+  };
+  
+  const handleSendEmail = () => {
+    const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
+    const body = `Prezado(a) ${lead.name},
+
+Espero que esteja tudo bem.
+
+Conforme conversamos, segue em anexo nossa proposta comercial de serviços de Saúde e Segurança do Trabalho, elaborada especialmente para a ${lead.company}.
+
+O documento detalha o escopo dos serviços, nossa metodologia e as condições de investimento. Por favor, note que o PDF da proposta precisa ser anexado manualmente a este e-mail.
+
+Estamos à disposição para esclarecer qualquer dúvida e ansiosos pela oportunidade de firmar esta parceria.
+
+Atenciosamente,
+Grupo Florencio`;
+
+    const mailtoLink = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoLink;
   };
 
   const serviceAreas = [
@@ -540,7 +560,7 @@ export default function ProposalModal({
                   <ul className="list-disc list-inside space-y-2">
                     {lead.paymentMethods.map((pm, index) => (
                       <li key={index}>
-                        {pm.method.replace(' (Link)', '').replace(' (Maquininha)', '')}
+                        {pm.method.replace(/\s\(.*\)/, '')}
                       </li>
                     ))}
                   </ul>
@@ -603,6 +623,10 @@ export default function ProposalModal({
             <Button variant="outline" onClick={handleDownloadPdf}>
               <Download className="mr-2 h-4 w-4" />
               Baixar PDF
+            </Button>
+            <Button variant="outline" onClick={handleSendEmail}>
+              <Mail className="mr-2 h-4 w-4" />
+              Enviar por Email
             </Button>
             <Button onClick={handleSendWhatsApp}>
               <Send className="mr-2 h-4 w-4" />
