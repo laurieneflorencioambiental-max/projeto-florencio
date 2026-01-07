@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -101,18 +102,18 @@ export default function ProposalModal({
     if (input) {
       // Temporarily set the content of the editable div for PDF generation
       const editableDivs = input.querySelectorAll('[contenteditable]');
-      
-      const originalContents: {element: Element, content: string}[] = [];
+
+      const originalContents: { element: Element; content: string }[] = [];
 
       // Since we are now using onBlur to update state for multiple editable elements,
       // we need to make sure the PDF captures the latest state, not what's on the DOM from innerHTML.
       // This is a bit of a workaround because html2canvas reads the DOM.
       // The best way would be to manage state for all editable fields, but for a quick fix, let's just make sure the object is up-to-date.
       const objectContainer = input.querySelector('#object-container');
-      if(objectContainer) {
+      if (objectContainer) {
         objectContainer.innerHTML = proposalBody.replace(/\n/g, '<br />');
       }
-      
+
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -151,11 +152,20 @@ export default function ProposalModal({
     { icon: SearchCheck, label: 'Auditorias e Inspeções' },
   ];
 
-  const EditableDiv = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  const EditableDiv = ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <div
       contentEditable
       suppressContentEditableWarning
-      className={cn("focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm", className)}
+      className={cn(
+        'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
+        className
+      )}
     >
       {children}
     </div>
@@ -172,7 +182,9 @@ export default function ProposalModal({
         </DialogHeader>
 
         <div className="mb-4">
-          <Label htmlFor="proposal-template">Selecione um Modelo de Serviço</Label>
+          <Label htmlFor="proposal-template">
+            Selecione um Modelo de Serviço
+          </Label>
           <Select onValueChange={handleTemplateChange}>
             <SelectTrigger id="proposal-template">
               <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
@@ -275,7 +287,7 @@ export default function ProposalModal({
                 ))}
               </div>
               <div className="border-b"></div>
-              
+
               <EditableDiv>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
                   Objetivo
@@ -309,7 +321,7 @@ export default function ProposalModal({
             <section className="my-8">
               <EditableDiv>
                 <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
-                  <div className="bg-primary/20 text-primary-foreground text-center p-2 rounded-t-lg">
+                  <div className="bg-primary/20 text-center p-2 rounded-t-lg">
                     <h3 className="font-bold text-primary">
                       Nossa Localização Estratégica
                     </h3>
