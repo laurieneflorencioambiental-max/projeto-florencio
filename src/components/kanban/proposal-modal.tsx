@@ -215,17 +215,29 @@ export default function ProposalModal({
   
     const content = field ? proposalState[field] || '' : undefined;
   
+    if (content !== undefined) {
+        return (
+             <div
+                contentEditable
+                suppressContentEditableWarning
+                data-field={field}
+                className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
+                onBlur={handleBlur}
+                dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
+            />
+        )
+    }
+
     return (
-      <div
-        contentEditable={!!field}
-        suppressContentEditableWarning
-        data-field={field}
-        className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
-        onBlur={handleBlur}
-        dangerouslySetInnerHTML={content !== undefined ? { __html: content.replace(/\n/g, '<br />') } : undefined}
-      >
-        {content === undefined ? children : null}
-      </div>
+        <div
+            contentEditable={!!field}
+            suppressContentEditableWarning
+            data-field={field}
+            className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
+            onBlur={handleBlur}
+        >
+            {children}
+        </div>
     );
   };
 
@@ -303,9 +315,9 @@ export default function ProposalModal({
               <div className="border-b my-8"></div>
 
               {/* Sobre Nós */}
-              <section className="my-8 space-y-6">
+              <section className="my-8">
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
+                  <h3 className="text-lg font-semibold mb-4" style={{ color: '#596371' }}>
                     Sobre nós
                   </h3>
                   <p className="text-sm leading-relaxed">
@@ -335,7 +347,7 @@ export default function ProposalModal({
                   </blockquote>
                 </EditableDiv>
 
-                <h4 className="text-md font-semibold text-center" style={{ color: '#596371' }}>
+                <h4 className="text-md font-semibold text-center mt-6" style={{ color: '#596371' }}>
                   Temos uma equipe especializada para oferecer as melhores
                   soluções em:
                 </h4>
@@ -352,10 +364,10 @@ export default function ProposalModal({
                 <div className="border-b"></div>
 
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
+                  <h3 className="text-lg font-semibold mt-6" style={{ color: '#596371' }}>
                     Objetivo
                   </h3>
-                  <p className="text-sm leading-relaxed">
+                  <p className="text-sm leading-relaxed mt-4">
                     Temos por objetivo o compromisso em oferecer serviços de Saúde
                     Ocupacional e Segurança do Trabalho com excelência e em
                     conformidade com a legislação, promovendo ambientes
