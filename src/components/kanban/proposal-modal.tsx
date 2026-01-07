@@ -197,12 +197,10 @@ export default function ProposalModal({
   
   const EditableDiv = ({
     field,
-    children,
     className,
     isHtml = false,
   }: {
     field: keyof Omit<ProposalState, 'plans'>;
-    children?: React.ReactNode;
     className?: string;
     isHtml?: boolean;
   }) => {
@@ -219,12 +217,11 @@ export default function ProposalModal({
       <div
         contentEditable
         suppressContentEditableWarning
+        data-field={field}
         className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
         onBlur={handleBlur}
         dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
-      >
-        {/* Children are not used when dangerouslySetInnerHTML is set */}
-      </div>
+      />
     );
   };
 
@@ -444,45 +441,49 @@ export default function ProposalModal({
               </section>
 
               {/* Investimento com Planos */}
-               <section className="my-8">
-                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
-                  5. Investimentos - Opções
+              <section className="my-8">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
+                  Investimento
                 </h3>
-                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md">
-                   <p className="text-sm">Abaixo seguem as opções dos Planos, de acordo com a estratégia financeira da sua empresa.</p>
-                </EditableDiv>
-                <div className="mt-4 overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr className="bg-primary/90 text-primary-foreground">
-                                <th className="p-3 text-left font-semibold">Planos</th>
-                                <th className="p-3 text-left font-semibold">Faixa de Funcionários</th>
-                                <th className="p-3 text-left font-semibold">Serviços Inclusos</th>
-                                <th className="p-3 text-left font-semibold">Investimento</th>
-                                <th className="p-3 text-center font-semibold">PG Único</th>
-                                <th className="p-3 text-center font-semibold">PG Mensal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {proposalState.plans.map((plan, index) => (
-                                <tr key={plan.id} className={cn("border-b border-primary/20", index % 2 === 0 ? "bg-primary/5" : "bg-primary/10")}>
-                                    <td className="p-3 align-top">{plan.name}</td>
-                                    <td className="p-3 align-top">{plan.employeeRange}</td>
-                                    <td className="p-3 align-top whitespace-pre-wrap">{plan.servicesIncluded}</td>
-                                    <td className="p-3 align-top">{formatCurrency(plan.investment)}</td>
-                                    <td className="p-3 text-center align-top">{plan.paymentType === 'unique' ? 'X' : ''}</td>
-                                    <td className="p-3 text-center align-top">{plan.paymentType === 'monthly' ? 'X' : ''}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                 <div className="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-                    <p className="text-lg">Valor Total do Lead:</p>
-                    <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(lead.value)}
-                    </p>
+                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md"/>
+                
+                {proposalState.plans && proposalState.plans.length > 0 && (
+                  <div className="mt-4 overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                          <thead>
+                              <tr className="bg-primary/90 text-primary-foreground">
+                                  <th className="p-3 text-left font-semibold">Planos</th>
+                                  <th className="p-3 text-left font-semibold">Faixa de Funcionários</th>
+                                  <th className="p-3 text-left font-semibold">Serviços Inclusos</th>
+                                  <th className="p-3 text-left font-semibold">Investimento</th>
+                                  <th className="p-3 text-center font-semibold">PG Único</th>
+                                  <th className="p-3 text-center font-semibold">PG Mensal</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {proposalState.plans.map((plan, index) => (
+                                  <tr key={plan.id} className={cn("border-b border-primary/20", index % 2 === 0 ? "bg-primary/5" : "bg-primary/10")}>
+                                      <td className="p-3 align-top">{plan.name}</td>
+                                      <td className="p-3 align-top">{plan.employeeRange}</td>
+                                      <td className="p-3 align-top whitespace-pre-wrap">{plan.servicesIncluded}</td>
+                                      <td className="p-3 align-top">{formatCurrency(plan.investment)}</td>
+                                      <td className="p-3 text-center align-top">{plan.paymentType === 'unique' ? 'X' : ''}</td>
+                                      <td className="p-3 text-center align-top">{plan.paymentType === 'monthly' ? 'X' : ''}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
                   </div>
+                )}
+                 
+                 {lead.value > 0 && (
+                    <div className="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                      <p className="text-lg">Valor Total do Orçamento:</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {formatCurrency(lead.value)}
+                      </p>
+                    </div>
+                  )}
               </section>
 
               {/* Condições de Pagamento */}

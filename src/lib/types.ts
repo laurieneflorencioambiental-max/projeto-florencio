@@ -65,7 +65,7 @@ export const leadSchema = z.object({
   company: z.string().min(2, 'O nome da empresa é obrigatório.'),
   cnpj: z.string().min(14, 'O CNPJ deve ter 14 dígitos.'),
   proposalSummary: z.string().min(10, 'O resumo deve ter pelo menos 10 caracteres.'),
-  value: z.number().positive('O valor deve ser positivo.'),
+  value: z.number().min(0, 'O valor não pode ser negativo.'),
   paymentMethods: z.array(paymentMethodSchema).min(1, 'Selecione ao menos um método de pagamento.'),
   contactSource: z.object({
     source: z.enum(contactSources),

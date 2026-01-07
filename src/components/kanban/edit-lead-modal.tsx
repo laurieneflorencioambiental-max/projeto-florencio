@@ -55,7 +55,7 @@ export default function EditLeadModal({
     defaultValues: {
         ...lead,
         role: lead.role || '',
-        value: lead.value || 0,
+        value: lead.value === null ? 0 : lead.value,
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
     },
   });

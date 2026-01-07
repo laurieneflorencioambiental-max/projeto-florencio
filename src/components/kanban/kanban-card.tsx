@@ -60,6 +60,7 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTempl
   };
 
   const formatCurrency = (value: number) => {
+    if (value === 0) return 'A definir';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
