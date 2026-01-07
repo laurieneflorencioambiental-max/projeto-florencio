@@ -404,6 +404,8 @@ export default function ProposalModal({
               </EditableDiv>
             </section>
 
+            <div className="border-b my-8" />
+
             {/* Missão, Visão, Valores */}
             <section className="my-8">
               <EditableDiv>
