@@ -72,13 +72,22 @@ export default function ProposalModal({
   useEffect(() => {
     if (isOpen) {
       // Set initial state from lead/defaults when modal opens
+      const defaultInvestmentText = lead.value > 0 
+        ? `
+<div class="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+    <p class="text-lg">Valor Total do Orçamento:</p>
+    <p class="text-2xl font-bold text-primary">${formatCurrency(lead.value)}</p>
+</div>
+        `
+        : 'Valores detalhados nos planos abaixo.';
+
       setProposalState({
         proposalObject: lead.proposalSummary,
         serviceScope: 'A ser definido na proposta.',
         clientResponsibilities: 'A ser definido na proposta.',
         contractorResponsibilities: 'A ser definido na proposta.',
         deadline: 'A ser definido na proposta.',
-        investment: 'A ser definido na proposta.',
+        investment: defaultInvestmentText,
         strategicVision: 'A ser definido na proposta.',
         plans: [],
       });
@@ -205,41 +214,40 @@ export default function ProposalModal({
     children?: React.ReactNode;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-      if (field) {
-        setProposalState(prevState => ({
-          ...prevState,
-          [field]: e.currentTarget.innerHTML,
-        }));
-      }
+        if (field) {
+            setProposalState(prevState => ({
+                ...prevState,
+                [field]: e.currentTarget.innerHTML,
+            }));
+        }
     };
-  
-    const content = field ? proposalState[field] || '' : undefined;
-  
+
+    const content = field ? proposalState[field] : undefined;
+    
+    // Render with dangerouslySetInnerHTML if field is provided
     if (content !== undefined) {
         return (
-             <div
+            <div
                 contentEditable
                 suppressContentEditableWarning
                 data-field={field}
                 className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
                 onBlur={handleBlur}
-                dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
+                dangerouslySetInnerHTML={{ __html: String(content).replace(/\n/g, '<br />') }}
             />
-        )
+        );
     }
 
+    // Render children if field is not provided
     return (
         <div
-            contentEditable={!!field}
-            suppressContentEditableWarning
-            data-field={field}
-            className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
-            onBlur={handleBlur}
+            contentEditable={false} // Static content should not be editable
+            className={className}
         >
             {children}
         </div>
     );
-  };
+};
 
 
   return (
@@ -276,7 +284,7 @@ export default function ProposalModal({
             className="p-0 bg-white"
             id="proposal-container"
           >
-            <div className="a4-page p-8 text-[hsl(var(--proposal-text-secondary))]" id="proposal-content" style={{ color: '#1b7689' }}>
+            <div className="a4-page p-8 text-sm" id="proposal-content" style={{ color: '#1b7689' }}>
               {/* Cabeçalho da Proposta */}
               <header className="flex justify-between items-center pb-4 border-b">
                 <div>
@@ -316,11 +324,11 @@ export default function ProposalModal({
 
               {/* Sobre Nós */}
               <section className="my-8">
+                <h3 className="text-lg font-semibold mb-4" style={{ color: '#596371' }}>
+                  Sobre nós
+                </h3>
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold mb-4" style={{ color: '#596371' }}>
-                    Sobre nós
-                  </h3>
-                  <p className="text-sm leading-relaxed">
+                  <p className="text-sm leading-relaxed mt-4">
                     Somos apaixonados há mais de uma década por transformar
                     ambientes de trabalho. O Grupo Florêncio se consolidou como
                     referência em Saúde e Segurança do Trabalho. Nossa equipe,
@@ -463,16 +471,7 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Investimento
                 </h3>
-                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md">
-                    {lead.value > 0 && (
-                        <div className="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-                        <p className="text-lg">Valor Total do Orçamento:</p>
-                        <p className="text-2xl font-bold text-primary">
-                            {formatCurrency(lead.value)}
-                        </p>
-                        </div>
-                    )}
-                </EditableDiv>
+                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md" />
                 
                 {proposalState.plans && proposalState.plans.length > 0 && (
                   <div className="mt-4 overflow-x-auto">
@@ -526,7 +525,7 @@ export default function ProposalModal({
                 </EditableDiv>
               </section>
 
-              <div className="border-b my-8" />
+              <div className="border-b my-8"></div>
 
               {/* Missão, Visão, Valores */}
               <section className="my-8">
@@ -568,6 +567,42 @@ export default function ProposalModal({
                   </div>
                 </EditableDiv>
               </section>
+
+               {/* Termo de Aprovação */}
+              <section className="my-8" style={{ breakBefore: 'page' }}>
+                 <EditableDiv>
+                  <h3 className="text-lg font-semibold mb-4" style={{ color: '#596371' }}>
+                    7. Termo de aprovação:
+                  </h3>
+
+                  <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
+                      <h4 className="font-bold text-center text-primary mb-2">Aprovação do Serviço</h4>
+                      <p className="text-center text-xs">
+                          Esta Proposta Técnica Comercial será APROVADA, mediante a sua devolução via e-mail, assinada e datada por pessoa responsável da CONTRATANTE.
+                      </p>
+                  </div>
+
+                  <div className="mt-8 space-y-6">
+                      <p>De acordo em: ______ / ______ / ______</p>
+                      <p>Nome do Aprovador: ____________________________________________________</p>
+                  </div>
+
+                  <div className="mt-8 border rounded-lg p-4 space-y-4">
+                      <p className='font-semibold'>Prezado cliente,</p>
+                      <p>
+                          Em nossa busca contínua em promover práticas de Segurança do Trabalho e Sustentabilidade, gostaríamos de propor uma parceria em nossas mídias sociais. Caso tenhamos a honra de realizar este projeto com a sua empresa, gostaríamos de saber se podemos divulgar nosso trabalho realizado nas suas instalações em nossas plataformas digitais, como Instagram, Linkedin, Site, YouTube?
+                      </p>
+                      <p>
+                          Acreditamos que essa parceria poderá beneficiar a imagem positiva da sua empresa no compromisso com a Segurança do Trabalho e Meio Ambiente.
+                      </p>
+                      <div className="space-y-2 mt-4">
+                          <p>(  ) sim</p>
+                          <p>(  ) não</p>
+                      </div>
+                  </div>
+                 </EditableDiv>
+              </section>
+
 
               {/* Rodapé */}
               <footer className="text-center pt-8 border-t mt-8">
