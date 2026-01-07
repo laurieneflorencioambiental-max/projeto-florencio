@@ -245,7 +245,7 @@ export default function ProposalModal({
             <footer className="text-center pt-8 border-t mt-8">
               <p className="font-bold">Grupo Florencio</p>
               <p className="text-xs">
-                contato@grupoflorencio.com.br | (11) 99999-8888
+                comercial@grupoflorencio.com.br | +55 (21) 96453-9493
               </p>
               <p className="text-xs">www.grupoflorencio.com.br</p>
             </footer>
