@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Download, Send } from 'lucide-react';
+import { Download, Send, ClipboardCheck, Recycle, ClipboardList, SearchCheck } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -127,6 +127,13 @@ export default function ProposalModal({
     // Uma alternativa é primeiro salvar o PDF e depois enviá-lo manualmente.
   };
 
+  const serviceAreas = [
+    { icon: ClipboardCheck, label: 'Saúde e Segurança do Trabalho' },
+    { icon: Recycle, label: 'Meio Ambiente' },
+    { icon: ClipboardList, label: 'eSocial SST' },
+    { icon: SearchCheck, label: 'Auditorias e Inspeções' },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
@@ -138,10 +145,10 @@ export default function ProposalModal({
         </DialogHeader>
 
         <div className="mb-4">
-          <Label htmlFor="proposal-template">Selecione um Modelo</Label>
+          <Label htmlFor="proposal-template">Selecione um Modelo de Serviço</Label>
           <Select onValueChange={handleTemplateChange}>
             <SelectTrigger id="proposal-template">
-              <SelectValue placeholder="Escolha um modelo de serviço" />
+              <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
             </SelectTrigger>
             <SelectContent>
               {proposalTemplates.map(template => (
@@ -191,6 +198,43 @@ export default function ProposalModal({
               <p>CNPJ: {lead.cnpj}</p>
               <p>Email: {lead.email}</p>
               <p>WhatsApp: {lead.whatsapp}</p>
+            </section>
+
+             {/* Sobre Nós */}
+            <section className="my-8 space-y-6">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Sobre nós</h3>
+                <p className="text-sm leading-relaxed">
+                Somos apaixonados há mais de uma década por transformar ambientes de trabalho. O Grupo Florêncio se consolidou como referência em Saúde e Segurança do Trabalho. Nossa equipe, especializada e eficiente, atua com cuidado e comprometimento para criar espaços corporativos mais seguros, sustentáveis e alinhados às Normas Regulamentadoras. Com transparência e expertise, proporcionamos a confiança que sua empresa precisa para elevar seus padrões de segurança e eficiência. Confie em nossa experiência para alcançar resultados valiosos e duradouros.
+                </p>
+                <blockquote className="border-l-4 border-primary pl-4 py-2 my-4">
+                    <p className="text-sm italic">"Nossos serviços são investimentos, onde trazemos benefícios que superam qualquer custo, pois não é sobre preço, é sobre entregar resultados valiosos. Comprometemo-nos integralmente a proporcionar excelência em Saúde e Segurança do Trabalho, impulsionados pela nossa especialização e dedicação incansável.”</p>
+                    <footer className="text-right text-xs font-medium mt-2">Grupo Florêncio</footer>
+                </blockquote>
+
+                <h4 className="text-md font-semibold text-center text-gray-800 dark:text-gray-200">Temos uma equipe especializada para oferecer as melhores soluções em:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center my-6">
+                    {serviceAreas.map((area, index) => (
+                        <div key={index} className="flex flex-col items-center">
+                            <div className="bg-primary/10 text-primary rounded-full p-4 mb-2">
+                                <area.icon className="h-8 w-8" />
+                            </div>
+                            <span className="text-xs font-semibold">{area.label}</span>
+                        </div>
+                    ))}
+                </div>
+                <div className='border-b'></div>
+
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Objetivo</h3>
+                <p className="text-sm leading-relaxed">
+                Temos por objetivo o compromisso em oferecer serviços de Saúde Ocupacional e Segurança do Trabalho com excelência e em conformidade com a legislação, promovendo ambientes corporativos seguros, saudáveis e produtivos.
+                </p>
+                <div className='border-b'></div>
+                <p className="text-sm leading-relaxed">
+                Esta Proposta Comercial está com valores compatíveis de Negociação para o atendimento da Prestação de Serviços de QSMS - Qualidade, Segurança, Meio Ambiente e Saúde. Gostaríamos de salientar o grande interesse que temos em trabalhar em parceria com a sua empresa, pois a nossa missão é oferecer serviços em gestão através de uma visão estratégica buscando a satisfação do cliente e melhorias para a sociedade.
+                </p>
+                 <p className="text-sm leading-relaxed">
+                Para tal, encaminhamos ao V. Sr. (a)., a presente Proposta de Preços para a realização dos serviços conforme descritos, de acordo com as diretrizes técnicas, para esta conceituada empresa.
+                </p>
             </section>
 
             {/* Corpo da Proposta */}
