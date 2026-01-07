@@ -219,8 +219,9 @@ export default function ProposalModal({
         <ScrollArea className="flex-1 bg-gray-100 dark:bg-gray-900 rounded-md">
           <div
             ref={proposalRef}
-            className="p-0 bg-white dark:bg-black text-[#1b7689] dark:text-white"
+            className="p-0 bg-white text-[hsl(var(--proposal-text-secondary))] dark:bg-black dark:text-[hsl(var(--proposal-text-secondary))]"
             id="proposal-container"
+            style={{ color: '#1b7689' }}
           >
             <div className="a4-page p-8" id="proposal-content">
               {/* Cabeçalho da Proposta */}
@@ -242,7 +243,7 @@ export default function ProposalModal({
 
               {/* Informações do Cliente */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
                   Para:
                 </h3>
                 <EditableDiv>
@@ -260,7 +261,7 @@ export default function ProposalModal({
               {/* Sobre Nós */}
               <section className="my-8 space-y-6">
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  <h3 className="text-lg font-semibold text-[hsl(var(--proposal-text-secondary))]">
                     Sobre nós
                   </h3>
                   <p className="text-sm leading-relaxed">
@@ -290,7 +291,7 @@ export default function ProposalModal({
                   </blockquote>
                 </EditableDiv>
 
-                <h4 className="text-md font-semibold text-center text-gray-800 dark:text-gray-200">
+                <h4 className="text-md font-semibold text-center text-[hsl(var(--proposal-text-secondary))]">
                   Temos uma equipe especializada para oferecer as melhores
                   soluções em:
                 </h4>
@@ -307,7 +308,7 @@ export default function ProposalModal({
                 <div className="border-b"></div>
 
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
+                  <h3 className="text-lg font-semibold text-[hsl(var(--proposal-text-secondary))] mt-6">
                     Objetivo
                   </h3>
                   <p className="text-sm leading-relaxed">
@@ -369,7 +370,7 @@ export default function ProposalModal({
 
               {/* Corpo da Proposta */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
                   Objeto da Proposta
                 </h3>
                 <div
@@ -386,7 +387,7 @@ export default function ProposalModal({
 
               {/* Investimento */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
                   Investimento
                 </h3>
                 <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
@@ -399,7 +400,7 @@ export default function ProposalModal({
 
               {/* Condições de Pagamento */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
                   Condições de Pagamento
                 </h3>
                 <EditableDiv>
@@ -408,7 +409,7 @@ export default function ProposalModal({
                       <li key={index}>
                         {pm.method}
                         {pm.method.includes('Crédito') && pm.cardFee && (
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-sm opacity-80">
                             {' '}
                             (taxa de {pm.cardFee}% inclusa)
                           </span>
@@ -430,7 +431,7 @@ export default function ProposalModal({
                         <Target className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg">Missão</h4>
+                        <h4 className="font-bold text-lg text-[hsl(var(--proposal-text-secondary))]">Missão</h4>
                         <p className="text-sm leading-relaxed">
                           Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
                         </p>
@@ -441,7 +442,7 @@ export default function ProposalModal({
                         <Eye className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg">Visão</h4>
+                        <h4 className="font-bold text-lg text-[hsl(var(--proposal-text-secondary))]">Visão</h4>
                         <p className="text-sm leading-relaxed">
                           Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
                         </p>
@@ -452,7 +453,7 @@ export default function ProposalModal({
                         <Gem className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg">Valores</h4>
+                        <h4 className="font-bold text-lg text-[hsl(var(--proposal-text-secondary))]">Valores</h4>
                         <p className="text-sm leading-relaxed">
                           Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
                         </p>

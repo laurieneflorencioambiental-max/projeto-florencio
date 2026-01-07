@@ -41,6 +41,7 @@ body {
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 192 69% 25%;
     --sidebar-ring: 180 52% 50%;
+    --proposal-text-secondary: 215 12% 39%;
   }
   .dark {
     --background: 216 10% 15%;
@@ -75,6 +76,7 @@ body {
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 192 69% 25%;
     --sidebar-ring: 180 52% 50%;
+    --proposal-text-secondary: 215 12% 70%;
   }
 }
 
