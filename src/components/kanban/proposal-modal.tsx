@@ -203,7 +203,7 @@ export default function ProposalModal({
     className,
     field,
   }: {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     className?: string;
     field?: keyof ProposalState;
   }) => {
@@ -215,24 +215,25 @@ export default function ProposalModal({
         }));
       }
     };
-    
-    const content = field ? (proposalState[field] || '').replace(/\n/g, '<br />') : children;
   
-    return (
-      <div
-        contentEditable
-        suppressContentEditableWarning
-        className={cn(
-          'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
-          className
-        )}
-        data-field={field}
-        dangerouslySetInnerHTML={field ? { __html: content as string } : undefined}
-        onBlur={handleBlur}
-      >
-        {!field && children}
-      </div>
-    );
+    const props: any = {
+      contentEditable: true,
+      suppressContentEditableWarning: true,
+      className: cn(
+        'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
+        className
+      ),
+      onBlur: handleBlur,
+    };
+  
+    if (field) {
+      props['data-field'] = field;
+      props.dangerouslySetInnerHTML = { __html: (proposalState[field] || '').replace(/\n/g, '<br />') };
+    } else {
+      return <div {...props}>{children}</div>;
+    }
+  
+    return <div {...props} />;
   };
 
   return (
@@ -290,7 +291,7 @@ export default function ProposalModal({
 
               {/* Informações do Cliente */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Para:
                 </h3>
                 <EditableDiv>
@@ -308,7 +309,7 @@ export default function ProposalModal({
               {/* Sobre Nós */}
               <section className="my-8 space-y-6">
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold text-[hsl(var(--proposal-text-secondary))]">
+                  <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
                     Sobre nós
                   </h3>
                   <p className="text-sm leading-relaxed">
@@ -338,7 +339,7 @@ export default function ProposalModal({
                   </blockquote>
                 </EditableDiv>
 
-                <h4 className="text-md font-semibold text-center text-[hsl(var(--proposal-text-secondary))]">
+                <h4 className="text-md font-semibold text-center" style={{ color: '#596371' }}>
                   Temos uma equipe especializada para oferecer as melhores
                   soluções em:
                 </h4>
@@ -355,7 +356,7 @@ export default function ProposalModal({
                 <div className="border-b"></div>
 
                 <EditableDiv>
-                  <h3 className="text-lg font-semibold text-[hsl(var(--proposal-text-secondary))] mt-6">
+                  <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
                     Objetivo
                   </h3>
                   <p className="text-sm leading-relaxed">
@@ -417,32 +418,32 @@ export default function ProposalModal({
 
               {/* Corpo da Proposta */}
               <section className="my-8 space-y-6">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Objeto da Proposta
                 </h3>
                 <EditableDiv field="proposalObject" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Escopo do Serviço
                 </h3>
                 <EditableDiv field="serviceScope" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Da Contratante
                 </h3>
                 <EditableDiv field="clientResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Da Contratada
                 </h3>
                 <EditableDiv field="contractorResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
                 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Prazo para Realização dos Serviços
                 </h3>
                 <EditableDiv field="deadline" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Nossa Visão Estratégica
                 </h3>
                 <EditableDiv field="strategicVision" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
@@ -451,7 +452,7 @@ export default function ProposalModal({
 
               {/* Investimento */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Investimento
                 </h3>
                 <EditableDiv>
@@ -466,7 +467,7 @@ export default function ProposalModal({
 
               {/* Condições de Pagamento */}
               <section className="my-8">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Condições de Pagamento
                 </h3>
                 <EditableDiv>
@@ -497,7 +498,7 @@ export default function ProposalModal({
                         <Target className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg text-[hsl(var(--proposal-text-secondary))]">Missão</h4>
+                        <h4 className="font-bold text-lg" style={{ color: '#596371' }}>Missão</h4>
                         <p className="text-sm leading-relaxed">
                           Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
                         </p>
@@ -508,7 +509,7 @@ export default function ProposalModal({
                         <Eye className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg text-[hsl(var(--proposal-text-secondary))]">Visão</h4>
+                        <h4 className="font-bold text-lg" style={{ color: '#596371' }}>Visão</h4>
                         <p className="text-sm leading-relaxed">
                           Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
                         </p>
@@ -519,7 +520,7 @@ export default function ProposalModal({
                         <Gem className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-lg text-[hsl(var(--proposal-text-secondary))]">Valores</h4>
+                        <h4 className="font-bold text-lg" style={{ color: '#596371' }}>Valores</h4>
                         <p className="text-sm leading-relaxed">
                           Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
                         </p>
