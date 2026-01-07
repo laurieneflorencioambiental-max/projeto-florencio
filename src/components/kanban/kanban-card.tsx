@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Lead } from '@/lib/types';
+import type { Lead, ProposalTemplate } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -47,9 +47,10 @@ type KanbanCardProps = {
   lead: Lead;
   allLeads: Lead[];
   onUpdateLead: (lead: Lead) => void;
+  proposalTemplates: ProposalTemplate[];
 };
 
-export default function KanbanCard({ lead, allLeads, onUpdateLead }: KanbanCardProps) {
+export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTemplates }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
@@ -250,6 +251,7 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead }: KanbanCardP
         isOpen={isProposalModalOpen}
         onOpenChange={setIsProposalModalOpen}
         onUpdateLead={onUpdateLead}
+        proposalTemplates={proposalTemplates}
       />
     </>
   );

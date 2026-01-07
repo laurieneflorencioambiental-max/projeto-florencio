@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import type { Lead } from '@/lib/types';
+import type { Lead, ProposalTemplate } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { proposalTemplates } from '@/lib/proposal-templates';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -31,6 +30,7 @@ type ProposalModalProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onUpdateLead: (lead: Lead) => void;
+  proposalTemplates: ProposalTemplate[];
 };
 
 export default function ProposalModal({
@@ -39,6 +39,7 @@ export default function ProposalModal({
   isOpen,
   onOpenChange,
   onUpdateLead,
+  proposalTemplates,
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [proposalBody, setProposalBody] = useState(lead.proposalSummary);

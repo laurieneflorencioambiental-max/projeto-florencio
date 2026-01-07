@@ -3,8 +3,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
 import { initialLeads } from '@/lib/data';
-import type { Lead, Status } from '@/lib/types';
-import { statuses } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate } from '@/lib/types';
+import { statuses, proposalTemplates as initialProposalTemplates } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -36,11 +36,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings, FileText } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
+import ManageTemplatesModal from '@/components/kanban/manage-templates-modal';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -66,12 +67,16 @@ export default function Home() {
   ]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManageSellersModalOpen, setIsManageSellersModalOpen] = useState(false);
-
+  const [isManageTemplatesModalOpen, setIsManageTemplatesModalOpen] = useState(false);
+  
   // Seller Management State
   const [sellers, setSellers] = useState<string[]>([]);
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
-  // Load sellers from localStorage on mount
+  // Template Management State
+  const [proposalTemplates, setProposalTemplates] = useState<ProposalTemplate[]>([]);
+
+  // Load sellers & templates from localStorage on mount
   useEffect(() => {
     try {
       const savedSellers = localStorage.getItem('sellers');
@@ -85,22 +90,31 @@ export default function Home() {
       if (savedCurrentSeller) {
         setCurrentSeller(savedCurrentSeller);
       }
+      
+      const savedTemplates = localStorage.getItem('proposalTemplates');
+      if (savedTemplates) {
+        setProposalTemplates(JSON.parse(savedTemplates));
+      } else {
+        setProposalTemplates(initialProposalTemplates);
+      }
     } catch (error) {
       console.error("Failed to access localStorage:", error);
       setSellers(defaultSellers);
+      setProposalTemplates(initialProposalTemplates);
     }
   }, []);
 
-  // Persist sellers to localStorage
+  // Persist sellers & templates to localStorage
   useEffect(() => {
     try {
         if (sellers.length > 0) {
             localStorage.setItem('sellers', JSON.stringify(sellers));
         }
+        localStorage.setItem('proposalTemplates', JSON.stringify(proposalTemplates));
     } catch (error) {
-        console.error("Failed to save sellers to localStorage:", error);
+        console.error("Failed to save to localStorage:", error);
     }
-  }, [sellers]);
+  }, [sellers, proposalTemplates]);
 
 
   const handleSellerChange = (seller: string) => {
@@ -215,7 +229,11 @@ export default function Home() {
                 <span className="sr-only">Gerenciar Vendedores</span>
             </Button>
         </div>
-        <div>
+        <div className='flex items-center gap-2'>
+            <Button variant="outline" onClick={() => setIsManageTemplatesModalOpen(true)}>
+                <FileText className="mr-2 h-4 w-4" />
+                Gerenciar Modelos
+            </Button>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!currentSeller}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Novo Orçamento
@@ -315,7 +333,7 @@ export default function Home() {
             </DropdownMenu>
         </div>
       </div>
-      <KanbanBoard allLeads={leads} leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} />
+      <KanbanBoard allLeads={leads} leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} proposalTemplates={proposalTemplates} />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
         <LostLeadsChart leads={filteredLeads} />
@@ -331,6 +349,12 @@ export default function Home() {
         onOpenChange={setIsManageSellersModalOpen}
         sellers={sellers}
         setSellers={setSellers}
+      />
+      <ManageTemplatesModal
+        isOpen={isManageTemplatesModalOpen}
+        onOpenChange={setIsManageTemplatesModalOpen}
+        templates={proposalTemplates}
+        setTemplates={setProposalTemplates}
       />
     </div>
   );

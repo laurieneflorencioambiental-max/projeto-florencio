@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Lead, Status } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate } from '@/lib/types';
 import KanbanColumn from './kanban-column';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
@@ -11,9 +11,10 @@ type KanbanBoardProps = {
   setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   visibleStatuses: Status[];
   onUpdateLead: (lead: Lead) => void;
+  proposalTemplates: ProposalTemplate[];
 };
 
-export default function KanbanBoard({ allLeads, leads, setLeads, visibleStatuses, onUpdateLead }: KanbanBoardProps) {
+export default function KanbanBoard({ allLeads, leads, setLeads, visibleStatuses, onUpdateLead, proposalTemplates }: KanbanBoardProps) {
 
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
@@ -41,6 +42,7 @@ export default function KanbanBoard({ allLeads, leads, setLeads, visibleStatuses
             leads={leads.filter(lead => lead.status === status)}
             onDrop={handleDrop}
             onUpdateLead={onUpdateLead}
+            proposalTemplates={proposalTemplates}
           />
         ))}
       </div>

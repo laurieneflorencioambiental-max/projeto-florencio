@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Lead, Status } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate } from '@/lib/types';
 import KanbanCard from './kanban-card';
 import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ type KanbanColumnProps = {
   leads: Lead[];
   onDrop: (e: React.DragEvent<HTMLDivElement>, status: Status) => void;
   onUpdateLead: (lead: Lead) => void;
+  proposalTemplates: ProposalTemplate[];
 };
 
 export default function KanbanColumn({
@@ -21,6 +22,7 @@ export default function KanbanColumn({
   leads,
   onDrop,
   onUpdateLead,
+  proposalTemplates,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
 
@@ -72,7 +74,7 @@ export default function KanbanColumn({
       <ScrollArea className="flex-1">
         <CardContent className="flex flex-col gap-4 p-2 md:p-4 h-full">
           {leads.map(lead => (
-            <KanbanCard key={lead.id} lead={lead} allLeads={allLeads} onUpdateLead={onUpdateLead} />
+            <KanbanCard key={lead.id} lead={lead} allLeads={allLeads} onUpdateLead={onUpdateLead} proposalTemplates={proposalTemplates} />
           ))}
         </CardContent>
       </ScrollArea>
