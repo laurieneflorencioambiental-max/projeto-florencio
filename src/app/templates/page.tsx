@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
 
 const getSavedTemplates = (): ProposalTemplate[] => {
   try {
@@ -50,13 +51,21 @@ const saveTemplates = (templates: ProposalTemplate[]) => {
   }
 };
 
+const emptyTemplate: Omit<ProposalTemplate, 'id' | 'name'> = {
+  proposalObject: '',
+  serviceScope: '',
+  clientResponsibilities: '',
+  contractorResponsibilities: '',
+  deadline: '',
+  strategicVision: '',
+};
+
 export default function ManageTemplatesPage() {
   const { toast } = useToast();
   const [templates, setTemplates] = useState<ProposalTemplate[]>([]);
-  const [newTemplate, setNewTemplate] = useState<{
-    name: string;
-    content: string;
-  }>({ name: '', content: '' });
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateData, setNewTemplateData] = useState(emptyTemplate);
+
   const [editingTemplate, setEditingTemplate] =
     useState<ProposalTemplate | null>(null);
 
@@ -69,20 +78,26 @@ export default function ManageTemplatesPage() {
   }, [loadTemplates]);
 
   const handleAddTemplate = () => {
-    if (newTemplate.name.trim() === '' || newTemplate.content.trim() === '') {
+    if (newTemplateName.trim() === '' || newTemplateData.proposalObject.trim() === '') {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'O nome e o conteúdo do modelo são obrigatórios.',
+        description: 'O nome e o objeto da proposta são obrigatórios.',
       });
       return;
     }
     const newId = `template-${Date.now()}`;
     const currentTemplates = getSavedTemplates();
-    const updatedTemplates = [...currentTemplates, { id: newId, ...newTemplate }];
+    const newFullTemplate: ProposalTemplate = {
+        id: newId,
+        name: newTemplateName,
+        ...newTemplateData,
+    };
+    const updatedTemplates = [...currentTemplates, newFullTemplate];
     saveTemplates(updatedTemplates);
     loadTemplates(); // Re-load from storage
-    setNewTemplate({ name: '', content: '' });
+    setNewTemplateName('');
+    setNewTemplateData(emptyTemplate);
     toast({
       title: 'Sucesso',
       description: 'Novo modelo de proposta adicionado.',
@@ -101,12 +116,12 @@ export default function ManageTemplatesPage() {
     if (
       !editingTemplate ||
       editingTemplate.name.trim() === '' ||
-      editingTemplate.content.trim() === ''
+      editingTemplate.proposalObject.trim() === ''
     ) {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'O nome e o conteúdo do modelo não podem ser vazios.',
+        description: 'O nome e o objeto da proposta não podem ser vazios.',
       });
       return;
     }
@@ -145,6 +160,20 @@ export default function ManageTemplatesPage() {
     });
   };
 
+  const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id'|'name'>, value: string, onChange: (value: string) => void) => (
+    <div className="space-y-2">
+        <Label htmlFor={`template-${fieldName}`}>{label}</Label>
+        <Textarea
+            id={`template-${fieldName}`}
+            placeholder={`Conteúdo para "${label}"`}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            rows={fieldName === 'proposalObject' ? 5 : 3}
+        />
+    </div>
+  );
+
+
   return (
     <div className="flex flex-col gap-8">
       <Card>
@@ -153,30 +182,21 @@ export default function ManageTemplatesPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="new-template-name">Nome do Modelo</label>
+            <Label htmlFor="new-template-name">Nome do Modelo</Label>
             <Input
               id="new-template-name"
               placeholder="Ex: Treinamento NR-35"
-              value={newTemplate.name}
-              onChange={e =>
-                setNewTemplate({ ...newTemplate, name: e.target.value })
-              }
+              value={newTemplateName}
+              onChange={e => setNewTemplateName(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="new-template-content">
-              Conteúdo do Modelo (Objeto da Proposta)
-            </label>
-            <Textarea
-              id="new-template-content"
-              placeholder="A presente proposta tem por objeto a prestação de serviços de..."
-              value={newTemplate.content}
-              onChange={e =>
-                setNewTemplate({ ...newTemplate, content: e.target.value })
-              }
-              rows={5}
-            />
-          </div>
+          {renderFormField('Objeto da Proposta', 'proposalObject', newTemplateData.proposalObject, (val) => setNewTemplateData(p => ({...p, proposalObject: val})))}
+          {renderFormField('Escopo do Serviço', 'serviceScope', newTemplateData.serviceScope, (val) => setNewTemplateData(p => ({...p, serviceScope: val})))}
+          {renderFormField('Da Contratante', 'clientResponsibilities', newTemplateData.clientResponsibilities, (val) => setNewTemplateData(p => ({...p, clientResponsibilities: val})))}
+          {renderFormField('Da Contratada', 'contractorResponsibilities', newTemplateData.contractorResponsibilities, (val) => setNewTemplateData(p => ({...p, contractorResponsibilities: val})))}
+          {renderFormField('Prazo para Realização dos Serviços', 'deadline', newTemplateData.deadline, (val) => setNewTemplateData(p => ({...p, deadline: val})))}
+          {renderFormField('Nossa Visão Estratégica', 'strategicVision', newTemplateData.strategicVision, (val) => setNewTemplateData(p => ({...p, strategicVision: val})))}
+
           <Button onClick={handleAddTemplate}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Modelo
@@ -193,7 +213,7 @@ export default function ManageTemplatesPage() {
             Nenhum modelo cadastrado.
           </p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {templates.map(template => (
               <Card
                 key={template.id}
@@ -202,7 +222,7 @@ export default function ManageTemplatesPage() {
                 {editingTemplate?.id === template.id ? (
                   <CardContent className="p-6 space-y-4 flex-1 flex flex-col">
                     <div className="space-y-2">
-                      <label>Nome do Modelo</label>
+                      <Label>Nome do Modelo</Label>
                       <Input
                         value={editingTemplate.name}
                         onChange={e =>
@@ -213,20 +233,13 @@ export default function ManageTemplatesPage() {
                         }
                       />
                     </div>
-                    <div className="space-y-2 flex-1 flex flex-col">
-                      <label>Conteúdo</label>
-                      <Textarea
-                        value={editingTemplate.content}
-                        onChange={e =>
-                          setEditingTemplate({
-                            ...editingTemplate,
-                            content: e.target.value,
-                          })
-                        }
-                        rows={10}
-                        className="flex-1"
-                      />
-                    </div>
+                     {renderFormField('Objeto da Proposta', 'proposalObject', editingTemplate.proposalObject, (val) => setEditingTemplate(p => p && {...p, proposalObject: val}))}
+                     {renderFormField('Escopo do Serviço', 'serviceScope', editingTemplate.serviceScope, (val) => setEditingTemplate(p => p && ({...p, serviceScope: val})))}
+                     {renderFormField('Da Contratante', 'clientResponsibilities', editingTemplate.clientResponsibilities, (val) => setEditingTemplate(p => p && ({...p, clientResponsibilities: val})))}
+                     {renderFormField('Da Contratada', 'contractorResponsibilities', editingTemplate.contractorResponsibilities, (val) => setEditingTemplate(p => p && ({...p, contractorResponsibilities: val})))}
+                     {renderFormField('Prazo para Realização dos Serviços', 'deadline', editingTemplate.deadline, (val) => setEditingTemplate(p => p && ({...p, deadline: val})))}
+                     {renderFormField('Nossa Visão Estratégica', 'strategicVision', editingTemplate.strategicVision, (val) => setEditingTemplate(p => p && ({...p, strategicVision: val})))}
+
                     <div className="flex justify-end gap-2 mt-2">
                       <Button variant="ghost" onClick={handleCancelEditing}>
                         <X className="mr-2 h-4 w-4" /> Cancelar
@@ -242,9 +255,32 @@ export default function ManageTemplatesPage() {
                       <CardTitle className="truncate">{template.name}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
-                      <p className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border whitespace-pre-wrap h-48 overflow-y-auto flex-1">
-                        {template.content}
-                      </p>
+                      <div className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border space-y-4 h-96 overflow-y-auto">
+                        <div>
+                            <h4 className='font-bold text-foreground'>Objeto da Proposta</h4>
+                            <p className="whitespace-pre-wrap">{template.proposalObject}</p>
+                        </div>
+                         <div>
+                            <h4 className='font-bold text-foreground'>Escopo do Serviço</h4>
+                            <p className="whitespace-pre-wrap">{template.serviceScope}</p>
+                        </div>
+                         <div>
+                            <h4 className='font-bold text-foreground'>Da Contratante</h4>
+                            <p className="whitespace-pre-wrap">{template.clientResponsibilities}</p>
+                        </div>
+                         <div>
+                            <h4 className='font-bold text-foreground'>Da Contratada</h4>
+                            <p className="whitespace-pre-wrap">{template.contractorResponsibilities}</p>
+                        </div>
+                         <div>
+                            <h4 className='font-bold text-foreground'>Prazo</h4>
+                            <p className="whitespace-pre-wrap">{template.deadline}</p>
+                        </div>
+                         <div>
+                            <h4 className='font-bold text-foreground'>Visão Estratégica</h4>
+                            <p className="whitespace-pre-wrap">{template.strategicVision}</p>
+                        </div>
+                      </div>
                       <div className="flex justify-end gap-2 items-center">
                         <Button
                           variant="outline"

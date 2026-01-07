@@ -45,6 +45,15 @@ type ProposalModalProps = {
   proposalTemplates: ProposalTemplate[];
 };
 
+type ProposalState = {
+    proposalObject: string;
+    serviceScope: string;
+    clientResponsibilities: string;
+    contractorResponsibilities: string;
+    deadline: string;
+    strategicVision: string;
+}
+
 export default function ProposalModal({
   lead,
   allLeads,
@@ -54,12 +63,28 @@ export default function ProposalModal({
   proposalTemplates,
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
-  const [proposalBody, setProposalBody] = useState(lead.proposalSummary);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
+  
+  const [proposalState, setProposalState] = useState<ProposalState>({
+      proposalObject: lead.proposalSummary,
+      serviceScope: 'A ser definido na proposta.',
+      clientResponsibilities: 'A ser definido na proposta.',
+      contractorResponsibilities: 'A ser definido na proposta.',
+      deadline: 'A ser definido na proposta.',
+      strategicVision: 'A ser definido na proposta.'
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setProposalBody(lead.proposalSummary);
+      // Set initial state from lead/defaults when modal opens
+      setProposalState({
+        proposalObject: lead.proposalSummary,
+        serviceScope: 'A ser definido na proposta.',
+        clientResponsibilities: 'A ser definido na proposta.',
+        contractorResponsibilities: 'A ser definido na proposta.',
+        deadline: 'A ser definido na proposta.',
+        strategicVision: 'A ser definido na proposta.'
+      });
 
       let currentProposalNumber = lead.proposalNumber;
 
@@ -90,7 +115,14 @@ export default function ProposalModal({
   const handleTemplateChange = (templateId: string) => {
     const template = proposalTemplates.find(t => t.id === templateId);
     if (template) {
-      setProposalBody(template.content);
+      setProposalState({
+          proposalObject: template.proposalObject,
+          serviceScope: template.serviceScope,
+          clientResponsibilities: template.clientResponsibilities,
+          contractorResponsibilities: template.contractorResponsibilities,
+          deadline: template.deadline,
+          strategicVision: template.strategicVision
+      });
     }
   };
 
@@ -100,28 +132,25 @@ export default function ProposalModal({
       currency: 'BRL',
     }).format(value);
   };
-
+  
   const handleDownloadPdf = () => {
     const input = proposalRef.current;
     if (input) {
-      // Temporarily set the content of the editable div for PDF generation
-      const editableDivs = input.querySelectorAll('[contenteditable]');
+      const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
 
-      const originalContents: { element: Element; content: string }[] = [];
-
-      // Since we are now using onBlur to update state for multiple editable elements,
-      // we need to make sure the PDF captures the latest state, not what's on the DOM from innerHTML.
-      // This is a bit of a workaround because html2canvas reads the DOM.
-      // The best way would be to manage state for all editable fields, but for a quick fix, let's just make sure the object is up-to-date.
-      const objectContainer = input.querySelector('#object-container');
-      if (objectContainer) {
-        objectContainer.innerHTML = proposalBody.replace(/\n/g, '<br />');
-      }
-
+      // Ensure PDF captures the latest state
+      editableDivs.forEach(div => {
+        const field = div.getAttribute('data-field') as keyof ProposalState | null;
+        if(field && proposalState[field]) {
+          div.innerHTML = proposalState[field].replace(/\n/g, '<br />');
+        }
+      });
+      
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
       });
+
       html2canvas(input, { scale: 3 }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -172,21 +201,39 @@ export default function ProposalModal({
   const EditableDiv = ({
     children,
     className,
+    field,
   }: {
     children: React.ReactNode;
     className?: string;
-  }) => (
-    <div
-      contentEditable
-      suppressContentEditableWarning
-      className={cn(
-        'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
+    field?: keyof ProposalState;
+  }) => {
+    const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+      if (field) {
+        setProposalState(prevState => ({
+          ...prevState,
+          [field]: e.currentTarget.innerText
+        }));
+      }
+    };
+    
+    const content = field ? (proposalState[field] || '').replace(/\n/g, '<br />') : children;
+  
+    return (
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        className={cn(
+          'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
+          className
+        )}
+        data-field={field}
+        dangerouslySetInnerHTML={field ? { __html: content as string } : undefined}
+        onBlur={handleBlur}
+      >
+        {!field && children}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -219,7 +266,7 @@ export default function ProposalModal({
         <ScrollArea className="flex-1 bg-gray-100 dark:bg-gray-900 rounded-md">
           <div
             ref={proposalRef}
-            className="p-0 bg-white text-[hsl(var(--proposal-text-secondary))] dark:bg-black dark:text-[hsl(var(--proposal-text-secondary))]"
+            className="p-0 bg-white text-[hsl(var(--proposal-text-secondary))] dark:bg-black"
             id="proposal-container"
             style={{ color: '#1b7689' }}
           >
@@ -369,20 +416,37 @@ export default function ProposalModal({
               </section>
 
               {/* Corpo da Proposta */}
-              <section className="my-8">
+              <section className="my-8 space-y-6">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
                   Objeto da Proposta
                 </h3>
-                <div
-                  id="object-container"
-                  contentEditable
-                  suppressContentEditableWarning
-                  className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  dangerouslySetInnerHTML={{
-                    __html: proposalBody.replace(/\n/g, '<br />'),
-                  }}
-                  onBlur={e => setProposalBody(e.currentTarget.innerText)}
-                />
+                <EditableDiv field="proposalObject" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                  Escopo do Serviço
+                </h3>
+                <EditableDiv field="serviceScope" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                  Da Contratante
+                </h3>
+                <EditableDiv field="clientResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                  Da Contratada
+                </h3>
+                <EditableDiv field="contractorResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+                
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                  Prazo para Realização dos Serviços
+                </h3>
+                <EditableDiv field="deadline" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
+                  Nossa Visão Estratégica
+                </h3>
+                <EditableDiv field="strategicVision" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+
               </section>
 
               {/* Investimento */}
