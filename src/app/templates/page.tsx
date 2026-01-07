@@ -145,23 +145,27 @@ export default function ManageTemplatesPage() {
     const currentTemplates = getSavedTemplates();
     let updatedTemplates;
     
-    // Ensure new plans get a unique ID
     const plansWithIds = data.plans.map(p => ({ ...p, id: p.id || `plan-${Date.now()}-${Math.random()}` }));
-    const formDataWithPlanIds = { ...data, plans: plansWithIds };
-
+    
     if (editingTemplateId) {
-      updatedTemplates = currentTemplates.map(t =>
-        t.id === editingTemplateId ? { ...t, ...formDataWithPlanIds } : t
-      );
-      toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
+        const fullTemplateData: ProposalTemplate = {
+            id: editingTemplateId,
+            ...data,
+            plans: plansWithIds,
+        };
+        updatedTemplates = currentTemplates.map(t =>
+            t.id === editingTemplateId ? fullTemplateData : t
+        );
+        toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
-      const newId = `template-${Date.now()}`;
-      const newFullTemplate: ProposalTemplate = {
-        id: newId,
-        ...formDataWithPlanIds,
-      };
-      updatedTemplates = [...currentTemplates, newFullTemplate];
-      toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
+        const newId = `template-${Date.now()}`;
+        const newFullTemplate: ProposalTemplate = {
+            id: newId,
+            ...data,
+            plans: plansWithIds,
+        };
+        updatedTemplates = [...currentTemplates, newFullTemplate];
+        toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
     }
     saveTemplates(updatedTemplates);
     loadTemplates();
@@ -408,6 +412,3 @@ export default function ManageTemplatesPage() {
     </div>
   );
 }
-
-    
-    
