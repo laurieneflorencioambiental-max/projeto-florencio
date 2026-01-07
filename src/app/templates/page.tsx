@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { ProposalTemplate } from '@/lib/types';
-import { initialProposalTemplates } from '@/lib/types';
+import { proposalTemplates } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,15 +37,15 @@ export default function ManageTemplatesPage() {
       if (savedTemplates) {
         setTemplates(JSON.parse(savedTemplates));
       } else {
-        setTemplates(initialProposalTemplates);
+        setTemplates(proposalTemplates);
         localStorage.setItem(
           'proposalTemplates',
-          JSON.stringify(initialProposalTemplates)
+          JSON.stringify(proposalTemplates)
         );
       }
     } catch (error) {
       console.error('Failed to access localStorage:', error);
-      setTemplates(initialProposalTemplates);
+      setTemplates(proposalTemplates);
     }
   }, []);
 
@@ -280,3 +280,5 @@ export default function ManageTemplatesPage() {
     </div>
   );
 }
+
+    

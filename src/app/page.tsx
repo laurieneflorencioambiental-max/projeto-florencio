@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
 import { initialLeads } from '@/lib/data';
 import type { Lead, Status, ProposalTemplate } from '@/lib/types';
-import { statuses, proposalTemplates as initialProposalTemplates } from '@/lib/types';
+import { statuses, proposalTemplates } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -72,7 +72,7 @@ export default function Home() {
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
   // Template Management State - Now only reads from localStorage
-  const [proposalTemplates, setProposalTemplates] = useState<ProposalTemplate[]>([]);
+  const [currentProposalTemplates, setCurrentProposalTemplates] = useState<ProposalTemplate[]>([]);
 
   // Load sellers & templates from localStorage on mount
   useEffect(() => {
@@ -91,15 +91,15 @@ export default function Home() {
       
       const savedTemplates = localStorage.getItem('proposalTemplates');
       if (savedTemplates) {
-        setProposalTemplates(JSON.parse(savedTemplates));
+        setCurrentProposalTemplates(JSON.parse(savedTemplates));
       } else {
-        setProposalTemplates(initialProposalTemplates);
-        localStorage.setItem('proposalTemplates', JSON.stringify(initialProposalTemplates));
+        setCurrentProposalTemplates(proposalTemplates);
+        localStorage.setItem('proposalTemplates', JSON.stringify(proposalTemplates));
       }
     } catch (error) {
       console.error("Failed to access localStorage:", error);
       setSellers(defaultSellers);
-      setProposalTemplates(initialProposalTemplates);
+      setCurrentProposalTemplates(proposalTemplates);
     }
   }, []);
 
@@ -327,7 +327,7 @@ export default function Home() {
             </DropdownMenu>
         </div>
       </div>
-      <KanbanBoard allLeads={leads} leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} proposalTemplates={proposalTemplates} />
+      <KanbanBoard allLeads={leads} leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} proposalTemplates={currentProposalTemplates} />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
         <LostLeadsChart leads={filteredLeads} />
@@ -347,3 +347,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
