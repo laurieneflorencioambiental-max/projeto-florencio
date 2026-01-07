@@ -158,7 +158,7 @@ export default function ProposalModal({
       // Ensure PDF captures the latest state by updating the innerHTML from the state
       editableDivs.forEach(div => {
         const field = div.getAttribute('data-field') as keyof ProposalState | null;
-        if(field && typeof proposalState[field as keyof ProposalState] === 'string') {
+        if(field && typeof proposalState[field as keyof Omit<ProposalState, 'plans'>] === 'string') {
           div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans'>] as string).replace(/\n/g, '<br />');
         }
       });
@@ -216,11 +216,9 @@ export default function ProposalModal({
   const EditableDiv = ({
     field,
     className,
-    children,
   }: {
     field: keyof Omit<ProposalState, 'plans'> | 'static';
     className?: string;
-    children?: React.ReactNode;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
       if (field !== 'static') {
@@ -231,16 +229,6 @@ export default function ProposalModal({
       }
     };
   
-    // Render children if provided (static content)
-    if (children) {
-      return (
-        <div contentEditable={false} className={className}>
-          {children}
-        </div>
-      );
-    }
-  
-    // Render editable content from state
     const content = field !== 'static' ? proposalState[field] : '';
     return (
       <div
@@ -313,7 +301,6 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Para:
                 </h3>
-                <EditableDiv field="static">
                   <p className="font-bold">{lead.company}</p>
                   <p>
                     A/C: {lead.name}
@@ -322,7 +309,6 @@ export default function ProposalModal({
                   <p>CNPJ: {lead.cnpj}</p>
                   <p>Email: {lead.email}</p>
                   <p>WhatsApp: {lead.whatsapp}</p>
-                </EditableDiv>
               </section>
 
               <div className="border-b my-8"></div>
@@ -332,7 +318,6 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2">
                   Sobre nós
                 </h3>
-                <EditableDiv field="static">
                   <p className="text-sm leading-relaxed mt-4">
                     Somos apaixonados há mais de uma década por transformar
                     ambientes de trabalho. O Grupo Florêncio se consolidou como
@@ -358,9 +343,7 @@ export default function ProposalModal({
                       Grupo Florêncio
                     </footer>
                   </blockquote>
-                </EditableDiv>
                 <div className='my-8'>
-                    <EditableDiv field="static">
                       <div className="grid md:grid-cols-3 gap-8">
                         <div className="flex items-start gap-4">
                           <div className="mt-1" style={{ color: '#1b7689' }}>
@@ -396,7 +379,6 @@ export default function ProposalModal({
                           </div>
                         </div>
                       </div>
-                    </EditableDiv>
                 </div>
                 <h4 className="text-md font-semibold text-center mt-6">
                   Temos uma equipe especializada para oferecer as melhores
@@ -414,7 +396,6 @@ export default function ProposalModal({
                 </div>
                 <div className="border-b"></div>
 
-                <EditableDiv field="static">
                   <h3 className="text-lg font-semibold mt-6">
                     Objetivo
                   </h3>
@@ -440,12 +421,10 @@ export default function ProposalModal({
                     acordo com as diretrizes técnicas, para esta conceituada
                     empresa.
                   </p>
-                </EditableDiv>
               </section>
 
               {/* Localização Estratégica */}
               <section className="my-8">
-                <EditableDiv field="static">
                   <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
                     <div className="bg-primary/20 text-center p-2 rounded-t-lg">
                       <h3 className="font-bold" style={{ color: '#1b7689' }}>
@@ -472,7 +451,6 @@ export default function ProposalModal({
                       </p>
                     </div>
                   </div>
-                </EditableDiv>
               </section>
 
               {/* Corpo da Proposta */}
@@ -553,21 +531,13 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Condições de Pagamento
                 </h3>
-                <EditableDiv field="static">
                   <ul className="list-disc list-inside space-y-2">
                     {lead.paymentMethods.map((pm, index) => (
                       <li key={index}>
                         {pm.method}
-                        {pm.method.includes('Crédito') && pm.cardFee && (
-                          <span className="text-sm opacity-80">
-                            {' '}
-                            (taxa de {pm.cardFee}% inclusa)
-                          </span>
-                        )}
                       </li>
                     ))}
                   </ul>
-                </EditableDiv>
               </section>
 
               <div className="border-b my-8"></div>
@@ -575,7 +545,6 @@ export default function ProposalModal({
 
                {/* Termo de Aprovação */}
               <section className="my-8" style={{ breakBefore: 'page' }}>
-                 <EditableDiv field="static">
                   <h3 className="text-lg font-semibold mb-4">
                     Termo de aprovação:
                   </h3>
@@ -605,19 +574,16 @@ export default function ProposalModal({
                           <p>(  ) não</p>
                       </div>
                   </div>
-                 </EditableDiv>
               </section>
 
 
               {/* Rodapé */}
               <footer className="text-center pt-8 border-t mt-8">
-                <EditableDiv field="static">
                   <p className="font-bold" style={{ color: '#1b7689' }}>Grupo Florencio</p>
                   <p className="text-xs">
                     comercial@grupoflorencio.com.br | +55 (21) 96453-9493 | @grupoflorencio
                   </p>
                   <p className="text-xs">www.grupoflorencio.com.br</p>
-                </EditableDiv>
               </footer>
             </div>
           </div>
