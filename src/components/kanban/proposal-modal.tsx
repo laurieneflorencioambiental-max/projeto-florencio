@@ -51,6 +51,7 @@ type ProposalState = {
     clientResponsibilities: string;
     contractorResponsibilities: string;
     deadline: string;
+    investment: string;
     strategicVision: string;
 }
 
@@ -71,6 +72,7 @@ export default function ProposalModal({
       clientResponsibilities: 'A ser definido na proposta.',
       contractorResponsibilities: 'A ser definido na proposta.',
       deadline: 'A ser definido na proposta.',
+      investment: 'A ser definido na proposta.',
       strategicVision: 'A ser definido na proposta.'
   });
 
@@ -83,6 +85,7 @@ export default function ProposalModal({
         clientResponsibilities: 'A ser definido na proposta.',
         contractorResponsibilities: 'A ser definido na proposta.',
         deadline: 'A ser definido na proposta.',
+        investment: 'A ser definido na proposta.',
         strategicVision: 'A ser definido na proposta.'
       });
 
@@ -121,6 +124,7 @@ export default function ProposalModal({
           clientResponsibilities: template.clientResponsibilities,
           contractorResponsibilities: template.contractorResponsibilities,
           deadline: template.deadline,
+          investment: template.investment,
           strategicVision: template.strategicVision
       });
     }
@@ -216,7 +220,7 @@ export default function ProposalModal({
       }
     };
   
-    const props: any = {
+    const commonProps: any = {
       contentEditable: true,
       suppressContentEditableWarning: true,
       className: cn(
@@ -227,13 +231,10 @@ export default function ProposalModal({
     };
   
     if (field) {
-      props['data-field'] = field;
-      props.dangerouslySetInnerHTML = { __html: (proposalState[field] || '').replace(/\n/g, '<br />') };
-    } else {
-      return <div {...props}>{children}</div>;
+      return <div {...commonProps} data-field={field} dangerouslySetInnerHTML={{ __html: (proposalState[field] || '').replace(/\n/g, '<br />') }} />;
     }
   
-    return <div {...props} />;
+    return <div {...commonProps}>{children}</div>;
   };
 
   return (
@@ -373,7 +374,7 @@ export default function ProposalModal({
                     salientar o grande interesse que temos em trabalhar em parceria
                     com a sua empresa, pois a nossa missão é oferecer serviços em
                     gestão através de uma visão estratégica buscando a satisfação
-                    do cliente e melhorias para a sociedade.
+                    do cliente e melhorias para a  sociedade.
                   </p>
                   <p className="text-sm leading-relaxed mt-4">
                     Para tal, encaminhamos ao V. Sr. (a)., a presente Proposta de
@@ -455,7 +456,7 @@ export default function ProposalModal({
                  <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Investimento
                 </h3>
-                <EditableDiv>
+                <EditableDiv field="investment">
                   <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
                     <p className="text-lg">Valor Total:</p>
                     <p className="text-2xl font-bold text-primary">

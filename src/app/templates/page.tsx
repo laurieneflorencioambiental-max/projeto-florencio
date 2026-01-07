@@ -58,6 +58,7 @@ const emptyTemplate: Omit<ProposalTemplate, 'id' | 'name'> = {
   contractorResponsibilities: '',
   deadline: '',
   strategicVision: '',
+  investment: '',
 };
 
 export default function ManageTemplatesPage() {
@@ -195,6 +196,7 @@ export default function ManageTemplatesPage() {
           {renderFormField('Da Contratante', 'clientResponsibilities', newTemplateData.clientResponsibilities, (val) => setNewTemplateData(p => ({...p, clientResponsibilities: val})))}
           {renderFormField('Da Contratada', 'contractorResponsibilities', newTemplateData.contractorResponsibilities, (val) => setNewTemplateData(p => ({...p, contractorResponsibilities: val})))}
           {renderFormField('Prazo para Realização dos Serviços', 'deadline', newTemplateData.deadline, (val) => setNewTemplateData(p => ({...p, deadline: val})))}
+          {renderFormField('Investimento', 'investment', newTemplateData.investment, (val) => setNewTemplateData(p => ({...p, investment: val})))}
           {renderFormField('Nossa Visão Estratégica', 'strategicVision', newTemplateData.strategicVision, (val) => setNewTemplateData(p => ({...p, strategicVision: val})))}
 
           <Button onClick={handleAddTemplate}>
@@ -238,6 +240,7 @@ export default function ManageTemplatesPage() {
                      {renderFormField('Da Contratante', 'clientResponsibilities', editingTemplate.clientResponsibilities, (val) => setEditingTemplate(p => p && ({...p, clientResponsibilities: val})))}
                      {renderFormField('Da Contratada', 'contractorResponsibilities', editingTemplate.contractorResponsibilities, (val) => setEditingTemplate(p => p && ({...p, contractorResponsibilities: val})))}
                      {renderFormField('Prazo para Realização dos Serviços', 'deadline', editingTemplate.deadline, (val) => setEditingTemplate(p => p && ({...p, deadline: val})))}
+                     {renderFormField('Investimento', 'investment', editingTemplate.investment, (val) => setEditingTemplate(p => p && ({...p, investment: val})))}
                      {renderFormField('Nossa Visão Estratégica', 'strategicVision', editingTemplate.strategicVision, (val) => setEditingTemplate(p => p && ({...p, strategicVision: val})))}
 
                     <div className="flex justify-end gap-2 mt-2">
@@ -275,6 +278,10 @@ export default function ManageTemplatesPage() {
                          <div>
                             <h4 className='font-bold text-foreground'>Prazo</h4>
                             <p className="whitespace-pre-wrap">{template.deadline}</p>
+                        </div>
+                        <div>
+                            <h4 className='font-bold text-foreground'>Investimento</h4>
+                            <p className="whitespace-pre-wrap">{template.investment}</p>
                         </div>
                          <div>
                             <h4 className='font-bold text-foreground'>Visão Estratégica</h4>

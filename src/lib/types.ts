@@ -88,6 +88,7 @@ export type ProposalTemplate = {
   contractorResponsibilities: string;
   deadline: string;
   strategicVision: string;
+  investment: string;
 };
 
 const defaultText = 'A ser definido na proposta.';
@@ -107,6 +108,7 @@ export const proposalTemplates: ProposalTemplate[] = [
     contractorResponsibilities: defaultText,
     deadline: defaultText,
     strategicVision: defaultText,
+    investment: defaultText,
   },
   {
     id: 'treinamento-nr12',
@@ -124,6 +126,7 @@ Conteúdo Programático:
     contractorResponsibilities: defaultText,
     deadline: defaultText,
     strategicVision: defaultText,
+    investment: defaultText,
   },
   {
     id: 'avcb',
@@ -137,5 +140,6 @@ Conteúdo Programático:
     contractorResponsibilities: defaultText,
     deadline: defaultText,
     strategicVision: defaultText,
+    investment: defaultText,
   },
 ];
