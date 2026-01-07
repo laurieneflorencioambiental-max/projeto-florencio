@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { ProposalTemplate } from '@/lib/types';
 import { proposalTemplates as defaultProposalTemplates } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,35 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const getSavedTemplates = (): ProposalTemplate[] => {
+  try {
+    const savedTemplates = localStorage.getItem('proposalTemplates');
+    if (savedTemplates) {
+      return JSON.parse(savedTemplates);
+    }
+  } catch (error) {
+    console.error('Failed to parse templates from localStorage:', error);
+  }
+  // If nothing is saved, initialize with default and save it.
+  try {
+    localStorage.setItem(
+      'proposalTemplates',
+      JSON.stringify(defaultProposalTemplates)
+    );
+  } catch (error) {
+    console.error('Failed to save default templates to localStorage:', error);
+  }
+  return defaultProposalTemplates;
+};
+
+const saveTemplates = (templates: ProposalTemplate[]) => {
+  try {
+    localStorage.setItem('proposalTemplates', JSON.stringify(templates));
+  } catch (error) {
+    console.error('Failed to save templates to localStorage:', error);
+  }
+};
+
 export default function ManageTemplatesPage() {
   const { toast } = useToast();
   const [templates, setTemplates] = useState<ProposalTemplate[]>([]);
@@ -31,31 +60,13 @@ export default function ManageTemplatesPage() {
   const [editingTemplate, setEditingTemplate] =
     useState<ProposalTemplate | null>(null);
 
-  // Load templates from localStorage on initial mount
-  useEffect(() => {
-    try {
-      const savedTemplates = localStorage.getItem('proposalTemplates');
-      if (savedTemplates) {
-        setTemplates(JSON.parse(savedTemplates));
-      } else {
-        // Only set default templates if nothing is in localStorage
-        setTemplates(defaultProposalTemplates);
-      }
-    } catch (error) {
-      console.error('Failed to access localStorage:', error);
-      // Fallback to default templates in case of error
-      setTemplates(defaultProposalTemplates);
-    }
+  const loadTemplates = useCallback(() => {
+    setTemplates(getSavedTemplates());
   }, []);
 
-  // Save templates to localStorage whenever they change
   useEffect(() => {
-    try {
-      localStorage.setItem('proposalTemplates', JSON.stringify(templates));
-    } catch (error) {
-      console.error('Failed to save to localStorage:', error);
-    }
-  }, [templates]);
+    loadTemplates();
+  }, [loadTemplates]);
 
   const handleAddTemplate = () => {
     if (newTemplate.name.trim() === '' || newTemplate.content.trim() === '') {
@@ -67,7 +78,10 @@ export default function ManageTemplatesPage() {
       return;
     }
     const newId = `template-${Date.now()}`;
-    setTemplates([...templates, { id: newId, ...newTemplate }]);
+    const currentTemplates = getSavedTemplates();
+    const updatedTemplates = [...currentTemplates, { id: newId, ...newTemplate }];
+    saveTemplates(updatedTemplates);
+    loadTemplates(); // Re-load from storage
     setNewTemplate({ name: '', content: '' });
     toast({
       title: 'Sucesso',
@@ -96,15 +110,21 @@ export default function ManageTemplatesPage() {
       });
       return;
     }
-    setTemplates(
-      templates.map(t => (t.id === editingTemplate.id ? editingTemplate : t))
+    const currentTemplates = getSavedTemplates();
+    const updatedTemplates = currentTemplates.map(t =>
+      t.id === editingTemplate.id ? editingTemplate : t
     );
+    saveTemplates(updatedTemplates);
+    loadTemplates(); // Re-load from storage
     setEditingTemplate(null);
     toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
   };
 
   const handleDeleteTemplate = (id: string) => {
-    setTemplates(templates.filter(t => t.id !== id));
+    const currentTemplates = getSavedTemplates();
+    const updatedTemplates = currentTemplates.filter(t => t.id !== id);
+    saveTemplates(updatedTemplates);
+    loadTemplates(); // Re-load from storage
     toast({ title: 'Sucesso', description: 'Modelo de proposta removido.' });
   };
 
@@ -115,7 +135,10 @@ export default function ManageTemplatesPage() {
       id: newId,
       name: `${template.name} (Cópia)`,
     };
-    setTemplates([...templates, duplicatedTemplate]);
+    const currentTemplates = getSavedTemplates();
+    const updatedTemplates = [...currentTemplates, duplicatedTemplate];
+    saveTemplates(updatedTemplates);
+    loadTemplates(); // Re-load from storage
     toast({
       title: 'Sucesso',
       description: `Modelo "${template.name}" duplicado.`,
