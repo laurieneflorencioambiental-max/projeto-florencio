@@ -86,3 +86,23 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .a4-page {
+    width: 210mm;
+    height: 297mm;
+    page-break-after: always;
+  }
+}
+
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .a4-page {
+    margin: 0;
+    box-shadow: none;
+    border: none;
+  }
+}
