@@ -67,6 +67,7 @@ export default function ProposalModal({
       investment: 'A ser definido na proposta.',
       strategicVision: 'A ser definido na proposta.',
       plans: [],
+      exams: [],
   });
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function ProposalModal({
         investment: defaultInvestmentText,
         strategicVision: 'A ser definido na proposta.',
         plans: [],
+        exams: [],
       });
 
       let currentProposalNumber = lead.proposalNumber;
@@ -139,6 +141,7 @@ export default function ProposalModal({
           investment: templateInvestment,
           strategicVision: template.strategicVision,
           plans: template.plans || [],
+          exams: template.exams || [],
       });
     }
   };
@@ -158,8 +161,8 @@ export default function ProposalModal({
       // Ensure PDF captures the latest state by updating the innerHTML from the state
       editableDivs.forEach(div => {
         const field = div.getAttribute('data-field') as keyof ProposalState | null;
-        if(field && typeof proposalState[field as keyof Omit<ProposalState, 'plans'>] === 'string') {
-          div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans'>] as string).replace(/\n/g, '<br />');
+        if(field && typeof proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] === 'string') {
+          div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] as string).replace(/\n/g, '<br />');
         }
       });
       
@@ -217,7 +220,7 @@ export default function ProposalModal({
     field,
     className,
   }: {
-    field: keyof Omit<ProposalState, 'plans'> | 'static';
+    field: keyof Omit<ProposalState, 'plans' | 'exams'> | 'static';
     className?: string;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
@@ -497,31 +500,34 @@ export default function ProposalModal({
                 )}
                 
                 {proposalState.plans && proposalState.plans.length > 0 && (
-                  <div className="mt-4 overflow-x-auto">
-                      <table className="w-full border-collapse text-sm">
-                          <thead>
-                              <tr style={{ backgroundColor: '#1b7689' }} className="text-white">
-                                  <th className="p-3 text-left font-semibold">Planos</th>
-                                  <th className="p-3 text-left font-semibold">Faixa de Funcionários</th>
-                                  <th className="p-3 text-left font-semibold">Serviços Inclusos</th>
-                                  <th className="p-3 text-left font-semibold">Investimento</th>
-                                  <th className="p-3 text-center font-semibold">PG Único</th>
-                                  <th className="p-3 text-center font-semibold">PG Mensal</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {proposalState.plans.map((plan, index) => (
-                                  <tr key={plan.id} className={cn("border-b", index % 2 === 0 ? "bg-blue-50" : "bg-blue-100")} style={{ borderColor: 'rgba(27, 118, 137, 0.2)' }}>
-                                      <td className="p-3 align-top">{plan.name}</td>
-                                      <td className="p-3 align-top">{plan.employeeRange}</td>
-                                      <td className="p-3 align-top whitespace-pre-wrap">{plan.servicesIncluded}</td>
-                                      <td className="p-3 align-top">{formatCurrency(plan.investment)}</td>
-                                      <td className="p-3 text-center align-top">{plan.paymentType === 'unique' ? 'X' : ''}</td>
-                                      <td className="p-3 text-center align-top">{plan.paymentType === 'monthly' ? 'X' : ''}</td>
-                                  </tr>
-                              ))}
-                          </tbody>
-                      </table>
+                  <div className="mt-4">
+                    <p className="text-sm mb-4">Abaixo seguem as opções dos Planos, de acordo com a estratégia financeira da sua empresa.</p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr style={{ backgroundColor: '#1b7689' }} className="text-white">
+                                    <th className="p-3 text-left font-semibold">Planos</th>
+                                    <th className="p-3 text-left font-semibold">Faixa de Funcionários</th>
+                                    <th className="p-3 text-left font-semibold">Serviços Inclusos</th>
+                                    <th className="p-3 text-left font-semibold">Investimento</th>
+                                    <th className="p-3 text-center font-semibold">PG Único</th>
+                                    <th className="p-3 text-center font-semibold">PG Mensal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {proposalState.plans.map((plan, index) => (
+                                    <tr key={plan.id} className={cn("border-b", index % 2 === 0 ? "bg-blue-50" : "bg-blue-100")} style={{ borderColor: 'rgba(27, 118, 137, 0.2)' }}>
+                                        <td className="p-3 align-top">{plan.name}</td>
+                                        <td className="p-3 align-top">{plan.employeeRange}</td>
+                                        <td className="p-3 align-top whitespace-pre-wrap">{plan.servicesIncluded}</td>
+                                        <td className="p-3 align-top">{formatCurrency(plan.investment)}</td>
+                                        <td className="p-3 text-center align-top">{plan.paymentType === 'unique' ? 'X' : ''}</td>
+                                        <td className="p-3 text-center align-top">{plan.paymentType === 'monthly' ? 'X' : ''}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                   </div>
                 )}
               </section>
@@ -534,7 +540,7 @@ export default function ProposalModal({
                   <ul className="list-disc list-inside space-y-2">
                     {lead.paymentMethods.map((pm, index) => (
                       <li key={index}>
-                        {pm.method}
+                        {pm.method.replace(' (Link)', '').replace(' (Maquininha)', '')}
                       </li>
                     ))}
                   </ul>
