@@ -71,7 +71,7 @@ export default function Home() {
   const [sellers, setSellers] = useState<string[]>([]);
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
-  // Template Management State - Now only reads from localStorage
+  // Template Management State
   const [currentProposalTemplates, setCurrentProposalTemplates] = useState<ProposalTemplate[]>([]);
 
   // Load sellers & templates from localStorage on mount
@@ -90,16 +90,17 @@ export default function Home() {
       }
       
       const savedTemplates = localStorage.getItem('proposalTemplates');
+      // This page now only READS. It does not write default templates.
+      // The /templates page is responsible for initialization.
       if (savedTemplates) {
         setCurrentProposalTemplates(JSON.parse(savedTemplates));
       } else {
-        setCurrentProposalTemplates(proposalTemplates);
-        localStorage.setItem('proposalTemplates', JSON.stringify(proposalTemplates));
+        setCurrentProposalTemplates([]); // Start with empty if none are saved
       }
     } catch (error) {
       console.error("Failed to access localStorage:", error);
       setSellers(defaultSellers);
-      setCurrentProposalTemplates(proposalTemplates);
+      setCurrentProposalTemplates([]);
     }
   }, []);
 
