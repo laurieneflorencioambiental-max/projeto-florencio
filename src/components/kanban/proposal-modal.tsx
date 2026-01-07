@@ -454,12 +454,14 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2 text-[hsl(var(--proposal-text-secondary))]">
                   Investimento
                 </h3>
-                <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-                  <p className="text-lg">Valor Total:</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(lead.value)}
-                  </p>
-                </div>
+                <EditableDiv>
+                  <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                    <p className="text-lg">Valor Total:</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(lead.value)}
+                    </p>
+                  </div>
+                </EditableDiv>
               </section>
 
               {/* Condições de Pagamento */}
