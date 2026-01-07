@@ -77,17 +77,6 @@ const saveTemplates = (templates: ProposalTemplate[]) => {
   }
 };
 
-const emptyTemplate: Omit<ProposalTemplate, 'id' | 'name'> = {
-  proposalObject: '',
-  serviceScope: '',
-  clientResponsibilities: '',
-  contractorResponsibilities: '',
-  deadline: '',
-  investment: '',
-  strategicVision: '',
-  plans: [],
-};
-
 const templateFormSchema = z.object({
     name: z.string().min(1, 'O nome do modelo é obrigatório.'),
     proposalObject: z.string().min(1, 'O objeto da proposta é obrigatório.'),
@@ -121,7 +110,7 @@ export default function ManageTemplatesPage() {
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'plans',
   });
@@ -155,7 +144,7 @@ export default function ManageTemplatesPage() {
 
     if (editingTemplateId) {
       updatedTemplates = currentTemplates.map(t =>
-        t.id === editingTemplateId ? { ...t, ...data } : t
+        t.id === editingTemplateId ? { ...t, ...data, id: t.id } : t
       );
       toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
@@ -412,3 +401,5 @@ export default function ManageTemplatesPage() {
     </div>
   );
 }
+
+    
