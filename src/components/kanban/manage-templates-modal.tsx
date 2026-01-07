@@ -20,7 +20,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Trash2, PlusCircle, Save } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 
 type ManageTemplatesModalProps = {
@@ -86,8 +86,8 @@ export default function ManageTemplatesModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4">
-          <h3 className="text-lg font-medium">Adicionar Novo Modelo</h3>
+        <div className="border-b pb-4">
+          <h3 className="text-lg font-medium mb-2">Adicionar Novo Modelo</h3>
           <div className="grid gap-2">
             <Input
               placeholder="Nome do novo modelo (ex: Treinamento NR-35)"
@@ -95,10 +95,11 @@ export default function ManageTemplatesModal({
               onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
             />
             <Textarea
-              placeholder="Conteúdo do modelo..."
+              placeholder="Conteúdo do modelo... (Este texto será o 'Objeto da Proposta')"
               value={newTemplate.content}
               onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
               rows={5}
+              className="bg-muted/50"
             />
             <Button onClick={handleAddTemplate} size="sm" className="justify-self-start">
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -107,7 +108,7 @@ export default function ManageTemplatesModal({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 mt-4 border-t pt-4">
+        <ScrollArea className="flex-1 mt-4">
           <h3 className="text-lg font-medium mb-2">Modelos Existentes</h3>
            {templates.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhum modelo cadastrado.</p>
@@ -119,15 +120,18 @@ export default function ManageTemplatesModal({
                 <AccordionContent>
                   {editingTemplate?.id === template.id ? (
                      <div className="flex flex-col gap-2">
+                        <label className='text-sm font-medium'>Nome do Modelo</label>
                         <Input
                             value={editingTemplate.name}
                             onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
                             className="font-bold"
                         />
+                        <label className='text-sm font-medium mt-2'>Conteúdo do Modelo (Objeto da Proposta)</label>
                         <Textarea
                             value={editingTemplate.content}
                             onChange={(e) => setEditingTemplate({ ...editingTemplate, content: e.target.value })}
-                            rows={8}
+                            rows={10}
+                            className="prose dark:prose-invert max-w-none focus:outline-none focus:ring-2 focus:ring-primary bg-muted/30"
                         />
                         <div className="flex justify-end gap-2 mt-2">
                             <Button variant="ghost" onClick={handleCancelEditing}>Cancelar</Button>
@@ -136,11 +140,12 @@ export default function ManageTemplatesModal({
                      </div>
                   ) : (
                     <div className="flex flex-col gap-4">
-                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap p-2 rounded-md bg-muted/50">
+                      <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap p-4 rounded-md bg-muted/50 border">
                         {template.content}
                       </div>
                       <div className="flex justify-end gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleStartEditing(template)}>
+                          <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </Button>
                         <Button variant="destructive" size="sm" onClick={() => handleDeleteTemplate(template.id)}>
@@ -157,7 +162,7 @@ export default function ManageTemplatesModal({
            )}
         </ScrollArea>
 
-        <DialogFooter>
+        <DialogFooter className="border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
