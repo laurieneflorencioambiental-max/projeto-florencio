@@ -198,16 +198,14 @@ export default function ProposalModal({
   const EditableDiv = ({
     field,
     className,
-    isHtml = false,
   }: {
     field: keyof Omit<ProposalState, 'plans'>;
     className?: string;
-    isHtml?: boolean;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
       setProposalState(prevState => ({
         ...prevState,
-        [field]: isHtml ? e.currentTarget.innerHTML : e.currentTarget.innerText,
+        [field]: e.currentTarget.innerHTML,
       }));
     };
   
@@ -257,7 +255,7 @@ export default function ProposalModal({
         <ScrollArea className="flex-1 bg-gray-100 dark:bg-gray-900 rounded-md">
           <div
             ref={proposalRef}
-            className="p-0 bg-white text-[hsl(var(--proposal-text-secondary))] dark:bg-black"
+            className="p-0 bg-white text-[hsl(var(--proposal-text-secondary))]"
             id="proposal-container"
             style={{ color: '#1b7689' }}
           >
@@ -268,7 +266,7 @@ export default function ProposalModal({
                   <h1 className="text-2xl font-bold text-primary">
                     Grupo Florencio
                   </h1>
-                  <p className="text-sm">saúde Ocupacional estratégica</p>
+                  <p className="text-sm">Saúde Ocupacional Estratégica</p>
                   <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
                 </div>
                 <div className="text-right">
