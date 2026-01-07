@@ -268,7 +268,8 @@ export default function ProposalModal({
                   <h1 className="text-2xl font-bold text-primary">
                     Grupo Florencio
                   </h1>
-                  <p className="text-sm">Soluções em Segurança do Trabalho</p>
+                  <p className="text-sm">saúde Ocupacional estratégica</p>
+                  <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
                 </div>
                 <div className="text-right">
                   <h2 className="text-xl font-semibold" style={{ color: '#596371' }}>Proposta Comercial</h2>
