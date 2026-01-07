@@ -19,6 +19,9 @@ import {
   Recycle,
   ClipboardList,
   SearchCheck,
+  Target,
+  Eye,
+  Gem,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -319,34 +322,34 @@ export default function ProposalModal({
 
             {/* Localização Estratégica */}
             <section className="my-8">
-              <EditableDiv>
-                <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
-                  <div className="bg-primary/20 text-center p-2 rounded-t-lg">
-                    <h3 className="font-bold text-primary">
-                      Nossa Localização Estratégica
-                    </h3>
+                <EditableDiv>
+                  <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
+                    <div className="bg-primary/20 text-center p-2 rounded-t-lg">
+                      <h3 className="font-bold text-primary">
+                        Nossa Localização Estratégica
+                      </h3>
+                    </div>
+                    <div className="p-6 bg-card rounded-b-lg">
+                      <p className="text-sm leading-relaxed mb-4">
+                        Nossas unidades de atendimento em medicina do trabalho
+                        estão estrategicamente distribuídas para estar próximas
+                        tanto dos seus funcionários quanto da sua empresa,
+                        facilitando o fluxo de atendimento e otimizando a
+                        logística dos serviços.
+                      </p>
+                      <p className="text-sm leading-relaxed mb-4">
+                        <span className="font-bold">Localizadas no:</span> Centro
+                        do RJ, Nova Iguaçu, Duque de Caxias, Vila Kosmos – Vila da
+                        Penha, Barra da Tijuca, Niterói, Macaé.
+                      </p>
+                      <p className="text-sm leading-relaxed mb-6">
+                        Cada unidade foi planejada para proporcionar agilidade e
+                        eficiência na realização de exames, consultas e demais
+                        procedimentos essenciais.
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-6 bg-card rounded-b-lg">
-                    <p className="text-sm leading-relaxed mb-4">
-                      Nossas unidades de atendimento em medicina do trabalho
-                      estão estrategicamente distribuídas para estar próximas
-                      tanto dos seus funcionários quanto da sua empresa,
-                      facilitando o fluxo de atendimento e otimizando a
-                      logística dos serviços.
-                    </p>
-                    <p className="text-sm leading-relaxed mb-4">
-                      <span className="font-bold">Localizadas no:</span> Centro
-                      do RJ, Nova Iguaçu, Duque de Caxias, Vila Kosmos – Vila da
-                      Penha, Barra da Tijuca, Niterói, Macaé.
-                    </p>
-                    <p className="text-sm leading-relaxed mb-6">
-                      Cada unidade foi planejada para proporcionar agilidade e
-                      eficiência na realização de exames, consultas e demais
-                      procedimentos essenciais.
-                    </p>
-                  </div>
-                </div>
-              </EditableDiv>
+                </EditableDiv>
             </section>
 
             {/* Corpo da Proposta */}
@@ -400,6 +403,48 @@ export default function ProposalModal({
                 </ul>
               </EditableDiv>
             </section>
+
+            {/* Missão, Visão, Valores */}
+            <section className="my-8">
+              <EditableDiv>
+                <div className="grid md:grid-cols-3 gap-8">
+                  <div className="flex items-start gap-4">
+                    <div className="text-primary mt-1">
+                      <Target className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Missão</h4>
+                      <p className="text-sm leading-relaxed">
+                        Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="text-primary mt-1">
+                      <Eye className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Visão</h4>
+                      <p className="text-sm leading-relaxed">
+                        Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="text-primary mt-1">
+                      <Gem className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Valores</h4>
+                      <p className="text-sm leading-relaxed">
+                        Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </EditableDiv>
+            </section>
+
 
             {/* Rodapé */}
             <footer className="text-center pt-8 border-t mt-8">
