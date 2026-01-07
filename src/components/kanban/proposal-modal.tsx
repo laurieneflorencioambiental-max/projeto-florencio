@@ -219,7 +219,7 @@ export default function ProposalModal({
         <ScrollArea className="flex-1 bg-gray-100 dark:bg-gray-900 rounded-md">
           <div
             ref={proposalRef}
-            className="p-0 bg-white dark:bg-black text-black dark:text-white"
+            className="p-0 bg-white dark:bg-black text-[#1b7689] dark:text-white"
             id="proposal-container"
           >
             <div className="a4-page p-8" id="proposal-content">
