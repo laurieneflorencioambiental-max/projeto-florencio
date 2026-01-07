@@ -140,7 +140,7 @@ export default function ProposalModal({
       // Ensure PDF captures the latest state by updating the innerHTML from the state
       editableDivs.forEach(div => {
         const field = div.getAttribute('data-field') as keyof ProposalState | null;
-        if(field && typeof proposalState[field] === 'string') {
+        if(field && typeof proposalState[field as keyof ProposalState] === 'string') {
           div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans'>] as string).replace(/\n/g, '<br />');
         }
       });
@@ -198,28 +198,34 @@ export default function ProposalModal({
   const EditableDiv = ({
     field,
     className,
+    children,
   }: {
-    field: keyof Omit<ProposalState, 'plans'>;
+    field?: keyof Omit<ProposalState, 'plans'>;
     className?: string;
+    children?: React.ReactNode;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-      setProposalState(prevState => ({
-        ...prevState,
-        [field]: e.currentTarget.innerHTML,
-      }));
+      if (field) {
+        setProposalState(prevState => ({
+          ...prevState,
+          [field]: e.currentTarget.innerHTML,
+        }));
+      }
     };
   
-    const content = proposalState[field] || '';
+    const content = field ? proposalState[field] || '' : undefined;
   
     return (
       <div
-        contentEditable
+        contentEditable={!!field}
         suppressContentEditableWarning
         data-field={field}
         className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
         onBlur={handleBlur}
-        dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }}
-      />
+        dangerouslySetInnerHTML={content !== undefined ? { __html: content.replace(/\n/g, '<br />') } : undefined}
+      >
+        {content === undefined ? children : null}
+      </div>
     );
   };
 
@@ -255,11 +261,10 @@ export default function ProposalModal({
         <ScrollArea className="flex-1 bg-gray-100 dark:bg-gray-900 rounded-md">
           <div
             ref={proposalRef}
-            className="p-0 bg-white text-[hsl(var(--proposal-text-secondary))]"
+            className="p-0 bg-white"
             id="proposal-container"
-            style={{ color: '#1b7689' }}
           >
-            <div className="a4-page p-8" id="proposal-content">
+            <div className="a4-page p-8 text-[hsl(var(--proposal-text-secondary))]" id="proposal-content" style={{ color: '#1b7689' }}>
               {/* Cabeçalho da Proposta */}
               <header className="flex justify-between items-center pb-4 border-b">
                 <div>
@@ -283,7 +288,7 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Para:
                 </h3>
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <p className="font-bold">{lead.company}</p>
                   <p>
                     A/C: {lead.name}
@@ -292,12 +297,14 @@ export default function ProposalModal({
                   <p>CNPJ: {lead.cnpj}</p>
                   <p>Email: {lead.email}</p>
                   <p>WhatsApp: {lead.whatsapp}</p>
-                </div>
+                </EditableDiv>
               </section>
+
+              <div className="border-b my-8"></div>
 
               {/* Sobre Nós */}
               <section className="my-8 space-y-6">
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
                     Sobre nós
                   </h3>
@@ -326,7 +333,7 @@ export default function ProposalModal({
                       Grupo Florêncio
                     </footer>
                   </blockquote>
-                </div>
+                </EditableDiv>
 
                 <h4 className="text-md font-semibold text-center" style={{ color: '#596371' }}>
                   Temos uma equipe especializada para oferecer as melhores
@@ -344,7 +351,7 @@ export default function ProposalModal({
                 </div>
                 <div className="border-b"></div>
 
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <h3 className="text-lg font-semibold" style={{ color: '#596371' }}>
                     Objetivo
                   </h3>
@@ -370,12 +377,12 @@ export default function ProposalModal({
                     acordo com as diretrizes técnicas, para esta conceituada
                     empresa.
                   </p>
-                </div>
+                </EditableDiv>
               </section>
 
               {/* Localização Estratégica */}
               <section className="my-8">
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
                     <div className="bg-primary/20 text-center p-2 rounded-t-lg">
                       <h3 className="font-bold text-primary">
@@ -402,7 +409,7 @@ export default function ProposalModal({
                       </p>
                     </div>
                   </div>
-                </div>
+                </EditableDiv>
               </section>
 
               {/* Corpo da Proposta */}
@@ -444,7 +451,16 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Investimento
                 </h3>
-                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md"/>
+                <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md">
+                    {lead.value > 0 && (
+                        <div className="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                        <p className="text-lg">Valor Total do Orçamento:</p>
+                        <p className="text-2xl font-bold text-primary">
+                            {formatCurrency(lead.value)}
+                        </p>
+                        </div>
+                    )}
+                </EditableDiv>
                 
                 {proposalState.plans && proposalState.plans.length > 0 && (
                   <div className="mt-4 overflow-x-auto">
@@ -474,15 +490,6 @@ export default function ProposalModal({
                       </table>
                   </div>
                 )}
-                 
-                 {lead.value > 0 && (
-                    <div className="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-                      <p className="text-lg">Valor Total do Orçamento:</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {formatCurrency(lead.value)}
-                      </p>
-                    </div>
-                  )}
               </section>
 
               {/* Condições de Pagamento */}
@@ -490,7 +497,7 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2" style={{ color: '#596371' }}>
                   Condições de Pagamento
                 </h3>
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <ul className="list-disc list-inside space-y-2">
                     {lead.paymentMethods.map((pm, index) => (
                       <li key={index}>
@@ -504,14 +511,14 @@ export default function ProposalModal({
                       </li>
                     ))}
                   </ul>
-                </div>
+                </EditableDiv>
               </section>
 
               <div className="border-b my-8" />
 
               {/* Missão, Visão, Valores */}
               <section className="my-8">
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <div className="grid md:grid-cols-3 gap-8">
                     <div className="flex items-start gap-4">
                       <div className="text-primary mt-1">
@@ -547,18 +554,18 @@ export default function ProposalModal({
                       </div>
                     </div>
                   </div>
-                </div>
+                </EditableDiv>
               </section>
 
               {/* Rodapé */}
               <footer className="text-center pt-8 border-t mt-8">
-                <div contentEditable suppressContentEditableWarning className="focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm">
+                <EditableDiv>
                   <p className="font-bold">Grupo Florencio</p>
                   <p className="text-xs">
                     comercial@grupoflorencio.com.br | +55 (21) 96453-9493
                   </p>
                   <p className="text-xs">www.grupoflorencio.com.br</p>
-                </div>
+                </EditableDiv>
               </footer>
             </div>
           </div>
