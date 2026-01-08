@@ -38,10 +38,10 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { useFirestore } from '@/firebase';
+import { useFirebaseApp } from '@/firebase';
 import { uploadProposalPdf } from '@/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
-import type { Firestore } from 'firebase/firestore';
+import type { FirebaseApp } from 'firebase/app';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -66,16 +66,16 @@ export default function ProposalModal({
   const [fullProposalNumber, setFullProposalNumber] = useState('');
   const [proposalLink, setProposalLink] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [firestore, setFirestore] = useState<Firestore | null>(null);
+  const [firebaseApp, setFirebaseApp] = useState<FirebaseApp | null>(null);
   const { toast } = useToast();
   
-  const firestoreInstance = useFirestore();
+  const app = useFirebaseApp();
 
   useEffect(() => {
-    if (firestoreInstance) {
-      setFirestore(firestoreInstance);
+    if (app) {
+      setFirebaseApp(app);
     }
-  }, [firestoreInstance]);
+  }, [app]);
 
 
   const [proposalState, setProposalState] = useState<ProposalState>({
@@ -181,7 +181,7 @@ export default function ProposalModal({
 
   const handleGenerateAndUploadPdf = async () => {
     const input = proposalRef.current;
-    if (!input || !firestore) return;
+    if (!input || !firebaseApp) return;
 
     setIsGenerating(true);
     setProposalLink(null);
@@ -217,7 +217,7 @@ export default function ProposalModal({
       const pdfBlob = pdf.getBlob();
       const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
 
-      const downloadUrl = await uploadProposalPdf(firestore, `propostas/${lead.id}/${fileName}`, pdfBlob);
+      const downloadUrl = await uploadProposalPdf(firebaseApp, `propostas/${lead.id}/${fileName}`, pdfBlob);
 
       setProposalLink(downloadUrl);
       onUpdateLead({
