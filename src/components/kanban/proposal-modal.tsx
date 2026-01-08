@@ -215,7 +215,7 @@ export default function ProposalModal({
       const pdfBlob = pdf.getBlob();
       const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
 
-      const downloadUrl = await uploadProposalPdf(firebaseApp, `propostas/${lead.id}/${fileName}`, pdfBlob);
+      const downloadUrl = await uploadProposalPdf(app, `propostas/${lead.id}/${fileName}`, pdfBlob);
       
       onUpdateLead({
         ...lead,
@@ -278,20 +278,19 @@ export default function ProposalModal({
   const EditableDiv = ({
     field,
     className,
+    children
   }: {
-    field: keyof Omit<ProposalState, 'plans' | 'exams'> | 'static';
+    field: keyof Omit<ProposalState, 'plans' | 'exams'>;
     className?: string;
+    children?: React.ReactNode;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-      if (field !== 'static') {
         setProposalState(prevState => ({
           ...prevState,
           [field]: e.currentTarget.innerHTML,
         }));
-      }
     };
   
-    const content = field !== 'static' ? proposalState[field] : '';
     return (
       <div
         contentEditable={!isGenerating}
@@ -299,8 +298,10 @@ export default function ProposalModal({
         data-field={field}
         className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
         onBlur={handleBlur}
-        dangerouslySetInnerHTML={{ __html: String(content).replace(/\n/g, '<br />') }}
-      />
+        dangerouslySetInnerHTML={{ __html: String(proposalState[field]).replace(/\n/g, '<br />') }}
+      >
+        {children}
+      </div>
     );
   };
 
@@ -517,35 +518,35 @@ export default function ProposalModal({
 
               {/* Corpo da Proposta */}
               <section className="my-8 space-y-6">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Objeto da Proposta
-                </h3>
-                <EditableDiv field="proposalObject" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Objeto da Proposta</h3>
+                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <EditableDiv field="proposalObject" />
+                </div>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Escopo do Serviço
-                </h3>
-                <EditableDiv field="serviceScope" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Escopo do Serviço</h3>
+                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <EditableDiv field="serviceScope" />
+                </div>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Da Contratante
-                </h3>
-                <EditableDiv field="clientResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Da Contratante</h3>
+                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <EditableDiv field="clientResponsibilities" />
+                </div>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Da Contratada
-                </h3>
-                <EditableDiv field="contractorResponsibilities" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
-                
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Prazo para Realização dos Serviços
-                </h3>
-                <EditableDiv field="deadline" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Da Contratada</h3>
+                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <EditableDiv field="contractorResponsibilities" />
+                </div>
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Nossa Visão Estratégica
-                </h3>
-                <EditableDiv field="strategicVision" className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md"/>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Prazo para Realização dos Serviços</h3>
+                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <EditableDiv field="deadline" />
+                </div>
+
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Nossa Visão Estratégica</h3>
+                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <EditableDiv field="strategicVision" />
+                </div>
 
               </section>
 
@@ -555,7 +556,9 @@ export default function ProposalModal({
                   Investimento
                 </h3>
                 { lead.value > 0 && (
-                  <EditableDiv field="investment" className="prose dark:prose-invert max-w-none p-2 rounded-md" />
+                  <div className="prose dark:prose-invert max-w-none p-2 rounded-md">
+                    <EditableDiv field="investment" />
+                  </div>
                 )}
                 
                 {proposalState.plans && proposalState.plans.length > 0 && (
