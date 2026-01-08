@@ -41,7 +41,7 @@ import Image from 'next/image';
 import { useFirestore } from '@/firebase';
 import { uploadProposalPdf } from '@/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
-import { Firestore } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -581,6 +581,31 @@ export default function ProposalModal({
                                         <td className="p-3 align-top">{formatCurrency(plan.investment)}</td>
                                         <td className="p-3 text-center align-top">{plan.paymentType === 'unique' ? 'X' : ''}</td>
                                         <td className="p-3 text-center align-top">{plan.paymentType === 'monthly' ? 'X' : ''}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                  </div>
+                )}
+                 {proposalState.exams && proposalState.exams.length > 0 && (
+                  <div className="mt-8">
+                    <p className="text-sm mb-4">Abaixo seguem os valores de exames complementares (se aplicável).</p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr style={{ backgroundColor: '#1b7689' }} className="text-white">
+                                    <th className="p-3 text-left font-semibold">Serviço</th>
+                                    <th className="p-3 text-left font-semibold">Descrição</th>
+                                    <th className="p-3 text-left font-semibold">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {proposalState.exams.map((exam, index) => (
+                                    <tr key={exam.id} className={cn("border-b", index % 2 === 0 ? "bg-blue-50" : "bg-blue-100")} style={{ borderColor: 'rgba(27, 118, 137, 0.2)' }}>
+                                        <td className="p-3 align-top">{exam.service}</td>
+                                        <td className="p-3 align-top">{exam.description}</td>
+                                        <td className="p-3 align-top">{formatCurrency(exam.value)}</td>
                                     </tr>
                                 ))}
                             </tbody>

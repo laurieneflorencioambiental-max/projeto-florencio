@@ -7,8 +7,7 @@ import {
   getDownloadURL,
   StorageReference,
 } from 'firebase/storage';
-import { Firestore } from 'firebase/firestore';
-import { useFirebase } from './provider';
+import type { Firestore } from 'firebase/firestore';
 
 /**
  * Uploads a PDF blob to a specified path in Firebase Storage and returns the public URL.
