@@ -23,6 +23,8 @@ import {
   Eye,
   Gem,
   Mail,
+  Link as LinkIcon,
+  Loader2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -36,6 +38,10 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useFirestore } from '@/firebase';
+import { uploadProposalPdf } from '@/firebase/storage';
+import { useToast } from '@/hooks/use-toast';
+import { Firestore } from 'firebase/firestore';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -46,7 +52,7 @@ type ProposalModalProps = {
   proposalTemplates: ProposalTemplate[];
 };
 
-type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>
+type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;
 
 export default function ProposalModal({
   lead,
@@ -58,22 +64,34 @@ export default function ProposalModal({
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
+  const [proposalLink, setProposalLink] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [firestore, setFirestore] = useState<Firestore | null>(null);
+  const { toast } = useToast();
   
-  const [proposalState, setProposalState] = useState<ProposalState>({
-      proposalObject: lead.proposalSummary,
-      serviceScope: 'A ser definido na proposta.',
-      clientResponsibilities: 'A ser definido na proposta.',
-      contractorResponsibilities: 'A ser definido na proposta.',
-      deadline: 'A ser definido na proposta.',
-      investment: 'A ser definido na proposta.',
-      strategicVision: 'A ser definido na proposta.',
-      plans: [],
-      exams: [],
-  });
+  const firestoreInstance = useFirestore();
 
   useEffect(() => {
-    if (isOpen) {
-      // Set initial state from lead/defaults when modal opens
+    if (firestoreInstance) {
+      setFirestore(firestoreInstance);
+    }
+  }, [firestoreInstance]);
+
+
+  const [proposalState, setProposalState] = useState<ProposalState>({
+    proposalObject: lead.proposalSummary,
+    serviceScope: 'A ser definido na proposta.',
+    clientResponsibilities: 'A ser definido na proposta.',
+    contractorResponsibilities: 'A ser definido na proposta.',
+    deadline: 'A ser definido na proposta.',
+    investment: 'A ser definido na proposta.',
+    strategicVision: 'A ser definido na proposta.',
+    plans: [],
+    exams: [],
+  });
+
+  const resetState = () => {
+     // Set initial state from lead/defaults when modal opens
       const defaultInvestmentText = lead.value > 0 
         ? `
 <div class="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
@@ -118,6 +136,13 @@ export default function ProposalModal({
           proposalNumber: currentProposalNumber,
         });
       }
+      setProposalLink(null);
+      setIsGenerating(false);
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+     resetState();
     }
   }, [isOpen, lead, allLeads, onUpdateLead]);
 
@@ -153,82 +178,95 @@ export default function ProposalModal({
       currency: 'BRL',
     }).format(value);
   };
-  
-  const handleDownloadPdf = () => {
-    const input = proposalRef.current;
-    if (input) {
-      const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
 
-      // Ensure PDF captures the latest state by updating the innerHTML from the state
-      editableDivs.forEach(div => {
-        const field = div.getAttribute('data-field') as keyof ProposalState | null;
-        if(field && typeof proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] === 'string') {
-          div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] as string).replace(/\n/g, '<br />');
-        }
-      });
+  const handleGenerateAndUploadPdf = async () => {
+    const input = proposalRef.current;
+    if (!input || !firestore) return;
+
+    setIsGenerating(true);
+    setProposalLink(null);
+
+    const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
+    editableDivs.forEach(div => {
+      const field = div.getAttribute('data-field') as keyof ProposalState | null;
+      if(field && typeof proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] === 'string') {
+        div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] as string).replace(/\n/g, '<br />');
+      }
+    });
+
+    try {
+      const canvas = await html2canvas(input, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      let heightLeft = pdfHeight;
+      let position = 0;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
       
+      const pdfBlob = pdf.getBlob();
+      const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
+
+      const downloadUrl = await uploadProposalPdf(firestore, pdfBlob, `propostas/${lead.id}/${fileName}`);
+
+      setProposalLink(downloadUrl);
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
       });
 
-      html2canvas(input, { scale: 3 }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        let heightLeft = pdfHeight;
-        let position = 0;
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft > 0) {
-          position = heightLeft - pdfHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-          heightLeft -= pageHeight;
-        }
-
-        pdf.save(
-          `proposta-${lead.company.toLowerCase().replace(/ /g, '-')}.pdf`
-        );
+      toast({
+        title: 'Link Gerado!',
+        description: 'O link para a proposta está pronto para ser compartilhado.',
       });
+
+    } catch (error) {
+      console.error("Error generating or uploading PDF:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro!',
+        description: 'Não foi possível gerar o link da proposta. Tente novamente.',
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handleSendWhatsApp = () => {
-    onUpdateLead({
-      ...lead,
-      whatsappSentCount: (lead.whatsappSentCount || 0) + 1,
-    });
-    const message = `Olá ${lead.name}, segue a proposta para a empresa ${lead.company}. Estamos à disposição para qualquer esclarecimento.`;
-    const whatsappUrl = `https://wa.me/${
-      lead.whatsapp
-    }?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+  const handleShare = (platform: 'whatsapp' | 'email' | 'copy') => {
+    if (!proposalLink) return;
+
+    if (platform === 'copy') {
+      navigator.clipboard.writeText(proposalLink);
+      toast({ title: 'Sucesso', description: 'Link copiado para a área de transferência!' });
+      return;
+    }
+
+    let text, url;
+    if (platform === 'whatsapp') {
+      onUpdateLead({
+        ...lead,
+        whatsappSentCount: (lead.whatsappSentCount || 0) + 1,
+      });
+      text = `Olá ${lead.name}, conforme conversamos, segue o link da proposta comercial para a ${lead.company}: ${proposalLink}`;
+      url = `https://wa.me/${lead.whatsapp}?text=${encodeURIComponent(text)}`;
+    } else { // email
+      const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
+      const body = `Prezado(a) ${lead.name},\n\nConforme conversamos, segue o link para nossa proposta comercial elaborada para a ${lead.company}:\n\n${proposalLink}\n\nEstamos à disposição para qualquer esclarecimento.\n\nAtenciosamente,\nGrupo Florencio`;
+      url = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+    window.open(url, '_blank');
   };
   
-  const handleSendEmail = () => {
-    const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
-    const body = `Prezado(a) ${lead.name},
-
-Espero que esteja tudo bem.
-
-Conforme conversamos, segue em anexo nossa proposta comercial de serviços de Saúde e Segurança do Trabalho, elaborada especialmente para a ${lead.company}.
-
-O documento detalha o escopo dos serviços, nossa metodologia e as condições de investimento. Por favor, note que o PDF da proposta precisa ser anexado manualmente a este e-mail.
-
-Estamos à disposição para esclarecer qualquer dúvida e ansiosos pela oportunidade de firmar esta parceria.
-
-Atenciosamente,
-Grupo Florencio`;
-
-    const mailtoLink = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
-  };
-
   const serviceAreas = [
     { icon: ClipboardCheck, label: 'Saúde e Segurança do Trabalho' },
     { icon: Recycle, label: 'Meio Ambiente' },
@@ -255,7 +293,7 @@ Grupo Florencio`;
     const content = field !== 'static' ? proposalState[field] : '';
     return (
       <div
-        contentEditable
+        contentEditable={!isGenerating && !proposalLink}
         suppressContentEditableWarning
         data-field={field}
         className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
@@ -280,7 +318,7 @@ Grupo Florencio`;
           <Label htmlFor="proposal-template">
             Selecione um Modelo de Serviço
           </Label>
-          <Select onValueChange={handleTemplateChange}>
+          <Select onValueChange={handleTemplateChange} disabled={isGenerating || !!proposalLink}>
             <SelectTrigger id="proposal-template">
               <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
             </SelectTrigger>
@@ -615,24 +653,37 @@ Grupo Florencio`;
           </div>
         </ScrollArea>
 
-        <DialogFooter className="pt-4 flex-wrap">
-          <p className="text-xs text-muted-foreground text-left flex-1 mr-auto">
-            Clique em qualquer texto para editar antes de gerar o PDF.
-          </p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownloadPdf}>
-              <Download className="mr-2 h-4 w-4" />
-              Baixar PDF
-            </Button>
-            <Button variant="outline" onClick={handleSendEmail}>
-              <Mail className="mr-2 h-4 w-4" />
-              Enviar por Email
-            </Button>
-            <Button onClick={handleSendWhatsApp}>
-              <Send className="mr-2 h-4 w-4" />
-              Enviar via WhatsApp
-            </Button>
-            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="pt-4 flex-wrap justify-between items-center">
+            <p className="text-xs text-muted-foreground text-left mr-auto">
+                {proposalLink ? 'Link gerado. Pronto para compartilhar!' : 'Clique em qualquer texto para editar antes de gerar o link.'}
+            </p>
+            <div className="flex gap-2 items-center">
+            {proposalLink ? (
+              <>
+                <Button variant="outline" onClick={() => handleShare('copy')}>
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  Copiar Link
+                </Button>
+                <Button variant="outline" onClick={() => handleShare('email')}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Email
+                </Button>
+                <Button onClick={() => handleShare('whatsapp')}>
+                  <Send className="mr-2 h-4 w-4" />
+                  WhatsApp
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleGenerateAndUploadPdf} disabled={isGenerating}>
+                {isGenerating ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                )}
+                {isGenerating ? 'Gerando...' : 'Gerar Link da Proposta'}
+              </Button>
+            )}
+             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>
           </div>
