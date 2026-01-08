@@ -699,7 +699,7 @@ export default function ProposalModal({
                 </Button>
               </>
             ) : (
-              <Button onClick={handleGenerateAndUploadPdf} disabled={isGenerating}>
+              <Button onClick={handleGenerateAndUploadPdf} disabled={isGenerating || !firebaseApp}>
                 {isGenerating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
