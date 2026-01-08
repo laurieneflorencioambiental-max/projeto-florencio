@@ -24,7 +24,8 @@ import {
   Gem,
   Mail,
   Link as LinkIcon,
-  Loader2
+  Loader2,
+  Copy,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -64,7 +65,6 @@ export default function ProposalModal({
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
-  const [proposalLink, setProposalLink] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [firebaseApp, setFirebaseApp] = useState<FirebaseApp | null>(null);
   const { toast } = useToast();
@@ -136,7 +136,6 @@ export default function ProposalModal({
           proposalNumber: currentProposalNumber,
         });
       }
-      setProposalLink(null);
       setIsGenerating(false);
   }
 
@@ -179,12 +178,11 @@ export default function ProposalModal({
     }).format(value);
   };
 
-  const handleGenerateAndUploadPdf = async () => {
+  const generateAndUploadPdf = async (): Promise<string | null> => {
     const input = proposalRef.current;
-    if (!input || !firebaseApp) return;
+    if (!input || !firebaseApp) return null;
 
     setIsGenerating(true);
-    setProposalLink(null);
 
     const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
     editableDivs.forEach(div => {
@@ -218,8 +216,7 @@ export default function ProposalModal({
       const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
 
       const downloadUrl = await uploadProposalPdf(firebaseApp, `propostas/${lead.id}/${fileName}`, pdfBlob);
-
-      setProposalLink(downloadUrl);
+      
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -229,6 +226,8 @@ export default function ProposalModal({
         title: 'Link Gerado!',
         description: 'O link para a proposta está pronto para ser compartilhado.',
       });
+      
+      return downloadUrl;
 
     } catch (error) {
       console.error("Error generating or uploading PDF:", error);
@@ -237,12 +236,14 @@ export default function ProposalModal({
         title: 'Erro!',
         description: 'Não foi possível gerar o link da proposta. Tente novamente.',
       });
+      return null;
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleShare = (platform: 'whatsapp' | 'email' | 'copy') => {
+  const handleShare = async (platform: 'whatsapp' | 'email' | 'copy') => {
+    const proposalLink = await generateAndUploadPdf();
     if (!proposalLink) return;
 
     if (platform === 'copy') {
@@ -293,7 +294,7 @@ export default function ProposalModal({
     const content = field !== 'static' ? proposalState[field] : '';
     return (
       <div
-        contentEditable={!isGenerating && !proposalLink}
+        contentEditable={!isGenerating}
         suppressContentEditableWarning
         data-field={field}
         className={cn('focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm', className)}
@@ -318,7 +319,7 @@ export default function ProposalModal({
           <Label htmlFor="proposal-template">
             Selecione um Modelo de Serviço
           </Label>
-          <Select onValueChange={handleTemplateChange} disabled={isGenerating || !!proposalLink}>
+          <Select onValueChange={handleTemplateChange} disabled={isGenerating}>
             <SelectTrigger id="proposal-template">
               <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
             </SelectTrigger>
@@ -680,34 +681,21 @@ export default function ProposalModal({
 
         <DialogFooter className="pt-4 flex-wrap justify-between items-center">
             <p className="text-xs text-muted-foreground text-left mr-auto">
-                {proposalLink ? 'Link gerado. Pronto para compartilhar!' : 'Clique em qualquer texto para editar antes de gerar o link.'}
+                {isGenerating ? 'Gerando link, aguarde...' : 'Clique em qualquer texto para editar antes de gerar o link.'}
             </p>
             <div className="flex gap-2 items-center">
-            {proposalLink ? (
-              <>
-                <Button variant="outline" onClick={() => handleShare('copy')}>
-                  <LinkIcon className="mr-2 h-4 w-4" />
+                <Button variant="outline" onClick={() => handleShare('copy')} disabled={isGenerating || !firebaseApp}>
+                  {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
                   Copiar Link
                 </Button>
-                <Button variant="outline" onClick={() => handleShare('email')}>
-                  <Mail className="mr-2 h-4 w-4" />
+                <Button variant="outline" onClick={() => handleShare('email')} disabled={isGenerating || !firebaseApp}>
+                  {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
                   Email
                 </Button>
-                <Button onClick={() => handleShare('whatsapp')}>
-                  <Send className="mr-2 h-4 w-4" />
+                <Button onClick={() => handleShare('whatsapp')} disabled={isGenerating || !firebaseApp}>
+                  {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   WhatsApp
                 </Button>
-              </>
-            ) : (
-              <Button onClick={handleGenerateAndUploadPdf} disabled={isGenerating || !firebaseApp}>
-                {isGenerating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                )}
-                {isGenerating ? 'Gerando...' : 'Gerar Link da Proposta'}
-              </Button>
-            )}
              <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Fechar
             </Button>
