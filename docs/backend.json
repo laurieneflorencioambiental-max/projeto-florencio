@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "Budget": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Budget",
+      "type": "object",
+      "description": "Represents a sales budget within the Florencio Sales Manager application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Budget entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the budget."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the budget."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The budget amount."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the budget (e.g., New, Pending, Approved, Loss, Rejected)."
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "Reason for budget rejection, if applicable."
+        },
+        "followUpHistory": {
+          "type": "array",
+          "description": "History of follow-up attempts for this budget.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/budgets/{budgetId}",
+        "definition": {
+          "entityName": "Budget",
+          "schema": {
+            "$ref": "#/backend/entities/Budget"
+          },
+          "description": "Stores budget documents for each user. Path-based ownership ensures only the user can access their own budgets.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique identifier of the budget."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This design prioritizes security and scalability for the Florencio Sales Manager application. It leverages path-based ownership for user data and denormalization to achieve authorization independence, eliminating the need for `get()` calls in security rules. This approach enhances security, simplifies rule writing, and enables atomic operations.\n\nBudgets are stored under each user's document (`/users/{userId}/budgets/{budgetId}`). This provides simple ownership and allows for fine-grained access control. The status field within each budget facilitates the Kanban board functionality, and the structure readily supports adding fields like 'rejectionReason' and 'followUpHistory'.\n\nThis structure ensures that list operations are secure because budgets are always accessed within the context of a specific user. There is no need to filter based on data; the path itself defines the accessible data."
+  }
+}

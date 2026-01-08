@@ -1,0 +1,86 @@
+/**
+ * # Core Philosophy
+ * This ruleset enforces a strict user-ownership model for the Florencio Sales Manager application.
+ * All user-generated data, specifically 'budgets', is exclusively owned by and accessible only to the user who created it.
+ * The security model prioritizes data privacy and isolation, ensuring that one user can never access another user's sales data.
+ *
+ * # Data Structure
+ * All user data is nested within a top-level 'users' collection. The hierarchical path is '/users/{userId}/budgets/{budgetId}'.
+ * This structure inherently links data to its owner through the path itself, simplifying security logic and enabling secure queries.
+ *
+ * # Key Security Decisions
+ * - **Path-Based Ownership**: Access control is determined entirely by the `{userId}` in the document path. If a user's authenticated UID matches the `{userId}`, they are granted access.
+ * - **No User Listing**: There are no rules allowing clients to list documents in the top-level `/users` collection, preventing enumeration of all application users.
+ * - **Deny by Default**: Any path not explicitly matched in these rules is inaccessible.
+ *
+ * # Denormalization for Authorization
+ * The data structure is designed to be self-contained for authorization. Each user's data tree (`/users/{userId}`) contains all information needed to secure its contents. This eliminates the need for slow and costly `get()` calls to other documents for permission checks, resulting in simpler, more performant, and more secure rules.
+ *
+ * # Structural Segregation
+ * This ruleset uses structural segregation by placing all private user data within a user-specific subcollection (`/users/{userId}/budgets`). This is the most secure and performant way to manage private user data and prevent accidental data leakage in list operations.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId from the path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * A robust check for update/delete operations.
+     * Ensures the user is the owner AND the document already exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * On create, validates that the document's internal 'id' field matches its document ID in the path.
+     * This enforces relational integrity from the moment of creation.
+     */
+    function isBudgetCreateValid(budgetId) {
+      return request.resource.data.id == budgetId;
+    }
+
+    /**
+     * On update, ensures the document's internal 'id' field cannot be changed.
+     * This prevents re-linking or altering the fundamental identity of the document.
+     */
+    function isBudgetUpdateValid() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+
+    /**
+     * @description Secures the 'budgets' subcollection, ensuring users can only manage their own budget documents.
+     * @path /users/{userId}/budgets/{budgetId}
+     * @allow A signed-in user with UID 'user123' can (create) a document at '/users/user123/budgets/budget_abc'.
+     * @deny A user with UID 'user456' is denied (get) access to a document at '/users/user123/budgets/budget_abc' because their UID does not match the path.
+     * @principle Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/budgets/{budgetId} {
+      // READ: Only the owner can get or list their own budgets.
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // WRITE: Only the owner can create, update, or delete their own budgets.
+      // Prototyping Mode: No data shape validation is performed beyond critical IDs.
+      allow create: if isOwner(userId) && isBudgetCreateValid(budgetId);
+      allow update: if isExistingOwner(userId) && isBudgetUpdateValid();
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
