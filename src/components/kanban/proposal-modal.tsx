@@ -217,7 +217,7 @@ export default function ProposalModal({
       const pdfBlob = pdf.getBlob();
       const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
 
-      const downloadUrl = await uploadProposalPdf(firestore, pdfBlob, `propostas/${lead.id}/${fileName}`);
+      const downloadUrl = await uploadProposalPdf(firestore, `propostas/${lead.id}/${fileName}`, pdfBlob);
 
       setProposalLink(downloadUrl);
       onUpdateLead({

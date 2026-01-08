@@ -13,14 +13,14 @@ import type { Firestore } from 'firebase/firestore';
  * Uploads a PDF blob to a specified path in Firebase Storage and returns the public URL.
  *
  * @param firestore - The Firestore instance (used to get the app instance).
- * @param pdfBlob - The PDF file as a Blob.
  * @param path - The full path in Firebase Storage where the file will be saved (e.g., 'proposals/proposal-xyz.pdf').
+ * @param pdfBlob - The PDF file as a Blob.
  * @returns A promise that resolves with the public download URL of the uploaded file.
  */
 export const uploadProposalPdf = async (
   firestore: Firestore,
-  pdfBlob: Blob,
-  path: string
+  path: string,
+  pdfBlob: Blob
 ): Promise<string> => {
   if (!firestore.app) {
     throw new Error('Firebase app is not initialized.');
