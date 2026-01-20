@@ -30,24 +30,11 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
-  const { lead, proposalState, fullProposalNumber } = proposalData;
+  const { lead, proposalState, fullProposalNumber, logoUrl } = proposalData;
   const [mediaConsent, setMediaConsent] = useState<'yes' | 'no' | undefined>(
     undefined
   );
   const [approvalDate, setApprovalDate] = useState<Date>();
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const savedLogo = localStorage.getItem('companyLogo');
-      if (savedLogo) {
-        setLogoUrl(savedLogo);
-      }
-    } catch (error) {
-      console.error("Failed to load logo from localStorage:", error);
-    }
-  }, []);
-
 
   const formatCurrency = (value: number) => {
     if (!value) return 'R$ 0,00';

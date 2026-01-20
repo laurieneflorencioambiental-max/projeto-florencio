@@ -119,6 +119,7 @@ export type ProposalData = {
   proposalState: ProposalState;
   fullProposalNumber: string;
   createdAt: any; // Using `any` for Firestore serverTimestamp
+  logoUrl?: string | null;
 };
 
 const defaultText = 'A ser definido na proposta.';

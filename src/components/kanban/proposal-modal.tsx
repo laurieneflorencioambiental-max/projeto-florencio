@@ -175,6 +175,7 @@ export default function ProposalModal({
                   proposalState: proposalState,
                   fullProposalNumber: fullProposalNumber,
                   createdAt: serverTimestamp(),
+                  logoUrl: logoUrl,
               };
   
               if (!firestore) {
