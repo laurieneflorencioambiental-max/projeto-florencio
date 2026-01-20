@@ -88,7 +88,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             <p className="text-sm">{fullProposalNumber}</p>
             <p className="text-sm">
               Data:{' '}
-              {new Date(proposalData.createdAt).toLocaleDateString('pt-BR')}
+              {proposalData.createdAt?.toDate ? proposalData.createdAt.toDate().toLocaleDateString('pt-BR') : 'Data Indisponível'}
             </p>
           </div>
         </header>
