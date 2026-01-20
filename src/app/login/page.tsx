@@ -21,6 +21,7 @@ import { useAuth, useUser } from '@/firebase';
 import { Briefcase, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, insira um email válido.'),
@@ -53,7 +54,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     try {
-      await auth.signInWithEmailAndPassword(data.email, data.password);
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: 'Login bem-sucedido!',
         description: 'Você será redirecionado em breve.',
