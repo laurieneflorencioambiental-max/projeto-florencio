@@ -171,41 +171,68 @@ export default function ProposalModal({
   const generateAndUploadPdf = async (): Promise<string | null> => {
     const input = proposalRef.current;
     if (!input) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro Interno',
+        description: 'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.',
+      });
       return null;
     }
     
     setIsGenerating(true);
 
-    try {
-      const canvas = await html2canvas(input, { scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      let heightLeft = pdfHeight;
-      let position = 0;
-      const pageHeight = pdf.internal.pageSize.getHeight();
+    // Promise for the core PDF generation and upload logic
+    const generationPromise = new Promise<string>(async (resolve, reject) => {
+      try {
+        const canvas = await html2canvas(input, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        let heightLeft = pdfHeight;
+        let position = 0;
+        const pageHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
+        
+        const pdfBlob = pdf.output('blob');
+
+        if (!pdfBlob || pdfBlob.size === 0) {
+          return reject(new Error('A geração do PDF resultou em um arquivo vazio.'));
+        }
+
+        const fileName = `proposta-${lead.id}-${Date.now()}.pdf`;
+
+        const downloadUrl = await uploadProposalPdf(
+          firebaseApp,
+          `propostas/${lead.id}/${fileName}`,
+          pdfBlob
+        );
+        
+        resolve(downloadUrl);
+      } catch (error) {
+        reject(error);
       }
+    });
+
+    // Promise for a timeout
+    const timeoutPromise = new Promise<string>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('A operação demorou demais (timeout). Isso pode ocorrer por conteúdo muito complexo na proposta.'));
+      }, 30000); // 30-second timeout
+    });
+
+    try {
+      const downloadUrl = await Promise.race([generationPromise, timeoutPromise]);
       
-      const pdfBlob = pdf.output('blob');
-
-      const fileName = `proposta-${lead.id}-${Date.now()}.pdf`;
-
-      const downloadUrl = await uploadProposalPdf(
-        firebaseApp,
-        `propostas/${lead.id}/${fileName}`,
-        pdfBlob
-      );
-
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -217,21 +244,20 @@ export default function ProposalModal({
       });
 
       return downloadUrl;
+
     } catch (e) {
-      console.error('[PROPOSAL MODAL] Error generating PDF and Uploading:', e);
+      console.error('[PROPOSAL MODAL] Error during PDF generation/upload or timeout:', e);
       toast({
         variant: 'destructive',
         title: 'Erro ao Gerar Link',
-        description:
-          e instanceof Error
-            ? e.message
-            : 'Falha ao criar o PDF ou enviá-lo para o armazenamento. Verifique o console para mais detalhes.',
+        description: e instanceof Error ? e.message : 'Ocorreu uma falha desconhecida. Verifique o console para detalhes.',
       });
       return null;
     } finally {
       setIsGenerating(false);
     }
   };
+
 
   const handleShare = async (platform: 'whatsapp' | 'email' | 'copy') => {
     const proposalLink = await generateAndUploadPdf();
