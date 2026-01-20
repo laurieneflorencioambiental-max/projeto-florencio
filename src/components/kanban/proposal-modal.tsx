@@ -39,10 +39,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { useFirebaseApp } from '@/firebase';
+import { getApp, type FirebaseApp } from 'firebase/app';
 import { uploadProposalPdf } from '@/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
-import type { FirebaseApp } from 'firebase/app';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -68,15 +67,23 @@ export default function ProposalModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [firebaseApp, setFirebaseApp] = useState<FirebaseApp | null>(null);
   const { toast } = useToast();
-  
-  const app = useFirebaseApp();
 
   useEffect(() => {
-    if (app) {
-      setFirebaseApp(app);
+    // Safely get the Firebase app instance after mount, avoiding context issues with portals.
+    if (isOpen) {
+      try {
+        const app = getApp();
+        setFirebaseApp(app);
+      } catch (error) {
+        console.error("Firebase app not initialized.", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro de Configuração',
+            description: 'O app Firebase não foi inicializado corretamente.'
+        });
+      }
     }
-  }, [app]);
-
+  }, [isOpen, toast]);
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -180,7 +187,14 @@ export default function ProposalModal({
 
   const generateAndUploadPdf = async (): Promise<string | null> => {
     const input = proposalRef.current;
-    if (!input || !firebaseApp) return null;
+    if (!input || !firebaseApp) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro de Inicialização',
+            description: 'O Firebase ainda não está pronto. Tente novamente em alguns segundos.'
+        });
+        return null;
+    }
 
     setIsGenerating(true);
 
@@ -212,10 +226,10 @@ export default function ProposalModal({
         heightLeft -= pageHeight;
       }
       
-      const pdfBlob = pdf.getBlob();
+      const pdfBlob = pdf.output('blob');
       const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
 
-      const downloadUrl = await uploadProposalPdf(app, `propostas/${lead.id}/${fileName}`, pdfBlob);
+      const downloadUrl = await uploadProposalPdf(firebaseApp, `propostas/${lead.id}/${fileName}`, pdfBlob);
       
       onUpdateLead({
         ...lead,
