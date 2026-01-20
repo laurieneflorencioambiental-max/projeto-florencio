@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, UploadCloud, Trash2, Image as ImageIcon, Briefcase } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,45 +28,62 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-const MAX_LOGO_SIZE_KB = 50;
+const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
+const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  
+  const [proposalLogoPreview, setProposalLogoPreview] = useState<string | null>(null);
+  const [sidebarLogoPreview, setSidebarLogoPreview] = useState<string | null>(null);
+  
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const proposalFileInputRef = useRef<HTMLInputElement>(null);
+  const sidebarFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
     } else if (user) {
       try {
-        const savedLogo = localStorage.getItem('companyLogo');
-        if (savedLogo) {
-          setLogoPreview(savedLogo);
+        const savedProposalLogo = localStorage.getItem('companyLogo');
+        if (savedProposalLogo) {
+          setProposalLogoPreview(savedProposalLogo);
+        }
+        const savedSidebarLogo = localStorage.getItem('sidebarLogo');
+        if (savedSidebarLogo) {
+          setSidebarLogoPreview(savedSidebarLogo);
         }
       } catch (error) {
-        console.error('Failed to load logo from localStorage:', error);
+        console.error('Failed to load logos from localStorage:', error);
         toast({
           variant: 'destructive',
-          title: 'Erro ao carregar logo',
-          description: 'Não foi possível carregar o logo salvo.',
+          title: 'Erro ao carregar logos',
+          description: 'Não foi possível carregar os logos salvos.',
         });
       }
     }
   }, [user, isUserLoading, router, toast]);
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    logoType: 'proposal' | 'sidebar'
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > MAX_LOGO_SIZE_KB * 1024) {
+    const maxSize = logoType === 'proposal' ? MAX_PROPOSAL_LOGO_SIZE_KB : MAX_SIDEBAR_LOGO_SIZE_KB;
+    const localStorageKey = logoType === 'proposal' ? 'companyLogo' : 'sidebarLogo';
+    const setPreview = logoType === 'proposal' ? setProposalLogoPreview : setSidebarLogoPreview;
+
+    if (file.size > maxSize * 1024) {
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: `O logo deve ter no máximo ${MAX_LOGO_SIZE_KB}KB.`,
+        description: `O logo deve ter no máximo ${maxSize}KB.`,
       });
       return;
     }
@@ -76,14 +93,19 @@ export default function SettingsPage() {
     reader.onloadend = () => {
       const base64String = reader.result as string;
       try {
-        localStorage.setItem('companyLogo', base64String);
-        setLogoPreview(base64String);
+        localStorage.setItem(localStorageKey, base64String);
+        setPreview(base64String);
         toast({
           title: 'Logo atualizado!',
           description: 'Seu novo logo foi salvo com sucesso.',
         });
+        // Also fire a storage event so other tabs can update
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: localStorageKey,
+            newValue: base64String
+        }));
       } catch (error) {
-        console.error('Failed to save logo to localStorage:', error);
+        console.error(`Failed to save ${logoType} logo to localStorage:`, error);
         toast({
           variant: 'destructive',
           title: 'Erro ao salvar',
@@ -96,19 +118,28 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = (logoType: 'proposal' | 'sidebar') => {
+    const localStorageKey = logoType === 'proposal' ? 'companyLogo' : 'sidebarLogo';
+    const setPreview = logoType === 'proposal' ? setProposalLogoPreview : setSidebarLogoPreview;
+    const fileInputRef = logoType === 'proposal' ? proposalFileInputRef : sidebarFileInputRef;
+
     try {
-      localStorage.removeItem('companyLogo');
-      setLogoPreview(null);
+      localStorage.removeItem(localStorageKey);
+      setPreview(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       toast({
         title: 'Logo removido',
-        description: 'O logo da empresa foi removido.',
+        description: `O logo foi removido.`,
       });
+       // Also fire a storage event so other tabs can update
+       window.dispatchEvent(new StorageEvent('storage', {
+            key: localStorageKey,
+            newValue: null
+       }));
     } catch (error) {
-      console.error('Failed to remove logo from localStorage:', error);
+      console.error(`Failed to remove ${logoType} logo from localStorage:`, error);
       toast({
         variant: 'destructive',
         title: 'Erro ao remover',
@@ -129,31 +160,28 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-8">
       <Card>
         <CardHeader>
-          <CardTitle>Aparência da Proposta</CardTitle>
+          <CardTitle>Aparência do Aplicativo</CardTitle>
           <CardDescription>
-            Personalize a aparência das propostas comerciais com o logo da sua empresa.
+            Personalize a identidade visual da plataforma.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           <div className="space-y-2">
-            <Label>Logo da Empresa</Label>
+            <Label>Ícone da Barra Lateral</Label>
             <div className="flex items-center gap-4">
-              <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {logoPreview ? (
-                  <img src={logoPreview} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
+              <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
+                {sidebarLogoPreview ? (
+                  <img src={sidebarLogoPreview} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
                 ) : (
-                  <div className="text-center text-muted-foreground">
-                    <ImageIcon className="mx-auto h-8 w-8" />
-                    <p className="text-xs">Sem logo</p>
-                  </div>
+                  <Briefcase className="h-8 w-8 text-muted-foreground" />
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                 <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                 <Button onClick={() => sidebarFileInputRef.current?.click()} disabled={isUploading}>
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                    {logoPreview ? 'Alterar Logo' : 'Enviar Logo'}
+                    {sidebarLogoPreview ? 'Alterar Ícone' : 'Enviar Ícone'}
                 </Button>
-                {logoPreview && (
+                {sidebarLogoPreview && (
                    <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" disabled={isUploading}>
@@ -165,12 +193,12 @@ export default function SettingsPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Esta ação removerá permanentemente o seu logo. Você poderá enviar um novo a qualquer momento.
+                            Esta ação removerá permanentemente o ícone da barra lateral.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleRemoveLogo}>
+                          <AlertDialogAction onClick={() => handleRemoveLogo('sidebar')}>
                             Sim, remover
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -179,16 +207,88 @@ export default function SettingsPage() {
                 )}
               </div>
                <Input
-                    ref={fileInputRef}
+                    ref={sidebarFileInputRef}
                     type="file"
                     className="hidden"
                     accept="image/png, image/jpeg, image/webp, image/svg+xml"
-                    onChange={handleLogoUpload}
+                    onChange={(e) => handleLogoUpload(e, 'sidebar')}
                     disabled={isUploading}
                 />
             </div>
              <p className="text-xs text-muted-foreground mt-2">
-                Recomendado: PNG com fundo transparente, até {MAX_LOGO_SIZE_KB}KB, aprox. 400x150 pixels.
+                Recomendado: PNG quadrado com fundo transparente, até {MAX_SIDEBAR_LOGO_SIZE_KB}KB, aprox. 64x64 pixels.
+            </p>
+          </div>
+        </CardContent>
+        <CardFooter>
+            <p className="text-xs text-muted-foreground">
+                As alterações são salvas automaticamente no seu navegador.
+            </p>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Aparência da Proposta</CardTitle>
+          <CardDescription>
+            Personalize a aparência das propostas comerciais com o logo da sua empresa.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Logo da Empresa (para Propostas)</Label>
+            <div className="flex items-center gap-4">
+              <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
+                {proposalLogoPreview ? (
+                  <img src={proposalLogoPreview} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <ImageIcon className="mx-auto h-8 w-8" />
+                    <p className="text-xs">Sem logo</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                 <Button onClick={() => proposalFileInputRef.current?.click()} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                    {proposalLogoPreview ? 'Alterar Logo' : 'Enviar Logo'}
+                </Button>
+                {proposalLogoPreview && (
+                   <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={isUploading}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remover
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação removerá permanentemente o seu logo das propostas.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRemoveLogo('proposal')}>
+                            Sim, remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                )}
+              </div>
+               <Input
+                    ref={proposalFileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                    onChange={(e) => handleLogoUpload(e, 'proposal')}
+                    disabled={isUploading}
+                />
+            </div>
+             <p className="text-xs text-muted-foreground mt-2">
+                Recomendado: PNG com fundo transparente, até {MAX_PROPOSAL_LOGO_SIZE_KB}KB, aprox. 400x150 pixels.
             </p>
           </div>
         </CardContent>

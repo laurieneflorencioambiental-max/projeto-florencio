@@ -14,7 +14,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Briefcase, Home, FileText, LogOut, Settings } from 'lucide-react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -24,6 +24,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const auth = useAuth();
   const { user } = useUser();
+  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    // This effect runs on the client-side after initial render.
+    // It's safe to access localStorage here.
+    const savedLogo = localStorage.getItem('sidebarLogo');
+    if (savedLogo) {
+      setSidebarLogo(savedLogo);
+    }
+
+    // This listener will update the logo if it's changed in another tab (e.g., the settings page)
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'sidebarLogo') {
+        setSidebarLogo(event.newValue);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []); // Empty dependency array ensures this runs only once on mount.
 
   const getPageTitle = () => {
     if (pathname === '/') return 'Gestão de Orçamentos';
@@ -47,7 +71,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
-            <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
+            {sidebarLogo ? (
+                 <img src={sidebarLogo} alt="Logo da Empresa" className="h-8 w-8 object-contain" />
+            ) : (
+                <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
+            )}
             <div className="flex flex-col">
               <h2 className="text-base font-headline font-bold text-sidebar-foreground leading-tight">
                 Comercial
