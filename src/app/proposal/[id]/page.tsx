@@ -5,18 +5,36 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import type { ProposalData, Plan, Exam } from '@/lib/types';
-import { Loader2, Leaf, Goal, Eye, Gem, HardHat } from 'lucide-react';
+import {
+  Loader2,
+  Leaf,
+  Goal,
+  Eye,
+  Gem,
+  HardHat,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
   const { lead, proposalState, fullProposalNumber } = proposalData;
   const [mediaConsent, setMediaConsent] = useState<'yes' | 'no' | undefined>(
     undefined
   );
+  const [approvalDate, setApprovalDate] = useState<Date>();
 
   const formatCurrency = (value: number) => {
     if (!value) return 'R$ 0,00';
@@ -425,7 +443,39 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           </div>
 
           <div className="mt-8 space-y-6">
-            <p>De acordo em: ______ / ______ / ______</p>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">De acordo em:</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={'outline'}
+                    className={cn(
+                      'w-[240px] justify-start text-left font-normal print:border-none print:shadow-none',
+                      !approvalDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {approvalDate ? (
+                      format(approvalDate, 'PPP', { locale: ptBR })
+                    ) : (
+                      <span>Escolha uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0 print:hidden"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={approvalDate}
+                    onSelect={setApprovalDate}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             <p>
               Nome do Aprovador:
               ____________________________________________________
@@ -448,7 +498,8 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               Ambiente.
             </p>
             <p className="text-sm text-muted-foreground">
-              Para assinalar sua preferência, por favor, clique em uma das opções abaixo:
+              Para assinalar sua preferência, por favor, clique em uma das
+              opções abaixo:
             </p>
             <RadioGroup
               className="space-y-2"
