@@ -21,7 +21,7 @@ import {
   Plus,
   Loader2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -376,90 +376,88 @@ export default function ManageTemplatesPage() {
                 key={template.id}
                 className="flex flex-col"
               >
-                  <>
-                    <CardHeader>
-                      <CardTitle className="truncate">{template.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
-                      <div className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border space-y-4 h-96 overflow-y-auto">
-                        <div>
-                            <h4 className='font-bold text-foreground'>Objeto da Proposta</h4>
-                            <p className="whitespace-pre-wrap">{template.proposalObject}</p>
-                        </div>
-                         <div>
-                            <h4 className='font-bold text-foreground'>Escopo do Serviço</h4>
-                            <p className="whitespace-pre-wrap">{template.serviceScope}</p>
-                        </div>
-                         <div>
-                            <h4 className='font-bold text-foreground'>Da Contratante</h4>
-                            <p className="whitespace-pre-wrap">{template.clientResponsibilities}</p>
-                        </div>
-                         <div>
-                            <h4 className='font-bold text-foreground'>Da Contratada</h4>
-                            <p className="whitespace-pre-wrap">{template.contractorResponsibilities}</p>
-                        </div>
-                         <div>
-                            <h4 className='font-bold text-foreground'>Prazo</h4>
-                            <p className="whitespace-pre-wrap">{template.deadline}</p>
-                        </div>
-                        <div>
-                            <h4 className='font-bold text-foreground'>Investimento</h4>
-                            <p className="whitespace-pre-wrap">{template.investment}</p>
-                        </div>
-                         <div>
-                            <h4 className='font-bold text-foreground'>Visão Estratégica</h4>
-                            <p className="whitespace-pre-wrap">{template.strategicVision}</p>
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2 items-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDuplicateTemplate(template)}
+                <CardHeader>
+                  <CardTitle className="truncate">{template.name}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <div className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border space-y-4 h-96 overflow-y-auto">
+                    <div>
+                        <h4 className='font-bold text-foreground'>Objeto da Proposta</h4>
+                        <p className="whitespace-pre-wrap">{template.proposalObject}</p>
+                    </div>
+                      <div>
+                        <h4 className='font-bold text-foreground'>Escopo do Serviço</h4>
+                        <p className="whitespace-pre-wrap">{template.serviceScope}</p>
+                    </div>
+                      <div>
+                        <h4 className='font-bold text-foreground'>Da Contratante</h4>
+                        <p className="whitespace-pre-wrap">{template.clientResponsibilities}</p>
+                    </div>
+                      <div>
+                        <h4 className='font-bold text-foreground'>Da Contratada</h4>
+                        <p className="whitespace-pre-wrap">{template.contractorResponsibilities}</p>
+                    </div>
+                      <div>
+                        <h4 className='font-bold text-foreground'>Prazo</h4>
+                        <p className="whitespace-pre-wrap">{template.deadline}</p>
+                    </div>
+                    <div>
+                        <h4 className='font-bold text-foreground'>Investimento</h4>
+                        <p className="whitespace-pre-wrap">{template.investment}</p>
+                    </div>
+                      <div>
+                        <h4 className='font-bold text-foreground'>Visão Estratégica</h4>
+                        <p className="whitespace-pre-wrap">{template.strategicVision}</p>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDuplicateTemplate(template)}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplicar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStartEditing(template)}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Você tem certeza?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Essa ação não pode ser desfeita. Isso excluirá
+                          permanentemente o modelo "
+                          <span className="font-bold">{template.name}</span>
+                          ".
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteTemplate(template.id)}
                         >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStartEditing(template)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Editar
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Você tem certeza?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá
-                                permanentemente o modelo "
-                                <span className="font-bold">{template.name}</span>
-                                ".
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteTemplate(template.id)}
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </CardContent>
-                  </>
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardFooter>
               </Card>
             ))}
           </div>
