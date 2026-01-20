@@ -22,26 +22,24 @@ export const uploadProposalPdf = async (
   path: string,
   pdfBlob: Blob
 ): Promise<string> => {
-  if (!app) {
-    throw new Error('Firebase app is not initialized.');
-  }
+  console.log("[STORAGE] B0 - entrou uploadProposalPdf", { path, blobSize: pdfBlob?.size });
 
   const storage = getStorage(app);
-  const storageRef: StorageReference = ref(storage, path);
+  const storageRef = ref(storage, path);
 
   try {
-    // Upload the file to the specified path.
+    console.log("[STORAGE] B1 - antes uploadBytes");
     const snapshot = await uploadBytes(storageRef, pdfBlob, {
-      contentType: 'application/pdf',
+      contentType: "application/pdf",
     });
 
-    // Get the public URL for the uploaded file.
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    console.log("[STORAGE] B2 - depois uploadBytes", snapshot.ref.fullPath);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
 
-    return downloadURL;
-  } catch (error) {
-    console.error('Error uploading file to Firebase Storage:', error);
-    // Re-throw the error to be handled by the caller.
-    throw error;
+    console.log("[STORAGE] B3 - downloadUrl", downloadUrl);
+    return downloadUrl;
+  } catch (e) {
+    console.error("[STORAGE] ERRO", e);
+    throw e;
   }
 };

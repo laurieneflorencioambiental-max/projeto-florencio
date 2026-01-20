@@ -186,22 +186,13 @@ export default function ProposalModal({
   };
 
   const generateAndUploadPdf = async (): Promise<string | null> => {
-    if (!firebaseApp) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro de Configuração',
-        description: 'A conexão com o Firebase ainda não foi estabelecida.',
-      });
-      return null;
-    }
-
     const input = proposalRef.current;
-    if (!input) {
+    if (!input || !firebaseApp) {
       toast({
         variant: 'destructive',
-        title: 'Erro Interno',
+        title: 'Erro de Inicialização',
         description:
-          'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.',
+          'Não foi possível conectar ao serviço de armazenamento. Tente novamente.',
       });
       return null;
     }
@@ -227,6 +218,7 @@ export default function ProposalModal({
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
         heightLeft -= pageHeight;
       }
+      
       const pdfBlob = pdf.output('blob');
 
       const fileName = `proposta-${lead.id}-${Date.now()}.pdf`;
