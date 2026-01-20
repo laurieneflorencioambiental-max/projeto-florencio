@@ -218,14 +218,14 @@ export default function ProposalModal({
 
       return downloadUrl;
     } catch (e) {
-      console.error('[PDF] ERRO', e);
+      console.error('[PROPOSAL MODAL] Error generating PDF and Uploading:', e);
       toast({
         variant: 'destructive',
-        title: 'Erro ao Gerar PDF',
+        title: 'Erro ao Gerar Link',
         description:
           e instanceof Error
             ? e.message
-            : 'Falha ao gerar o link da proposta.',
+            : 'Falha ao criar o PDF ou enviá-lo para o armazenamento. Verifique o console para mais detalhes.',
       });
       return null;
     } finally {
