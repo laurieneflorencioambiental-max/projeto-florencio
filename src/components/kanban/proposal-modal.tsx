@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Mail, Loader2, Copy, Goal, Eye, Gem } from 'lucide-react';
+import { Send, Mail, Loader2, Copy, Goal, Eye, Gem, HardHat, Leaf } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -230,10 +230,10 @@ export default function ProposalModal({
   };
   
   const serviceAreas = [
-    { label: 'Saúde e Segurança do Trabalho' },
-    { label: 'Meio Ambiente' },
-    { label: 'eSocial SST' },
-    { label: 'Auditorias e Inspeções' },
+    { label: 'Saúde e Segurança do Trabalho', icon: HardHat },
+    { label: 'Meio Ambiente', icon: Leaf },
+    { label: 'eSocial SST', icon: Gem },
+    { label: 'Auditorias e Inspeções', icon: Eye },
   ];
   
   const EditableDiv = ({
@@ -396,6 +396,10 @@ export default function ProposalModal({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center my-6">
                   {serviceAreas.map((area, index) => (
                     <div key={index} className="flex flex-col items-center justify-center p-4 bg-primary/10 rounded-lg">
+                      <area.icon
+                        className="h-8 w-8 mb-2"
+                        style={{ color: '#1b7689' }}
+                      />
                       <span className="font-semibold text-sm text-center" style={{ color: '#1b7689' }}>{area.label}</span>
                     </div>
                   ))}

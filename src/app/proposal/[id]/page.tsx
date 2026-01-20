@@ -5,7 +5,7 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import type { ProposalData, Plan, Exam } from '@/lib/types';
-import { Loader2, Leaf, Goal, Eye, Gem } from 'lucide-react';
+import { Loader2, Leaf, Goal, Eye, Gem, HardHat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -27,8 +27,8 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
   };
 
   const serviceAreas = [
-    { label: 'Saúde e Segurança do Trabalho', icon: Goal },
-    { label: 'Meio Ambiente', icon: Eye },
+    { label: 'Saúde e Segurança do Trabalho', icon: HardHat },
+    { label: 'Meio Ambiente', icon: Leaf },
     { label: 'eSocial SST', icon: Gem },
     { label: 'Auditorias e Inspeções', icon: Eye },
   ];
