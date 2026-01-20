@@ -7,20 +7,14 @@ import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
-  if (!getApps().length) {
-    // Important! initializeApp() is called without any arguments because Firebase App Hosting
-    // integrates with the initializeApp() function to provide the environment variables needed to
-    // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
-    // without arguments.
-    const firebaseApp = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApp();
+  // If there are already initialized apps, use the first one.
+  // Otherwise, initialize a new app with the provided config.
+  const firebaseApp = getApps().length
+    ? getApp()
+    : initializeApp(firebaseConfig);
 
-    return getSdks(firebaseApp);
-  }
-
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+  // Return all the SDKs.
+  return getSdks(firebaseApp);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
