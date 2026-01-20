@@ -5,7 +5,7 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import type { ProposalData, Plan, Exam } from '@/lib/types';
-import { Loader2, Printer, Goal, Eye, Gem } from 'lucide-react';
+import { Loader2, Leaf, Goal, Eye, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -59,12 +59,20 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
         </header>
 
         <Alert className="my-6 print:hidden">
-          <Printer className="h-4 w-4" />
+          <Leaf className="h-4 w-4" />
           <AlertDescription>
-            Para salvar esta proposta como um arquivo PDF em seu computador,
-            pressione as teclas <strong>Ctrl + P</strong> (ou{' '}
-            <strong>Cmd + P</strong> em um Mac) e escolha a opção &ldquo;Salvar
-            como PDF&rdquo;.
+            Para um processo mais ágil e sustentável, sugerimos que você salve
+            esta proposta como PDF (use <strong>Ctrl+P</strong> ou{' '}
+            <strong>Cmd+P</strong>) e utilize a assinatura digital do{' '}
+            <a
+              href="https://www.gov.br/pt-br/servicos/assinatura-eletronica"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline"
+            >
+              GOV.BR
+            </a>
+            . Assim, você economiza papel e contribui com o meio ambiente.
           </AlertDescription>
         </Alert>
 
