@@ -13,7 +13,7 @@ import {
   SidebarFooter,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Briefcase, Home, FileText, LogOut } from 'lucide-react';
+import { Briefcase, Home, FileText, LogOut, Settings } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
@@ -28,6 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     if (pathname === '/') return 'Gestão de Orçamentos';
     if (pathname === '/templates') return 'Modelos de Proposta';
+    if (pathname === '/settings') return 'Configurações';
     return 'Comercial Florencio';
   };
 
@@ -70,6 +71,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <FileText />
                 <span>Modelos de Proposta</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
+                    <Settings />
+                    <span>Configurações</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>

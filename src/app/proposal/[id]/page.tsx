@@ -35,6 +35,19 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
     undefined
   );
   const [approvalDate, setApprovalDate] = useState<Date>();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const savedLogo = localStorage.getItem('companyLogo');
+      if (savedLogo) {
+        setLogoUrl(savedLogo);
+      }
+    } catch (error) {
+      console.error("Failed to load logo from localStorage:", error);
+    }
+  }, []);
+
 
   const formatCurrency = (value: number) => {
     if (!value) return 'R$ 0,00';
@@ -60,9 +73,13 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
         {/* Header */}
         <header className="flex justify-between items-center pb-4 border-b">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
-              Grupo Florencio
-            </h1>
+            {logoUrl ? (
+                <img src={logoUrl} alt="Logo da Empresa" className="h-16 w-auto object-contain" />
+              ) : (
+                <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
+                  Grupo Florencio
+                </h1>
+            )}
             <p className="text-sm">Saúde Ocupacional Estratégica</p>
             <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
           </div>

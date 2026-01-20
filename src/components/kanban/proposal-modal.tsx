@@ -49,6 +49,7 @@ export default function ProposalModal({
   const { toast } = useToast();
   const firestore = useFirestore();
   const app = useFirebaseApp();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -114,6 +115,17 @@ export default function ProposalModal({
   useEffect(() => {
     if (isOpen) {
      resetState();
+      try {
+        const savedLogo = localStorage.getItem('companyLogo');
+        if (savedLogo) {
+          setLogoUrl(savedLogo);
+        } else {
+          setLogoUrl(null);
+        }
+      } catch (error) {
+        console.error("Failed to load logo from localStorage:", error);
+        setLogoUrl(null);
+      }
     }
   }, [isOpen, lead, allLeads]);
 
@@ -302,9 +314,13 @@ export default function ProposalModal({
               {/* Cabeçalho da Proposta */}
               <header className="flex justify-between items-center pb-4 border-b">
                 <div>
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo da Empresa" className="h-16 w-auto object-contain" />
+                ) : (
                   <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
                     Grupo Florencio
                   </h1>
+                )}
                   <p className="text-sm">Saúde Ocupacional Estratégica</p>
                   <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
                 </div>
