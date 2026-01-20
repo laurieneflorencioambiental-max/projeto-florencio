@@ -13,17 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Download,
   Send,
-  ClipboardCheck,
-  Recycle,
-  ClipboardList,
-  SearchCheck,
-  Target,
-  Eye,
-  Gem,
   Mail,
-  Link as LinkIcon,
   Loader2,
   Copy,
 } from 'lucide-react';
@@ -38,7 +29,6 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import { useFirebaseApp } from '@/firebase';
 import { uploadProposalPdf } from '@/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
@@ -286,10 +276,10 @@ export default function ProposalModal({
   };
   
   const serviceAreas = [
-    { icon: ClipboardCheck, label: 'Saúde e Segurança do Trabalho' },
-    { icon: Recycle, label: 'Meio Ambiente' },
-    { icon: ClipboardList, label: 'eSocial SST' },
-    { icon: SearchCheck, label: 'Auditorias e Inspeções' },
+    { label: 'Saúde e Segurança do Trabalho' },
+    { label: 'Meio Ambiente' },
+    { label: 'eSocial SST' },
+    { label: 'Auditorias e Inspeções' },
   ];
   
   const EditableDiv = ({
@@ -425,38 +415,23 @@ export default function ProposalModal({
                   </blockquote>
                 <div className='my-8'>
                       <div className="grid md:grid-cols-3 gap-8">
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1" style={{ color: '#1b7689' }}>
-                            <Target className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-lg">Missão</h4>
-                            <p className="text-sm leading-relaxed">
-                              Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
-                            </p>
-                          </div>
+                        <div>
+                          <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Missão</h4>
+                          <p className="text-sm leading-relaxed mt-2">
+                            Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
+                          </p>
                         </div>
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1" style={{ color: '#1b7689' }}>
-                            <Eye className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-lg">Visão</h4>
-                            <p className="text-sm leading-relaxed">
-                              Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
-                            </p>
-                          </div>
+                        <div>
+                          <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Visão</h4>
+                          <p className="text-sm leading-relaxed mt-2">
+                            Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
+                          </p>
                         </div>
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1" style={{ color: '#1b7689' }}>
-                            <Gem className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-lg">Valores</h4>
-                            <p className="text-sm leading-relaxed">
-                              Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
-                            </p>
-                          </div>
+                        <div>
+                          <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Valores</h4>
+                          <p className="text-sm leading-relaxed mt-2">
+                            Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
+                          </p>
                         </div>
                       </div>
                 </div>
@@ -464,13 +439,10 @@ export default function ProposalModal({
                   Temos uma equipe especializada para oferecer as melhores
                   soluções em:
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center my-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center my-6">
                   {serviceAreas.map((area, index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      <div className="bg-primary/10 rounded-full p-4 mb-2" style={{ color: '#1b7689' }}>
-                        <area.icon className="h-8 w-8" />
-                      </div>
-                      <span className="text-xs font-semibold">{area.label}</span>
+                    <div key={index} className="flex flex-col items-center justify-center p-4 bg-primary/10 rounded-lg h-full">
+                      <span className="font-semibold text-sm text-center" style={{ color: '#1b7689' }}>{area.label}</span>
                     </div>
                   ))}
                 </div>
