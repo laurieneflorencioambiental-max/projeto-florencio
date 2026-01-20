@@ -25,39 +25,46 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, Pencil, Save, PlusCircle } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+
+type Seller = { id: string; name: string };
 
 type ManageSellersModalProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  sellers: string[];
-  setSellers: React.Dispatch<React.SetStateAction<string[]>>;
+  sellers: Seller[];
 };
 
 export default function ManageSellersModal({
   isOpen,
   onOpenChange,
   sellers,
-  setSellers,
 }: ManageSellersModalProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [newSellerName, setNewSellerName] = useState('');
-  const [editingSeller, setEditingSeller] = useState<{ index: number; name: string } | null>(null);
+  const [editingSeller, setEditingSeller] = useState<{ id: string, name: string } | null>(null);
 
-  const handleAddSeller = () => {
-    if (newSellerName.trim() === '') {
+  const sellersCollection = collection(firestore, 'sellers');
+
+  const handleAddSeller = async () => {
+    const name = newSellerName.trim();
+    if (name === '') {
       toast({ variant: 'destructive', title: 'Erro', description: 'O nome do vendedor não pode ser vazio.' });
       return;
     }
-    if (sellers.includes(newSellerName.trim())) {
+    if (sellers.some(s => s.name === name)) {
       toast({ variant: 'destructive', title: 'Erro', description: 'Este vendedor já existe.' });
       return;
     }
-    setSellers([...sellers, newSellerName.trim()]);
+    
+    await addDoc(sellersCollection, { name });
     setNewSellerName('');
-    toast({ title: 'Sucesso', description: `Vendedor "${newSellerName.trim()}" adicionado.` });
+    toast({ title: 'Sucesso', description: `Vendedor "${name}" adicionado.` });
   };
 
-  const handleUpdateSeller = () => {
+  const handleUpdateSeller = async () => {
     if (!editingSeller) return;
     
     const updatedName = editingSeller.name.trim();
@@ -67,26 +74,22 @@ export default function ManageSellersModal({
       return;
     }
 
-    // Check if the new name already exists, excluding the original name at the same index
-    const originalName = sellers[editingSeller.index];
-    if (updatedName !== originalName && sellers.includes(updatedName)) {
+    const originalSeller = sellers.find(s => s.id === editingSeller.id);
+    if (updatedName !== originalSeller?.name && sellers.some(s => s.name === updatedName)) {
         toast({ variant: 'destructive', title: 'Erro', description: 'Este vendedor já existe.' });
         return;
     }
+    
+    const sellerDoc = doc(firestore, 'sellers', editingSeller.id);
+    await updateDoc(sellerDoc, { name: updatedName });
 
-
-    const updatedSellers = [...sellers];
-    updatedSellers[editingSeller.index] = updatedName;
-    setSellers(updatedSellers);
     setEditingSeller(null);
     toast({ title: 'Sucesso', description: 'Nome do vendedor atualizado.' });
   };
 
-  const handleDeleteSeller = (index: number) => {
-    const sellerToDelete = sellers[index];
-    const updatedSellers = sellers.filter((_, i) => i !== index);
-    setSellers(updatedSellers);
-    toast({ title: 'Sucesso', description: `Vendedor "${sellerToDelete}" removido.` });
+  const handleDeleteSeller = async (sellerId: string) => {
+    await deleteDoc(doc(firestore, 'sellers', sellerId));
+    toast({ title: 'Sucesso', description: `Vendedor removido.` });
   };
 
 
@@ -115,9 +118,9 @@ export default function ManageSellersModal({
             </div>
             <ScrollArea className='h-64 border rounded-md p-2'>
                 <div className='space-y-2'>
-                {sellers.map((seller, index) => (
-                    <div key={index} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
-                        {editingSeller?.index === index ? (
+                {sellers.map((seller) => (
+                    <div key={seller.id} className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50">
+                        {editingSeller?.id === seller.id ? (
                             <Input
                                 value={editingSeller.name}
                                 onChange={(e) => setEditingSeller({ ...editingSeller, name: e.target.value })}
@@ -126,15 +129,15 @@ export default function ManageSellersModal({
                                 className="h-9"
                             />
                         ) : (
-                            <p className="flex-1 text-sm">{seller}</p>
+                            <p className="flex-1 text-sm">{seller.name}</p>
                         )}
                         <div className="flex items-center gap-1">
-                            {editingSeller?.index === index ? (
+                            {editingSeller?.id === seller.id ? (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700" onClick={handleUpdateSeller}>
                                     <Save className="h-4 w-4" />
                                 </Button>
                             ) : (
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingSeller({ index, name: seller })}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingSeller({ id: seller.id, name: seller.name })}>
                                     <Pencil className="h-4 w-4" />
                                 </Button>
                             )}
@@ -149,12 +152,12 @@ export default function ManageSellersModal({
                                     <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                     <AlertDialogDescription>
                                         Essa ação não pode ser desfeita. Isso excluirá permanentemente o vendedor
-                                        <span className="font-bold"> {seller}</span>.
+                                        <span className="font-bold"> {seller.name}</span>.
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteSeller(index)}>Excluir</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDeleteSeller(seller.id)}>Excluir</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>

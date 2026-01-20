@@ -44,7 +44,7 @@ service cloud.firestore {
      * Ensures the user is the owner AND the document already exists.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId)/budgets/$(budgetId));
     }
 
     /**
@@ -67,20 +67,10 @@ service cloud.firestore {
     /**
      * @description Secures the 'budgets' subcollection, ensuring users can only manage their own budget documents.
      * @path /users/{userId}/budgets/{budgetId}
-     * @allow A signed-in user with UID 'user123' can (create) a document at '/users/user123/budgets/budget_abc'.
-     * @deny A user with UID 'user456' is denied (get) access to a document at '/users/user123/budgets/budget_abc' because their UID does not match the path.
-     * @principle Restricts access to a user's own data tree using path-based ownership.
      */
     match /users/{userId}/budgets/{budgetId} {
-      // READ: Only the owner can get or list their own budgets.
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-
-      // WRITE: Only the owner can create, update, or delete their own budgets.
-      // Prototyping Mode: No data shape validation is performed beyond critical IDs.
-      allow create: if isOwner(userId) && isBudgetCreateValid(budgetId);
-      allow update: if isExistingOwner(userId) && isBudgetUpdateValid();
-      allow delete: if isExistingOwner(userId);
+      // READ, WRITE: Only the owner can manage their own budgets.
+      allow read, write: if isOwner(userId);
     }
     
     /**
@@ -88,16 +78,22 @@ service cloud.firestore {
      * Proposals are public to anyone with the link, but can only be created by authenticated users.
      * Updates and deletes are disallowed from the client for simplicity and security.
      * @path /proposals/{proposalId}
-     * @allow Anyone can (get) a proposal if they know its ID.
-     * @allow A signed-in user can (create) a new proposal document.
-     * @deny Anonymous users cannot (create) proposals.
-     * @deny No one can (update) or (delete) proposals from the client.
      */
     match /proposals/{proposalId} {
       allow get: if true;
       allow list: if false; // Disallow listing all proposals
       allow create: if isSignedIn();
       allow update, delete: if false;
+    }
+
+    /**
+     * @description Secures the 'sellers' collection.
+     * Any authenticated user can read, create, update, and delete sellers.
+     * This allows for collaborative management of the sales team list.
+     */
+    match /sellers/{sellerId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
   }
 }

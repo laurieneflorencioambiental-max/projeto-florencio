@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import type { Lead } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -43,6 +43,13 @@ type EditLeadModalProps = {
   onSave: (lead: Lead) => void;
 };
 
+const getLeadDate = (date: any): Date => {
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  return date;
+};
+
 export default function EditLeadModal({
   lead,
   isOpen,
@@ -52,13 +59,20 @@ export default function EditLeadModal({
   const { toast } = useToast();
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
-    defaultValues: {
+    defaultValues: lead,
+  });
+
+  useEffect(() => {
+    if (lead) {
+      form.reset({
         ...lead,
         role: lead.role || '',
         value: lead.value === null ? 0 : lead.value,
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
-    },
-  });
+        createdAt: getLeadDate(lead.createdAt), // Convert timestamp to Date for the form
+      });
+    }
+  }, [lead, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,

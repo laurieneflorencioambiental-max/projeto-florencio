@@ -40,20 +40,39 @@ import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import ProposalModal from './proposal-modal';
-import { Separator } from '../ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type KanbanCardProps = {
   lead: Lead;
   allLeads: Lead[];
   onUpdateLead: (lead: Lead) => void;
+  onDeleteLead: (leadId: string) => void;
   proposalTemplates: ProposalTemplate[];
 };
 
-export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTemplates }: KanbanCardProps) {
+const getLeadDate = (date: any): Date => {
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  return date;
+};
+
+export default function KanbanCard({ lead, allLeads, onUpdateLead, onDeleteLead, proposalTemplates }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -90,6 +109,11 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTempl
     return <CreditCard />;
   };
 
+  const handleDelete = () => {
+    onDeleteLead(lead.id);
+    setIsDeleteDialogOpen(false);
+  }
+
   return (
     <>
       <Card
@@ -108,7 +132,7 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTempl
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  <span>{format(lead.createdAt, "dd/MM/yyyy 'às' HH:mm")}</span>
+                  <span>{format(getLeadDate(lead.createdAt), "dd/MM/yyyy 'às' HH:mm")}</span>
                 </div>
               </div>
             </div>
@@ -117,10 +141,26 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTempl
                 <Pencil className="h-4 w-4" />
                 <span className="sr-only">Editar</span>
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Excluir</span>
-              </Button>
+              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o orçamento da empresa "{lead.company}".
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
             </div>
           </div>
         </CardHeader>

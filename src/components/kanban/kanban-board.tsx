@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import type { Lead, Status, ProposalTemplate } from '@/lib/types';
 import KanbanColumn from './kanban-column';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -8,13 +7,14 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 type KanbanBoardProps = {
   allLeads: Lead[];
   leads: Lead[];
-  setLeads: React.Dispatch<React.SetStateAction<Lead[]>>;
   visibleStatuses: Status[];
   onUpdateLead: (lead: Lead) => void;
+  onDeleteLead: (leadId: string) => void;
+  onLeadStatusChange: (leadId: string, newStatus: Status) => void;
   proposalTemplates: ProposalTemplate[];
 };
 
-export default function KanbanBoard({ allLeads, leads, setLeads, visibleStatuses, onUpdateLead, proposalTemplates }: KanbanBoardProps) {
+export default function KanbanBoard({ allLeads, leads, visibleStatuses, onUpdateLead, onDeleteLead, onLeadStatusChange, proposalTemplates }: KanbanBoardProps) {
 
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
@@ -24,11 +24,7 @@ export default function KanbanBoard({ allLeads, leads, setLeads, visibleStatuses
     const leadId = e.dataTransfer.getData('leadId');
     if (!leadId) return;
 
-    setLeads(prevLeads =>
-      prevLeads.map(lead =>
-        lead.id === leadId ? { ...lead, status: newStatus, previousStatus: lead.status } : lead
-      )
-    );
+    onLeadStatusChange(leadId, newStatus);
   };
 
   return (
@@ -42,6 +38,7 @@ export default function KanbanBoard({ allLeads, leads, setLeads, visibleStatuses
             leads={leads.filter(lead => lead.status === status)}
             onDrop={handleDrop}
             onUpdateLead={onUpdateLead}
+            onDeleteLead={onDeleteLead}
             proposalTemplates={proposalTemplates}
           />
         ))}

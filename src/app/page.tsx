@@ -2,9 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import { initialLeads } from '@/lib/data';
 import type { Lead, Status, ProposalTemplate } from '@/lib/types';
-import { statuses } from '@/lib/types';
+import { leadSchema, statuses } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -41,8 +40,9 @@ import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -52,13 +52,13 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   label: ptBR.localize?.month(i, { width: 'wide' }),
 }));
 
-const defaultSellers: string[] = [];
+type Seller = { id: string; name: string };
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
 
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -74,11 +74,24 @@ export default function Home() {
   const [isManageSellersModalOpen, setIsManageSellersModalOpen] = useState(false);
   
   // Seller Management State
-  const [sellers, setSellers] = useState<string[]>([]);
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
   // Template Management State
   const [currentProposalTemplates, setCurrentProposalTemplates] = useState<ProposalTemplate[]>([]);
+
+  // Fetch leads from Firestore
+  const leadsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'budgets');
+  }, [firestore, user]);
+  const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
+
+  // Fetch sellers from Firestore
+  const sellersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'sellers');
+  }, [firestore]);
+  const { data: sellers, isLoading: areSellersLoading } = useCollection<Seller>(sellersQuery);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -86,46 +99,43 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Load sellers, current seller, and templates from localStorage on initial mount
+  // Load current seller preference and templates from localStorage
   useEffect(() => {
     if (user) {
         try {
-        const savedSellers = localStorage.getItem('sellers');
         const savedCurrentSeller = localStorage.getItem('currentSeller');
         const savedTemplates = localStorage.getItem('proposalTemplates');
 
-        const initialSellers = savedSellers ? JSON.parse(savedSellers) : defaultSellers;
-        setSellers(initialSellers);
-
-        if (savedCurrentSeller && initialSellers.includes(savedCurrentSeller)) {
+        if (savedCurrentSeller) {
             setCurrentSeller(savedCurrentSeller);
-        } else if (initialSellers.length > 0) {
-            setCurrentSeller(initialSellers[0]);
+        } else if (sellers && sellers.length > 0) {
+            setCurrentSeller(sellers[0].name);
         }
         
-        // This page now only READS. It does not write default templates.
-        // The /templates page is responsible for initialization.
         if (savedTemplates) {
             setCurrentProposalTemplates(JSON.parse(savedTemplates));
         } else {
-            setCurrentProposalTemplates([]); // Start with empty if none are saved
+            setCurrentProposalTemplates([]); 
         }
         } catch (error) {
-        console.error("Failed to access localStorage on initial load:", error);
-        setSellers(defaultSellers);
-        setCurrentProposalTemplates([]);
+            console.error("Failed to access localStorage on initial load:", error);
+            setCurrentProposalTemplates([]);
         }
     }
-  }, [user]);
-
-  // Persist sellers to localStorage
+  }, [user, sellers]);
+  
+  // Set initial seller when sellers load
   useEffect(() => {
-    try {
-        localStorage.setItem('sellers', JSON.stringify(sellers));
-    } catch (error) {
-        console.error("Failed to save sellers to localStorage:", error);
+    if(!currentSeller && sellers && sellers.length > 0) {
+        const savedCurrentSeller = localStorage.getItem('currentSeller');
+        const sellerNames = sellers.map(s => s.name);
+        if (savedCurrentSeller && sellerNames.includes(savedCurrentSeller)) {
+            setCurrentSeller(savedCurrentSeller);
+        } else {
+            setCurrentSeller(sellers[0].name);
+        }
     }
-  }, [sellers]);
+  }, [sellers, currentSeller])
 
   // Persist currentSeller to localStorage
   useEffect(() => {
@@ -152,20 +162,61 @@ export default function Home() {
     );
   };
   
-  const handleAddLead = (newLead: Lead) => {
-    setLeads(prevLeads => [newLead, ...prevLeads]);
+  const handleAddLead = async (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
+      if (!user || !firestore) return;
+      const newDocRef = doc(collection(firestore, 'users', user.uid, 'budgets'));
+      const newLead: Lead = {
+          ...values,
+          id: newDocRef.id,
+          createdAt: serverTimestamp(),
+          status: 'Novos',
+          createdBy: currentSeller,
+          proposalGeneratedCount: 0,
+          whatsappSentCount: 0,
+          editCount: 0,
+          previousStatus: null,
+          proposalNumber: null,
+          proposalVersion: 0,
+      };
+      await setDoc(newDocRef, newLead);
   };
 
+  const handleUpdateLead = async (updatedLead: Lead) => {
+      if (!user || !firestore) return;
+      const leadRef = doc(firestore, 'users', user.uid, 'budgets', updatedLead.id);
+      await setDoc(leadRef, updatedLead, { merge: true });
+  };
+  
+  const handleDeleteLead = async (leadId: string) => {
+      if (!user || !firestore) return;
+      const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
+      await deleteDoc(leadRef);
+  }
+
+  const handleLeadStatusChange = async (leadId: string, newStatus: Status) => {
+    if (!user || !firestore || !leads) return;
+    const lead = leads.find(l => l.id === leadId);
+    if(lead) {
+        const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
+        await updateDoc(leadRef, {
+            status: newStatus,
+            previousStatus: lead.status
+        });
+    }
+  };
+
+
   const filteredLeads = useMemo(() => {
+    const leadsData = leads || [];
     const now = new Date();
     
     let timeFilteredLeads: Lead[];
 
     if (filter === 'all') {
-      timeFilteredLeads = leads;
+      timeFilteredLeads = leadsData;
     } else {
-      timeFilteredLeads = leads.filter(lead => {
-        const leadDate = lead.createdAt;
+      timeFilteredLeads = leadsData.filter(lead => {
+        const leadDate = lead.createdAt.toDate();
         switch (filter) {
           case 'today':
             return isWithinInterval(leadDate, {
@@ -196,21 +247,16 @@ export default function Home() {
     );
 
   }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
-  
-  
-  const handleUpdateLead = (updatedLead: Lead) => {
-    setLeads(prevLeads =>
-      prevLeads.map(lead => (lead.id === updatedLead.id ? updatedLead : lead))
-    );
-  };
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || areLeadsLoading || areSellersLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
+  
+  const sellerNames = sellers ? sellers.map(s => s.name) : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -223,13 +269,13 @@ export default function Home() {
              <Select
                 value={currentSeller}
                 onValueChange={handleSellerChange}
-                disabled={sellers.length === 0}
+                disabled={sellerNames.length === 0}
             >
                 <SelectTrigger className="w-[180px]" id="seller-select">
                 <SelectValue placeholder="Selecione um vendedor" />
                 </SelectTrigger>
                 <SelectContent>
-                {sellers.map(seller => (
+                {sellerNames.map(seller => (
                     <SelectItem key={seller} value={seller}>{seller}</SelectItem>
                 ))}
                 </SelectContent>
@@ -339,7 +385,15 @@ export default function Home() {
             </DropdownMenu>
         </div>
       </div>
-      <KanbanBoard allLeads={leads} leads={filteredLeads} setLeads={setLeads} visibleStatuses={visibleStatuses} onUpdateLead={handleUpdateLead} proposalTemplates={currentProposalTemplates} />
+      <KanbanBoard 
+        allLeads={leads || []}
+        leads={filteredLeads}
+        visibleStatuses={visibleStatuses}
+        onUpdateLead={handleUpdateLead}
+        onDeleteLead={handleDeleteLead}
+        onLeadStatusChange={handleLeadStatusChange}
+        proposalTemplates={currentProposalTemplates}
+      />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
         <LostLeadsChart leads={filteredLeads} />
@@ -353,8 +407,7 @@ export default function Home() {
       <ManageSellersModal
         isOpen={isManageSellersModalOpen}
         onOpenChange={setIsManageSellersModalOpen}
-        sellers={sellers}
-        setSellers={setSellers}
+        sellers={sellers || []}
       />
     </div>
   );
