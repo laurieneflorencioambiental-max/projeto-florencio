@@ -447,8 +447,11 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               da sua empresa no compromisso com a Segurança do Trabalho e Meio
               Ambiente.
             </p>
+            <p className="text-sm text-muted-foreground">
+              Para assinalar sua preferência, por favor, clique em uma das opções abaixo:
+            </p>
             <RadioGroup
-              className="space-y-2 mt-4"
+              className="space-y-2"
               value={mediaConsent}
               onValueChange={(value: 'yes' | 'no') => setMediaConsent(value)}
             >
