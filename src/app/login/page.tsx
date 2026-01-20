@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { Briefcase, Loader2 } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, insira um email válido.'),
@@ -76,7 +77,7 @@ export default function LoginPage() {
             break;
         }
       } else {
-        description = 'Ocorreu um erro de conexão ou configuração. Verifique se o app está conectado ao projeto Firebase correto e se o provedor de "Email/Senha" está ativado no painel de autenticação do Firebase.';
+        description = `Ocorreu um erro de conexão. O app está tentando se conectar ao projeto: '${firebaseConfig.projectId}'. Verifique se este é o projeto correto e se o provedor 'Email/Senha' está ativado no painel do Firebase.`;
       }
       toast({
         variant: 'destructive',
