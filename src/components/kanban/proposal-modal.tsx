@@ -188,21 +188,33 @@ export default function ProposalModal({
   const generateAndUploadPdf = async (): Promise<string | null> => {
     const input = proposalRef.current;
     if (!input || !firebaseApp) {
-        toast({
-            variant: 'destructive',
-            title: 'Erro de Inicialização',
-            description: 'O Firebase ainda não está pronto. Tente novamente em alguns segundos.'
-        });
-        return null;
+      toast({
+        variant: 'destructive',
+        title: 'Erro de Inicialização',
+        description:
+          'O Firebase ainda não está pronto. Tente novamente em alguns segundos.',
+      });
+      return null;
     }
 
     setIsGenerating(true);
 
-    const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
+    const editableDivs = Array.from(
+      input.querySelectorAll('[contenteditable]')
+    );
     editableDivs.forEach(div => {
       const field = div.getAttribute('data-field') as keyof ProposalState | null;
-      if(field && typeof proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] === 'string') {
-        div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] as string).replace(/\n/g, '<br />');
+      if (
+        field &&
+        typeof proposalState[
+          field as keyof Omit<ProposalState, 'plans' | 'exams'>
+        ] === 'string'
+      ) {
+        div.innerHTML = (
+          proposalState[
+            field as keyof Omit<ProposalState, 'plans' | 'exams'>
+          ] as string
+        ).replace(/\n/g, '<br />');
       }
     });
 
@@ -225,12 +237,18 @@ export default function ProposalModal({
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
         heightLeft -= pageHeight;
       }
-      
-      const pdfBlob = pdf.output('blob');
-      const fileName = `proposta-${lead.company.toLowerCase().replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
 
-      const downloadUrl = await uploadProposalPdf(firebaseApp, `propostas/${lead.id}/${fileName}`, pdfBlob);
-      
+      const pdfBlob = pdf.output('blob');
+      const fileName = `proposta-${lead.company
+        .toLowerCase()
+        .replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
+
+      const downloadUrl = await uploadProposalPdf(
+        firebaseApp,
+        `propostas/${lead.id}/${fileName}`,
+        pdfBlob
+      );
+
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -240,16 +258,20 @@ export default function ProposalModal({
         title: 'Link Gerado!',
         description: 'O link para a proposta está pronto para ser compartilhado.',
       });
-      
-      return downloadUrl;
 
+      return downloadUrl;
     } catch (error) {
-      console.error("Error generating or uploading PDF:", error);
+      console.error('Erro ao gerar/enviar PDF:', error);
+
       toast({
         variant: 'destructive',
         title: 'Erro!',
-        description: 'Não foi possível gerar o link da proposta. Tente novamente.',
+        description:
+          (error as any)?.message
+            ? `Falha: ${(error as any).message}`
+            : 'Não foi possível gerar o link da proposta. Tente novamente.',
       });
+
       return null;
     } finally {
       setIsGenerating(false);
