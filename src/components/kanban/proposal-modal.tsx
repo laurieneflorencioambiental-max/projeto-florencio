@@ -186,29 +186,27 @@ export default function ProposalModal({
   };
 
   const generateAndUploadPdf = async (): Promise<string | null> => {
-    setIsGenerating(true);
-
-    const input = proposalRef.current;
-    if (!input || !firebaseApp) {
+    if (!firebaseApp) {
       toast({
         variant: 'destructive',
-        title: 'Erro de Inicialização',
-        description: 'O Firebase ainda não está pronto. Tente novamente em alguns segundos.',
+        title: 'Erro de Configuração',
+        description: 'A conexão com o Firebase ainda não foi estabelecida.',
       });
-      setIsGenerating(false);
       return null;
     }
 
-    const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
-    editableDivs.forEach((div) => {
-      const field = div.getAttribute('data-field') as keyof ProposalState | null;
-      if (field && typeof proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] === 'string') {
-        div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] as string).replace(
-          /\n/g,
-          '<br />'
-        );
-      }
-    });
+    const input = proposalRef.current;
+    if (!input) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro Interno',
+        description:
+          'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.',
+      });
+      return null;
+    }
+
+    setIsGenerating(true);
 
     try {
       const canvas = await html2canvas(input, { scale: 2 });
@@ -229,11 +227,9 @@ export default function ProposalModal({
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
         heightLeft -= pageHeight;
       }
-
       const pdfBlob = pdf.output('blob');
-      const fileName = `proposta-${lead.company
-        .toLowerCase()
-        .replace(/[\s/.]+/g, '-')}-${fullProposalNumber}.pdf`;
+
+      const fileName = `proposta-${lead.id}-${Date.now()}.pdf`;
 
       const downloadUrl = await uploadProposalPdf(
         firebaseApp,
@@ -252,18 +248,16 @@ export default function ProposalModal({
       });
 
       return downloadUrl;
-    } catch (error) {
-      console.error('Erro ao gerar/enviar PDF:', error);
-
+    } catch (e) {
+      console.error('[PDF] ERRO', e);
       toast({
         variant: 'destructive',
-        title: 'Erro!',
+        title: 'Erro ao Gerar PDF',
         description:
-          (error as any)?.message
-            ? `Falha: ${(error as any).message}`
-            : 'Não foi possível gerar o link da proposta. Tente novamente.',
+          e instanceof Error
+            ? e.message
+            : 'Falha ao gerar o link da proposta.',
       });
-
       return null;
     } finally {
       setIsGenerating(false);
