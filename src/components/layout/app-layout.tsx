@@ -10,20 +10,36 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Briefcase, Home, FileText } from 'lucide-react';
+import { Briefcase, Home, FileText, LogOut } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth, useUser } from '@/firebase';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const { user } = useUser();
 
   const getPageTitle = () => {
     if (pathname === '/') return 'Gestão de Orçamentos';
     if (pathname === '/templates') return 'Modelos de Proposta';
     return 'Comercial Florencio';
   };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/login');
+  };
+
+  const getUserInitials = (email: string | null | undefined) => {
+    if (!email) return '...';
+    return email.substring(0, 2).toUpperCase();
+  }
 
   return (
     <SidebarProvider>
@@ -57,6 +73,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+            <SidebarSeparator />
+            <div className='flex items-center gap-3 p-2'>
+                <Avatar className='h-8 w-8'>
+                    <AvatarImage src={user?.photoURL || undefined} />
+                    <AvatarFallback>{getUserInitials(user?.email)}</AvatarFallback>
+                </Avatar>
+                <div className='flex flex-col overflow-hidden'>
+                    <p className='text-sm font-medium text-sidebar-foreground truncate'>{user?.displayName || user?.email}</p>
+                </div>
+            </div>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton onClick={handleLogout} tooltip="Sair">
+                        <LogOut />
+                        <span>Sair</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">

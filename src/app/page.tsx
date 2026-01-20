@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
 import { initialLeads } from '@/lib/data';
 import type { Lead, Status, ProposalTemplate } from '@/lib/types';
-import { statuses, proposalTemplates } from '@/lib/types';
+import { statuses } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -36,11 +36,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings, Loader2 } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -52,6 +55,9 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 const defaultSellers: string[] = [];
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,35 +80,43 @@ export default function Home() {
   // Template Management State
   const [currentProposalTemplates, setCurrentProposalTemplates] = useState<ProposalTemplate[]>([]);
 
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isUserLoading, router]);
+
   // Load sellers, current seller, and templates from localStorage on initial mount
   useEffect(() => {
-    try {
-      const savedSellers = localStorage.getItem('sellers');
-      const savedCurrentSeller = localStorage.getItem('currentSeller');
-      const savedTemplates = localStorage.getItem('proposalTemplates');
+    if (user) {
+        try {
+        const savedSellers = localStorage.getItem('sellers');
+        const savedCurrentSeller = localStorage.getItem('currentSeller');
+        const savedTemplates = localStorage.getItem('proposalTemplates');
 
-      const initialSellers = savedSellers ? JSON.parse(savedSellers) : defaultSellers;
-      setSellers(initialSellers);
+        const initialSellers = savedSellers ? JSON.parse(savedSellers) : defaultSellers;
+        setSellers(initialSellers);
 
-      if (savedCurrentSeller && initialSellers.includes(savedCurrentSeller)) {
-        setCurrentSeller(savedCurrentSeller);
-      } else if (initialSellers.length > 0) {
-        setCurrentSeller(initialSellers[0]);
-      }
-      
-      // This page now only READS. It does not write default templates.
-      // The /templates page is responsible for initialization.
-      if (savedTemplates) {
-        setCurrentProposalTemplates(JSON.parse(savedTemplates));
-      } else {
-        setCurrentProposalTemplates([]); // Start with empty if none are saved
-      }
-    } catch (error) {
-      console.error("Failed to access localStorage on initial load:", error);
-      setSellers(defaultSellers);
-      setCurrentProposalTemplates([]);
+        if (savedCurrentSeller && initialSellers.includes(savedCurrentSeller)) {
+            setCurrentSeller(savedCurrentSeller);
+        } else if (initialSellers.length > 0) {
+            setCurrentSeller(initialSellers[0]);
+        }
+        
+        // This page now only READS. It does not write default templates.
+        // The /templates page is responsible for initialization.
+        if (savedTemplates) {
+            setCurrentProposalTemplates(JSON.parse(savedTemplates));
+        } else {
+            setCurrentProposalTemplates([]); // Start with empty if none are saved
+        }
+        } catch (error) {
+        console.error("Failed to access localStorage on initial load:", error);
+        setSellers(defaultSellers);
+        setCurrentProposalTemplates([]);
+        }
     }
-  }, []);
+  }, [user]);
 
   // Persist sellers to localStorage
   useEffect(() => {
@@ -190,6 +204,13 @@ export default function Home() {
     );
   };
 
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">

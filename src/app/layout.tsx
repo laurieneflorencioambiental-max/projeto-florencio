@@ -1,22 +1,25 @@
-import type { Metadata } from 'next';
+'use client';
+
+import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/layout/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
 
-export const metadata: Metadata = {
-  title: 'Florencio Sales Manager',
-  description: 'Gestão comercial para o Grupo Florencio',
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
+
   return (
     <html lang="pt-BR">
       <head>
+        <title>Florencio Sales Manager</title>
+        <meta name="description" content="Gestão comercial para o Grupo Florencio" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -30,7 +33,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <AppLayout>{children}</AppLayout>
+          {isLoginPage ? children : <AppLayout>{children}</AppLayout>}
           <Toaster />
         </FirebaseClientProvider>
       </body>

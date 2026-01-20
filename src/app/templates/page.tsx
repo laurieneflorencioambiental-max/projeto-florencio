@@ -19,6 +19,7 @@ import {
   X,
   Copy,
   Plus,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -45,6 +46,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 const getSavedTemplates = (): ProposalTemplate[] => {
   try {
@@ -97,6 +100,8 @@ const templateFormSchema = z.object({
 
 
 export default function ManageTemplatesPage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const { toast } = useToast();
   const [templates, setTemplates] = useState<ProposalTemplate[]>([]);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
@@ -133,8 +138,16 @@ export default function ManageTemplatesPage() {
   }, []);
 
   useEffect(() => {
-    loadTemplates();
-  }, [loadTemplates]);
+    if (!isUserLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    if (user) {
+        loadTemplates();
+    }
+  }, [loadTemplates, user]);
   
   const resetForm = () => {
     form.reset({
@@ -239,6 +252,14 @@ export default function ManageTemplatesPage() {
     />
   );
   
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <Card ref={formCardRef}>
@@ -447,5 +468,3 @@ export default function ManageTemplatesPage() {
     </div>
   );
 }
-
-    
