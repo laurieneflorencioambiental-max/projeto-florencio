@@ -110,7 +110,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center my-6">
             {serviceAreas.map((area, index) => (
-                <div key={index} className="flex flex-col items-center justify-center p-4 bg-primary/10 rounded-lg h-full">
+                <div key={index} className="flex flex-col items-center justify-center p-4 bg-primary/10 rounded-lg">
                 <span className="font-semibold text-sm text-center" style={{ color: '#1b7689' }}>{area.label}</span>
                 </div>
             ))}
