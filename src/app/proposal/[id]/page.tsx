@@ -500,7 +500,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               da sua empresa no compromisso com a Segurança do Trabalho e Meio
               Ambiente.
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-destructive">
               Para assinalar sua preferência, por favor, clique em uma das
               opções abaixo:
             </p>
