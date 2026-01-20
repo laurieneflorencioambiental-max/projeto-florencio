@@ -42,7 +42,7 @@ import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -148,6 +148,175 @@ export default function Home() {
     }
   }, [currentSeller]);
 
+  // This useEffect will seed the database with test data if it's empty.
+  useEffect(() => {
+    if (areLeadsLoading || areSellersLoading || !firestore || !user) {
+      return;
+    }
+
+    const seedDatabase = async () => {
+      let dataSeeded = false;
+      const batch = writeBatch(firestore);
+
+      // Check if sellers are empty
+      if (sellers && sellers.length === 0) {
+        const sellersCollection = collection(firestore, 'sellers');
+        const sampleSellersData = [
+          { name: 'João Silva' },
+          { name: 'Maria Oliveira' },
+          { name: 'Carlos Pereira' },
+        ];
+        sampleSellersData.forEach(seller => {
+          const newSellerRef = doc(sellersCollection);
+          batch.set(newSellerRef, seller);
+        });
+        dataSeeded = true;
+      }
+      
+      // Check if leads are empty
+      if (leads && leads.length === 0) {
+        const budgetsCollection = collection(firestore, 'users', user.uid, 'budgets');
+        const sampleLeadsData = [ // This is an array of partial lead objects
+          {
+            name: 'Ana Costa',
+            role: 'Gerente de TI',
+            company: 'TechCorp',
+            cnpj: '11.111.111/0001-11',
+            proposalSummary: 'Consultoria completa em SST para a nova planta fabril.',
+            value: 25000,
+            paymentMethods: [{ method: 'Boleto' }],
+            contactSource: { source: 'Indicação', indicatedBy: 'Empresa Parceira' },
+            email: 'ana.costa@techcorp.com',
+            whatsapp: '11987654321',
+            status: 'Novos',
+            createdBy: 'João Silva',
+            proposalGeneratedCount: 0,
+            whatsappSentCount: 0,
+            editCount: 0,
+            previousStatus: null,
+            proposalNumber: 1,
+            proposalVersion: 0,
+            rejectionReason: null,
+          },
+          {
+            name: 'Bruno Lima',
+            role: 'Diretor de Operações',
+            company: 'Inovações XYZ',
+            cnpj: '22.222.222/0001-22',
+            proposalSummary: 'Treinamento de NR-35 para trabalho em altura para 20 funcionários.',
+            value: 8000,
+            paymentMethods: [{ method: 'Cartão de Crédito (Link)', cardFee: 5 }],
+            contactSource: { source: 'Google' },
+            email: 'bruno.lima@inovacoesxyz.com',
+            whatsapp: '21912345678',
+            status: 'Pendente/Em negociação',
+            createdBy: 'Maria Oliveira',
+            proposalGeneratedCount: 1,
+            whatsappSentCount: 1,
+            editCount: 2,
+            previousStatus: 'Novos',
+            proposalNumber: 2,
+            proposalVersion: 1,
+            rejectionReason: null,
+          },
+          {
+            name: 'Carla Dias',
+            role: 'Sócia-proprietária',
+            company: 'Soluções Rápidas',
+            cnpj: '33.333.333/0001-33',
+            proposalSummary: 'Elaboração de PGR e PCMSO.',
+            value: 12500,
+            paymentMethods: [{ method: 'Boleto' }, { method: 'Cartão de Crédito (Maquininha)', cardFee: 4 }],
+            contactSource: { source: 'Instagram' },
+            email: 'carla.dias@solucoesrapidas.com',
+            whatsapp: '31988776655',
+            status: 'Aprovado',
+            createdBy: 'João Silva',
+            proposalGeneratedCount: 2,
+            whatsappSentCount: 2,
+            editCount: 3,
+            previousStatus: 'Pendente/Em negociação',
+            proposalNumber: 3,
+            proposalVersion: 2,
+            rejectionReason: null,
+          },
+          {
+            name: 'Daniel Faria',
+            role: 'Coordenador de Compras',
+            company: 'Mercado Global',
+            cnpj: '44.444.444/0001-44',
+            proposalSummary: 'AVCB e treinamento de brigada de incêndio.',
+            value: 18000,
+            paymentMethods: [{ method: 'Boleto' }],
+            contactSource: { source: 'BNI' },
+            email: 'daniel.faria@mercadoglobal.com',
+            whatsapp: '41977665544',
+            status: 'Desistência',
+            rejectionReason: 'Cliente sem urgência/prioridade',
+            createdBy: 'Carlos Pereira',
+            proposalGeneratedCount: 1,
+            whatsappSentCount: 0,
+            editCount: 1,
+            previousStatus: 'Pendente/Em negociação',
+            proposalNumber: 4,
+            proposalVersion: 0,
+          },
+          {
+            name: 'Elisa Mendes',
+            role: 'Chefe de Engenharia',
+            company: 'Construtora Alfa',
+            cnpj: '55.555.555/0001-55',
+            proposalSummary: 'Laudo de insalubridade e periculosidade para obra.',
+            value: 7500,
+            paymentMethods: [{ method: 'Boleto' }],
+            contactSource: { source: 'Marketing Offline' },
+            email: 'elisa.mendes@construtoraalfa.com',
+            whatsapp: '51966554433',
+            status: 'Rejeitado',
+            rejectionReason: 'Preço elevado',
+            createdBy: 'Maria Oliveira',
+            proposalGeneratedCount: 1,
+            whatsappSentCount: 1,
+            editCount: 1,
+            previousStatus: 'Pendente/Em negociação',
+            proposalNumber: 5,
+            proposalVersion: 0,
+          },
+        ];
+
+        sampleLeadsData.forEach(lead => {
+          const newDocRef = doc(budgetsCollection);
+          const newLead: Lead = {
+            ...(lead as Omit<Lead, 'id' | 'createdAt'>), // Cast to satisfy TypeScript
+            id: newDocRef.id,
+            createdAt: serverTimestamp(),
+          };
+          batch.set(newDocRef, newLead);
+        });
+        dataSeeded = true;
+      }
+
+      if (dataSeeded) {
+        try {
+          await batch.commit();
+        } catch (e) {
+          console.error("Error seeding database:", e);
+        }
+      }
+    };
+
+    // Use a flag in session storage to ensure seeding only happens once per session
+    // to avoid re-seeding on every hot-reload during development.
+    const isSeeded = sessionStorage.getItem('db_seeded');
+    if (isSeeded !== 'true') {
+      seedDatabase().then(() => {
+        if ((leads && leads.length > 0) || (sellers && sellers.length > 0)) {
+             sessionStorage.setItem('db_seeded', 'true');
+        }
+      });
+    }
+}, [areLeadsLoading, areSellersLoading, firestore, user, leads, sellers]);
+
 
   const handleSellerChange = (seller: string) => {
     setCurrentSeller(seller);
@@ -216,6 +385,9 @@ export default function Home() {
       timeFilteredLeads = leadsData;
     } else {
       timeFilteredLeads = leadsData.filter(lead => {
+        if (!lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
+          return false; // Skip leads without a valid date
+        }
         const leadDate = lead.createdAt.toDate();
         switch (filter) {
           case 'today':
@@ -412,3 +584,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
