@@ -111,6 +111,16 @@ export type ProposalTemplate = {
   exams: Exam[];
 };
 
+export type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;
+
+export type ProposalData = {
+  id?: string;
+  lead: Lead;
+  proposalState: ProposalState;
+  fullProposalNumber: string;
+  createdAt: any; // Using `any` for Firestore serverTimestamp
+};
+
 const defaultText = 'A ser definido na proposta.';
 
 export const proposalTemplates: ProposalTemplate[] = [

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate, Plan } from '@/lib/types';
+import type { Lead, ProposalTemplate, Plan, ProposalState, ProposalData } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -12,14 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Send,
-  Mail,
-  Loader2,
-  Copy,
-} from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { Send, Mail, Loader2, Copy } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -29,9 +22,9 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useFirebaseApp } from '@/firebase';
-import { uploadProposalPdf } from '@/firebase/storage';
+import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -41,8 +34,6 @@ type ProposalModalProps = {
   onUpdateLead: (lead: Lead) => void;
   proposalTemplates: ProposalTemplate[];
 };
-
-type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;
 
 export default function ProposalModal({
   lead,
@@ -56,7 +47,7 @@ export default function ProposalModal({
   const [fullProposalNumber, setFullProposalNumber] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  const firebaseApp = useFirebaseApp();
+  const firestore = useFirestore();
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -123,7 +114,7 @@ export default function ProposalModal({
     if (isOpen) {
      resetState();
     }
-  }, [isOpen, lead, allLeads, onUpdateLead]);
+  }, [isOpen, lead, allLeads]);
 
   const handleTemplateChange = (templateId: string) => {
     const template = proposalTemplates.find(t => t.id === templateId);
@@ -157,100 +148,49 @@ export default function ProposalModal({
       currency: 'BRL',
     }).format(value);
   };
-
-  const generateAndUploadPdf = async (): Promise<string | null> => {
-    const input = proposalRef.current;
-    if (!input) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro Interno',
-        description: 'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.',
-      });
-      return null;
-    }
-    
+  
+  const createAndShareProposalLink = async (): Promise<string | null> => {
     setIsGenerating(true);
-
-    // Promise for the core PDF generation and upload logic
-    const generationPromise = new Promise<string>(async (resolve, reject) => {
-      try {
-        const canvas = await html2canvas(input, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        let heightLeft = pdfHeight;
-        let position = 0;
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft > 0) {
-          position = heightLeft - pdfHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-          heightLeft -= pageHeight;
-        }
-        
-        const pdfBlob = pdf.output('blob');
-
-        if (!pdfBlob || pdfBlob.size === 0) {
-          return reject(new Error('A geração do PDF resultou em um arquivo vazio.'));
-        }
-
-        const fileName = `proposta-${lead.id}-${Date.now()}.pdf`;
-
-        const downloadUrl = await uploadProposalPdf(
-          firebaseApp,
-          `propostas/${lead.id}/${fileName}`,
-          pdfBlob
-        );
-        
-        resolve(downloadUrl);
-      } catch (error) {
-        reject(error);
-      }
-    });
-
-    // Promise for a timeout
-    const timeoutPromise = new Promise<string>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('A operação demorou demais (timeout). Isso pode ocorrer por conteúdo muito complexo na proposta.'));
-      }, 30000); // 30-second timeout
-    });
-
     try {
-      const downloadUrl = await Promise.race([generationPromise, timeoutPromise]);
-      
-      onUpdateLead({
-        ...lead,
-        proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
-      });
+        const proposalData: Omit<ProposalData, 'id'> = {
+            lead: lead,
+            proposalState: proposalState,
+            fullProposalNumber: fullProposalNumber,
+            createdAt: serverTimestamp(),
+        };
 
-      toast({
-        title: 'Link Gerado!',
-        description: 'O link para a proposta está pronto para ser compartilhado.',
-      });
+        const docRef = await addDoc(collection(firestore, 'proposals'), proposalData);
+        
+        const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
+        
+        onUpdateLead({
+            ...lead,
+            proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
+        });
 
-      return downloadUrl;
+        toast({
+            title: 'Link da Proposta Gerado!',
+            description: 'O link para a página da proposta está pronto para ser compartilhado.',
+        });
+        
+        return proposalUrl;
 
-    } catch (e) {
-      console.error('[PROPOSAL MODAL] Error during PDF generation/upload or timeout:', e);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Gerar Link',
-        description: e instanceof Error ? e.message : 'Ocorreu uma falha desconhecida. Verifique o console para detalhes.',
-      });
-      return null;
+    } catch (error) {
+        console.error("Error creating proposal document: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao Gerar Link',
+            description: 'Não foi possível salvar a proposta no banco de dados. Verifique o console.',
+        });
+        return null;
     } finally {
-      setIsGenerating(false);
+        setIsGenerating(false);
     }
   };
 
 
   const handleShare = async (platform: 'whatsapp' | 'email' | 'copy') => {
-    const proposalLink = await generateAndUploadPdf();
+    const proposalLink = await createAndShareProposalLink();
     if (!proposalLink) return;
 
     if (platform === 'copy') {
@@ -285,11 +225,9 @@ export default function ProposalModal({
   const EditableDiv = ({
     field,
     className,
-    children
   }: {
     field: keyof Omit<ProposalState, 'plans' | 'exams'>;
     className?: string;
-    children?: React.ReactNode;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
         setProposalState(prevState => ({
@@ -307,7 +245,6 @@ export default function ProposalModal({
         onBlur={handleBlur}
         dangerouslySetInnerHTML={{ __html: String(proposalState[field]).replace(/\n/g, '<br />') }}
       >
-        {children}
       </div>
     );
   };
@@ -473,36 +410,6 @@ export default function ProposalModal({
                     acordo com as diretrizes técnicas, para esta conceituada
                     empresa.
                   </p>
-              </section>
-
-              {/* Localização Estratégica */}
-              <section className="my-8">
-                  <div className="bg-muted/50 dark:bg-muted/20 p-6 rounded-lg">
-                    <div className="bg-primary/20 text-center p-2 rounded-t-lg">
-                      <h3 className="font-bold" style={{ color: '#1b7689' }}>
-                        Nossa Localização Estratégica
-                      </h3>
-                    </div>
-                    <div className="p-6 bg-card rounded-b-lg">
-                      <p className="text-sm leading-relaxed mb-4">
-                        Nossas unidades de atendimento em medicina do trabalho
-                        estão estrategicamente distribuídas para estar próximas
-                        tanto dos seus funcionários quanto da sua empresa,
-                        facilitando o fluxo de atendimento e otimizando a
-                        logística dos serviços.
-                      </p>
-                      <p className="text-sm leading-relaxed mb-4">
-                        <span className="font-bold">Localizadas no:</span> Centro
-                        do RJ, Nova Iguaçu, Duque de Caxias, Vila Kosmos – Vila da
-                        Penha, Barra da Tijuca, Niterói, Macaé.
-                      </p>
-                      <p className="text-sm leading-relaxed mb-6">
-                        Cada unidade foi planejada para proporcionar agilidade e
-                        eficiência na realização de exames, consultas e demais
-                        procedimentos essenciais.
-                      </p>
-                    </div>
-                  </div>
               </section>
 
               {/* Corpo da Proposta */}

@@ -82,5 +82,22 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && isBudgetUpdateValid();
       allow delete: if isExistingOwner(userId);
     }
+    
+    /**
+     * @description Secures the 'proposals' collection.
+     * Proposals are public to anyone with the link, but can only be created by authenticated users.
+     * Updates and deletes are disallowed from the client for simplicity and security.
+     * @path /proposals/{proposalId}
+     * @allow Anyone can (get) a proposal if they know its ID.
+     * @allow A signed-in user can (create) a new proposal document.
+     * @deny Anonymous users cannot (create) proposals.
+     * @deny No one can (update) or (delete) proposals from the client.
+     */
+    match /proposals/{proposalId} {
+      allow get: if true;
+      allow list: if false; // Disallow listing all proposals
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
   }
 }

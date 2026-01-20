@@ -14,6 +14,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
+  const isProposalPage = pathname.startsWith('/proposal/');
 
   return (
     <html lang="pt-BR">
@@ -33,7 +34,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          {isLoginPage ? children : <AppLayout>{children}</AppLayout>}
+          {isLoginPage || isProposalPage ? children : <AppLayout>{children}</AppLayout>}
           <Toaster />
         </FirebaseClientProvider>
       </body>
