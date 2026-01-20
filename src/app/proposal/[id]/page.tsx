@@ -206,6 +206,57 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             )}
         </section>
 
+        {/* Condições de Pagamento */}
+        <section className="my-8">
+            <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                Condições de Pagamento
+            </h3>
+            <ul className="list-disc list-inside space-y-2">
+                {lead.paymentMethods.map((pm, index) => (
+                    <li key={index}>
+                    {pm.method.replace(/\s\(.*\)/, '')}
+                    </li>
+                ))}
+            </ul>
+        </section>
+
+        <div className="border-b my-8"></div>
+
+
+        {/* Termo de Aprovação */}
+        <section className="my-8" style={{ breakBefore: 'page' }}>
+            <h3 className="text-lg font-semibold mb-4">
+                Termo de aprovação:
+            </h3>
+
+            <div className="p-4 rounded-lg border" style={{ backgroundColor: 'rgba(27, 118, 137, 0.1)', borderColor: 'rgba(27, 118, 137, 0.2)' }}>
+                <h4 className="font-bold text-center mb-2" style={{ color: '#1b7689' }}>Aprovação do Serviço</h4>
+                <p className="text-center text-xs">
+                    Esta Proposta Técnica Comercial será APROVADA, mediante a sua devolução via e-mail, assinada e datada por pessoa responsável da CONTRATANTE.
+                </p>
+            </div>
+
+            <div className="mt-8 space-y-6">
+                <p>De acordo em: ______ / ______ / ______</p>
+                <p>Nome do Aprovador: ____________________________________________________</p>
+            </div>
+
+            <div className="mt-8 border rounded-lg p-4 space-y-4">
+                <p className='font-semibold'>Prezado cliente,</p>
+                <p>
+                    Em nossa busca contínua em promover práticas de Segurança do Trabalho e Sustentabilidade, gostaríamos de propor uma parceria em nossas mídias sociais. Caso tenhamos a honra de realizar este projeto com a sua empresa, gostaríamos de saber se podemos divulgar nosso trabalho realizado nas suas instalações em nossas plataformas digitais, como Instagram, Linkedin, Site, YouTube?
+                </p>
+                <p>
+                    Acreditamos que essa parceria poderá beneficiar a imagem positiva da sua empresa no compromisso com a Segurança do Trabalho e Meio Ambiente.
+                </p>
+                <div className="space-y-2 mt-4">
+                    <p>(  ) sim</p>
+                    <p>(  ) não</p>
+                </div>
+            </div>
+        </section>
+
+
         {/* Footer */}
         <footer className="text-center pt-8 border-t mt-8">
             <p className="font-bold" style={{ color: '#1b7689' }}>Grupo Florencio</p>
