@@ -5,7 +5,7 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import type { ProposalData, Plan, Exam } from '@/lib/types';
-import { Loader2, Printer } from 'lucide-react';
+import { Loader2, Printer, Goal, Eye, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -84,26 +84,29 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             </footer>
             </blockquote>
             <div className='my-8'>
-            <div className="grid md:grid-cols-3 gap-8">
-                <div>
-                <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Missão</h4>
-                <p className="text-sm leading-relaxed mt-2">
-                    Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
-                </p>
+                <div className="grid md:grid-cols-3 gap-8 text-center">
+                    <div className="flex flex-col items-center">
+                        <Goal className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                        <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Missão</h4>
+                        <p className="text-sm leading-relaxed mt-2 text-left">
+                            Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
+                        </p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <Eye className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                        <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Visão</h4>
+                        <p className="text-sm leading-relaxed mt-2 text-left">
+                            Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
+                        </p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <Gem className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                        <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Valores</h4>
+                        <p className="text-sm leading-relaxed mt-2 text-left">
+                            Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
+                        </p>
+                    </div>
                 </div>
-                <div>
-                <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Visão</h4>
-                <p className="text-sm leading-relaxed mt-2">
-                    Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
-                </p>
-                </div>
-                <div>
-                <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Valores</h4>
-                <p className="text-sm leading-relaxed mt-2">
-                    Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
-                </p>
-                </div>
-            </div>
             </div>
              <h4 className="text-md font-semibold text-center mt-6">
                 Temos uma equipe especializada para oferecer as melhores soluções em:

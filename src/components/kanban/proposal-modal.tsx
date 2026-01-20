@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Mail, Loader2, Copy } from 'lucide-react';
+import { Send, Mail, Loader2, Copy, Goal, Eye, Gem } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useFirebaseApp } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -48,6 +48,7 @@ export default function ProposalModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
+  const app = useFirebaseApp();
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -150,42 +151,55 @@ export default function ProposalModal({
   };
   
   const createAndShareProposalLink = async (): Promise<string | null> => {
-    setIsGenerating(true);
-    try {
-        const proposalData: Omit<ProposalData, 'id'> = {
-            lead: lead,
-            proposalState: proposalState,
-            fullProposalNumber: fullProposalNumber,
-            createdAt: serverTimestamp(),
-        };
-
-        const docRef = await addDoc(collection(firestore, 'proposals'), proposalData);
-        
-        const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
-        
-        onUpdateLead({
-            ...lead,
-            proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
-        });
-
-        toast({
-            title: 'Link da Proposta Gerado!',
-            description: 'O link para a página da proposta está pronto para ser compartilhado.',
-        });
-        
-        return proposalUrl;
-
-    } catch (error) {
-        console.error("Error creating proposal document: ", error);
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao Gerar Link',
-            description: 'Não foi possível salvar a proposta no banco de dados. Verifique o console.',
-        });
-        return null;
-    } finally {
-        setIsGenerating(false);
-    }
+      setIsGenerating(true);
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("A geração da proposta demorou muito. Tente novamente.")), 30000)
+      );
+  
+      try {
+          const proposalGeneration = async () => {
+              const proposalData: Omit<ProposalData, 'id'> = {
+                  lead: lead,
+                  proposalState: proposalState,
+                  fullProposalNumber: fullProposalNumber,
+                  createdAt: serverTimestamp(),
+              };
+  
+              if (!firestore) {
+                  throw new Error("Firestore não está inicializado.");
+              }
+  
+              const docRef = await addDoc(collection(firestore, 'proposals'), proposalData);
+              const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
+              
+              onUpdateLead({
+                  ...lead,
+                  proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
+              });
+  
+              toast({
+                  title: 'Link da Proposta Gerado!',
+                  description: 'O link para a página da proposta está pronto para ser compartilhado.',
+              });
+              
+              return proposalUrl;
+          };
+  
+          // Race the proposal generation against the timeout
+          const result = await Promise.race([proposalGeneration(), timeoutPromise]);
+          return result;
+  
+      } catch (error) {
+          console.error("Erro ao criar o link da proposta:", error);
+          toast({
+              variant: 'destructive',
+              title: 'Erro ao Gerar Link',
+              description: error instanceof Error ? error.message : 'Não foi possível salvar a proposta. Verifique o console.',
+          });
+          return null;
+      } finally {
+          setIsGenerating(false);
+      }
   };
 
 
@@ -351,25 +365,28 @@ export default function ProposalModal({
                     </footer>
                   </blockquote>
                 <div className='my-8'>
-                      <div className="grid md:grid-cols-3 gap-8">
-                        <div>
-                          <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Missão</h4>
-                          <p className="text-sm leading-relaxed mt-2">
-                            Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Visão</h4>
-                          <p className="text-sm leading-relaxed mt-2">
-                            Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Valores</h4>
-                          <p className="text-sm leading-relaxed mt-2">
-                            Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
-                          </p>
-                        </div>
+                      <div className="grid md:grid-cols-3 gap-8 text-center">
+                          <div className="flex flex-col items-center">
+                              <Goal className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                              <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Missão</h4>
+                              <p className="text-sm leading-relaxed mt-2 text-left">
+                                  Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio Ambiente & Segurança do Trabalho em prol do uso adequado dos recursos naturais, aumento da produtividade e bem-estar social, superando as expectativas de nossos clientes e agregando valores para a sociedade.
+                              </p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                              <Eye className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                              <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Visão</h4>
+                              <p className="text-sm leading-relaxed mt-2 text-left">
+                                  Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
+                              </p>
+                          </div>
+                          <div className="flex flex-col items-center">
+                              <Gem className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                              <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Valores</h4>
+                              <p className="text-sm leading-relaxed mt-2 text-left">
+                                  Dedicação aos nossos clientes, Honestidade, Ética, Transparência, Comprometimento Socio ambiental.
+                              </p>
+                          </div>
                       </div>
                 </div>
                 <h4 className="text-md font-semibold text-center mt-6">
