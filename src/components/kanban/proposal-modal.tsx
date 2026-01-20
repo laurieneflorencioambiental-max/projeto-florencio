@@ -39,7 +39,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { getApp, type FirebaseApp } from 'firebase/app';
+import { useFirebaseApp } from '@/firebase';
 import { uploadProposalPdf } from '@/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,6 +66,7 @@ export default function ProposalModal({
   const [fullProposalNumber, setFullProposalNumber] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const firebaseApp = useFirebaseApp();
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -172,20 +173,7 @@ export default function ProposalModal({
     if (!input) {
       return null;
     }
-
-    let firebaseApp: FirebaseApp;
-    try {
-      firebaseApp = getApp();
-    } catch (error) {
-      console.error("Firebase app not initialized.", error);
-      toast({
-          variant: 'destructive',
-          title: 'Erro de Configuração',
-          description: 'O app Firebase não foi inicializado corretamente.'
-      });
-      return null;
-    }
-
+    
     setIsGenerating(true);
 
     try {
