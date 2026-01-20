@@ -60,7 +60,7 @@ export default function LoginPage() {
       router.push('/');
     } catch (error) {
       console.error('Login error:', error);
-      let description = 'Ocorreu um erro desconhecido. Tente novamente.';
+      let description: string;
       if (error instanceof FirebaseError) {
         switch (error.code) {
           case 'auth/user-not-found':
@@ -72,9 +72,11 @@ export default function LoginPage() {
             description = 'O formato do email é inválido.';
             break;
           default:
-            description = 'Falha no login. Verifique suas credenciais.';
+            description = `Falha no login. Verifique suas credenciais. (Código: ${error.code})`;
             break;
         }
+      } else {
+        description = 'Ocorreu um erro de conexão ou configuração. Verifique se o app está conectado ao projeto Firebase correto e se o provedor de "Email/Senha" está ativado no painel de autenticação do Firebase.';
       }
       toast({
         variant: 'destructive',
