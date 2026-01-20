@@ -5,9 +5,10 @@ import { useFirestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import type { ProposalData, Plan, Exam } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 
 function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
@@ -45,6 +46,13 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             <p className="text-sm">Data: {new Date(proposalData.createdAt).toLocaleDateString('pt-BR')}</p>
         </div>
         </header>
+
+        <Alert className="my-6 print:hidden">
+          <Printer className="h-4 w-4" />
+          <AlertDescription>
+            Para salvar esta proposta como um arquivo PDF em seu computador, pressione as teclas <strong>Ctrl + P</strong> (ou <strong>Cmd + P</strong> em um Mac) e escolha a opção &ldquo;Salvar como PDF&rdquo;.
+          </AlertDescription>
+        </Alert>
 
         {/* Client info */}
         <section className="my-8">
