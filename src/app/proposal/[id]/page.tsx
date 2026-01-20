@@ -443,38 +443,41 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           </div>
 
           <div className="mt-8 space-y-6">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">De acordo em:</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-[240px] justify-start text-left font-normal print:border-none print:shadow-none',
-                      !approvalDate && 'text-muted-foreground'
-                    )}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">De acordo em:</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-[240px] justify-start text-left font-normal print:border-none print:shadow-none',
+                        !approvalDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {approvalDate ? (
+                        format(approvalDate, 'PPP', { locale: ptBR })
+                      ) : (
+                        <span>Escolha uma data</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-0 print:hidden"
+                    align="start"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {approvalDate ? (
-                      format(approvalDate, 'PPP', { locale: ptBR })
-                    ) : (
-                      <span>Escolha uma data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-0 print:hidden"
-                  align="start"
-                >
-                  <Calendar
-                    mode="single"
-                    selected={approvalDate}
-                    onSelect={setApprovalDate}
-                    initialFocus
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
+                    <Calendar
+                      mode="single"
+                      selected={approvalDate}
+                      onSelect={setApprovalDate}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <p className="text-sm text-destructive print:hidden -ml-2">(Preencha a data antes de assinar)</p>
             </div>
             <p>
               Nome do Aprovador:
