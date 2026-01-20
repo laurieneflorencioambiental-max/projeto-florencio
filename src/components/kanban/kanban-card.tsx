@@ -101,16 +101,16 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead, proposalTempl
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
-              <CardDescription className='space-y-1'>
-                <p>
-                  {lead.name}
-                  {lead.role && <span className="text-xs text-muted-foreground">, {lead.role}</span>}
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>{format(new Date(lead.createdAt), 'dd/MM/yyyy')}</span>
-                </div>
-              </CardDescription>
+              <div className="text-sm text-muted-foreground space-y-1">
+  <div>
+    {lead.name}
+    {lead.role && <span className="text-xs ...">...</span>}
+  </div>
+
+  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+    ...
+  </div>
+</div>
             </div>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>

@@ -186,35 +186,27 @@ export default function ProposalModal({
   };
 
   const generateAndUploadPdf = async (): Promise<string | null> => {
+    setIsGenerating(true);
+
     const input = proposalRef.current;
     if (!input || !firebaseApp) {
       toast({
         variant: 'destructive',
         title: 'Erro de Inicialização',
-        description:
-          'O Firebase ainda não está pronto. Tente novamente em alguns segundos.',
+        description: 'O Firebase ainda não está pronto. Tente novamente em alguns segundos.',
       });
+      setIsGenerating(false);
       return null;
     }
 
-    setIsGenerating(true);
-
-    const editableDivs = Array.from(
-      input.querySelectorAll('[contenteditable]')
-    );
-    editableDivs.forEach(div => {
+    const editableDivs = Array.from(input.querySelectorAll('[contenteditable]'));
+    editableDivs.forEach((div) => {
       const field = div.getAttribute('data-field') as keyof ProposalState | null;
-      if (
-        field &&
-        typeof proposalState[
-          field as keyof Omit<ProposalState, 'plans' | 'exams'>
-        ] === 'string'
-      ) {
-        div.innerHTML = (
-          proposalState[
-            field as keyof Omit<ProposalState, 'plans' | 'exams'>
-          ] as string
-        ).replace(/\n/g, '<br />');
+      if (field && typeof proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] === 'string') {
+        div.innerHTML = (proposalState[field as keyof Omit<ProposalState, 'plans' | 'exams'>] as string).replace(
+          /\n/g,
+          '<br />'
+        );
       }
     });
 
