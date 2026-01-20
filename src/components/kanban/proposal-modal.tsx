@@ -65,25 +65,7 @@ export default function ProposalModal({
   const proposalRef = useRef<HTMLDivElement>(null);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [firebaseApp, setFirebaseApp] = useState<FirebaseApp | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Safely get the Firebase app instance after mount, avoiding context issues with portals.
-    if (isOpen) {
-      try {
-        const app = getApp();
-        setFirebaseApp(app);
-      } catch (error) {
-        console.error("Firebase app not initialized.", error);
-        toast({
-            variant: 'destructive',
-            title: 'Erro de Configuração',
-            description: 'O app Firebase não foi inicializado corretamente.'
-        });
-      }
-    }
-  }, [isOpen, toast]);
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -187,12 +169,19 @@ export default function ProposalModal({
 
   const generateAndUploadPdf = async (): Promise<string | null> => {
     const input = proposalRef.current;
-    if (!input || !firebaseApp) {
+    if (!input) {
+      return null;
+    }
+
+    let firebaseApp: FirebaseApp;
+    try {
+      firebaseApp = getApp();
+    } catch (error) {
+      console.error("Firebase app not initialized.", error);
       toast({
-        variant: 'destructive',
-        title: 'Erro de Inicialização',
-        description:
-          'Não foi possível conectar ao serviço de armazenamento. Tente novamente.',
+          variant: 'destructive',
+          title: 'Erro de Configuração',
+          description: 'O app Firebase não foi inicializado corretamente.'
       });
       return null;
     }
@@ -701,15 +690,15 @@ export default function ProposalModal({
                 {isGenerating ? 'Gerando link, aguarde...' : 'Clique em qualquer texto para editar antes de gerar o link.'}
             </p>
             <div className="flex gap-2 items-center">
-                <Button variant="outline" onClick={() => handleShare('copy')} disabled={isGenerating || !firebaseApp}>
+                <Button variant="outline" onClick={() => handleShare('copy')} disabled={isGenerating}>
                   {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
                   Copiar Link
                 </Button>
-                <Button variant="outline" onClick={() => handleShare('email')} disabled={isGenerating || !firebaseApp}>
+                <Button variant="outline" onClick={() => handleShare('email')} disabled={isGenerating}>
                   {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
                   Email
                 </Button>
-                <Button onClick={() => handleShare('whatsapp')} disabled={isGenerating || !firebaseApp}>
+                <Button onClick={() => handleShare('whatsapp')} disabled={isGenerating}>
                   {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   WhatsApp
                 </Button>
