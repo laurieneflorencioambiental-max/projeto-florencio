@@ -47,7 +47,6 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    // Only try to access localStorage after initial auth check and if user is not logged in
     if (!isUserLoading && !user) {
       try {
         const savedSidebarLogo = localStorage.getItem('sidebarLogo');
@@ -115,26 +114,26 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-sidebar p-4">
-      <Card className="w-full max-w-sm">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-sm bg-sidebar text-sidebar-foreground shadow-2xl border-sidebar-border">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-3 mb-4">
                 {sidebarLogo ? (
                     <img src={sidebarLogo} alt="Logo da Empresa" className="h-10 w-10 object-contain" />
                 ) : (
-                    <Briefcase className="h-10 w-10 text-primary flex-shrink-0" />
+                    <Briefcase className="h-10 w-10 text-sidebar-foreground flex-shrink-0" />
                 )}
                 <div className="flex flex-col text-left">
-                <h2 className="text-xl font-headline font-bold text-foreground leading-tight">
+                <h2 className="text-xl font-headline font-bold text-sidebar-foreground leading-tight">
                     Comercial
                 </h2>
-                <p className="text-base text-foreground/80 leading-tight">
+                <p className="text-base text-sidebar-foreground/80 leading-tight">
                     Grupo Florencio
                 </p>
                 </div>
             </div>
           <CardTitle>Acessar Plataforma</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sidebar-foreground/80">
             Use seu email e senha para entrar.
           </CardDescription>
         </CardHeader>
@@ -148,6 +147,7 @@ export default function LoginPage() {
                 placeholder="seu@email.com"
                 {...register('email')}
                 disabled={isSubmitting}
+                className="bg-sidebar-accent border-sidebar-border placeholder:text-sidebar-foreground/70 focus:bg-sidebar"
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -161,6 +161,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 {...register('password')}
                 disabled={isSubmitting}
+                className="bg-sidebar-accent border-sidebar-border placeholder:text-sidebar-foreground/70 focus:bg-sidebar"
               />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>
@@ -175,7 +176,7 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Card>
-      <p className="mt-4 text-center text-xs text-sidebar-foreground/70">
+      <p className="mt-4 text-center text-xs text-muted-foreground">
         Não tem uma conta? Peça ao seu gestor para criar um acesso para você.
       </p>
     </main>
