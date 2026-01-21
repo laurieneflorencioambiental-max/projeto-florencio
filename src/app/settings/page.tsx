@@ -23,6 +23,7 @@ import {
   Briefcase,
   Moon,
   Sun,
+  Wallpaper,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -39,6 +40,9 @@ import { Switch } from '@/components/ui/switch';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
+const MAX_LOGIN_BG_SIZE_KB = 500;
+
+type ImageType = 'proposal' | 'sidebar' | 'loginBackground';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -51,14 +55,15 @@ export default function SettingsPage() {
   const [sidebarLogoPreview, setSidebarLogoPreview] = useState<string | null>(
     null
   );
+  const [loginBgPreview, setLoginBgPreview] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const [isUploading, setIsUploading] = useState(false);
 
   const proposalFileInputRef = useRef<HTMLInputElement>(null);
   const sidebarFileInputRef = useRef<HTMLInputElement>(null);
+  const loginBgFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize theme from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as
       | 'light'
@@ -78,19 +83,19 @@ export default function SettingsPage() {
     } else if (user) {
       try {
         const savedProposalLogo = localStorage.getItem('companyLogo');
-        if (savedProposalLogo) {
-          setProposalLogoPreview(savedProposalLogo);
-        }
+        if (savedProposalLogo) setProposalLogoPreview(savedProposalLogo);
+
         const savedSidebarLogo = localStorage.getItem('sidebarLogo');
-        if (savedSidebarLogo) {
-          setSidebarLogoPreview(savedSidebarLogo);
-        }
+        if (savedSidebarLogo) setSidebarLogoPreview(savedSidebarLogo);
+
+        const savedLoginBg = localStorage.getItem('loginBackground');
+        if (savedLoginBg) setLoginBgPreview(savedLoginBg);
       } catch (error) {
-        console.error('Failed to load logos from localStorage:', error);
+        console.error('Failed to load assets from localStorage:', error);
         toast({
           variant: 'destructive',
-          title: 'Erro ao carregar logos',
-          description: 'Não foi possível carregar os logos salvos.',
+          title: 'Erro ao carregar personalizações',
+          description: 'Não foi possível carregar as imagens salvas.',
         });
       }
     }
@@ -102,36 +107,46 @@ export default function SettingsPage() {
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', isDark);
 
-    // Also fire a storage event so other tabs can update
     window.dispatchEvent(
-      new StorageEvent('storage', {
-        key: 'theme',
-        newValue: newTheme,
-      })
+      new StorageEvent('storage', { key: 'theme', newValue: newTheme })
     );
   };
 
-  const handleLogoUpload = (
+  const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
-    logoType: 'proposal' | 'sidebar'
+    imageType: ImageType
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const maxSize =
-      logoType === 'proposal'
-        ? MAX_PROPOSAL_LOGO_SIZE_KB
-        : MAX_SIDEBAR_LOGO_SIZE_KB;
-    const localStorageKey =
-      logoType === 'proposal' ? 'companyLogo' : 'sidebarLogo';
-    const setPreview =
-      logoType === 'proposal' ? setProposalLogoPreview : setSidebarLogoPreview;
+    const configMap = {
+      proposal: {
+        maxSize: MAX_PROPOSAL_LOGO_SIZE_KB,
+        key: 'companyLogo',
+        setPreview: setProposalLogoPreview,
+        name: 'Logo da Proposta',
+      },
+      sidebar: {
+        maxSize: MAX_SIDEBAR_LOGO_SIZE_KB,
+        key: 'sidebarLogo',
+        setPreview: setSidebarLogoPreview,
+        name: 'Ícone',
+      },
+      loginBackground: {
+        maxSize: MAX_LOGIN_BG_SIZE_KB,
+        key: 'loginBackground',
+        setPreview: setLoginBgPreview,
+        name: 'Imagem de Fundo do Login',
+      },
+    };
 
-    if (file.size > maxSize * 1024) {
+    const config = configMap[imageType];
+
+    if (file.size > config.maxSize * 1024) {
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: `O logo deve ter no máximo ${maxSize}KB.`,
+        description: `A imagem deve ter no máximo ${config.maxSize}KB.`,
       });
       return;
     }
@@ -141,29 +156,25 @@ export default function SettingsPage() {
     reader.onloadend = () => {
       const base64String = reader.result as string;
       try {
-        localStorage.setItem(localStorageKey, base64String);
-        setPreview(base64String);
+        localStorage.setItem(config.key, base64String);
+        config.setPreview(base64String);
         toast({
-          title: 'Logo atualizado!',
-          description: 'Seu novo logo foi salvo com sucesso.',
+          title: `${config.name} atualizado(a)!`,
+          description: 'Sua nova imagem foi salva com sucesso.',
         });
-        // Also fire a storage event so other tabs can update
         window.dispatchEvent(
           new StorageEvent('storage', {
-            key: localStorageKey,
+            key: config.key,
             newValue: base64String,
           })
         );
       } catch (error) {
-        console.error(
-          `Failed to save ${logoType} logo to localStorage:`,
-          error
-        );
+        console.error(`Failed to save ${imageType} to localStorage:`, error);
         toast({
           variant: 'destructive',
           title: 'Erro ao salvar',
           description:
-            'Não foi possível salvar o logo. O armazenamento pode estar cheio.',
+            'Não foi possível salvar a imagem. O armazenamento pode estar cheio.',
         });
       } finally {
         setIsUploading(false);
@@ -172,40 +183,49 @@ export default function SettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleRemoveLogo = (logoType: 'proposal' | 'sidebar') => {
-    const localStorageKey =
-      logoType === 'proposal' ? 'companyLogo' : 'sidebarLogo';
-    const setPreview =
-      logoType === 'proposal' ? setProposalLogoPreview : setSidebarLogoPreview;
-    const fileInputRef =
-      logoType === 'proposal' ? proposalFileInputRef : sidebarFileInputRef;
+  const handleRemoveImage = (imageType: ImageType) => {
+    const configMap = {
+      proposal: {
+        key: 'companyLogo',
+        setPreview: setProposalLogoPreview,
+        name: 'Logo da proposta',
+        fileInputRef: proposalFileInputRef,
+      },
+      sidebar: {
+        key: 'sidebarLogo',
+        setPreview: setSidebarLogoPreview,
+        name: 'Ícone',
+        fileInputRef: sidebarFileInputRef,
+      },
+      loginBackground: {
+        key: 'loginBackground',
+        setPreview: setLoginBgPreview,
+        name: 'Imagem de fundo',
+        fileInputRef: loginBgFileInputRef,
+      },
+    };
+
+    const config = configMap[imageType];
 
     try {
-      localStorage.removeItem(localStorageKey);
-      setPreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      localStorage.removeItem(config.key);
+      config.setPreview(null);
+      if (config.fileInputRef.current) {
+        config.fileInputRef.current.value = '';
       }
       toast({
-        title: 'Logo removido',
-        description: `O logo foi removido.`,
+        title: 'Imagem removida',
+        description: `O(a) ${config.name} foi removido(a).`,
       });
-      // Also fire a storage event so other tabs can update
       window.dispatchEvent(
-        new StorageEvent('storage', {
-          key: localStorageKey,
-          newValue: null,
-        })
+        new StorageEvent('storage', { key: config.key, newValue: null })
       );
     } catch (error) {
-      console.error(
-        `Failed to remove ${logoType} logo from localStorage:`,
-        error
-      );
+      console.error(`Failed to remove ${imageType} from localStorage:`, error);
       toast({
         variant: 'destructive',
         title: 'Erro ao remover',
-        description: 'Não foi possível remover o logo.',
+        description: `Não foi possível remover o(a) ${config.name}.`,
       });
     }
   };
@@ -223,9 +243,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Tema de Aparência</CardTitle>
-          <CardDescription>
-            Selecione o tema para a plataforma.
-          </CardDescription>
+          <CardDescription>Selecione o tema para a plataforma.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border p-4">
@@ -303,14 +321,13 @@ export default function SettingsPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação removerá permanentemente o ícone da barra
-                          lateral.
+                          Esta ação removerá permanentemente o ícone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleRemoveLogo('sidebar')}
+                          onClick={() => handleRemoveImage('sidebar')}
                         >
                           Sim, remover
                         </AlertDialogAction>
@@ -324,13 +341,13 @@ export default function SettingsPage() {
                 type="file"
                 className="hidden"
                 accept="image/png, image/jpeg, image/webp, image/svg+xml"
-                onChange={e => handleLogoUpload(e, 'sidebar')}
+                onChange={e => handleImageUpload(e, 'sidebar')}
                 disabled={isUploading}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               Recomendado: PNG quadrado com fundo transparente, até{' '}
-              {MAX_SIDEBAR_LOGO_SIZE_KB}KB, aprox. 64x64 pixels.
+              {MAX_SIDEBAR_LOGO_SIZE_KB}KB.
             </p>
           </div>
         </CardContent>
@@ -343,15 +360,95 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Tela de Login</CardTitle>
+          <CardDescription>
+            Personalize a imagem de fundo da tela de login.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label>Imagem de Fundo</Label>
+            <div className="flex items-center gap-4">
+              <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
+                {loginBgPreview ? (
+                  <img
+                    src={loginBgPreview}
+                    alt="Pré-visualização do Fundo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Wallpaper className="mx-auto h-8 w-8" />
+                    <p className="text-xs">Sem imagem</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() => loginBgFileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
+                  {loginBgPreview ? 'Alterar Imagem' : 'Enviar Imagem'}
+                </Button>
+                {loginBgPreview && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={isUploading}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação removerá permanentemente a imagem de fundo.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveImage('loginBackground')}
+                        >
+                          Sim, remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+              <Input
+                ref={loginBgFileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={e => handleImageUpload(e, 'loginBackground')}
+                disabled={isUploading}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Recomendado: Imagem com boa resolução, até{' '}
+              {MAX_LOGIN_BG_SIZE_KB}KB.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Aparência da Proposta</CardTitle>
           <CardDescription>
-            Personalize a aparência das propostas comerciais com o logo da sua
-            empresa.
+            Personalize a aparência das propostas comerciais.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label>Logo da Empresa (para Propostas)</Label>
+            <Label>Logo da Empresa</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
                 {proposalLogoPreview ? (
@@ -391,14 +488,13 @@ export default function SettingsPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação removerá permanentemente o seu logo das
-                          propostas.
+                          Esta ação removerá permanentemente o seu logo.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleRemoveLogo('proposal')}
+                          onClick={() => handleRemoveImage('proposal')}
                         >
                           Sim, remover
                         </AlertDialogAction>
@@ -412,21 +508,16 @@ export default function SettingsPage() {
                 type="file"
                 className="hidden"
                 accept="image/png, image/jpeg, image/webp, image/svg+xml"
-                onChange={e => handleLogoUpload(e, 'proposal')}
+                onChange={e => handleImageUpload(e, 'proposal')}
                 disabled={isUploading}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               Recomendado: PNG com fundo transparente, até{' '}
-              {MAX_PROPOSAL_LOGO_SIZE_KB}KB, aprox. 400x150 pixels.
+              {MAX_PROPOSAL_LOGO_SIZE_KB}KB.
             </p>
           </div>
         </CardContent>
-        <CardFooter>
-          <p className="text-xs text-muted-foreground">
-            As alterações são salvas automaticamente no seu navegador.
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );

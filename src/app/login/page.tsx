@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Card,
   CardHeader,
@@ -37,6 +38,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
+  const [loginBackground, setLoginBackground] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -54,12 +56,15 @@ export default function LoginPage() {
         if (savedSidebarLogo) {
           setSidebarLogo(savedSidebarLogo);
         }
+        const savedLoginBg = localStorage.getItem('loginBackground');
+        if (savedLoginBg) {
+          setLoginBackground(savedLoginBg);
+        }
       } catch (error) {
-        console.error('Failed to load sidebar logo from localStorage:', error);
+        console.error('Failed to load from localStorage:', error);
       }
     }
   }, [isUserLoading, user]);
-
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -105,91 +110,130 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
-  
+
   if (isUserLoading || user) {
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm bg-sidebar text-sidebar-foreground shadow-2xl border-sidebar-border">
-        <CardHeader className="text-center">
-            <div className="flex justify-center items-center gap-3 mb-4">
+    <main className="grid min-h-screen w-full md:grid-cols-2">
+      <div className="relative hidden bg-muted md:block">
+        {loginBackground ? (
+          <Image
+            src={loginBackground}
+            alt="Imagem de fundo da tela de login"
+            fill
+            className="object-cover"
+            priority
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center p-10">
+            <Briefcase className="h-24 w-24 text-muted-foreground/30" />
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-center p-6 lg:p-8 bg-background">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+          <Card className="w-full bg-sidebar text-sidebar-foreground shadow-2xl border-sidebar-border">
+            <CardHeader className="text-center">
+              <div className="flex justify-center items-center gap-3 mb-4">
                 {sidebarLogo ? (
-                    <img src={sidebarLogo} alt="Logo da Empresa" className="h-10 w-10 object-contain" />
+                  <img
+                    src={sidebarLogo}
+                    alt="Logo da Empresa"
+                    className="h-10 w-10 object-contain"
+                  />
                 ) : (
-                    <Briefcase className="h-10 w-10 text-sidebar-foreground flex-shrink-0" />
+                  <Briefcase className="h-10 w-10 text-sidebar-foreground flex-shrink-0" />
                 )}
                 <div className="flex flex-col text-left">
-                <h2 className="text-xl font-headline font-bold text-sidebar-foreground leading-tight">
+                  <h2 className="text-xl font-headline font-bold text-sidebar-foreground leading-tight">
                     Comercial
-                </h2>
-                <p className="text-base text-sidebar-foreground/80 leading-tight">
+                  </h2>
+                  <p className="text-base text-sidebar-foreground/80 leading-tight">
                     Grupo Florencio
-                </p>
+                  </p>
                 </div>
-            </div>
-          <CardTitle>Acessar Plataforma</CardTitle>
-          <CardDescription className="text-sidebar-foreground/80">
-            Use seu email e senha para entrar.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                {...register('email')}
-                disabled={isSubmitting}
-                className="bg-sidebar-accent border-sidebar-border placeholder:text-sidebar-foreground/70 focus:bg-sidebar"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-               <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  {...register('password')}
-                  disabled={isSubmitting}
-                  className="bg-sidebar-accent border-sidebar-border placeholder:text-sidebar-foreground/70 focus:bg-sidebar pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                  aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Entrar
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Não tem uma conta? Peça ao seu gestor para criar um acesso para você.
-      </p>
+              <CardTitle>Acessar Plataforma</CardTitle>
+              <CardDescription className="text-sidebar-foreground/80">
+                Use seu email e senha para entrar.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    {...register('email')}
+                    disabled={isSubmitting}
+                    className="bg-sidebar-accent border-sidebar-border placeholder:text-sidebar-foreground/70 focus:bg-sidebar"
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      {...register('password')}
+                      disabled={isSubmitting}
+                      className="bg-sidebar-accent border-sidebar-border placeholder:text-sidebar-foreground/70 focus:bg-sidebar pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                      aria-label={
+                        showPassword ? 'Esconder senha' : 'Mostrar senha'
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm text-destructive">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Entrar
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+          <p className="px-8 text-center text-xs text-muted-foreground">
+            Não tem uma conta? Peça ao seu gestor para criar um acesso para você.
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
