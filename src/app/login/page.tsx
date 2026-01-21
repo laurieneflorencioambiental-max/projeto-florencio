@@ -47,15 +47,17 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    try {
-      const savedSidebarLogo = localStorage.getItem('sidebarLogo');
-      if (savedSidebarLogo) {
-        setSidebarLogo(savedSidebarLogo);
+    if (!isUserLoading) {
+      try {
+        const savedSidebarLogo = localStorage.getItem('sidebarLogo');
+        if (savedSidebarLogo) {
+          setSidebarLogo(savedSidebarLogo);
+        }
+      } catch (error) {
+        console.error('Failed to load sidebar logo from localStorage:', error);
       }
-    } catch (error) {
-      console.error('Failed to load sidebar logo from localStorage:', error);
     }
-  }, []);
+  }, [isUserLoading]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
