@@ -88,9 +88,9 @@ export default function Home() {
 
   // Fetch sellers from Firestore
   const sellersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!user || !firestore) return null;
     return collection(firestore, 'sellers');
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: sellers, isLoading: areSellersLoading } = useCollection<Seller>(sellersQuery);
 
   useEffect(() => {
