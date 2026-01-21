@@ -36,6 +36,7 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
 
   const {
     register,
@@ -44,6 +45,17 @@ export default function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    try {
+      const savedSidebarLogo = localStorage.getItem('sidebarLogo');
+      if (savedSidebarLogo) {
+        setSidebarLogo(savedSidebarLogo);
+      }
+    } catch (error) {
+      console.error('Failed to load sidebar logo from localStorage:', error);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -103,7 +115,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-3 mb-4">
-                <Briefcase className="h-10 w-10 text-primary flex-shrink-0" />
+                {sidebarLogo ? (
+                    <img src={sidebarLogo} alt="Logo da Empresa" className="h-10 w-10 object-contain" />
+                ) : (
+                    <Briefcase className="h-10 w-10 text-primary flex-shrink-0" />
+                )}
                 <div className="flex flex-col text-left">
                 <h2 className="text-xl font-headline font-bold text-foreground leading-tight">
                     Comercial
