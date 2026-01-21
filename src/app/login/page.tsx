@@ -47,7 +47,8 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading) {
+    // Only try to access localStorage after initial auth check and if user is not logged in
+    if (!isUserLoading && !user) {
       try {
         const savedSidebarLogo = localStorage.getItem('sidebarLogo');
         if (savedSidebarLogo) {
@@ -57,7 +58,8 @@ export default function LoginPage() {
         console.error('Failed to load sidebar logo from localStorage:', error);
       }
     }
-  }, [isUserLoading]);
+  }, [isUserLoading, user]);
+
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -113,7 +115,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-sidebar p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-3 mb-4">
@@ -173,7 +175,7 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Card>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
+      <p className="mt-4 text-center text-xs text-sidebar-foreground/70">
         Não tem uma conta? Peça ao seu gestor para criar um acesso para você.
       </p>
     </main>
