@@ -266,7 +266,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Label>Ícone da Barra Lateral</Label>
+            <Label>Ícone (Barra Lateral e Login)</Label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
                 {sidebarLogoPreview ? (
