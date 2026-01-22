@@ -2,9 +2,9 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Matches any file within the /customization folder and its subdirectories.
-    // Using a recursive wildcard to ensure all paths are covered.
-    match /customization/{allPaths=**} {
+    // Matches files directly inside the /customization folder.
+    // e.g., /customization/proposal_logo
+    match /customization/{fileName} {
 
       // Anyone can read the images (logos, backgrounds).
       // This is safe because they are just visual assets.
