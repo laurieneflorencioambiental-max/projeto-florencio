@@ -72,13 +72,5 @@ service cloud.firestore {
     match /proposal-templates/{templateId} {
        allow read, write: if isSignedIn();
     }
-    
-    /**
-     * @description Secures the 'app-settings' collection.
-     * This is a singleton collection. Any authenticated user can read and write.
-     */
-    match /app-settings/{docId} {
-       allow read, write: if isSignedIn();
-    }
   }
 }

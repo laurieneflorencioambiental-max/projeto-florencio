@@ -105,16 +105,6 @@
             "value": { "type": "number" }
         },
         "required": ["id", "service", "value"]
-    },
-    "AppSettings": {
-        "title": "App Settings",
-        "description": "Global application settings and customizations.",
-        "type": "object",
-        "properties": {
-            "sidebarLogoUrl": { "type": "string", "format": "uri" },
-            "proposalLogoUrl": { "type": "string", "format": "uri" },
-            "loginBackgroundUrl": { "type": "string", "format": "uri" }
-        }
     }
   },
   "auth": {
@@ -149,14 +139,6 @@
           "entityName": "ProposalTemplate",
           "schema": { "$ref": "#/backend/entities/ProposalTemplate" },
           "description": "Stores global proposal templates available to all users."
-        }
-      },
-      {
-        "path": "/app-settings/customization",
-        "definition": {
-          "entityName": "AppSettings",
-          "schema": { "$ref": "#/backend/entities/AppSettings" },
-          "description": "A singleton document holding global app customization settings like logos."
         }
       }
     ]

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate, Plan, ProposalState, ProposalData, AppSettings } from '@/lib/types';
+import type { Lead, ProposalTemplate, Plan, ProposalState, ProposalData } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -112,18 +112,17 @@ export default function ProposalModal({
   }
 
   useEffect(() => {
-    if (isOpen && firestore) {
+    if (isOpen) {
      resetState();
-      const fetchSettings = async () => {
-        const settingsDoc = await getDoc(doc(firestore, 'app-settings', 'customization'));
-        if (settingsDoc.exists()) {
-            const settingsData = settingsDoc.data() as AppSettings;
-            setLogoUrl(settingsData.proposalLogoUrl || null);
-        }
+      try {
+        const localLogoUrl = localStorage.getItem('proposalLogoUrl');
+        setLogoUrl(localLogoUrl);
+      } catch (e) {
+        console.error("Could not read from localStorage", e);
+        setLogoUrl(null);
       }
-      fetchSettings();
     }
-  }, [isOpen, lead, allLeads, firestore]);
+  }, [isOpen, lead, allLeads]);
 
   const handleTemplateChange = (templateId: string) => {
     const template = proposalTemplates.find(t => t.id === templateId);

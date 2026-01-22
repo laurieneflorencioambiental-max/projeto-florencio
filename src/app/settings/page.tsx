@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, setDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -38,8 +37,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { uploadFile, deleteFile } from '@/firebase/storage';
-import { AppSettings } from '@/lib/types';
+import type { AppSettings } from '@/lib/types';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -50,21 +48,12 @@ type ImageType = 'proposalLogoUrl' | 'sidebarLogoUrl' | 'loginBackgroundUrl';
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
   const { toast } = useToast();
-
-  const settingsDocRef = useMemoFirebase(
-    () => (firestore ? doc(firestore, 'app-settings', 'customization') : null),
-    [firestore]
-  );
-  const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
   
-  const [previews, setPreviews] = useState<Partial<Record<ImageType, string | null>>>({});
+  const [settings, setSettings] = useState<Partial<AppSettings>>({});
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  const [isUploading, setIsUploading] = useState<
-    Partial<Record<ImageType, boolean>>
-  >({});
+  const [isUploading, setIsUploading] = useState<Partial<Record<ImageType, boolean>>>({});
   const anyUploading = Object.values(isUploading).some(v => v);
 
   const fileInputRefs = {
@@ -75,12 +64,21 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const initialTheme =
-      savedTheme ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light');
+    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     setTheme(initialTheme);
+    
+    try {
+        const sidebarLogoUrl = localStorage.getItem('sidebarLogoUrl');
+        const proposalLogoUrl = localStorage.getItem('proposalLogoUrl');
+        const loginBackgroundUrl = localStorage.getItem('loginBackgroundUrl');
+        setSettings({
+            sidebarLogoUrl,
+            proposalLogoUrl,
+            loginBackgroundUrl,
+        });
+    } catch(e) {
+        console.error("Failed to load settings from localStorage", e);
+    }
   }, []);
 
   useEffect(() => {
@@ -89,32 +87,6 @@ export default function SettingsPage() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (settings) {
-      setPreviews({
-        proposalLogoUrl: settings.proposalLogoUrl || null,
-        sidebarLogoUrl: settings.sidebarLogoUrl || null,
-        loginBackgroundUrl: settings.loginBackgroundUrl || null,
-      });
-      // Sync settings to localStorage for other parts of the app that don't use Firestore directly.
-      try {
-        if(settings.sidebarLogoUrl) {
-            localStorage.setItem('sidebarLogoUrl', settings.sidebarLogoUrl);
-        } else {
-            localStorage.removeItem('sidebarLogoUrl');
-        }
-
-        if(settings.loginBackgroundUrl) {
-            localStorage.setItem('loginBackgroundUrl', settings.loginBackgroundUrl);
-        } else {
-            localStorage.removeItem('loginBackgroundUrl');
-        }
-      } catch (e) {
-        console.error("Could not update localStorage from Firestore settings", e);
-      }
-    }
-  }, [settings]);
-
   const handleThemeChange = (isDark: boolean) => {
     const newTheme = isDark ? 'dark' : 'light';
     setTheme(newTheme);
@@ -122,18 +94,24 @@ export default function SettingsPage() {
     document.documentElement.classList.toggle('dark', isDark);
     window.dispatchEvent(new StorageEvent('storage', { key: 'theme', newValue: newTheme }));
   };
+  
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    imageType: ImageType
-  ) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, imageType: ImageType) => {
     const file = event.target.files?.[0];
-    if (!file || !settingsDocRef) return;
+    if (!file) return;
 
     const configMap = {
-      proposalLogoUrl: { maxSize: MAX_PROPOSAL_LOGO_SIZE_KB, path: 'customization/proposal_logo', name: 'Logo da Proposta' },
-      sidebarLogoUrl: { maxSize: MAX_SIDEBAR_LOGO_SIZE_KB, path: 'customization/sidebar_logo', name: 'Ícone (Barra Lateral e Login)' },
-      loginBackgroundUrl: { maxSize: MAX_LOGIN_BG_SIZE_KB, path: 'customization/login_background', name: 'Imagem de Fundo do Login' },
+      proposalLogoUrl: { maxSize: MAX_PROPOSAL_LOGO_SIZE_KB, name: 'Logo da Proposta' },
+      sidebarLogoUrl: { maxSize: MAX_SIDEBAR_LOGO_SIZE_KB, name: 'Ícone (Barra Lateral e Login)' },
+      loginBackgroundUrl: { maxSize: MAX_LOGIN_BG_SIZE_KB, name: 'Imagem de Fundo do Login' },
     };
     const config = configMap[imageType];
 
@@ -144,14 +122,16 @@ export default function SettingsPage() {
 
     setIsUploading(prev => ({ ...prev, [imageType]: true }));
     try {
-      const downloadUrl = await uploadFile(config.path, file);
-
-      await setDoc(settingsDocRef, { [imageType]: downloadUrl }, { merge: true });
+      const base64Url = await fileToBase64(file);
+      
+      localStorage.setItem(imageType, base64Url);
+      setSettings(prev => ({ ...prev, [imageType]: base64Url }));
+      window.dispatchEvent(new StorageEvent('storage', { key: imageType, newValue: base64Url }));
 
       toast({ title: `${config.name} atualizado(a)!`, description: 'Sua nova imagem foi salva com sucesso.' });
     } catch (error) {
       console.error(`Failed to upload ${imageType}:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.';
+      const errorMessage = error instanceof Error ? error.message : 'Não foi possível ler a imagem.';
       toast({ variant: 'destructive', title: 'Erro no Upload', description: errorMessage });
     } finally {
       setIsUploading(prev => ({ ...prev, [imageType]: false }));
@@ -159,28 +139,27 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRemoveImage = async (imageType: ImageType) => {
+  const handleRemoveImage = (imageType: ImageType) => {
     const configMap = {
-      proposalLogoUrl: { path: 'customization/proposal_logo', name: 'Logo da proposta' },
-      sidebarLogoUrl: { path: 'customization/sidebar_logo', name: 'Ícone (Barra Lateral e Login)' },
-      loginBackgroundUrl: { path: 'customization/login_background', name: 'Imagem de fundo' },
+      proposalLogoUrl: { name: 'Logo da proposta' },
+      sidebarLogoUrl: { name: 'Ícone (Barra Lateral e Login)' },
+      loginBackgroundUrl: { name: 'Imagem de fundo' },
     };
     const config = configMap[imageType];
 
-    if(!settingsDocRef) return;
-
     try {
-      await deleteFile(config.path);
-      await setDoc(settingsDocRef, { [imageType]: null }, { merge: true });
+      localStorage.removeItem(imageType);
+      setSettings(prev => ({ ...prev, [imageType]: null }));
+       window.dispatchEvent(new StorageEvent('storage', { key: imageType, newValue: null }));
 
       toast({ title: 'Imagem removida', description: `O(a) ${config.name} foi removido(a).` });
     } catch (error) {
       console.error(`Failed to remove ${imageType}:`, error);
-      toast({ variant: 'destructive', title: 'Erro ao remover', description: `Não foi possível remover o(a) ${config.name}. Verifique as permissões do Firebase Storage.` });
+      toast({ variant: 'destructive', title: 'Erro ao remover', description: `Não foi possível remover o(a) ${config.name}.` });
     }
   };
 
-  if (isUserLoading || areSettingsLoading || !user) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -215,7 +194,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Aparência do Aplicativo</CardTitle>
           <CardDescription>
-            Personalize a identidade visual da plataforma. As alterações são salvas na nuvem e aplicadas a todos os usuários.
+            Personalize a identidade visual da plataforma. As alterações são salvas localmente neste navegador.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -223,8 +202,8 @@ export default function SettingsPage() {
             <Label>Ícone (Barra Lateral e Login)</Label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {previews.sidebarLogoUrl ? (
-                  <img src={previews.sidebarLogoUrl} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
+                {settings.sidebarLogoUrl ? (
+                  <img src={settings.sidebarLogoUrl} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
                 ) : (
                   <Briefcase className="h-8 w-8 text-muted-foreground" />
                 )}
@@ -232,9 +211,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button onClick={() => fileInputRefs.sidebarLogoUrl.current?.click()} disabled={anyUploading}>
                   {isUploading.sidebarLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {previews.sidebarLogoUrl ? 'Alterar Ícone' : 'Enviar Ícone'}
+                  {settings.sidebarLogoUrl ? 'Alterar Ícone' : 'Enviar Ícone'}
                 </Button>
-                {previews.sidebarLogoUrl && (
+                {settings.sidebarLogoUrl && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
@@ -261,8 +240,8 @@ export default function SettingsPage() {
             <Label>Imagem de Fundo</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
-                {previews.loginBackgroundUrl ? (
-                  <img src={previews.loginBackgroundUrl} alt="Pré-visualização do Fundo" className="w-full h-full object-cover" />
+                {settings.loginBackgroundUrl ? (
+                  <img src={settings.loginBackgroundUrl} alt="Pré-visualização do Fundo" className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center text-muted-foreground"><Wallpaper className="mx-auto h-8 w-8" /><p className="text-xs">Sem imagem</p></div>
                 )}
@@ -270,9 +249,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button onClick={() => fileInputRefs.loginBackgroundUrl.current?.click()} disabled={anyUploading}>
                   {isUploading.loginBackgroundUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {previews.loginBackgroundUrl ? 'Alterar Imagem' : 'Enviar Imagem'}
+                  {settings.loginBackgroundUrl ? 'Alterar Imagem' : 'Enviar Imagem'}
                 </Button>
-                {previews.loginBackgroundUrl && (
+                {settings.loginBackgroundUrl && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
@@ -299,8 +278,8 @@ export default function SettingsPage() {
             <Label>Logo da Empresa</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {previews.proposalLogoUrl ? (
-                  <img src={previews.proposalLogoUrl} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
+                {settings.proposalLogoUrl ? (
+                  <img src={settings.proposalLogoUrl} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
                 ) : (
                   <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto h-8 w-8" /><p className="text-xs">Sem logo</p></div>
                 )}
@@ -308,9 +287,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button onClick={() => fileInputRefs.proposalLogoUrl.current?.click()} disabled={anyUploading}>
                   {isUploading.proposalLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {previews.proposalLogoUrl ? 'Alterar Logo' : 'Enviar Logo'}
+                  {settings.proposalLogoUrl ? 'Alterar Logo' : 'Enviar Logo'}
                 </Button>
-                {previews.proposalLogoUrl && (
+                {settings.proposalLogoUrl && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
