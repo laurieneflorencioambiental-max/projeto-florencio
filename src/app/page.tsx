@@ -43,7 +43,7 @@ import ContactSourceChart from '@/components/charts/contact-source-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -225,6 +225,7 @@ export default function Home() {
             proposalNumber: 1,
             proposalVersion: 0,
             rejectionReason: null,
+            comments: [],
           },
           {
             name: 'Bruno Lima',
@@ -246,6 +247,7 @@ export default function Home() {
             proposalNumber: 2,
             proposalVersion: 1,
             rejectionReason: null,
+            comments: [],
           },
           {
             name: 'Carla Dias',
@@ -267,6 +269,7 @@ export default function Home() {
             proposalNumber: 3,
             proposalVersion: 2,
             rejectionReason: null,
+            comments: [],
           },
           {
             name: 'Daniel Faria',
@@ -288,6 +291,7 @@ export default function Home() {
             previousStatus: 'Pendente/Em negociação',
             proposalNumber: 4,
             proposalVersion: 0,
+            comments: [],
           },
           {
             name: 'Elisa Mendes',
@@ -309,6 +313,7 @@ export default function Home() {
             previousStatus: 'Pendente/Em negociação',
             proposalNumber: 5,
             proposalVersion: 0,
+            comments: [],
           },
         ];
 
@@ -374,6 +379,7 @@ export default function Home() {
           previousStatus: null,
           proposalNumber: null,
           proposalVersion: 0,
+          comments: [],
       };
       await setDoc(newDocRef, newLead);
   };
@@ -399,6 +405,23 @@ export default function Home() {
             status: newStatus,
             previousStatus: lead.status
         });
+    }
+  };
+
+  const handleAddComment = async (leadId: string, commentText: string) => {
+    if (!user || !firestore || !leads || !currentSeller) return;
+    const lead = leads.find(l => l.id === leadId);
+    if (lead) {
+      const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
+      const newComment = {
+        id: `comment-${Date.now()}-${Math.random()}`,
+        text: commentText,
+        author: currentSeller,
+        createdAt: serverTimestamp(),
+      };
+      await updateDoc(leadRef, {
+        comments: arrayUnion(newComment)
+      });
     }
   };
 
@@ -651,6 +674,7 @@ export default function Home() {
         onUpdateLead={handleUpdateLead}
         onDeleteLead={handleDeleteLead}
         onLeadStatusChange={handleLeadStatusChange}
+        onAddComment={handleAddComment}
         proposalTemplates={proposalTemplates || []}
         logoUrl={settings?.proposalLogoUrl}
         proposalCoverUrl={settings?.proposalCoverUrl}

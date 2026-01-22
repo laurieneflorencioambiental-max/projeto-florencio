@@ -14,6 +14,7 @@ type KanbanColumnProps = {
   onDrop: (e: React.DragEvent<HTMLDivElement>, status: Status) => void;
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
+  onAddComment: (leadId: string, commentText: string) => void;
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
@@ -27,6 +28,7 @@ export default function KanbanColumn({
   onDrop,
   onUpdateLead,
   onDeleteLead,
+  onAddComment,
   proposalTemplates,
   logoUrl,
   proposalCoverUrl,
@@ -88,6 +90,7 @@ export default function KanbanColumn({
               allLeads={allLeads}
               onUpdateLead={onUpdateLead}
               onDeleteLead={onDeleteLead}
+              onAddComment={onAddComment}
               proposalTemplates={proposalTemplates}
               logoUrl={logoUrl}
               proposalCoverUrl={proposalCoverUrl}

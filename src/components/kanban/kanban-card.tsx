@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Lead, ProposalTemplate } from '@/lib/types';
 import {
   Card,
@@ -34,11 +34,13 @@ import {
   Repeat,
   Send,
   ArrowRightLeft,
+  MessageSquare,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import ProposalModal from './proposal-modal';
 import {
   AlertDialog,
@@ -52,12 +54,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Separator } from '../ui/separator';
+import { Input } from '../ui/input';
 
 type KanbanCardProps = {
   lead: Lead;
   allLeads: Lead[];
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
+  onAddComment: (leadId: string, commentText: string) => void;
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
@@ -71,11 +81,21 @@ const getLeadDate = (date: any): Date => {
   return date;
 };
 
+const getCommentDate = (date: any): Date => {
+    if (date && typeof date.toDate === 'function') {
+        return date.toDate();
+    }
+    // Fallback for dates that might already be JS Date objects from optimistic updates
+    return new Date(date);
+};
+
+
 export default function KanbanCard({
   lead,
   allLeads,
   onUpdateLead,
   onDeleteLead,
+  onAddComment,
   proposalTemplates,
   logoUrl,
   proposalCoverUrl,
@@ -85,6 +105,23 @@ export default function KanbanCard({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
+  const handleAddComment = () => {
+      if (newComment.trim() === '' || !lead) return;
+      onAddComment(lead.id, newComment);
+      setNewComment('');
+  };
+
+  const sortedComments = useMemo(() => {
+    if (!lead.comments) return [];
+    return [...lead.comments].sort((a, b) => {
+        const dateA = getCommentDate(a.createdAt).getTime();
+        const dateB = getCommentDate(b.createdAt).getTime();
+        return dateB - dateA;
+    });
+  }, [lead.comments]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -231,7 +268,7 @@ export default function KanbanCard({
                 </div>
             </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2">
+        <CardFooter className="flex flex-col gap-2 items-start">
             <div className="w-full flex flex-col gap-2">
                 <Button
                     variant="outline"
@@ -283,6 +320,55 @@ export default function KanbanCard({
                     </div>
                 </TooltipProvider>
             </div>
+            <Collapsible open={commentsOpen} onOpenChange={setCommentsOpen} className="w-full">
+                <Separator className="my-2" />
+                <CollapsibleTrigger asChild>
+                    <div className="w-full flex justify-between items-center cursor-pointer p-1 rounded-md hover:bg-muted">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <MessageSquare className="h-4 w-4" />
+                            <span>Comentários</span>
+                        </div>
+                        <Badge variant="secondary">{lead.comments?.length || 0}</Badge>
+                    </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                    <div className="space-y-3">
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Adicionar um comentário..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleAddComment();
+                                    }
+                                }}
+                            />
+                            <Button size="icon" onClick={handleAddComment} disabled={!newComment.trim()}>
+                                <Send className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            {sortedComments.length > 0 ? (
+                                sortedComments.map((comment: any) => (
+                                    <div key={comment.id} className="text-xs p-2 bg-muted/70 rounded-md">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <p className="font-semibold text-foreground">{comment.author}</p>
+                                            <p className="text-muted-foreground">
+                                                {formatDistanceToNow(getCommentDate(comment.createdAt), { addSuffix: true, locale: ptBR })}
+                                            </p>
+                                        </div>
+                                        <p className="whitespace-pre-wrap break-words text-foreground/90">{comment.text}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-xs text-center text-muted-foreground py-4">Nenhum comentário ainda.</p>
+                            )}
+                        </div>
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
         </CardFooter>
       </Card>
       {lead.status === 'Rejeitado' && (

@@ -11,6 +11,7 @@ type KanbanBoardProps = {
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
   onLeadStatusChange: (leadId: string, newStatus: Status) => void;
+  onAddComment: (leadId: string, commentText: string) => void;
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
@@ -24,6 +25,7 @@ export default function KanbanBoard({
   onUpdateLead,
   onDeleteLead,
   onLeadStatusChange,
+  onAddComment,
   proposalTemplates,
   logoUrl,
   proposalCoverUrl,
@@ -52,6 +54,7 @@ export default function KanbanBoard({
             onDrop={handleDrop}
             onUpdateLead={onUpdateLead}
             onDeleteLead={onDeleteLead}
+            onAddComment={onAddComment}
             proposalTemplates={proposalTemplates}
             logoUrl={logoUrl}
             proposalCoverUrl={proposalCoverUrl}
