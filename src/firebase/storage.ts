@@ -5,41 +5,63 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
+  deleteObject,
 } from 'firebase/storage';
-import type { FirebaseApp } from 'firebase/app';
+import { initializeFirebase } from '@/firebase';
+
+function getStorageInstance() {
+  // This will get the existing app instance or initialize it, thanks to getApps().
+  const { firebaseApp } = initializeFirebase();
+  return getStorage(firebaseApp);
+}
 
 /**
  * Uploads a file to a specified path in Firebase Storage and returns the public URL.
  *
- * @param app - The FirebaseApp instance.
  * @param path - The full path in Firebase Storage where the file will be saved.
  * @param file - The file as a File object.
  * @returns A promise that resolves with the public download URL of the uploaded file.
  */
 export const uploadFile = async (
-  app: FirebaseApp,
   path: string,
   file: File
 ): Promise<string> => {
-  if (!app) {
-    throw new Error('Firebase app is not initialized. Cannot upload file.');
-  }
   if (!file) {
     throw new Error('File is invalid. Cannot upload file.');
   }
 
-  const storage = getStorage(app);
+  const storage = getStorageInstance();
   const storageRef = ref(storage, path);
 
   try {
-    // uploadBytes can take a File object directly and will infer the contentType.
     const snapshot = await uploadBytes(storageRef, file);
-    
     const downloadUrl = await getDownloadURL(snapshot.ref);
     return downloadUrl;
   } catch (error) {
-    console.error('Error during Firebase Storage operation:', error);
+    console.error('Error during Firebase Storage upload operation:', error);
     // Re-throw to be handled by the UI component
     throw error;
+  }
+};
+
+/**
+ * Deletes a file from Firebase Storage.
+ *
+ * @param path - The full path of the file to delete in Storage.
+ */
+export const deleteFile = async (path: string): Promise<void> => {
+  const storage = getStorageInstance();
+  const fileRef = ref(storage, path);
+
+  try {
+    await deleteObject(fileRef);
+  } catch (error: any) {
+    // If the object doesn't exist, it's not an error in this context.
+    // We can safely ignore 'storage/object-not-found' errors.
+    if (error.code !== 'storage/object-not-found') {
+      console.error('Error deleting file from Firebase Storage:', error);
+      // Re-throw other errors to be handled by the caller
+      throw error;
+    }
   }
 };

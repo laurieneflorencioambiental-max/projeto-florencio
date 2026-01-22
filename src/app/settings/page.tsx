@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirebaseApp } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -37,8 +37,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { uploadFile } from '@/firebase/storage';
-import { getStorage, ref, deleteObject } from 'firebase/storage';
+import { uploadFile, deleteFile } from '@/firebase/storage';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -50,7 +49,6 @@ export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
-  const app = useFirebaseApp();
 
   const [proposalLogoPreview, setProposalLogoPreview] = useState<string | null>(
     null
@@ -159,7 +157,7 @@ export default function SettingsPage() {
 
     setIsUploading(true);
     try {
-      const downloadUrl = await uploadFile(app, config.path, file);
+      const downloadUrl = await uploadFile(config.path, file);
 
       localStorage.setItem(config.key, downloadUrl);
       config.setPreview(downloadUrl);
@@ -220,15 +218,7 @@ export default function SettingsPage() {
         config.fileInputRef.current.value = '';
       }
 
-      try {
-        const storage = getStorage(app);
-        const imageRef = ref(storage, config.path);
-        await deleteObject(imageRef);
-      } catch (error: any) {
-        if (error.code !== 'storage/object-not-found') {
-          throw error;
-        }
-      }
+      await deleteFile(config.path);
 
       toast({
         title: 'Imagem removida',
@@ -242,7 +232,7 @@ export default function SettingsPage() {
       toast({
         variant: 'destructive',
         title: 'Erro ao remover',
-        description: `Não foi possível remover o(a) ${config.name}.`,
+        description: `Não foi possível remover o(a) ${config.name}. Verifique as permissões do Firebase Storage.`,
       });
     }
   };
