@@ -43,7 +43,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
-const MAX_LOGIN_BG_SIZE_KB = 500;
+const MAX_LOGIN_BG_SIZE_KB = 2000;
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -63,7 +63,7 @@ export default function SettingsPage() {
   // Fetch initial data using useEffect instead of useDoc
   useEffect(() => {
     if (settingsRef) {
-      setAreSettingsLoading(true);
+      if (!areSettingsLoading) setAreSettingsLoading(true);
       getDoc(settingsRef)
         .then(docSnap => {
           if (docSnap.exists()) {
@@ -79,10 +79,11 @@ export default function SettingsPage() {
         .finally(() => {
           setAreSettingsLoading(false);
         });
-    } else if (!firestore) {
+    } else if (!firestore && areSettingsLoading) {
       setAreSettingsLoading(false);
     }
-  }, [settingsRef]); // Dependency array corrected to only run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsRef, toast]); // Dependency array corrected to only run once on mount.
 
   const anyUploading = Object.values(isUploading).some(v => v);
 
@@ -296,7 +297,7 @@ export default function SettingsPage() {
               </div>
               <Input ref={fileInputRefs.loginBackgroundUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={e => handleImageUpload(e, 'loginBackgroundUrl')} disabled={anyUploading} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Recomendado: Imagem com boa resolução, até {MAX_LOGIN_BG_SIZE_KB}KB.</p>
+            <p className="text-xs text-muted-foreground mt-2">Recomendado: 1920x1080 pixels, até {MAX_LOGIN_BG_SIZE_KB}KB para melhor qualidade.</p>
           </div>
         </CardContent>
       </Card>
