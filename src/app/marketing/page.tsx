@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -64,12 +64,15 @@ interface RoiEntry {
   roi: number;
 }
 
+const campaignStatuses = ['Futura', 'Rodando', 'Pausada', 'Concluída'] as const;
+type CampaignStatus = (typeof campaignStatuses)[number];
+
 interface MarketingAction {
   id: number;
   name: string;
   goal: string;
   deadline: Date;
-  completed: boolean;
+  status: CampaignStatus;
   source?: string;
   percentageGoal?: number;
 }
@@ -90,6 +93,8 @@ export default function MarketingPage() {
   const [newActionDeadline, setNewActionDeadline] = useState<Date | undefined>();
   const [newActionSource, setNewActionSource] = useState('');
   const [newActionPercentageGoal, setNewActionPercentageGoal] = useState('');
+  const [newActionStatus, setNewActionStatus] =
+    useState<CampaignStatus>('Futura');
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
   const [isSuggestingGoal, setIsSuggestingGoal] = useState(false);
   const [goalSuggestion, setGoalSuggestion] = useState<string | null>(null);
@@ -165,7 +170,10 @@ export default function MarketingPage() {
     setNewActionGoal(action.goal);
     setNewActionDeadline(action.deadline);
     setNewActionSource(action.source || '');
-    setNewActionPercentageGoal(action.percentageGoal ? String(action.percentageGoal) : '');
+    setNewActionPercentageGoal(
+      action.percentageGoal ? String(action.percentageGoal) : ''
+    );
+    setNewActionStatus(action.status);
     setGoalSuggestion(null);
   };
 
@@ -176,6 +184,7 @@ export default function MarketingPage() {
     setNewActionDeadline(undefined);
     setNewActionSource('');
     setNewActionPercentageGoal('');
+    setNewActionStatus('Futura');
     setGoalSuggestion(null);
   };
 
@@ -190,7 +199,9 @@ export default function MarketingPage() {
       return;
     }
 
-    const percentageGoalValue = newActionPercentageGoal ? parseFloat(newActionPercentageGoal) : undefined;
+    const percentageGoalValue = newActionPercentageGoal
+      ? parseFloat(newActionPercentageGoal)
+      : undefined;
 
     if (editingActionId) {
       setActions(
@@ -203,6 +214,7 @@ export default function MarketingPage() {
                 deadline: newActionDeadline,
                 source: newActionSource,
                 percentageGoal: percentageGoalValue,
+                status: newActionStatus,
               }
             : action
         )
@@ -217,7 +229,7 @@ export default function MarketingPage() {
         name: newActionName,
         goal: newActionGoal,
         deadline: newActionDeadline,
-        completed: false,
+        status: newActionStatus,
         source: newActionSource,
         percentageGoal: percentageGoalValue,
       };
@@ -229,14 +241,6 @@ export default function MarketingPage() {
     }
 
     handleCancelEditing();
-  };
-
-  const handleToggleAction = (id: number) => {
-    setActions(
-      actions.map(action =>
-        action.id === id ? { ...action, completed: !action.completed } : action
-      )
-    );
   };
 
   const handleDeleteAction = (id: number) => {
@@ -292,13 +296,41 @@ export default function MarketingPage() {
   };
 
   const sortedActions = useMemo(() => {
+    const statusOrder: Record<CampaignStatus, number> = {
+      Rodando: 1,
+      Pausada: 2,
+      Futura: 3,
+      Concluída: 4,
+    };
     return [...actions].sort((a, b) => {
-      if (a.completed === b.completed) {
-        return a.deadline.getTime() - b.deadline.getTime();
+      if (statusOrder[a.status] !== statusOrder[b.status]) {
+        return statusOrder[a.status] - statusOrder[b.status];
       }
-      return a.completed ? 1 : -1;
+      return a.deadline.getTime() - b.deadline.getTime();
     });
   }, [actions]);
+
+  const statusBadgeConfig: Record<
+    CampaignStatus,
+    { className: string; variant: 'default' | 'secondary' | 'outline' }
+  > = {
+    Rodando: {
+      className: 'border-green-600/50 bg-green-500/10 text-green-700',
+      variant: 'outline',
+    },
+    Pausada: {
+      className: 'border-yellow-600/50 bg-yellow-500/10 text-yellow-700',
+      variant: 'outline',
+    },
+    Futura: {
+      className: 'border-blue-600/50 bg-blue-500/10 text-blue-700',
+      variant: 'outline',
+    },
+    Concluída: {
+      className: 'border-gray-400/50 bg-gray-500/10 text-gray-600',
+      variant: 'outline',
+    },
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -382,13 +414,15 @@ export default function MarketingPage() {
                   value={newActionPercentageGoal}
                   onChange={e => setNewActionPercentageGoal(e.target.value)}
                 />
-                 {goalSuggestion && (
-                  <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded-md">{goalSuggestion}</p>
+                {goalSuggestion && (
+                  <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded-md">
+                    {goalSuggestion}
+                  </p>
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="space-y-2 flex-grow min-w-[200px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <div className="space-y-2">
                 <Label htmlFor="action-deadline">Prazo Final</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -419,30 +453,50 @@ export default function MarketingPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className="flex items-center gap-2">
-                {editingActionId && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancelEditing}
-                  >
-                    Cancelar
-                  </Button>
-                )}
-                <Button type="submit" className="flex-shrink-0">
-                  {editingActionId ? (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Salvar Alterações
-                    </>
-                  ) : (
-                    <>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Adicionar Ação
-                    </>
-                  )}
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="action-status">Status</Label>
+                <Select
+                  value={newActionStatus}
+                  onValueChange={(value: CampaignStatus) =>
+                    setNewActionStatus(value)
+                  }
+                >
+                  <SelectTrigger id="action-status">
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campaignStatuses.map(status => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+            <div className="flex justify-end items-center gap-2 pt-4">
+              {editingActionId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEditing}
+                >
+                  Cancelar
+                </Button>
+              )}
+              <Button type="submit">
+                {editingActionId ? (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Alterações
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Ação
+                  </>
+                )}
+              </Button>
             </div>
           </form>
 
@@ -451,7 +505,7 @@ export default function MarketingPage() {
             <div className="space-y-3">
               {sortedActions.map(action => {
                 const isExpired =
-                  !action.completed &&
+                  action.status !== 'Concluída' &&
                   isPast(action.deadline) &&
                   !isToday(action.deadline);
                 return (
@@ -459,35 +513,35 @@ export default function MarketingPage() {
                     key={action.id}
                     className={cn(
                       'p-4 border rounded-lg flex items-start gap-4 transition-all',
-                      action.completed
+                      action.status === 'Concluída'
                         ? 'bg-muted/40 opacity-70'
                         : 'bg-card',
                       isExpired && 'border-destructive/50 bg-destructive/10'
                     )}
                   >
-                    <Checkbox
-                      id={`action-${action.id}`}
-                      checked={action.completed}
-                      onCheckedChange={() => handleToggleAction(action.id)}
-                      className="mt-1"
-                      aria-label={`Marcar como ${
-                        action.completed ? 'pendente' : 'concluída'
-                      }`}
-                    />
                     <div className="flex-1 grid gap-1.5">
-                      <Label
-                        htmlFor={`action-${action.id}`}
-                        className={cn(
-                          'font-semibold cursor-pointer',
-                          action.completed && 'line-through'
-                        )}
-                      >
-                        {action.name}
-                      </Label>
+                      <div className="flex justify-between items-start">
+                        <Label
+                          htmlFor={`action-${action.id}`}
+                          className={cn(
+                            'font-semibold cursor-pointer text-base',
+                            action.status === 'Concluída' && 'line-through'
+                          )}
+                        >
+                          {action.name}
+                        </Label>
+                        <Badge
+                          variant={statusBadgeConfig[action.status].variant}
+                          className={cn(statusBadgeConfig[action.status].className)}
+                        >
+                          {action.status}
+                        </Badge>
+                      </div>
+
                       <p
                         className={cn(
                           'text-sm text-muted-foreground whitespace-pre-wrap',
-                          action.completed && 'line-through'
+                          action.status === 'Concluída' && 'line-through'
                         )}
                       >
                         {action.goal}
@@ -511,7 +565,7 @@ export default function MarketingPage() {
                       <div
                         className={cn(
                           'flex items-center gap-2 text-xs mt-2',
-                          action.completed
+                          action.status === 'Concluída'
                             ? 'text-muted-foreground'
                             : isExpired
                             ? 'font-bold text-destructive'
@@ -530,7 +584,7 @@ export default function MarketingPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleStartEditing(action)}
-                        disabled={action.completed}
+                        disabled={action.status === 'Concluída'}
                       >
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Editar Ação</span>
