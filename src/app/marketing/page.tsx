@@ -99,6 +99,7 @@ interface DigitalTool {
   value: number;
   periodicity: ToolPeriodicity;
   dueDate: Date;
+  observation?: string;
 }
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -138,6 +139,7 @@ export default function MarketingPage() {
   const [newToolPeriodicity, setNewToolPeriodicity] =
     useState<ToolPeriodicity>('Mensal');
   const [newToolDueDate, setNewToolDueDate] = useState<Date | undefined>();
+  const [newToolObservation, setNewToolObservation] = useState('');
 
   // Filter state
   const [filter, setFilter] = useState<FilterPeriod>('all');
@@ -501,6 +503,7 @@ export default function MarketingPage() {
                 value,
                 periodicity: newToolPeriodicity,
                 dueDate: newToolDueDate,
+                observation: newToolObservation,
               }
             : tool
         )
@@ -516,6 +519,7 @@ export default function MarketingPage() {
         value,
         periodicity: newToolPeriodicity,
         dueDate: newToolDueDate,
+        observation: newToolObservation,
       };
       setTools([...tools, newTool]);
       toast({
@@ -532,6 +536,7 @@ export default function MarketingPage() {
     setNewToolValue(String(tool.value));
     setNewToolPeriodicity(tool.periodicity);
     setNewToolDueDate(tool.dueDate);
+    setNewToolObservation(tool.observation || '');
   };
 
   const handleCancelEditingTool = () => {
@@ -540,6 +545,7 @@ export default function MarketingPage() {
     setNewToolValue('');
     setNewToolPeriodicity('Mensal');
     setNewToolDueDate(undefined);
+    setNewToolObservation('');
   };
 
   const handleDeleteTool = (id: number) => {
@@ -959,7 +965,7 @@ export default function MarketingPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tool-due-date">Data de Vencimento</Label>
+                <Label htmlFor="tool-due-date">Próximo Venc./Prazo</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -989,6 +995,16 @@ export default function MarketingPage() {
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tool-observation">Observação (Opcional)</Label>
+              <Textarea
+                id="tool-observation"
+                placeholder="Ex: Contrato anual com cobrança mensal."
+                value={newToolObservation}
+                onChange={e => setNewToolObservation(e.target.value)}
+                rows={2}
+              />
             </div>
 
             <div className="flex justify-end items-center gap-2 pt-4">
@@ -1034,24 +1050,33 @@ export default function MarketingPage() {
               <TableBody>
                 {filteredTools.map(tool => {
                   const isToolOverdue =
-                    tool.periodicity === 'Único' &&
-                    isPast(tool.dueDate) &&
-                    !isToday(tool.dueDate);
+                    isPast(tool.dueDate) && !isToday(tool.dueDate);
 
                   return (
                     <TableRow
                       key={tool.id}
                       className={cn(isToolOverdue && 'bg-destructive/10')}
                     >
-                      <TableCell className="font-medium">{tool.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {tool.name}
+                        {tool.observation && (
+                          <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap font-normal">
+                            {tool.observation}
+                          </p>
+                        )}
+                      </TableCell>
                       <TableCell>{tool.periodicity}</TableCell>
                       <TableCell
-                        className={cn(isToolOverdue && 'text-destructive')}
+                        className={cn(
+                          isToolOverdue
+                            ? 'text-destructive font-bold'
+                            : 'text-green-600 font-semibold'
+                        )}
                       >
                         <div className="flex items-center gap-1.5">
                           {isToolOverdue && <AlertCircle className="h-4 w-4" />}
-                          <span className={cn(isToolOverdue && 'font-bold')}>
-                            {isToolOverdue && 'Vencido em '}
+                          <span>
+                            {isToolOverdue ? 'Vencido em ' : 'Vence em '}
                             {format(tool.dueDate, 'dd/MM/yyyy')}
                           </span>
                         </div>
