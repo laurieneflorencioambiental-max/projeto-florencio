@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permite que qualquer usuário autenticado leia e escreva na pasta 'customization'.
+    // Isso é necessário para que o upload do logo e da imagem de fundo funcione.
+    // A leitura é necessária para exibir as imagens após o upload.
+    match /customization/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}
