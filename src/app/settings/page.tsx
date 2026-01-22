@@ -83,7 +83,7 @@ export default function SettingsPage() {
       setAreSettingsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settingsRef, toast]); // Dependency array corrected to only run once on mount.
+  }, [settingsRef]); // Removed toast from dependency array
 
   const anyUploading = Object.values(isUploading).some(v => v);
 
@@ -297,7 +297,7 @@ export default function SettingsPage() {
               </div>
               <Input ref={fileInputRefs.loginBackgroundUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={e => handleImageUpload(e, 'loginBackgroundUrl')} disabled={anyUploading} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Recomendado: 1920x1080 pixels, até {MAX_LOGIN_BG_SIZE_KB}KB para melhor qualidade.</p>
+            <p className="text-xs text-muted-foreground mt-2">Recomendado: Imagem vertical (ex: 1080x1920 pixels), até {MAX_LOGIN_BG_SIZE_KB}KB para melhor qualidade.</p>
           </div>
         </CardContent>
       </Card>
