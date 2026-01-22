@@ -23,6 +23,7 @@ import {
   Crosshair,
   Sparkles,
   Loader2,
+  Wrench,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -88,6 +89,17 @@ interface MarketingAction {
   percentageGoal?: number;
 }
 
+const toolPeriodicityOptions = ['Mensal', 'Anual', 'Único'] as const;
+type ToolPeriodicity = (typeof toolPeriodicityOptions)[number];
+
+interface DigitalTool {
+  id: number;
+  name: string;
+  value: number;
+  periodicity: ToolPeriodicity;
+  dueDate: Date;
+}
+
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
 const months = Array.from({ length: 12 }, (_, i) => ({
@@ -116,6 +128,15 @@ export default function MarketingPage() {
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
   const [isSuggestingGoal, setIsSuggestingGoal] = useState(false);
   const [goalSuggestion, setGoalSuggestion] = useState<string | null>(null);
+
+  // Digital Tools State
+  const [tools, setTools] = useState<DigitalTool[]>([]);
+  const [editingToolId, setEditingToolId] = useState<number | null>(null);
+  const [newToolName, setNewToolName] = useState('');
+  const [newToolValue, setNewToolValue] = useState('');
+  const [newToolPeriodicity, setNewToolPeriodicity] =
+    useState<ToolPeriodicity>('Mensal');
+  const [newToolDueDate, setNewToolDueDate] = useState<Date | undefined>();
 
   // Filter state
   const [filter, setFilter] = useState<FilterPeriod>('all');
@@ -187,6 +208,37 @@ export default function MarketingPage() {
       }
     });
   }, [entries, filter, selectedMonth, selectedYear]);
+
+  const filteredTools = useMemo(() => {
+    if (filter === 'all') {
+      return tools;
+    }
+    const now = new Date();
+    return tools.filter(tool => {
+      const toolDate = tool.dueDate;
+      switch (filter) {
+        case 'today':
+          return isWithinInterval(toolDate, {
+            start: startOfDay(now),
+            end: endOfDay(now),
+          });
+        case 'week':
+          return isWithinInterval(toolDate, {
+            start: startOfWeek(now),
+            end: endOfWeek(now),
+          });
+        case 'month':
+          return (
+            getMonth(toolDate) === selectedMonth &&
+            getYear(toolDate) === selectedYear
+          );
+        case 'year':
+          return getYear(toolDate) === selectedYear;
+        default:
+          return true;
+      }
+    });
+  }, [tools, filter, selectedMonth, selectedYear]);
 
   // ROI Handlers
   const handleAddEntry = (e: React.FormEvent) => {
@@ -424,6 +476,79 @@ export default function MarketingPage() {
     },
   };
 
+  // Tool Handlers
+  const handleToolFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = parseFloat(newToolValue);
+    if (!newToolName || !newToolDueDate || isNaN(value) || value <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Dados inválidos',
+        description:
+          'Por favor, preencha nome, valor (maior que zero) e data de vencimento da ferramenta.',
+      });
+      return;
+    }
+
+    if (editingToolId) {
+      setTools(
+        tools.map(tool =>
+          tool.id === editingToolId
+            ? {
+                ...tool,
+                name: newToolName,
+                value,
+                periodicity: newToolPeriodicity,
+                dueDate: newToolDueDate,
+              }
+            : tool
+        )
+      );
+      toast({
+        title: 'Ferramenta Atualizada!',
+        description: `A assinatura de "${newToolName}" foi atualizada.`,
+      });
+    } else {
+      const newTool: DigitalTool = {
+        id: Date.now(),
+        name: newToolName,
+        value,
+        periodicity: newToolPeriodicity,
+        dueDate: newToolDueDate,
+      };
+      setTools([...tools, newTool]);
+      toast({
+        title: 'Ferramenta Adicionada!',
+        description: `"${newToolName}" foi adicionada à sua lista de investimentos.`,
+      });
+    }
+    handleCancelEditingTool();
+  };
+
+  const handleStartEditingTool = (tool: DigitalTool) => {
+    setEditingToolId(tool.id);
+    setNewToolName(tool.name);
+    setNewToolValue(String(tool.value));
+    setNewToolPeriodicity(tool.periodicity);
+    setNewToolDueDate(tool.dueDate);
+  };
+
+  const handleCancelEditingTool = () => {
+    setEditingToolId(null);
+    setNewToolName('');
+    setNewToolValue('');
+    setNewToolPeriodicity('Mensal');
+    setNewToolDueDate(undefined);
+  };
+
+  const handleDeleteTool = (id: number) => {
+    setTools(tools.filter(tool => tool.id !== id));
+    toast({
+      title: 'Ferramenta Removida',
+      description: 'A ferramenta foi removida da sua lista de investimentos.',
+    });
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-start gap-4 flex-wrap bg-card p-3 rounded-lg border">
@@ -462,10 +587,7 @@ export default function MarketingPage() {
               </SelectTrigger>
               <SelectContent>
                 {months.map(month => (
-                  <SelectItem
-                    key={month.value}
-                    value={month.value.toString()}
-                  >
+                  <SelectItem key={month.value} value={month.value.toString()}>
                     {month.label}
                   </SelectItem>
                 ))}
@@ -769,6 +891,183 @@ export default function MarketingPage() {
               <p className="text-sm text-muted-foreground mt-2">
                 Use o formulário acima para começar a planejar ou altere o
                 filtro.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-6 w-6" />
+            Investimento em Ferramentas Digitais
+          </CardTitle>
+          <CardDescription>
+            Gerencie suas assinaturas e ferramentas de marketing.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleToolFormSubmit}
+            className="space-y-4 p-4 border rounded-lg bg-muted/50 mb-6"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tool-name">Nome da Ferramenta</Label>
+                <Input
+                  id="tool-name"
+                  placeholder="Ex: Canva Pro"
+                  value={newToolName}
+                  onChange={e => setNewToolName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tool-value">Valor (R$)</Label>
+                <Input
+                  id="tool-value"
+                  type="number"
+                  placeholder="Ex: 54.90"
+                  value={newToolValue}
+                  onChange={e => setNewToolValue(e.target.value)}
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <div className="space-y-2">
+                <Label htmlFor="tool-periodicity">Periodicidade</Label>
+                <Select
+                  value={newToolPeriodicity}
+                  onValueChange={(value: ToolPeriodicity) =>
+                    setNewToolPeriodicity(value)
+                  }
+                >
+                  <SelectTrigger id="tool-periodicity">
+                    <SelectValue placeholder="Selecione a periodicidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {toolPeriodicityOptions.map(option => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tool-due-date">Data de Vencimento</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="tool-due-date"
+                      variant={'outline'}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !newToolDueDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newToolDueDate ? (
+                        format(newToolDueDate, 'PPP', { locale: ptBR })
+                      ) : (
+                        <span>Escolha uma data</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={newToolDueDate}
+                      onSelect={setNewToolDueDate}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="flex justify-end items-center gap-2 pt-4">
+              {editingToolId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEditingTool}
+                >
+                  Cancelar
+                </Button>
+              )}
+              <Button type="submit">
+                {editingToolId ? (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Ferramenta
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Ferramenta
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+
+          <h3 className="text-lg font-medium mb-4">Ferramentas Adicionadas</h3>
+          {filteredTools.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ferramenta</TableHead>
+                  <TableHead>Periodicidade</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="w-[100px] text-center">
+                    Ações
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTools.map(tool => (
+                  <TableRow key={tool.id}>
+                    <TableCell className="font-medium">{tool.name}</TableCell>
+                    <TableCell>{tool.periodicity}</TableCell>
+                    <TableCell>
+                      {format(tool.dueDate, 'dd/MM/yyyy')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {tool.value.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleStartEditingTool(tool)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteTool(tool.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+              <p className="text-muted-foreground">
+                Nenhuma ferramenta adicionada para este período.
               </p>
             </div>
           )}
