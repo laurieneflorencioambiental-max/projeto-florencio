@@ -9,37 +9,36 @@ import {
 import type { FirebaseApp } from 'firebase/app';
 
 /**
- * Uploads a PDF blob to a specified path in Firebase Storage and returns the public URL.
+ * Uploads a file to a specified path in Firebase Storage and returns the public URL.
  *
  * @param app - The FirebaseApp instance.
  * @param path - The full path in Firebase Storage where the file will be saved.
- * @param pdfBlob - The PDF file as a Blob.
+ * @param file - The file as a File object.
  * @returns A promise that resolves with the public download URL of the uploaded file.
  */
-export const uploadProposalPdf = async (
+export const uploadFile = async (
   app: FirebaseApp,
   path: string,
-  pdfBlob: Blob
+  file: File
 ): Promise<string> => {
   if (!app) {
     throw new Error('Firebase app is not initialized. Cannot upload file.');
   }
-  if (!pdfBlob || pdfBlob.size === 0) {
-    throw new Error('PDF Blob is invalid or empty. Cannot upload file.');
+  if (!file) {
+    throw new Error('File is invalid. Cannot upload file.');
   }
 
   const storage = getStorage(app);
   const storageRef = ref(storage, path);
 
   try {
-    const snapshot = await uploadBytes(storageRef, pdfBlob, {
-      contentType: 'application/pdf',
-    });
+    // uploadBytes can take a File object directly and will infer the contentType.
+    const snapshot = await uploadBytes(storageRef, file);
     
     const downloadUrl = await getDownloadURL(snapshot.ref);
     return downloadUrl;
   } catch (error) {
-    console.error('Error during Firebase Storage operation (upload or getURL):', error);
+    console.error('Error during Firebase Storage operation:', error);
     // Re-throw to be handled by the UI component
     throw error;
   }

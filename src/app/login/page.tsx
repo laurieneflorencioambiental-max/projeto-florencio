@@ -52,11 +52,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isUserLoading && !user) {
       try {
-        const savedSidebarLogo = localStorage.getItem('sidebarLogo');
+        const savedSidebarLogo = localStorage.getItem('sidebarLogoUrl');
         if (savedSidebarLogo) {
           setSidebarLogo(savedSidebarLogo);
         }
-        const savedLoginBg = localStorage.getItem('loginBackground');
+        const savedLoginBg = localStorage.getItem('loginBackgroundUrl');
         if (savedLoginBg) {
           setLoginBackground(savedLoginBg);
         }

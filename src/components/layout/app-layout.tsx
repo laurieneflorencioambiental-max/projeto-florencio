@@ -29,14 +29,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // This effect runs on the client-side after initial render.
     // It's safe to access localStorage here.
-    const savedLogo = localStorage.getItem('sidebarLogo');
+    const savedLogo = localStorage.getItem('sidebarLogoUrl');
     if (savedLogo) {
       setSidebarLogo(savedLogo);
     }
 
     // This listener will update the logo if it's changed in another tab (e.g., the settings page)
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'sidebarLogo') {
+      if (event.key === 'sidebarLogoUrl') {
         setSidebarLogo(event.newValue);
       }
     };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useFirebaseApp } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -37,6 +37,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
+import { uploadFile } from '@/firebase/storage';
+import { getStorage, ref, deleteObject } from 'firebase/storage';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -48,6 +50,7 @@ export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const app = useFirebaseApp();
 
   const [proposalLogoPreview, setProposalLogoPreview] = useState<string | null>(
     null
@@ -82,13 +85,13 @@ export default function SettingsPage() {
       router.replace('/login');
     } else if (user) {
       try {
-        const savedProposalLogo = localStorage.getItem('companyLogo');
+        const savedProposalLogo = localStorage.getItem('companyLogoUrl');
         if (savedProposalLogo) setProposalLogoPreview(savedProposalLogo);
 
-        const savedSidebarLogo = localStorage.getItem('sidebarLogo');
+        const savedSidebarLogo = localStorage.getItem('sidebarLogoUrl');
         if (savedSidebarLogo) setSidebarLogoPreview(savedSidebarLogo);
 
-        const savedLoginBg = localStorage.getItem('loginBackground');
+        const savedLoginBg = localStorage.getItem('loginBackgroundUrl');
         if (savedLoginBg) setLoginBgPreview(savedLoginBg);
       } catch (error) {
         console.error('Failed to load assets from localStorage:', error);
@@ -112,7 +115,7 @@ export default function SettingsPage() {
     );
   };
 
-  const handleImageUpload = (
+  const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
     imageType: ImageType
   ) => {
@@ -122,19 +125,22 @@ export default function SettingsPage() {
     const configMap = {
       proposal: {
         maxSize: MAX_PROPOSAL_LOGO_SIZE_KB,
-        key: 'companyLogo',
+        key: 'companyLogoUrl',
+        path: 'customization/proposal_logo',
         setPreview: setProposalLogoPreview,
         name: 'Logo da Proposta',
       },
       sidebar: {
         maxSize: MAX_SIDEBAR_LOGO_SIZE_KB,
-        key: 'sidebarLogo',
+        key: 'sidebarLogoUrl',
+        path: 'customization/sidebar_logo',
         setPreview: setSidebarLogoPreview,
-        name: 'Ícone',
+        name: 'Ícone (Barra Lateral e Login)',
       },
       loginBackground: {
         maxSize: MAX_LOGIN_BG_SIZE_KB,
-        key: 'loginBackground',
+        key: 'loginBackgroundUrl',
+        path: 'customization/login_background',
         setPreview: setLoginBgPreview,
         name: 'Imagem de Fundo do Login',
       },
@@ -152,53 +158,53 @@ export default function SettingsPage() {
     }
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      try {
-        localStorage.setItem(config.key, base64String);
-        config.setPreview(base64String);
-        toast({
-          title: `${config.name} atualizado(a)!`,
-          description: 'Sua nova imagem foi salva com sucesso.',
-        });
-        window.dispatchEvent(
-          new StorageEvent('storage', {
-            key: config.key,
-            newValue: base64String,
-          })
-        );
-      } catch (error) {
-        console.error(`Failed to save ${imageType} to localStorage:`, error);
-        toast({
-          variant: 'destructive',
-          title: 'Erro ao salvar',
-          description:
-            'Não foi possível salvar a imagem. O armazenamento pode estar cheio.',
-        });
-      } finally {
-        setIsUploading(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const downloadUrl = await uploadFile(app, config.path, file);
+
+      localStorage.setItem(config.key, downloadUrl);
+      config.setPreview(downloadUrl);
+      toast({
+        title: `${config.name} atualizado(a)!`,
+        description: 'Sua nova imagem foi salva com sucesso.',
+      });
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: config.key,
+          newValue: downloadUrl,
+        })
+      );
+    } catch (error) {
+      console.error(`Failed to upload ${imageType}:`, error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro no Upload',
+        description:
+          'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleRemoveImage = (imageType: ImageType) => {
+  const handleRemoveImage = async (imageType: ImageType) => {
     const configMap = {
       proposal: {
-        key: 'companyLogo',
+        key: 'companyLogoUrl',
+        path: 'customization/proposal_logo',
         setPreview: setProposalLogoPreview,
         name: 'Logo da proposta',
         fileInputRef: proposalFileInputRef,
       },
       sidebar: {
-        key: 'sidebarLogo',
+        key: 'sidebarLogoUrl',
+        path: 'customization/sidebar_logo',
         setPreview: setSidebarLogoPreview,
-        name: 'Ícone',
+        name: 'Ícone (Barra Lateral e Login)',
         fileInputRef: sidebarFileInputRef,
       },
       loginBackground: {
-        key: 'loginBackground',
+        key: 'loginBackgroundUrl',
+        path: 'customization/login_background',
         setPreview: setLoginBgPreview,
         name: 'Imagem de fundo',
         fileInputRef: loginBgFileInputRef,
@@ -213,6 +219,17 @@ export default function SettingsPage() {
       if (config.fileInputRef.current) {
         config.fileInputRef.current.value = '';
       }
+
+      try {
+        const storage = getStorage(app);
+        const imageRef = ref(storage, config.path);
+        await deleteObject(imageRef);
+      } catch (error: any) {
+        if (error.code !== 'storage/object-not-found') {
+          throw error;
+        }
+      }
+
       toast({
         title: 'Imagem removida',
         description: `O(a) ${config.name} foi removido(a).`,
@@ -353,7 +370,7 @@ export default function SettingsPage() {
         </CardContent>
         <CardFooter>
           <p className="text-xs text-muted-foreground">
-            As alterações são salvas automaticamente no seu navegador.
+            As alterações são salvas automaticamente na nuvem.
           </p>
         </CardFooter>
       </Card>

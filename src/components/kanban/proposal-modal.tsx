@@ -116,7 +116,7 @@ export default function ProposalModal({
     if (isOpen) {
      resetState();
       try {
-        const savedLogo = localStorage.getItem('companyLogo');
+        const savedLogo = localStorage.getItem('companyLogoUrl');
         if (savedLogo) {
           setLogoUrl(savedLogo);
         } else {
