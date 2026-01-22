@@ -82,7 +82,7 @@ export default function SettingsPage() {
     } else if (!firestore) {
       setAreSettingsLoading(false);
     }
-  }, [settingsRef, firestore, toast]);
+  }, [settingsRef]); // Dependency array corrected to only run once on mount.
 
   const anyUploading = Object.values(isUploading).some(v => v);
 
