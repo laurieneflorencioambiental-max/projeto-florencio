@@ -128,7 +128,7 @@ export default function LoginPage() {
             src={settings.loginBackgroundUrl}
             alt="Imagem de fundo da tela de login"
             fill
-            className="object-cover"
+            className="object-contain"
             priority
           />
         ) : (
