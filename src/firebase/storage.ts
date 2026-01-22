@@ -6,14 +6,21 @@ import {
   uploadBytes,
   getDownloadURL,
   deleteObject,
+  FirebaseStorage,
 } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
 
-function getStorageInstance() {
-  // This will get the existing app instance or initialize it, thanks to getApps().
-  const { firebaseApp } = initializeFirebase();
-  return getStorage(firebaseApp);
+// Create a module-level singleton for the Storage instance
+let storageInstance: FirebaseStorage | null = null;
+
+function getStorageInstance(): FirebaseStorage {
+  if (!storageInstance) {
+    const { firebaseApp } = initializeFirebase();
+    storageInstance = getStorage(firebaseApp);
+  }
+  return storageInstance;
 }
+
 
 /**
  * Uploads a file to a specified path in Firebase Storage and returns the public URL.
