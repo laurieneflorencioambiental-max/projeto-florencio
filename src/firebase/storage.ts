@@ -9,6 +9,7 @@ import {
   FirebaseStorage,
 } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
+import { firebaseConfig } from './config';
 
 // Create a module-level singleton for the Storage instance
 let storageInstance: FirebaseStorage | null = null;
@@ -16,7 +17,8 @@ let storageInstance: FirebaseStorage | null = null;
 function getStorageInstance(): FirebaseStorage {
   if (!storageInstance) {
     const { firebaseApp } = initializeFirebase();
-    storageInstance = getStorage(firebaseApp);
+    const bucketUrl = `gs://${firebaseConfig.storageBucket}`;
+    storageInstance = getStorage(firebaseApp, bucketUrl);
   }
   return storageInstance;
 }
