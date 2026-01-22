@@ -14,40 +14,79 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ExternalLink, Info } from 'lucide-react';
+import { ExternalLink, Info, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 interface Meeting {
   id: number;
   title: string;
   date: Date;
+  time: string;
   description: string;
 }
 
 export default function AgendaPage() {
+  const { toast } = useToast();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [newMeetingTitle, setNewMeetingTitle] = useState('');
+  const [newMeetingTime, setNewMeetingTime] = useState('09:00');
   const [newMeetingDescription, setNewMeetingDescription] = useState('');
 
   const handleAddMeeting = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMeetingTitle || !date) return;
+    if (!newMeetingTitle || !date || !newMeetingTime) return;
 
     const newMeeting: Meeting = {
       id: Date.now(),
       title: newMeetingTitle,
       date: date,
+      time: newMeetingTime,
       description: newMeetingDescription,
     };
     setMeetings(
       [...meetings, newMeeting].sort(
-        (a, b) => a.date.getTime() - b.date.getTime()
+        (a, b) =>
+          new Date(`${format(a.date, 'yyyy-MM-dd')}T${a.time}`).getTime() -
+          new Date(`${format(b.date, 'yyyy-MM-dd')}T${b.time}`).getTime()
       )
     );
+
+    // Generate Google Calendar URL
+    const [hour, minute] = newMeetingTime.split(':').map(Number);
+    const startDate = new Date(date);
+    startDate.setHours(hour, minute, 0, 0);
+
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Assume 1 hour duration
+
+    const toGoogleISOString = (date: Date) =>
+      date.toISOString().replace(/-|:|\.\d{3}/g, '');
+
+    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+      newMeeting.title
+    )}&dates=${toGoogleISOString(startDate)}/${toGoogleISOString(
+      endDate
+    )}&details=${encodeURIComponent(newMeeting.description)}`;
+
+    toast({
+      title: 'Reunião Agendada!',
+      description: 'Sua reunião foi adicionada com sucesso.',
+      action: (
+        <Button asChild variant="outline">
+          <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Abrir no Google Agenda
+          </a>
+        </Button>
+      ),
+    });
+
+    // Reset form
     setNewMeetingTitle('');
     setNewMeetingDescription('');
+    setNewMeetingTime('09:00');
   };
 
   const selectedDateMeetings = meetings.filter(
@@ -88,8 +127,14 @@ export default function AgendaPage() {
                         key={meeting.id}
                         className="p-3 border rounded-lg bg-muted/50"
                       >
-                        <p className="font-semibold">{meeting.title}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <div className="flex justify-between items-start">
+                          <p className="font-semibold">{meeting.title}</p>
+                          <div className="flex items-center gap-1 text-sm text-primary font-medium">
+                            <Clock className="h-4 w-4" />
+                            <span>{meeting.time}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
                           {meeting.description}
                         </p>
                       </div>
@@ -135,12 +180,24 @@ export default function AgendaPage() {
                   rows={3}
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Reunião será agendada para:{' '}
-                <span className="font-bold">
-                  {date ? format(date, 'PPP', { locale: ptBR }) : ''}
-                </span>
-              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div className="space-y-2">
+                  <Label>Data Selecionada</Label>
+                  <p className="font-bold text-sm border rounded-md h-10 flex items-center px-3">
+                    {date ? format(date, 'PPP', { locale: ptBR }) : ''}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="meeting-time">Horário</Label>
+                  <Input
+                    id="meeting-time"
+                    type="time"
+                    value={newMeetingTime}
+                    onChange={(e) => setNewMeetingTime(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
               <Button type="submit">Adicionar Reunião</Button>
             </form>
           </CardContent>
@@ -173,7 +230,8 @@ export default function AgendaPage() {
             </ul>
             <p>
               Por enquanto, esta página serve como uma agenda interna para a
-              equipe.
+              equipe, com a opção de exportar o evento para o Google Agenda ao
+              criá-lo.
             </p>
             <Button variant="outline" size="sm" asChild className="mt-4">
               <a
