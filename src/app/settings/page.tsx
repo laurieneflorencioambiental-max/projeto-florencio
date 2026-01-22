@@ -59,7 +59,10 @@ export default function SettingsPage() {
   const [loginBgPreview, setLoginBgPreview] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState<
+    Partial<Record<ImageType, boolean>>
+  >({});
+  const anyUploading = Object.values(isUploading).some(v => v);
 
   const proposalFileInputRef = useRef<HTMLInputElement>(null);
   const sidebarFileInputRef = useRef<HTMLInputElement>(null);
@@ -155,7 +158,7 @@ export default function SettingsPage() {
       return;
     }
 
-    setIsUploading(true);
+    setIsUploading(prev => ({ ...prev, [imageType]: true }));
     try {
       const downloadUrl = await uploadFile(config.path, file);
 
@@ -180,7 +183,10 @@ export default function SettingsPage() {
           'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.',
       });
     } finally {
-      setIsUploading(false);
+      setIsUploading(prev => ({ ...prev, [imageType]: false }));
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -307,9 +313,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => sidebarFileInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={anyUploading}
                 >
-                  {isUploading ? (
+                  {isUploading.sidebar ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <UploadCloud className="mr-2 h-4 w-4" />
@@ -319,7 +325,7 @@ export default function SettingsPage() {
                 {sidebarLogoPreview && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={isUploading}>
+                      <Button variant="destructive" disabled={anyUploading}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Remover
                       </Button>
@@ -349,7 +355,7 @@ export default function SettingsPage() {
                 className="hidden"
                 accept="image/png, image/jpeg, image/webp, image/svg+xml"
                 onChange={e => handleImageUpload(e, 'sidebar')}
-                disabled={isUploading}
+                disabled={anyUploading}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
@@ -393,9 +399,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => loginBgFileInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={anyUploading}
                 >
-                  {isUploading ? (
+                  {isUploading.loginBackground ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <UploadCloud className="mr-2 h-4 w-4" />
@@ -405,7 +411,7 @@ export default function SettingsPage() {
                 {loginBgPreview && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={isUploading}>
+                      <Button variant="destructive" disabled={anyUploading}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Remover
                       </Button>
@@ -435,7 +441,7 @@ export default function SettingsPage() {
                 className="hidden"
                 accept="image/png, image/jpeg, image/webp"
                 onChange={e => handleImageUpload(e, 'loginBackground')}
-                disabled={isUploading}
+                disabled={anyUploading}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
@@ -474,9 +480,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => proposalFileInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={anyUploading}
                 >
-                  {isUploading ? (
+                  {isUploading.proposal ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <UploadCloud className="mr-2 h-4 w-4" />
@@ -486,7 +492,7 @@ export default function SettingsPage() {
                 {proposalLogoPreview && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={isUploading}>
+                      <Button variant="destructive" disabled={anyUploading}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Remover
                       </Button>
@@ -516,7 +522,7 @@ export default function SettingsPage() {
                 className="hidden"
                 accept="image/png, image/jpeg, image/webp, image/svg+xml"
                 onChange={e => handleImageUpload(e, 'proposal')}
-                disabled={isUploading}
+                disabled={anyUploading}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
