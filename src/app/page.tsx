@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase, DollarSign, PieChart } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
@@ -481,6 +481,29 @@ export default function Home() {
         return isWithinInterval(leadDate, { start, end });
     }).length;
   }, [leads]);
+  
+  const { conversionRate, averageTicket } = useMemo(() => {
+    const finishedLeads = (leads || []).filter(lead =>
+      ['Aprovado', 'Desistência', 'Rejeitado'].includes(lead.status)
+    );
+
+    const approvedLeads = finishedLeads.filter(
+      lead => lead.status === 'Aprovado'
+    );
+
+    const conversionRate =
+      finishedLeads.length > 0
+        ? (approvedLeads.length / finishedLeads.length) * 100
+        : 0;
+
+    const averageTicket =
+      approvedLeads.length > 0
+        ? approvedLeads.reduce((acc, lead) => acc + (lead.value || 0), 0) /
+          approvedLeads.length
+        : 0;
+
+    return { conversionRate, averageTicket };
+  }, [leads]);
 
   const goalMet = approvedThisMonthCount >= monthlyGoal;
   const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
@@ -548,12 +571,31 @@ export default function Home() {
             <CardTitle>Metas e Resumo do Mês</CardTitle>
             <CardDescription>Acompanhe o progresso da sua equipe em tempo real.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-3">
+        <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             <div className="flex flex-col justify-between p-4 border rounded-lg">
                 <Label className="text-muted-foreground">Total de Orçamentos</Label>
                 <div className="flex items-baseline gap-2">
                     <p className="text-2xl font-bold">{leads?.length || 0}</p>
                     <Briefcase className="h-5 w-5 text-muted-foreground" />
+                </div>
+            </div>
+             <div className="flex flex-col justify-between p-4 border rounded-lg">
+                <Label className="text-muted-foreground">Taxa de Conversão</Label>
+                <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{conversionRate.toFixed(1)}%</p>
+                    <PieChart className="h-5 w-5 text-muted-foreground" />
+                </div>
+            </div>
+            <div className="flex flex-col justify-between p-4 border rounded-lg">
+                <Label className="text-muted-foreground">Ticket Médio</Label>
+                <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">
+                      {averageTicket.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                    </p>
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
                 </div>
             </div>
             <div className="flex flex-col justify-between p-4 border rounded-lg">
