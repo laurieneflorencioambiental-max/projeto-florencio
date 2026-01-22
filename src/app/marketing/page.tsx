@@ -19,6 +19,8 @@ import {
   Clock,
   Pencil,
   Save,
+  TrendingUp,
+  Crosshair,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -47,7 +49,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { format } from 'date-fns';
+import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +67,8 @@ interface MarketingAction {
   goal: string;
   deadline: Date;
   completed: boolean;
+  source?: string;
+  percentageGoal?: number;
 }
 
 export default function MarketingPage() {
@@ -81,6 +85,8 @@ export default function MarketingPage() {
   const [newActionName, setNewActionName] = useState('');
   const [newActionGoal, setNewActionGoal] = useState('');
   const [newActionDeadline, setNewActionDeadline] = useState<Date | undefined>();
+  const [newActionSource, setNewActionSource] = useState('');
+  const [newActionPercentageGoal, setNewActionPercentageGoal] = useState('');
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
   // ROI Handlers
@@ -153,6 +159,8 @@ export default function MarketingPage() {
     setNewActionName(action.name);
     setNewActionGoal(action.goal);
     setNewActionDeadline(action.deadline);
+    setNewActionSource(action.source || '');
+    setNewActionPercentageGoal(action.percentageGoal ? String(action.percentageGoal) : '');
   };
 
   const handleCancelEditing = () => {
@@ -160,6 +168,8 @@ export default function MarketingPage() {
     setNewActionName('');
     setNewActionGoal('');
     setNewActionDeadline(undefined);
+    setNewActionSource('');
+    setNewActionPercentageGoal('');
   };
 
   const handleActionFormSubmit = (e: React.FormEvent) => {
@@ -173,6 +183,8 @@ export default function MarketingPage() {
       return;
     }
 
+    const percentageGoalValue = newActionPercentageGoal ? parseFloat(newActionPercentageGoal) : undefined;
+
     if (editingActionId) {
       setActions(
         actions.map(action =>
@@ -182,6 +194,8 @@ export default function MarketingPage() {
                 name: newActionName,
                 goal: newActionGoal,
                 deadline: newActionDeadline,
+                source: newActionSource,
+                percentageGoal: percentageGoalValue,
               }
             : action
         )
@@ -197,6 +211,8 @@ export default function MarketingPage() {
         goal: newActionGoal,
         deadline: newActionDeadline,
         completed: false,
+        source: newActionSource,
+        percentageGoal: percentageGoalValue,
       };
       setActions([...actions, newAction]);
       toast({
@@ -270,6 +286,34 @@ export default function MarketingPage() {
                 rows={2}
               />
             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="space-y-2">
+                <Label htmlFor="action-source">Fonte de Investimento</Label>
+                 <Select value={newActionSource} onValueChange={setNewActionSource}>
+                   <SelectTrigger id="action-source">
+                    <SelectValue placeholder="Selecione a fonte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                     {contactSources.map(source => (
+                      <SelectItem key={source} value={source}>
+                        {source}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="action-percentage">Meta de Aumento (%)</Label>
+                <Input
+                  id="action-percentage"
+                  type="number"
+                  placeholder="Ex: 15"
+                  value={newActionPercentageGoal}
+                  onChange={e => setNewActionPercentageGoal(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="flex flex-wrap items-end gap-4">
               <div className="space-y-2 flex-grow min-w-[200px]">
                 <Label htmlFor="action-deadline">Prazo Final</Label>
@@ -332,75 +376,98 @@ export default function MarketingPage() {
           <h3 className="text-lg font-medium mb-4">Ações Planejadas</h3>
           {sortedActions.length > 0 ? (
             <div className="space-y-3">
-              {sortedActions.map(action => (
-                <div
-                  key={action.id}
-                  className={cn(
-                    'p-4 border rounded-lg flex items-start gap-4 transition-all',
-                    action.completed ? 'bg-muted/40 opacity-70' : 'bg-card'
-                  )}
-                >
-                  <Checkbox
-                    id={`action-${action.id}`}
-                    checked={action.completed}
-                    onCheckedChange={() => handleToggleAction(action.id)}
-                    className="mt-1"
-                    aria-label={`Marcar como ${
-                      action.completed ? 'pendente' : 'concluída'
-                    }`}
-                  />
-                  <div className="flex-1 grid gap-1.5">
-                    <Label
-                      htmlFor={`action-${action.id}`}
-                      className={cn(
-                        'font-semibold cursor-pointer',
-                        action.completed && 'line-through'
-                      )}
-                    >
-                      {action.name}
-                    </Label>
-                    <p
-                      className={cn(
-                        'text-sm text-muted-foreground whitespace-pre-wrap',
-                        action.completed && 'line-through'
-                      )}
-                    >
-                      {action.goal}
-                    </p>
-                    <div
-                      className={cn(
-                        'flex items-center gap-2 text-xs mt-2',
-                        action.completed
-                          ? 'text-muted-foreground'
-                          : 'text-primary font-medium'
-                      )}
-                    >
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        Prazo: {format(action.deadline, 'dd/MM/yyyy')}
-                      </span>
+              {sortedActions.map(action => {
+                const isExpired = !action.completed && isPast(action.deadline) && !isToday(action.deadline);
+                return (
+                  <div
+                    key={action.id}
+                    className={cn(
+                      'p-4 border rounded-lg flex items-start gap-4 transition-all',
+                      action.completed
+                        ? 'bg-muted/40 opacity-70'
+                        : 'bg-card',
+                      isExpired && 'border-destructive/50 bg-destructive/10'
+                    )}
+                  >
+                    <Checkbox
+                      id={`action-${action.id}`}
+                      checked={action.completed}
+                      onCheckedChange={() => handleToggleAction(action.id)}
+                      className="mt-1"
+                      aria-label={`Marcar como ${
+                        action.completed ? 'pendente' : 'concluída'
+                      }`}
+                    />
+                    <div className="flex-1 grid gap-1.5">
+                      <Label
+                        htmlFor={`action-${action.id}`}
+                        className={cn(
+                          'font-semibold cursor-pointer',
+                          action.completed && 'line-through'
+                        )}
+                      >
+                        {action.name}
+                      </Label>
+                      <p
+                        className={cn(
+                          'text-sm text-muted-foreground whitespace-pre-wrap',
+                          action.completed && 'line-through'
+                        )}
+                      >
+                        {action.goal}
+                      </p>
+                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mt-2 text-muted-foreground">
+                        {action.source && (
+                          <div className="flex items-center gap-1.5">
+                            <Crosshair className="h-3 w-3" />
+                            <span>{action.source}</span>
+                          </div>
+                        )}
+                        {action.percentageGoal != null && (
+                          <div className="flex items-center gap-1.5">
+                            <TrendingUp className="h-3 w-3" />
+                            <span>Meta: {action.percentageGoal}% de aumento</span>
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          'flex items-center gap-2 text-xs mt-2',
+                          action.completed
+                            ? 'text-muted-foreground'
+                            : isExpired
+                            ? 'font-bold text-destructive'
+                            : 'text-primary font-medium'
+                        )}
+                      >
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {isExpired ? 'Prazo Expirado' : 'Prazo'}: {format(action.deadline, 'dd/MM/yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleStartEditing(action)}
+                        disabled={action.completed}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Editar Ação</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAction(action.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <span className="sr-only">Remover Ação</span>
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleStartEditing(action)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      <span className="sr-only">Editar Ação</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteAction(action.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                      <span className="sr-only">Remover Ação</span>
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
