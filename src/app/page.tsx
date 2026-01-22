@@ -76,9 +76,6 @@ export default function Home() {
   // Seller Management State
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
-  // Template Management State
-  const [currentProposalTemplates, setCurrentProposalTemplates] = useState<ProposalTemplate[]>([]);
-
   // Fetch leads from Firestore
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -88,10 +85,18 @@ export default function Home() {
 
   // Fetch sellers from Firestore
   const sellersQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
+    if (!firestore) return null;
     return collection(firestore, 'sellers');
-  }, [firestore, user]);
+  }, [firestore]);
   const { data: sellers, isLoading: areSellersLoading } = useCollection<Seller>(sellersQuery);
+  
+  // Fetch proposal templates from Firestore
+  const templatesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'proposal-templates');
+  }, [firestore]);
+  const { data: proposalTemplates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesQuery);
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -99,27 +104,19 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Load current seller preference and templates from localStorage
+  // Load current seller preference from localStorage
   useEffect(() => {
     if (user) {
         try {
         const savedCurrentSeller = localStorage.getItem('currentSeller');
-        const savedTemplates = localStorage.getItem('proposalTemplates');
 
         if (savedCurrentSeller) {
             setCurrentSeller(savedCurrentSeller);
         } else if (sellers && sellers.length > 0) {
             setCurrentSeller(sellers[0].name);
         }
-        
-        if (savedTemplates) {
-            setCurrentProposalTemplates(JSON.parse(savedTemplates));
-        } else {
-            setCurrentProposalTemplates([]); 
-        }
         } catch (error) {
             console.error("Failed to access localStorage on initial load:", error);
-            setCurrentProposalTemplates([]);
         }
     }
   }, [user, sellers]);
@@ -420,7 +417,7 @@ export default function Home() {
 
   }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
 
-  if (isUserLoading || !user || areLeadsLoading || areSellersLoading) {
+  if (isUserLoading || !user || areLeadsLoading || areSellersLoading || areTemplatesLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -564,7 +561,7 @@ export default function Home() {
         onUpdateLead={handleUpdateLead}
         onDeleteLead={handleDeleteLead}
         onLeadStatusChange={handleLeadStatusChange}
-        proposalTemplates={currentProposalTemplates}
+        proposalTemplates={proposalTemplates || []}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />

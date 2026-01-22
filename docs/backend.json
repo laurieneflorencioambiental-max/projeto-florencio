@@ -54,6 +54,67 @@
         "name": { "type": "string" }
       },
       "required": ["id", "name"]
+    },
+    "ProposalTemplate": {
+      "title": "Proposal Template",
+      "description": "Defines the structure for a reusable proposal template.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "proposalObject": { "type": "string" },
+        "serviceScope": { "type": "string" },
+        "clientResponsibilities": { "type": "string" },
+        "contractorResponsibilities": { "type": "string" },
+        "deadline": { "type": "string" },
+        "strategicVision": { "type": "string" },
+        "investment": { "type": "string" },
+        "plans": {
+          "type": "array",
+          "items": { "$ref": "#/backend/entities/Plan" }
+        },
+        "exams": {
+          "type": "array",
+          "items": { "$ref": "#/backend/entities/Exam" }
+        }
+      },
+      "required": ["id", "name", "proposalObject"]
+    },
+    "Plan": {
+        "title": "Plan",
+        "description": "A pricing plan within a proposal template.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "employeeRange": { "type": "string" },
+            "servicesIncluded": { "type": "string" },
+            "investment": { "type": "number" },
+            "paymentType": { "type": "string", "enum": ["unique", "monthly"] }
+        },
+        "required": ["id", "name", "investment", "paymentType"]
+    },
+    "Exam": {
+        "title": "Exam",
+        "description": "A specific exam with its price.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "service": { "type": "string" },
+            "description": { "type": "string" },
+            "value": { "type": "number" }
+        },
+        "required": ["id", "service", "value"]
+    },
+    "AppSettings": {
+        "title": "App Settings",
+        "description": "Global application settings and customizations.",
+        "type": "object",
+        "properties": {
+            "sidebarLogoUrl": { "type": "string", "format": "uri" },
+            "proposalLogoUrl": { "type": "string", "format": "uri" },
+            "loginBackgroundUrl": { "type": "string", "format": "uri" }
+        }
     }
   },
   "auth": {
@@ -79,7 +140,23 @@
         "definition": {
           "entityName": "Seller",
           "schema": { "$ref": "#/backend/entities/Seller" },
-          "description": "Stores the list of sellers available in the application."
+          "description": "Stores the global list of sellers available in the application."
+        }
+      },
+      {
+        "path": "/proposal-templates/{templateId}",
+        "definition": {
+          "entityName": "ProposalTemplate",
+          "schema": { "$ref": "#/backend/entities/ProposalTemplate" },
+          "description": "Stores global proposal templates available to all users."
+        }
+      },
+      {
+        "path": "/app-settings/customization",
+        "definition": {
+          "entityName": "AppSettings",
+          "schema": { "$ref": "#/backend/entities/AppSettings" },
+          "description": "A singleton document holding global app customization settings like logos."
         }
       }
     ]

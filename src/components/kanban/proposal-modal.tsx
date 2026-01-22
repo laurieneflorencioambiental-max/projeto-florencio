@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate, Plan, ProposalState, ProposalData } from '@/lib/types';
+import type { Lead, ProposalTemplate, Plan, ProposalState, ProposalData, AppSettings } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -22,9 +22,9 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useFirestore, useFirebaseApp } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -48,7 +48,6 @@ export default function ProposalModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
-  const app = useFirebaseApp();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const [proposalState, setProposalState] = useState<ProposalState>({
@@ -113,21 +112,18 @@ export default function ProposalModal({
   }
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && firestore) {
      resetState();
-      try {
-        const savedLogo = localStorage.getItem('companyLogoUrl');
-        if (savedLogo) {
-          setLogoUrl(savedLogo);
-        } else {
-          setLogoUrl(null);
+      const fetchSettings = async () => {
+        const settingsDoc = await getDoc(doc(firestore, 'app-settings', 'customization'));
+        if (settingsDoc.exists()) {
+            const settingsData = settingsDoc.data() as AppSettings;
+            setLogoUrl(settingsData.proposalLogoUrl || null);
         }
-      } catch (error) {
-        console.error("Failed to load logo from localStorage:", error);
-        setLogoUrl(null);
       }
+      fetchSettings();
     }
-  }, [isOpen, lead, allLeads]);
+  }, [isOpen, lead, allLeads, firestore]);
 
   const handleTemplateChange = (templateId: string) => {
     const template = proposalTemplates.find(t => t.id === templateId);
@@ -394,7 +390,8 @@ export default function ProposalModal({
                               <Eye className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
                               <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>Visão</h4>
                               <p className="text-sm leading-relaxed mt-2 text-left">
-                                  Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel estratégico na execução de todos os trabalhos prestados.
+                                  Sermos reconhecidos pela excelência dos nossos serviços, de forma a garantir qualidade, satisfação do cliente exercendo papel
+                                  estratégico na execução de todos os trabalhos prestados.
                               </p>
                           </div>
                           <div className="flex flex-col items-center">

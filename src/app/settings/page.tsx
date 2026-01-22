@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { doc, setDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -38,25 +39,27 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { uploadFile, deleteFile } from '@/firebase/storage';
+import { AppSettings } from '@/lib/types';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
 const MAX_LOGIN_BG_SIZE_KB = 500;
 
-type ImageType = 'proposal' | 'sidebar' | 'loginBackground';
+type ImageType = 'proposalLogoUrl' | 'sidebarLogoUrl' | 'loginBackgroundUrl';
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [proposalLogoPreview, setProposalLogoPreview] = useState<string | null>(
-    null
+  const settingsDocRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, 'app-settings', 'customization') : null),
+    [firestore]
   );
-  const [sidebarLogoPreview, setSidebarLogoPreview] = useState<string | null>(
-    null
-  );
-  const [loginBgPreview, setLoginBgPreview] = useState<string | null>(null);
+  const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsDocRef);
+  
+  const [previews, setPreviews] = useState<Partial<Record<ImageType, string | null>>>({});
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const [isUploading, setIsUploading] = useState<
@@ -64,15 +67,14 @@ export default function SettingsPage() {
   >({});
   const anyUploading = Object.values(isUploading).some(v => v);
 
-  const proposalFileInputRef = useRef<HTMLInputElement>(null);
-  const sidebarFileInputRef = useRef<HTMLInputElement>(null);
-  const loginBgFileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRefs = {
+    proposalLogoUrl: useRef<HTMLInputElement>(null),
+    sidebarLogoUrl: useRef<HTMLInputElement>(null),
+    loginBackgroundUrl: useRef<HTMLInputElement>(null),
+  };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as
-      | 'light'
-      | 'dark'
-      | null;
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initialTheme =
       savedTheme ||
       (window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -84,36 +86,38 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
-    } else if (user) {
+    }
+  }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    if (settings) {
+      setPreviews({
+        proposalLogoUrl: settings.proposalLogoUrl || null,
+        sidebarLogoUrl: settings.sidebarLogoUrl || null,
+        loginBackgroundUrl: settings.loginBackgroundUrl || null,
+      });
+      // Sync Firestore with localStorage for login page
       try {
-        const savedProposalLogo = localStorage.getItem('companyLogoUrl');
-        if (savedProposalLogo) setProposalLogoPreview(savedProposalLogo);
+        if(settings.proposalLogoUrl) localStorage.setItem('companyLogoUrl', settings.proposalLogoUrl);
+        else localStorage.removeItem('companyLogoUrl');
+        
+        if(settings.sidebarLogoUrl) localStorage.setItem('sidebarLogoUrl', settings.sidebarLogoUrl);
+        else localStorage.removeItem('sidebarLogoUrl');
 
-        const savedSidebarLogo = localStorage.getItem('sidebarLogoUrl');
-        if (savedSidebarLogo) setSidebarLogoPreview(savedSidebarLogo);
-
-        const savedLoginBg = localStorage.getItem('loginBackgroundUrl');
-        if (savedLoginBg) setLoginBgPreview(savedLoginBg);
-      } catch (error) {
-        console.error('Failed to load assets from localStorage:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Erro ao carregar personalizações',
-          description: 'Não foi possível carregar as imagens salvas.',
-        });
+        if(settings.loginBackgroundUrl) localStorage.setItem('loginBackgroundUrl', settings.loginBackgroundUrl);
+        else localStorage.removeItem('loginBackgroundUrl');
+      } catch (e) {
+        console.error("Could not update localStorage from Firestore settings", e);
       }
     }
-  }, [user, isUserLoading, router, toast]);
+  }, [settings]);
 
   const handleThemeChange = (isDark: boolean) => {
     const newTheme = isDark ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', isDark);
-
-    window.dispatchEvent(
-      new StorageEvent('storage', { key: 'theme', newValue: newTheme })
-    );
+    window.dispatchEvent(new StorageEvent('storage', { key: 'theme', newValue: newTheme }));
   };
 
   const handleImageUpload = async (
@@ -121,40 +125,17 @@ export default function SettingsPage() {
     imageType: ImageType
   ) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !settingsDocRef) return;
 
     const configMap = {
-      proposal: {
-        maxSize: MAX_PROPOSAL_LOGO_SIZE_KB,
-        key: 'companyLogoUrl',
-        path: 'customization/proposal_logo',
-        setPreview: setProposalLogoPreview,
-        name: 'Logo da Proposta',
-      },
-      sidebar: {
-        maxSize: MAX_SIDEBAR_LOGO_SIZE_KB,
-        key: 'sidebarLogoUrl',
-        path: 'customization/sidebar_logo',
-        setPreview: setSidebarLogoPreview,
-        name: 'Ícone (Barra Lateral e Login)',
-      },
-      loginBackground: {
-        maxSize: MAX_LOGIN_BG_SIZE_KB,
-        key: 'loginBackgroundUrl',
-        path: 'customization/login_background',
-        setPreview: setLoginBgPreview,
-        name: 'Imagem de Fundo do Login',
-      },
+      proposalLogoUrl: { maxSize: MAX_PROPOSAL_LOGO_SIZE_KB, path: 'customization/proposal_logo', name: 'Logo da Proposta' },
+      sidebarLogoUrl: { maxSize: MAX_SIDEBAR_LOGO_SIZE_KB, path: 'customization/sidebar_logo', name: 'Ícone (Barra Lateral e Login)' },
+      loginBackgroundUrl: { maxSize: MAX_LOGIN_BG_SIZE_KB, path: 'customization/login_background', name: 'Imagem de Fundo do Login' },
     };
-
     const config = configMap[imageType];
 
     if (file.size > config.maxSize * 1024) {
-      toast({
-        variant: 'destructive',
-        title: 'Arquivo muito grande',
-        description: `A imagem deve ter no máximo ${config.maxSize}KB.`,
-      });
+      toast({ variant: 'destructive', title: 'Arquivo muito grande', description: `A imagem deve ter no máximo ${config.maxSize}KB.` });
       return;
     }
 
@@ -162,88 +143,49 @@ export default function SettingsPage() {
     try {
       const downloadUrl = await uploadFile(config.path, file);
 
-      localStorage.setItem(config.key, downloadUrl);
-      config.setPreview(downloadUrl);
-      toast({
-        title: `${config.name} atualizado(a)!`,
-        description: 'Sua nova imagem foi salva com sucesso.',
-      });
-      window.dispatchEvent(
-        new StorageEvent('storage', {
-          key: config.key,
-          newValue: downloadUrl,
-        })
-      );
+      await setDoc(settingsDocRef, { [imageType]: downloadUrl }, { merge: true });
+
+      toast({ title: `${config.name} atualizado(a)!`, description: 'Sua nova imagem foi salva com sucesso.' });
+       // Manually trigger localStorage update for other tabs
+       localStorage.setItem(imageType === 'proposalLogoUrl' ? 'companyLogoUrl' : imageType, downloadUrl);
+       window.dispatchEvent(new StorageEvent('storage', { key: imageType === 'proposalLogoUrl' ? 'companyLogoUrl' : imageType, newValue: downloadUrl }));
+
+
     } catch (error) {
       console.error(`Failed to upload ${imageType}:`, error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro no Upload',
-        description:
-          'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.',
-      });
+      toast({ variant: 'destructive', title: 'Erro no Upload', description: 'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.' });
     } finally {
       setIsUploading(prev => ({ ...prev, [imageType]: false }));
-      if (event.target) {
-        event.target.value = '';
-      }
+      if (event.target) event.target.value = '';
     }
   };
 
   const handleRemoveImage = async (imageType: ImageType) => {
     const configMap = {
-      proposal: {
-        key: 'companyLogoUrl',
-        path: 'customization/proposal_logo',
-        setPreview: setProposalLogoPreview,
-        name: 'Logo da proposta',
-        fileInputRef: proposalFileInputRef,
-      },
-      sidebar: {
-        key: 'sidebarLogoUrl',
-        path: 'customization/sidebar_logo',
-        setPreview: setSidebarLogoPreview,
-        name: 'Ícone (Barra Lateral e Login)',
-        fileInputRef: sidebarFileInputRef,
-      },
-      loginBackground: {
-        key: 'loginBackgroundUrl',
-        path: 'customization/login_background',
-        setPreview: setLoginBgPreview,
-        name: 'Imagem de fundo',
-        fileInputRef: loginBgFileInputRef,
-      },
+      proposalLogoUrl: { key: 'companyLogoUrl', path: 'customization/proposal_logo', name: 'Logo da proposta' },
+      sidebarLogoUrl: { key: 'sidebarLogoUrl', path: 'customization/sidebar_logo', name: 'Ícone (Barra Lateral e Login)' },
+      loginBackgroundUrl: { key: 'loginBackgroundUrl', path: 'customization/login_background', name: 'Imagem de fundo' },
     };
-
     const config = configMap[imageType];
 
+    if(!settingsDocRef) return;
+
     try {
-      localStorage.removeItem(config.key);
-      config.setPreview(null);
-      if (config.fileInputRef.current) {
-        config.fileInputRef.current.value = '';
-      }
-
       await deleteFile(config.path);
+      await setDoc(settingsDocRef, { [imageType]: null }, { merge: true });
 
-      toast({
-        title: 'Imagem removida',
-        description: `O(a) ${config.name} foi removido(a).`,
-      });
-      window.dispatchEvent(
-        new StorageEvent('storage', { key: config.key, newValue: null })
-      );
+      toast({ title: 'Imagem removida', description: `O(a) ${config.name} foi removido(a).` });
+       // Manually trigger localStorage update for other tabs
+      localStorage.removeItem(config.key);
+      window.dispatchEvent(new StorageEvent('storage', { key: config.key, newValue: null }));
+
     } catch (error) {
-      console.error(`Failed to remove ${imageType} from localStorage:`, error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao remover',
-        description: `Não foi possível remover o(a) ${config.name}. Verifique as permissões do Firebase Storage.`,
-      });
+      console.error(`Failed to remove ${imageType}:`, error);
+      toast({ variant: 'destructive', title: 'Erro ao remover', description: `Não foi possível remover o(a) ${config.name}. Verifique as permissões do Firebase Storage.` });
     }
   };
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || areSettingsLoading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -261,29 +203,15 @@ export default function SettingsPage() {
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label
-                htmlFor="dark-mode"
-                className="text-base flex items-center gap-2"
-              >
-                {theme === 'dark' ? (
-                  <Moon className="h-5 w-5" />
-                ) : (
-                  <Sun className="h-5 w-5" />
-                )}
+              <Label htmlFor="dark-mode" className="text-base flex items-center gap-2">
+                {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                 Modo Escuro
               </Label>
               <p className="text-sm text-muted-foreground">
-                {theme === 'dark'
-                  ? 'Desative para uma experiência com cores claras.'
-                  : 'Ative para uma experiência com cores escuras.'}
+                {theme === 'dark' ? 'Desative para uma experiência com cores claras.' : 'Ative para uma experiência com cores escuras.'}
               </p>
             </div>
-            <Switch
-              id="dark-mode"
-              checked={theme === 'dark'}
-              onCheckedChange={handleThemeChange}
-              aria-label="Alternar modo escuro"
-            />
+            <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange} aria-label="Alternar modo escuro" />
           </div>
         </CardContent>
       </Card>
@@ -292,7 +220,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Aparência do Aplicativo</CardTitle>
           <CardDescription>
-            Personalize a identidade visual da plataforma.
+            Personalize a identidade visual da plataforma. As alterações são salvas na nuvem e aplicadas a todos os usuários.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -300,154 +228,68 @@ export default function SettingsPage() {
             <Label>Ícone (Barra Lateral e Login)</Label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {sidebarLogoPreview ? (
-                  <img
-                    src={sidebarLogoPreview}
-                    alt="Pré-visualização do Ícone"
-                    className="max-w-full max-h-full object-contain"
-                  />
+                {previews.sidebarLogoUrl ? (
+                  <img src={previews.sidebarLogoUrl} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
                 ) : (
                   <Briefcase className="h-8 w-8 text-muted-foreground" />
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Button
-                  onClick={() => sidebarFileInputRef.current?.click()}
-                  disabled={anyUploading}
-                >
-                  {isUploading.sidebar ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                  )}
-                  {sidebarLogoPreview ? 'Alterar Ícone' : 'Enviar Ícone'}
+                <Button onClick={() => fileInputRefs.sidebarLogoUrl.current?.click()} disabled={anyUploading}>
+                  {isUploading.sidebarLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                  {previews.sidebarLogoUrl ? 'Alterar Ícone' : 'Enviar Ícone'}
                 </Button>
-                {sidebarLogoPreview && (
+                {previews.sidebarLogoUrl && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={anyUploading}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Remover
-                      </Button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação removerá permanentemente o ícone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleRemoveImage('sidebar')}
-                        >
-                          Sim, remover
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
+                      <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá permanentemente o ícone.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('sidebarLogoUrl')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              <Input
-                ref={sidebarFileInputRef}
-                type="file"
-                className="hidden"
-                accept="image/png, image/jpeg, image/webp, image/svg+xml"
-                onChange={e => handleImageUpload(e, 'sidebar')}
-                disabled={anyUploading}
-              />
+              <Input ref={fileInputRefs.sidebarLogoUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/svg+xml" onChange={e => handleImageUpload(e, 'sidebarLogoUrl')} disabled={anyUploading} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Recomendado: PNG quadrado com fundo transparente, até{' '}
-              {MAX_SIDEBAR_LOGO_SIZE_KB}KB.
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">Recomendado: PNG quadrado com fundo transparente, até {MAX_SIDEBAR_LOGO_SIZE_KB}KB.</p>
           </div>
         </CardContent>
-        <CardFooter>
-          <p className="text-xs text-muted-foreground">
-            As alterações são salvas automaticamente na nuvem.
-          </p>
-        </CardFooter>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Tela de Login</CardTitle>
-          <CardDescription>
-            Personalize a imagem de fundo da tela de login.
-          </CardDescription>
+          <CardDescription>Personalize a imagem de fundo da tela de login.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <Label>Imagem de Fundo</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
-                {loginBgPreview ? (
-                  <img
-                    src={loginBgPreview}
-                    alt="Pré-visualização do Fundo"
-                    className="w-full h-full object-cover"
-                  />
+                {previews.loginBackgroundUrl ? (
+                  <img src={previews.loginBackgroundUrl} alt="Pré-visualização do Fundo" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="text-center text-muted-foreground">
-                    <Wallpaper className="mx-auto h-8 w-8" />
-                    <p className="text-xs">Sem imagem</p>
-                  </div>
+                  <div className="text-center text-muted-foreground"><Wallpaper className="mx-auto h-8 w-8" /><p className="text-xs">Sem imagem</p></div>
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Button
-                  onClick={() => loginBgFileInputRef.current?.click()}
-                  disabled={anyUploading}
-                >
-                  {isUploading.loginBackground ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                  )}
-                  {loginBgPreview ? 'Alterar Imagem' : 'Enviar Imagem'}
+                <Button onClick={() => fileInputRefs.loginBackgroundUrl.current?.click()} disabled={anyUploading}>
+                  {isUploading.loginBackgroundUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                  {previews.loginBackgroundUrl ? 'Alterar Imagem' : 'Enviar Imagem'}
                 </Button>
-                {loginBgPreview && (
+                {previews.loginBackgroundUrl && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={anyUploading}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Remover
-                      </Button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação removerá permanentemente a imagem de fundo.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleRemoveImage('loginBackground')}
-                        >
-                          Sim, remover
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
+                      <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá permanentemente a imagem de fundo.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('loginBackgroundUrl')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              <Input
-                ref={loginBgFileInputRef}
-                type="file"
-                className="hidden"
-                accept="image/png, image/jpeg, image/webp"
-                onChange={e => handleImageUpload(e, 'loginBackground')}
-                disabled={anyUploading}
-              />
+              <Input ref={fileInputRefs.loginBackgroundUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={e => handleImageUpload(e, 'loginBackgroundUrl')} disabled={anyUploading} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Recomendado: Imagem com boa resolução, até{' '}
-              {MAX_LOGIN_BG_SIZE_KB}KB.
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">Recomendado: Imagem com boa resolução, até {MAX_LOGIN_BG_SIZE_KB}KB.</p>
           </div>
         </CardContent>
       </Card>
@@ -455,80 +297,37 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Aparência da Proposta</CardTitle>
-          <CardDescription>
-            Personalize a aparência das propostas comerciais.
-          </CardDescription>
+          <CardDescription>Personalize a aparência das propostas comerciais.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label>Logo da Empresa</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {proposalLogoPreview ? (
-                  <img
-                    src={proposalLogoPreview}
-                    alt="Pré-visualização do Logo"
-                    className="max-w-full max-h-full object-contain"
-                  />
+                {previews.proposalLogoUrl ? (
+                  <img src={previews.proposalLogoUrl} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
                 ) : (
-                  <div className="text-center text-muted-foreground">
-                    <ImageIcon className="mx-auto h-8 w-8" />
-                    <p className="text-xs">Sem logo</p>
-                  </div>
+                  <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto h-8 w-8" /><p className="text-xs">Sem logo</p></div>
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Button
-                  onClick={() => proposalFileInputRef.current?.click()}
-                  disabled={anyUploading}
-                >
-                  {isUploading.proposal ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <UploadCloud className="mr-2 h-4 w-4" />
-                  )}
-                  {proposalLogoPreview ? 'Alterar Logo' : 'Enviar Logo'}
+                <Button onClick={() => fileInputRefs.proposalLogoUrl.current?.click()} disabled={anyUploading}>
+                  {isUploading.proposalLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                  {previews.proposalLogoUrl ? 'Alterar Logo' : 'Enviar Logo'}
                 </Button>
-                {proposalLogoPreview && (
+                {previews.proposalLogoUrl && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={anyUploading}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Remover
-                      </Button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação removerá permanentemente o seu logo.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleRemoveImage('proposal')}
-                        >
-                          Sim, remover
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
+                      <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá permanentemente o seu logo.</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('proposalLogoUrl')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              <Input
-                ref={proposalFileInputRef}
-                type="file"
-                className="hidden"
-                accept="image/png, image/jpeg, image/webp, image/svg+xml"
-                onChange={e => handleImageUpload(e, 'proposal')}
-                disabled={anyUploading}
-              />
+              <Input ref={fileInputRefs.proposalLogoUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/svg+xml" onChange={e => handleImageUpload(e, 'proposalLogoUrl')} disabled={anyUploading} />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Recomendado: PNG com fundo transparente, até{' '}
-              {MAX_PROPOSAL_LOGO_SIZE_KB}KB.
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">Recomendado: PNG com fundo transparente, até {MAX_PROPOSAL_LOGO_SIZE_KB}KB.</p>
           </div>
         </CardContent>
       </Card>

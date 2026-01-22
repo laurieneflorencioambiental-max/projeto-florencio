@@ -2,22 +2,18 @@
  * # Core Philosophy
  * This ruleset enforces a strict user-ownership model for the Florencio Sales Manager application.
  * All user-generated data, specifically 'budgets', is exclusively owned by and accessible only to the user who created it.
- * The security model prioritizes data privacy and isolation, ensuring that one user can never access another user's sales data.
+ * Global data like 'sellers', 'proposal-templates', and 'app-settings' are readable by any authenticated user, but writable only by them as well (simplification for MVP).
+ * The security model prioritizes data privacy and isolation for user data, while allowing collaborative management of global data.
  *
  * # Data Structure
- * All user data is nested within a top-level 'users' collection. The hierarchical path is '/users/{userId}/budgets/{budgetId}'.
- * This structure inherently links data to its owner through the path itself, simplifying security logic and enabling secure queries.
+ * - Private user data is nested under `/users/{userId}`.
+ * - Global configuration data is stored in top-level collections.
  *
  * # Key Security Decisions
- * - **Path-Based Ownership**: Access control is determined entirely by the `{userId}` in the document path. If a user's authenticated UID matches the `{userId}`, they are granted access.
- * - **No User Listing**: There are no rules allowing clients to list documents in the top-level `/users` collection, preventing enumeration of all application users.
- * - **Deny by Default**: Any path not explicitly matched in these rules is inaccessible.
- *
- * # Denormalization for Authorization
- * The data structure is designed to be self-contained for authorization. Each user's data tree (`/users/{userId}`) contains all information needed to secure its contents. This eliminates the need for slow and costly `get()` calls to other documents for permission checks, resulting in simpler, more performant, and more secure rules.
- *
- * # Structural Segregation
- * This ruleset uses structural segregation by placing all private user data within a user-specific subcollection (`/users/{userId}/budgets`). This is the most secure and performant way to manage private user data and prevent accidental data leakage in list operations.
+ * - **Path-Based Ownership**: For `/users/{userId}`, access control is determined entirely by the `{userId}` in the document path.
+ * - **Global Read/Write for Authenticated Users**: For simplicity in this stage, any logged-in user can manage sellers, templates, and app settings. This can be locked down further with custom claims (e.g., admin roles) in the future.
+ * - **No User Listing**: There are no rules allowing clients to list documents in the top-level `/users` collection.
+ * - **Deny by Default**: Any path not explicitly matched is inaccessible.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -38,31 +34,6 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
-    /**
-     * A robust check for update/delete operations.
-     * Ensures the user is the owner AND the document already exists.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId)/budgets/$(budgetId));
-    }
-
-    /**
-     * On create, validates that the document's internal 'id' field matches its document ID in the path.
-     * This enforces relational integrity from the moment of creation.
-     */
-    function isBudgetCreateValid(budgetId) {
-      return request.resource.data.id == budgetId;
-    }
-
-    /**
-     * On update, ensures the document's internal 'id' field cannot be changed.
-     * This prevents re-linking or altering the fundamental identity of the document.
-     */
-    function isBudgetUpdateValid() {
-      return request.resource.data.id == resource.data.id;
-    }
-
 
     /**
      * @description Secures the 'budgets' subcollection, ensuring users can only manage their own budget documents.
@@ -88,12 +59,26 @@ service cloud.firestore {
 
     /**
      * @description Secures the 'sellers' collection.
-     * Any authenticated user can read, create, update, and delete sellers.
-     * This allows for collaborative management of the sales team list.
+     * Any authenticated user can read and write.
      */
     match /sellers/{sellerId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read, write: if isSignedIn();
+    }
+    
+    /**
+     * @description Secures the 'proposal-templates' collection.
+     * Any authenticated user can read and write.
+     */
+    match /proposal-templates/{templateId} {
+       allow read, write: if isSignedIn();
+    }
+    
+    /**
+     * @description Secures the 'app-settings' collection.
+     * This is a singleton collection. Any authenticated user can read and write.
+     */
+    match /app-settings/{docId} {
+       allow read, write: if isSignedIn();
     }
   }
 }
