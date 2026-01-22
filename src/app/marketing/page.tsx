@@ -17,6 +17,8 @@ import {
   Trash2,
   CalendarIcon,
   Clock,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -79,6 +81,7 @@ export default function MarketingPage() {
   const [newActionName, setNewActionName] = useState('');
   const [newActionGoal, setNewActionGoal] = useState('');
   const [newActionDeadline, setNewActionDeadline] = useState<Date | undefined>();
+  const [editingActionId, setEditingActionId] = useState<number | null>(null);
 
   // ROI Handlers
   const handleAddEntry = (e: React.FormEvent) => {
@@ -145,7 +148,21 @@ export default function MarketingPage() {
   }, [entries]);
 
   // Action Plan Handlers
-  const handleAddAction = (e: React.FormEvent) => {
+  const handleStartEditing = (action: MarketingAction) => {
+    setEditingActionId(action.id);
+    setNewActionName(action.name);
+    setNewActionGoal(action.goal);
+    setNewActionDeadline(action.deadline);
+  };
+
+  const handleCancelEditing = () => {
+    setEditingActionId(null);
+    setNewActionName('');
+    setNewActionGoal('');
+    setNewActionDeadline(undefined);
+  };
+
+  const handleActionFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newActionName || !newActionGoal || !newActionDeadline) {
       toast({
@@ -156,25 +173,39 @@ export default function MarketingPage() {
       return;
     }
 
-    const newAction: MarketingAction = {
-      id: Date.now(),
-      name: newActionName,
-      goal: newActionGoal,
-      deadline: newActionDeadline,
-      completed: false,
-    };
+    if (editingActionId) {
+      setActions(
+        actions.map(action =>
+          action.id === editingActionId
+            ? {
+                ...action,
+                name: newActionName,
+                goal: newActionGoal,
+                deadline: newActionDeadline,
+              }
+            : action
+        )
+      );
+      toast({
+        title: 'Ação Atualizada!',
+        description: `A campanha "${newActionName}" foi atualizada.`,
+      });
+    } else {
+      const newAction: MarketingAction = {
+        id: Date.now(),
+        name: newActionName,
+        goal: newActionGoal,
+        deadline: newActionDeadline,
+        completed: false,
+      };
+      setActions([...actions, newAction]);
+      toast({
+        title: 'Ação Adicionada!',
+        description: `A campanha "${newActionName}" foi adicionada ao seu plano.`,
+      });
+    }
 
-    setActions([...actions, newAction]);
-
-    // Reset form
-    setNewActionName('');
-    setNewActionGoal('');
-    setNewActionDeadline(undefined);
-
-    toast({
-      title: 'Ação Adicionada!',
-      description: `A campanha "${newActionName}" foi adicionada ao seu plano.`,
-    });
+    handleCancelEditing();
   };
 
   const handleToggleAction = (id: number) => {
@@ -217,7 +248,7 @@ export default function MarketingPage() {
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={handleAddAction}
+            onSubmit={handleActionFormSubmit}
             className="space-y-4 p-4 border rounded-lg bg-muted/50 mb-6"
           >
             <div className="space-y-2">
@@ -271,10 +302,30 @@ export default function MarketingPage() {
                   </PopoverContent>
                 </Popover>
               </div>
-              <Button type="submit" className="flex-shrink-0">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Ação
-              </Button>
+              <div className="flex items-center gap-2">
+                {editingActionId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEditing}
+                  >
+                    Cancelar
+                  </Button>
+                )}
+                <Button type="submit" className="flex-shrink-0">
+                  {editingActionId ? (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Salvar Alterações
+                    </>
+                  ) : (
+                    <>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Adicionar Ação
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
 
@@ -330,14 +381,24 @@ export default function MarketingPage() {
                       </span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteAction(action.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                    <span className="sr-only">Remover Ação</span>
-                  </Button>
+                  <div className="flex items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleStartEditing(action)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Editar Ação</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteAction(action.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <span className="sr-only">Remover Ação</span>
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
