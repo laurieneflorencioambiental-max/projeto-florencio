@@ -652,6 +652,7 @@ export default function Home() {
         onLeadStatusChange={handleLeadStatusChange}
         proposalTemplates={proposalTemplates || []}
         logoUrl={settings?.proposalLogoUrl}
+        proposalCoverUrl={settings?.proposalCoverUrl}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />

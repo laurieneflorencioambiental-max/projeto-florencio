@@ -24,6 +24,7 @@ import {
   Moon,
   Sun,
   Wallpaper,
+  FileImage,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -38,12 +39,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import type { AppSettings } from '@/lib/types';
-import { uploadImageAndGetUrl, deleteImageByUrl, ImageType } from '@/firebase/storage';
+import {
+  uploadImageAndGetUrl,
+  deleteImageByUrl,
+  ImageType,
+} from '@/firebase/storage';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
 const MAX_LOGIN_BG_SIZE_KB = 2000;
+const MAX_PROPOSAL_COVER_SIZE_KB = 2000;
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -52,15 +58,16 @@ export default function SettingsPage() {
   const firestore = useFirestore();
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [isUploading, setIsUploading] = useState<Partial<Record<ImageType, boolean>>>({});
-  
-  // Local state for settings, managed manually to ensure UI updates.
+  const [isUploading, setIsUploading] =
+    useState<Partial<Record<ImageType, boolean>>>();
   const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
   const [areSettingsLoading, setAreSettingsLoading] = useState(true);
 
-  const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
-  
-  // Fetch initial data using useEffect instead of useDoc
+  const settingsRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
+    [firestore]
+  );
+
   useEffect(() => {
     if (settingsRef) {
       if (!areSettingsLoading) setAreSettingsLoading(true);
@@ -69,12 +76,15 @@ export default function SettingsPage() {
           if (docSnap.exists()) {
             setAppSettings(docSnap.data() as AppSettings);
           } else {
-            setAppSettings({}); // Initialize with empty object if no settings doc
+            setAppSettings({});
           }
         })
         .catch(error => {
-          console.error("Failed to fetch settings:", error);
-          toast({ variant: 'destructive', title: 'Erro ao carregar configurações' });
+          console.error('Failed to fetch settings:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Erro ao carregar configurações',
+          });
         })
         .finally(() => {
           setAreSettingsLoading(false);
@@ -82,26 +92,31 @@ export default function SettingsPage() {
     } else if (!firestore && areSettingsLoading) {
       setAreSettingsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settingsRef]); // Removed toast from dependency array
+  }, [settingsRef]);
 
-  const anyUploading = Object.values(isUploading).some(v => v);
+  const anyUploading = Object.values(isUploading || {}).some(v => v);
 
   const fileInputRefs = {
     proposalLogoUrl: useRef<HTMLInputElement>(null),
     sidebarLogoUrl: useRef<HTMLInputElement>(null),
     loginBackgroundUrl: useRef<HTMLInputElement>(null),
+    proposalCoverUrl: useRef<HTMLInputElement>(null),
   };
 
-  // Effect for theme
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const savedTheme = localStorage.getItem('theme') as
+      | 'light'
+      | 'dark'
+      | null;
+    const initialTheme =
+      savedTheme ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light');
     setTheme(initialTheme);
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
-  // Effect for user session
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
@@ -113,23 +128,45 @@ export default function SettingsPage() {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', isDark);
-    window.dispatchEvent(new StorageEvent('storage', { key: 'theme', newValue: newTheme }));
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'theme', newValue: newTheme })
+    );
   };
-  
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, imageType: ImageType) => {
+
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    imageType: ImageType
+  ) => {
     if (!firestore || !settingsRef) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
     const configMap = {
-      proposalLogoUrl: { maxSize: MAX_PROPOSAL_LOGO_SIZE_KB, name: 'Logo da Proposta' },
-      sidebarLogoUrl: { maxSize: MAX_SIDEBAR_LOGO_SIZE_KB, name: 'Ícone (Barra Lateral e Login)' },
-      loginBackgroundUrl: { maxSize: MAX_LOGIN_BG_SIZE_KB, name: 'Imagem de Fundo do Login' },
+      proposalLogoUrl: {
+        maxSize: MAX_PROPOSAL_LOGO_SIZE_KB,
+        name: 'Logo da Proposta',
+      },
+      sidebarLogoUrl: {
+        maxSize: MAX_SIDEBAR_LOGO_SIZE_KB,
+        name: 'Ícone (Barra Lateral e Login)',
+      },
+      loginBackgroundUrl: {
+        maxSize: MAX_LOGIN_BG_SIZE_KB,
+        name: 'Imagem de Fundo do Login',
+      },
+      proposalCoverUrl: {
+        maxSize: MAX_PROPOSAL_COVER_SIZE_KB,
+        name: 'Capa da Proposta',
+      },
     };
     const config = configMap[imageType];
 
     if (file.size > config.maxSize * 1024) {
-      toast({ variant: 'destructive', title: 'Arquivo muito grande', description: `A imagem deve ter no máximo ${config.maxSize}KB.` });
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: `A imagem deve ter no máximo ${config.maxSize}KB.`,
+      });
       return;
     }
 
@@ -137,25 +174,31 @@ export default function SettingsPage() {
     try {
       const oldUrl = appSettings?.[imageType];
 
-      // Upload the new image
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
-      // Update the URL in Firestore.
       await setDoc(settingsRef!, { [imageType]: newUrl }, { merge: true });
 
-      // Manually update the local state to force a re-render with the new image.
       setAppSettings(prev => ({ ...prev, [imageType]: newUrl }));
 
-      // AFTER updating the doc and state, delete the old image if it existed.
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
       }
 
-      toast({ title: `${config.name} atualizado(a)!`, description: 'Sua nova imagem foi salva com sucesso na nuvem.' });
+      toast({
+        title: `${config.name} atualizado(a)!`,
+        description: 'Sua nova imagem foi salva com sucesso na nuvem.',
+      });
     } catch (error) {
       console.error(`Failed to upload ${imageType}:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'Não foi possível completar o upload.';
-      toast({ variant: 'destructive', title: 'Erro no Upload', description: errorMessage });
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível completar o upload.';
+      toast({
+        variant: 'destructive',
+        title: 'Erro no Upload',
+        description: errorMessage,
+      });
     } finally {
       setIsUploading(prev => ({ ...prev, [imageType]: false }));
       if (event.target) event.target.value = '';
@@ -164,32 +207,37 @@ export default function SettingsPage() {
 
   const handleRemoveImage = async (imageType: ImageType) => {
     if (!firestore || !settingsRef) return;
-    
+
     const configMap = {
       proposalLogoUrl: { name: 'Logo da proposta' },
       sidebarLogoUrl: { name: 'Ícone (Barra Lateral e Login)' },
       loginBackgroundUrl: { name: 'Imagem de fundo' },
+      proposalCoverUrl: { name: 'Capa da proposta' },
     };
     const config = configMap[imageType];
 
     try {
       const oldUrl = appSettings?.[imageType];
 
-      // First, remove the URL from Firestore.
       await setDoc(settingsRef, { [imageType]: null }, { merge: true });
 
-      // Manually update local state to force UI to clear the image.
       setAppSettings(prev => ({ ...prev, [imageType]: null }));
-      
-      // Then, delete the image from Storage if it existed
+
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
       }
 
-      toast({ title: 'Imagem removida', description: `O(a) ${config.name} foi removido(a).` });
+      toast({
+        title: 'Imagem removida',
+        description: `O(a) ${config.name} foi removido(a).`,
+      });
     } catch (error) {
       console.error(`Failed to remove ${imageType}:`, error);
-      toast({ variant: 'destructive', title: 'Erro ao remover', description: `Não foi possível remover o(a) ${config.name}.` });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao remover',
+        description: `Não foi possível remover o(a) ${config.name}.`,
+      });
     }
   };
 
@@ -206,20 +254,36 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Tema de Aparência</CardTitle>
-          <CardDescription>Selecione o tema para a plataforma.</CardDescription>
+          <CardDescription>
+            Selecione o tema para a plataforma.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="dark-mode" className="text-base flex items-center gap-2">
-                {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              <Label
+                htmlFor="dark-mode"
+                className="text-base flex items-center gap-2"
+              >
+                {theme === 'dark' ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
                 Modo Escuro
               </Label>
               <p className="text-sm text-muted-foreground">
-                {theme === 'dark' ? 'Desative para uma experiência com cores claras.' : 'Ative para uma experiência com cores escuras.'}
+                {theme === 'dark'
+                  ? 'Desative para uma experiência com cores claras.'
+                  : 'Ative para uma experiência com cores escuras.'}
               </p>
             </div>
-            <Switch id="dark-mode" checked={theme === 'dark'} onCheckedChange={handleThemeChange} aria-label="Alternar modo escuro" />
+            <Switch
+              id="dark-mode"
+              checked={theme === 'dark'}
+              onCheckedChange={handleThemeChange}
+              aria-label="Alternar modo escuro"
+            />
           </div>
         </CardContent>
       </Card>
@@ -228,7 +292,8 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Aparência do Aplicativo</CardTitle>
           <CardDescription>
-            Personalize a identidade visual da plataforma. As alterações são salvas na nuvem para todos os usuários.
+            Personalize a identidade visual da plataforma. As alterações são
+            salvas na nuvem para todos os usuários.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -237,29 +302,67 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
                 {appSettings?.sidebarLogoUrl ? (
-                  <img src={appSettings.sidebarLogoUrl} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
+                  <img
+                    src={appSettings.sidebarLogoUrl}
+                    alt="Pré-visualização do Ícone"
+                    className="max-w-full max-h-full object-contain"
+                  />
                 ) : (
                   <Briefcase className="h-8 w-8 text-muted-foreground" />
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Button onClick={() => fileInputRefs.sidebarLogoUrl.current?.click()} disabled={anyUploading}>
-                  {isUploading.sidebarLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                <Button
+                  onClick={() => fileInputRefs.sidebarLogoUrl.current?.click()}
+                  disabled={anyUploading}
+                >
+                  {isUploading?.sidebarLogoUrl ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
                   {appSettings?.sidebarLogoUrl ? 'Alterar Ícone' : 'Enviar Ícone'}
                 </Button>
                 {appSettings?.sidebarLogoUrl && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={anyUploading}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá permanentemente o ícone.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('sidebarLogoUrl')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação removerá permanentemente o ícone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveImage('sidebarLogoUrl')}
+                        >
+                          Sim, remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              <Input ref={fileInputRefs.sidebarLogoUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/svg+xml" onChange={e => handleImageUpload(e, 'sidebarLogoUrl')} disabled={anyUploading} />
+              <Input
+                ref={fileInputRefs.sidebarLogoUrl}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                onChange={e => handleImageUpload(e, 'sidebarLogoUrl')}
+                disabled={anyUploading}
+              />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Recomendado: PNG quadrado com fundo transparente, até {MAX_SIDEBAR_LOGO_SIZE_KB}KB.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Recomendado: PNG quadrado com fundo transparente, até{' '}
+              {MAX_SIDEBAR_LOGO_SIZE_KB}KB.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -267,7 +370,9 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Tela de Login</CardTitle>
-          <CardDescription>Personalize a imagem de fundo da tela de login.</CardDescription>
+          <CardDescription>
+            Personalize a imagem de fundo da tela de login.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -275,29 +380,74 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
                 {appSettings?.loginBackgroundUrl ? (
-                  <img src={appSettings.loginBackgroundUrl} alt="Pré-visualização do Fundo" className="w-full h-full object-cover" />
+                  <img
+                    src={appSettings.loginBackgroundUrl}
+                    alt="Pré-visualização do Fundo"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <div className="text-center text-muted-foreground"><Wallpaper className="mx-auto h-8 w-8" /><p className="text-xs">Sem imagem</p></div>
+                  <div className="text-center text-muted-foreground">
+                    <Wallpaper className="mx-auto h-8 w-8" />
+                    <p className="text-xs">Sem imagem</p>
+                  </div>
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Button onClick={() => fileInputRefs.loginBackgroundUrl.current?.click()} disabled={anyUploading}>
-                  {isUploading.loginBackgroundUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {appSettings?.loginBackgroundUrl ? 'Alterar Imagem' : 'Enviar Imagem'}
+                <Button
+                  onClick={() =>
+                    fileInputRefs.loginBackgroundUrl.current?.click()
+                  }
+                  disabled={anyUploading}
+                >
+                  {isUploading?.loginBackgroundUrl ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
+                  {appSettings?.loginBackgroundUrl
+                    ? 'Alterar Imagem'
+                    : 'Enviar Imagem'}
                 </Button>
                 {appSettings?.loginBackgroundUrl && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={anyUploading}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá permanentemente a imagem de fundo.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('loginBackgroundUrl')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação removerá permanentemente a imagem de fundo.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveImage('loginBackgroundUrl')}
+                        >
+                          Sim, remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              <Input ref={fileInputRefs.loginBackgroundUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp" onChange={e => handleImageUpload(e, 'loginBackgroundUrl')} disabled={anyUploading} />
+              <Input
+                ref={fileInputRefs.loginBackgroundUrl}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={e => handleImageUpload(e, 'loginBackgroundUrl')}
+                disabled={anyUploading}
+              />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Recomendado: Imagem vertical (ex: 1080x1920 pixels), até {MAX_LOGIN_BG_SIZE_KB}KB para melhor qualidade.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Recomendado: Imagem vertical (ex: 1080x1920 pixels), até{' '}
+              {MAX_LOGIN_BG_SIZE_KB}KB para melhor qualidade.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -305,7 +455,9 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Aparência da Proposta</CardTitle>
-          <CardDescription>Personalize a aparência das propostas comerciais.</CardDescription>
+          <CardDescription>
+            Personalize a aparência das propostas comerciais.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -313,29 +465,142 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
                 {appSettings?.proposalLogoUrl ? (
-                  <img src={appSettings.proposalLogoUrl} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
+                  <img
+                    src={appSettings.proposalLogoUrl}
+                    alt="Pré-visualização do Logo"
+                    className="max-w-full max-h-full object-contain"
+                  />
                 ) : (
-                  <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto h-8 w-8" /><p className="text-xs">Sem logo</p></div>
+                  <div className="text-center text-muted-foreground">
+                    <ImageIcon className="mx-auto h-8 w-8" />
+                    <p className="text-xs">Sem logo</p>
+                  </div>
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <Button onClick={() => fileInputRefs.proposalLogoUrl.current?.click()} disabled={anyUploading}>
-                  {isUploading.proposalLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                <Button
+                  onClick={() => fileInputRefs.proposalLogoUrl.current?.click()}
+                  disabled={anyUploading}
+                >
+                  {isUploading?.proposalLogoUrl ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
                   {appSettings?.proposalLogoUrl ? 'Alterar Logo' : 'Enviar Logo'}
                 </Button>
                 {appSettings?.proposalLogoUrl && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={anyUploading}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
                     <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá permanentemente o seu logo.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('proposalLogoUrl')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação removerá permanentemente o seu logo.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveImage('proposalLogoUrl')}
+                        >
+                          Sim, remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
               </div>
-              <Input ref={fileInputRefs.proposalLogoUrl} type="file" className="hidden" accept="image/png, image/jpeg, image/webp, image/svg+xml" onChange={e => handleImageUpload(e, 'proposalLogoUrl')} disabled={anyUploading} />
+              <Input
+                ref={fileInputRefs.proposalLogoUrl}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                onChange={e => handleImageUpload(e, 'proposalLogoUrl')}
+                disabled={anyUploading}
+              />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Recomendado: PNG com fundo transparente, até {MAX_PROPOSAL_LOGO_SIZE_KB}KB.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Recomendado: PNG com fundo transparente, até{' '}
+              {MAX_PROPOSAL_LOGO_SIZE_KB}KB.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Capa da Proposta</Label>
+            <div className="flex items-center gap-4">
+              <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
+                {appSettings?.proposalCoverUrl ? (
+                  <img
+                    src={appSettings.proposalCoverUrl}
+                    alt="Pré-visualização da Capa"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <FileImage className="mx-auto h-8 w-8" />
+                    <p className="text-xs">Sem capa</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() =>
+                    fileInputRefs.proposalCoverUrl.current?.click()
+                  }
+                  disabled={anyUploading}
+                >
+                  {isUploading?.proposalCoverUrl ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
+                  {appSettings?.proposalCoverUrl ? 'Alterar Capa' : 'Enviar Capa'}
+                </Button>
+                {appSettings?.proposalCoverUrl && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={anyUploading}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação removerá permanentemente a capa da proposta.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveImage('proposalCoverUrl')}
+                        >
+                          Sim, remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+              <Input
+                ref={fileInputRefs.proposalCoverUrl}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={e => handleImageUpload(e, 'proposalCoverUrl')}
+                disabled={anyUploading}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Recomendado: Imagem em formato A4 (vertical, ex: 2480x3508
+              pixels), até {MAX_PROPOSAL_COVER_SIZE_KB}KB.
+            </p>
           </div>
         </CardContent>
       </Card>

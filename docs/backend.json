@@ -113,7 +113,8 @@
       "properties": {
         "sidebarLogoUrl": { "type": "string", "format": "uri" },
         "proposalLogoUrl": { "type": "string", "format": "uri" },
-        "loginBackgroundUrl": { "type": "string", "format": "uri" }
+        "loginBackgroundUrl": { "type": "string", "format": "uri" },
+        "proposalCoverUrl": { "type": "string", "format": "uri" }
       }
     }
   },

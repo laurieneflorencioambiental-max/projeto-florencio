@@ -30,7 +30,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
-  const { lead, proposalState, fullProposalNumber, logoUrl } = proposalData;
+  const { lead, proposalState, fullProposalNumber, logoUrl, proposalCoverUrl } =
+    proposalData;
   const [mediaConsent, setMediaConsent] = useState<'yes' | 'no' | undefined>(
     undefined
   );
@@ -52,7 +53,16 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
   ];
 
   return (
-    <main className="bg-gray-100 dark:bg-gray-900 p-4 sm:p-8 flex justify-center min-h-screen">
+    <main className="bg-gray-100 dark:bg-gray-900 p-4 sm:p-8 flex flex-col items-center gap-8">
+      {proposalCoverUrl && (
+        <div className="a4-page shadow-lg" style={{ padding: 0 }}>
+          <img
+            src={proposalCoverUrl}
+            alt="Capa da Proposta"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
       <div
         className="a4-page p-8 text-sm bg-white shadow-lg"
         style={{ color: '#596371', minHeight: '297mm' }}
@@ -61,11 +71,15 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
         <header className="flex justify-between items-center pb-4 border-b">
           <div>
             {logoUrl ? (
-                <img src={logoUrl} alt="Logo da Empresa" className="h-16 w-auto object-contain" />
-              ) : (
-                <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
-                  Grupo Florencio
-                </h1>
+              <img
+                src={logoUrl}
+                alt="Logo da Empresa"
+                className="h-16 w-auto object-contain"
+              />
+            ) : (
+              <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
+                Grupo Florencio
+              </h1>
             )}
             <p className="text-sm">Saúde Ocupacional Estratégica</p>
             <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
@@ -75,7 +89,9 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             <p className="text-sm">{fullProposalNumber}</p>
             <p className="text-sm">
               Data:{' '}
-              {proposalData.createdAt?.toDate ? proposalData.createdAt.toDate().toLocaleDateString('pt-BR') : 'Data Indisponível'}
+              {proposalData.createdAt?.toDate
+                ? proposalData.createdAt.toDate().toLocaleDateString('pt-BR')
+                : 'Data Indisponível'}
             </p>
           </div>
         </header>
@@ -481,7 +497,9 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                   </PopoverContent>
                 </Popover>
               </div>
-              <p className="text-sm text-destructive print:hidden -ml-2">(Preencha a data antes de assinar)</p>
+              <p className="text-sm text-destructive print:hidden -ml-2">
+                (Preencha a data antes de assinar)
+              </p>
             </div>
             <p>
               Nome do Aprovador:
@@ -559,7 +577,7 @@ export default function ProposalViewerPage() {
       setIsLoading(true);
       try {
         const { firestore } = initializeFirebase();
-        
+
         // Fetch proposal data
         const proposalRef = doc(firestore, 'proposals', id);
         const proposalSnap = await getDoc(proposalRef);
@@ -569,25 +587,24 @@ export default function ProposalViewerPage() {
           setIsLoading(false);
           return;
         }
-        
+
         const fetchedProposalData = proposalSnap.data() as ProposalData;
 
         // Fetch global settings
         const settingsRef = doc(firestore, 'app-settings', 'global');
         const settingsSnap = await getDoc(settingsRef);
-        
-        if (settingsSnap.exists()) {
-          const settings = settingsSnap.data() as AppSettings;
-          // Combine proposal data with the logo URL from settings
-          setProposalData({
-            ...fetchedProposalData,
-            logoUrl: settings.proposalLogoUrl
-          });
-        } else {
-          // If no settings, just set proposal data
-          setProposalData(fetchedProposalData);
-        }
 
+        const settings = settingsSnap.exists()
+          ? (settingsSnap.data() as AppSettings)
+          : {};
+
+        // Use saved URL first, then fallback to current global setting.
+        setProposalData({
+          ...fetchedProposalData,
+          logoUrl: fetchedProposalData.logoUrl ?? settings.proposalLogoUrl,
+          proposalCoverUrl:
+            fetchedProposalData.proposalCoverUrl ?? settings.proposalCoverUrl,
+        });
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Ocorreu um erro ao carregar a proposta.');

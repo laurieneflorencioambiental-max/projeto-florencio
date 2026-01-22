@@ -120,12 +120,14 @@ export type ProposalData = {
   fullProposalNumber: string;
   createdAt: any; // Using `any` for Firestore serverTimestamp
   logoUrl?: string | null;
+  proposalCoverUrl?: string | null;
 };
 
 export const appSettingsSchema = z.object({
   sidebarLogoUrl: z.string().url().optional().nullable(),
   proposalLogoUrl: z.string().url().optional().nullable(),
   loginBackgroundUrl: z.string().url().optional().nullable(),
+  proposalCoverUrl: z.string().url().optional().nullable(),
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;

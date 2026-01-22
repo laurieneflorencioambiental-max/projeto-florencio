@@ -12,7 +12,7 @@ try {
     console.error("Firebase Storage could not be initialized:", e);
 }
 
-export type ImageType = 'proposalLogoUrl' | 'sidebarLogoUrl' | 'loginBackgroundUrl';
+export type ImageType = 'proposalLogoUrl' | 'sidebarLogoUrl' | 'loginBackgroundUrl' | 'proposalCoverUrl';
 
 export const uploadImageAndGetUrl = async (file: File, imageType: ImageType): Promise<string> => {
     if (!storage) throw new Error("Firebase Storage is not initialized.");
