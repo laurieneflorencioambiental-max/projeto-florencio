@@ -10,7 +10,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DollarSign, Activity, PlusCircle, Trash2 } from 'lucide-react';
+import {
+  DollarSign,
+  Activity,
+  PlusCircle,
+  Trash2,
+  CalendarIcon,
+  Clock,
+} from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
   Select,
@@ -30,6 +37,17 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface RoiEntry {
   id: number;
@@ -39,13 +57,30 @@ interface RoiEntry {
   roi: number;
 }
 
+interface MarketingAction {
+  id: number;
+  name: string;
+  goal: string;
+  deadline: Date;
+  completed: boolean;
+}
+
 export default function MarketingPage() {
   const { toast } = useToast();
+
+  // ROI State
   const [entries, setEntries] = useState<RoiEntry[]>([]);
   const [newInvestment, setNewInvestment] = useState('');
   const [newRevenue, setNewRevenue] = useState('');
   const [newSource, setNewSource] = useState('');
 
+  // Action Plan State
+  const [actions, setActions] = useState<MarketingAction[]>([]);
+  const [newActionName, setNewActionName] = useState('');
+  const [newActionGoal, setNewActionGoal] = useState('');
+  const [newActionDeadline, setNewActionDeadline] = useState<Date | undefined>();
+
+  // ROI Handlers
   const handleAddEntry = (e: React.FormEvent) => {
     e.preventDefault();
     const investmentValue = parseFloat(newInvestment);
@@ -109,6 +144,64 @@ export default function MarketingPage() {
     return { totalInvestment, totalRevenue, totalRoi };
   }, [entries]);
 
+  // Action Plan Handlers
+  const handleAddAction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newActionName || !newActionGoal || !newActionDeadline) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos incompletos',
+        description: 'Preencha o nome, a meta e o prazo da ação.',
+      });
+      return;
+    }
+
+    const newAction: MarketingAction = {
+      id: Date.now(),
+      name: newActionName,
+      goal: newActionGoal,
+      deadline: newActionDeadline,
+      completed: false,
+    };
+
+    setActions([...actions, newAction]);
+
+    // Reset form
+    setNewActionName('');
+    setNewActionGoal('');
+    setNewActionDeadline(undefined);
+
+    toast({
+      title: 'Ação Adicionada!',
+      description: `A campanha "${newActionName}" foi adicionada ao seu plano.`,
+    });
+  };
+
+  const handleToggleAction = (id: number) => {
+    setActions(
+      actions.map(action =>
+        action.id === id ? { ...action, completed: !action.completed } : action
+      )
+    );
+  };
+
+  const handleDeleteAction = (id: number) => {
+    setActions(actions.filter(action => action.id !== id));
+    toast({
+      title: 'Ação Removida',
+      description: `A ação foi removida do seu plano.`,
+    });
+  };
+
+  const sortedActions = useMemo(() => {
+    return [...actions].sort((a, b) => {
+      if (a.completed === b.completed) {
+        return a.deadline.getTime() - b.deadline.getTime();
+      }
+      return a.completed ? 1 : -1;
+    });
+  }, [actions]);
+
   return (
     <div className="flex flex-col gap-8">
       <Card>
@@ -118,19 +211,146 @@ export default function MarketingPage() {
             Plano de Ação de Marketing
           </CardTitle>
           <CardDescription>
-            Defina e acompanhe suas iniciativas de marketing. Esta é uma área em
-            desenvolvimento.
+            Crie campanhas, defina metas, prazos e acompanhe o progresso de suas
+            ações de marketing.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-            <p className="text-muted-foreground">
-              Funcionalidade de Plano de Ação em breve.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Aqui você poderá criar campanhas, definir metas e prazos.
-            </p>
-          </div>
+          <form
+            onSubmit={handleAddAction}
+            className="space-y-4 p-4 border rounded-lg bg-muted/50 mb-6"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="action-name">Nome da Campanha/Ação</Label>
+              <Input
+                id="action-name"
+                placeholder="Ex: Campanha de Dia das Mães no Instagram"
+                value={newActionName}
+                onChange={e => setNewActionName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="action-goal">Meta da Ação</Label>
+              <Textarea
+                id="action-goal"
+                placeholder="Ex: Aumentar o engajamento em 20% e gerar 15 novos leads qualificados."
+                value={newActionGoal}
+                onChange={e => setNewActionGoal(e.target.value)}
+                rows={2}
+              />
+            </div>
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-2 flex-grow min-w-[200px]">
+                <Label htmlFor="action-deadline">Prazo Final</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="action-deadline"
+                      variant={'outline'}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !newActionDeadline && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {newActionDeadline ? (
+                        format(newActionDeadline, 'PPP', { locale: ptBR })
+                      ) : (
+                        <span>Escolha uma data</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={newActionDeadline}
+                      onSelect={setNewActionDeadline}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Button type="submit" className="flex-shrink-0">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Ação
+              </Button>
+            </div>
+          </form>
+
+          <h3 className="text-lg font-medium mb-4">Ações Planejadas</h3>
+          {sortedActions.length > 0 ? (
+            <div className="space-y-3">
+              {sortedActions.map(action => (
+                <div
+                  key={action.id}
+                  className={cn(
+                    'p-4 border rounded-lg flex items-start gap-4 transition-all',
+                    action.completed ? 'bg-muted/40 opacity-70' : 'bg-card'
+                  )}
+                >
+                  <Checkbox
+                    id={`action-${action.id}`}
+                    checked={action.completed}
+                    onCheckedChange={() => handleToggleAction(action.id)}
+                    className="mt-1"
+                    aria-label={`Marcar como ${
+                      action.completed ? 'pendente' : 'concluída'
+                    }`}
+                  />
+                  <div className="flex-1 grid gap-1.5">
+                    <Label
+                      htmlFor={`action-${action.id}`}
+                      className={cn(
+                        'font-semibold cursor-pointer',
+                        action.completed && 'line-through'
+                      )}
+                    >
+                      {action.name}
+                    </Label>
+                    <p
+                      className={cn(
+                        'text-sm text-muted-foreground whitespace-pre-wrap',
+                        action.completed && 'line-through'
+                      )}
+                    >
+                      {action.goal}
+                    </p>
+                    <div
+                      className={cn(
+                        'flex items-center gap-2 text-xs mt-2',
+                        action.completed
+                          ? 'text-muted-foreground'
+                          : 'text-primary font-medium'
+                      )}
+                    >
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Prazo: {format(action.deadline, 'dd/MM/yyyy')}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteAction(action.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <span className="sr-only">Remover Ação</span>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+              <p className="text-muted-foreground">
+                Nenhuma ação planejada ainda.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Use o formulário acima para começar a planejar.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
