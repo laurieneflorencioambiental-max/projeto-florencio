@@ -494,6 +494,11 @@ export default function Home() {
                     <p className="text-2xl font-bold">{approvedThisMonthCount}</p>
                     {goalMet && <Trophy className="h-6 w-6 text-yellow-500 animate-bounce" />}
                 </div>
+                {goalMet && (
+                    <p className="text-sm font-medium text-green-600 mt-2">
+                        Parabéns, você atingiu a meta do mês!
+                    </p>
+                )}
             </div>
               <div className="flex flex-col justify-between p-4 border rounded-lg space-y-2">
                 <div className="flex justify-between items-center">
