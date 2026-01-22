@@ -21,6 +21,8 @@ import {
   Save,
   TrendingUp,
   Crosshair,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -52,6 +54,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { suggestCampaignGoalAction } from '@/app/actions';
 
 interface RoiEntry {
   id: number;
@@ -88,6 +91,8 @@ export default function MarketingPage() {
   const [newActionSource, setNewActionSource] = useState('');
   const [newActionPercentageGoal, setNewActionPercentageGoal] = useState('');
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
+  const [isSuggestingGoal, setIsSuggestingGoal] = useState(false);
+  const [goalSuggestion, setGoalSuggestion] = useState<string | null>(null);
 
   // ROI Handlers
   const handleAddEntry = (e: React.FormEvent) => {
@@ -161,6 +166,7 @@ export default function MarketingPage() {
     setNewActionDeadline(action.deadline);
     setNewActionSource(action.source || '');
     setNewActionPercentageGoal(action.percentageGoal ? String(action.percentageGoal) : '');
+    setGoalSuggestion(null);
   };
 
   const handleCancelEditing = () => {
@@ -170,6 +176,7 @@ export default function MarketingPage() {
     setNewActionDeadline(undefined);
     setNewActionSource('');
     setNewActionPercentageGoal('');
+    setGoalSuggestion(null);
   };
 
   const handleActionFormSubmit = (e: React.FormEvent) => {
@@ -240,6 +247,50 @@ export default function MarketingPage() {
     });
   };
 
+  const handleSuggestGoal = async () => {
+    if (!newActionSource) {
+      toast({
+        variant: 'destructive',
+        title: 'Fonte não selecionada',
+        description: 'Por favor, selecione uma fonte de investimento primeiro.',
+      });
+      return;
+    }
+    setIsSuggestingGoal(true);
+    setGoalSuggestion(null);
+
+    const investmentValue = newActionPercentageGoal
+      ? parseFloat(newActionPercentageGoal)
+      : undefined;
+
+    try {
+      const result = await suggestCampaignGoalAction(
+        newActionSource,
+        investmentValue,
+        entries
+      );
+      if (result.suggestedPercentage > 0) {
+        setNewActionPercentageGoal(String(result.suggestedPercentage));
+        setGoalSuggestion(result.justification);
+        toast({
+          title: 'Sugestão Gerada!',
+          description: 'A IA sugeriu uma meta para sua campanha.',
+        });
+      } else {
+        setGoalSuggestion(result.justification);
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível gerar uma sugestão.',
+      });
+    } finally {
+      setIsSuggestingGoal(false);
+    }
+  };
+
   const sortedActions = useMemo(() => {
     return [...actions].sort((a, b) => {
       if (a.completed === b.completed) {
@@ -286,15 +337,18 @@ export default function MarketingPage() {
                 rows={2}
               />
             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="action-source">Fonte de Investimento</Label>
-                 <Select value={newActionSource} onValueChange={setNewActionSource}>
-                   <SelectTrigger id="action-source">
+                <Select
+                  value={newActionSource}
+                  onValueChange={setNewActionSource}
+                >
+                  <SelectTrigger id="action-source">
                     <SelectValue placeholder="Selecione a fonte" />
                   </SelectTrigger>
                   <SelectContent>
-                     {contactSources.map(source => (
+                    {contactSources.map(source => (
                       <SelectItem key={source} value={source}>
                         {source}
                       </SelectItem>
@@ -303,8 +357,24 @@ export default function MarketingPage() {
                   </SelectContent>
                 </Select>
               </div>
-               <div className="space-y-2">
-                <Label htmlFor="action-percentage">Meta de Aumento (%)</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="action-percentage">Meta de Aumento (%)</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSuggestGoal}
+                    disabled={isSuggestingGoal}
+                  >
+                    {isSuggestingGoal ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                    )}
+                    Sugerir Meta
+                  </Button>
+                </div>
                 <Input
                   id="action-percentage"
                   type="number"
@@ -312,6 +382,9 @@ export default function MarketingPage() {
                   value={newActionPercentageGoal}
                   onChange={e => setNewActionPercentageGoal(e.target.value)}
                 />
+                 {goalSuggestion && (
+                  <p className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded-md">{goalSuggestion}</p>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-4">
@@ -377,7 +450,10 @@ export default function MarketingPage() {
           {sortedActions.length > 0 ? (
             <div className="space-y-3">
               {sortedActions.map(action => {
-                const isExpired = !action.completed && isPast(action.deadline) && !isToday(action.deadline);
+                const isExpired =
+                  !action.completed &&
+                  isPast(action.deadline) &&
+                  !isToday(action.deadline);
                 return (
                   <div
                     key={action.id}
@@ -416,7 +492,7 @@ export default function MarketingPage() {
                       >
                         {action.goal}
                       </p>
-                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mt-2 text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs mt-2 text-muted-foreground">
                         {action.source && (
                           <div className="flex items-center gap-1.5">
                             <Crosshair className="h-3 w-3" />
@@ -426,7 +502,9 @@ export default function MarketingPage() {
                         {action.percentageGoal != null && (
                           <div className="flex items-center gap-1.5">
                             <TrendingUp className="h-3 w-3" />
-                            <span>Meta: {action.percentageGoal}% de aumento</span>
+                            <span>
+                              Meta: {action.percentageGoal}% de aumento
+                            </span>
                           </div>
                         )}
                       </div>
@@ -442,7 +520,8 @@ export default function MarketingPage() {
                       >
                         <Clock className="h-3 w-3" />
                         <span>
-                          {isExpired ? 'Prazo Expirado' : 'Prazo'}: {format(action.deadline, 'dd/MM/yyyy')}
+                          {isExpired ? 'Prazo Expirado' : 'Prazo'}:{' '}
+                          {format(action.deadline, 'dd/MM/yyyy')}
                         </span>
                       </div>
                     </div>
@@ -466,7 +545,7 @@ export default function MarketingPage() {
                       </Button>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           ) : (
