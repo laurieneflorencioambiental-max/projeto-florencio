@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -39,7 +39,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { AppSettings } from '@/lib/types';
 import { uploadImageAndGetUrl, deleteImageByUrl, ImageType } from '@/firebase/storage';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -54,9 +54,36 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isUploading, setIsUploading] = useState<Partial<Record<ImageType, boolean>>>({});
   
+  // Local state for settings, managed manually to ensure UI updates.
+  const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
+  const [areSettingsLoading, setAreSettingsLoading] = useState(true);
+
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
-  const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
   
+  // Fetch initial data using useEffect instead of useDoc
+  useEffect(() => {
+    if (settingsRef) {
+      setAreSettingsLoading(true);
+      getDoc(settingsRef)
+        .then(docSnap => {
+          if (docSnap.exists()) {
+            setAppSettings(docSnap.data() as AppSettings);
+          } else {
+            setAppSettings({}); // Initialize with empty object if no settings doc
+          }
+        })
+        .catch(error => {
+          console.error("Failed to fetch settings:", error);
+          toast({ variant: 'destructive', title: 'Erro ao carregar configurações' });
+        })
+        .finally(() => {
+          setAreSettingsLoading(false);
+        });
+    } else if (!firestore) {
+      setAreSettingsLoading(false);
+    }
+  }, [settingsRef, firestore, toast]);
+
   const anyUploading = Object.values(isUploading).some(v => v);
 
   const fileInputRefs = {
@@ -65,6 +92,7 @@ export default function SettingsPage() {
     loginBackgroundUrl: useRef<HTMLInputElement>(null),
   };
 
+  // Effect for theme
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -72,6 +100,7 @@ export default function SettingsPage() {
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
+  // Effect for user session
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
@@ -105,15 +134,18 @@ export default function SettingsPage() {
 
     setIsUploading(prev => ({ ...prev, [imageType]: true }));
     try {
-      const oldUrl = settings?.[imageType];
+      const oldUrl = appSettings?.[imageType];
 
       // Upload the new image
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
-      // Update the URL in Firestore. The useDoc hook will handle the UI update.
+      // Update the URL in Firestore.
       await setDoc(settingsRef!, { [imageType]: newUrl }, { merge: true });
 
-      // AFTER updating the doc, delete the old image if it existed.
+      // Manually update the local state to force a re-render with the new image.
+      setAppSettings(prev => ({ ...prev, [imageType]: newUrl }));
+
+      // AFTER updating the doc and state, delete the old image if it existed.
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
       }
@@ -140,10 +172,13 @@ export default function SettingsPage() {
     const config = configMap[imageType];
 
     try {
-      const oldUrl = settings?.[imageType];
+      const oldUrl = appSettings?.[imageType];
 
-      // First, remove the URL from Firestore. The useDoc hook will handle the UI update.
+      // First, remove the URL from Firestore.
       await setDoc(settingsRef, { [imageType]: null }, { merge: true });
+
+      // Manually update local state to force UI to clear the image.
+      setAppSettings(prev => ({ ...prev, [imageType]: null }));
       
       // Then, delete the image from Storage if it existed
       if (oldUrl) {
@@ -200,8 +235,8 @@ export default function SettingsPage() {
             <Label>Ícone (Barra Lateral e Login)</Label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {settings?.sidebarLogoUrl ? (
-                  <img src={settings.sidebarLogoUrl} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
+                {appSettings?.sidebarLogoUrl ? (
+                  <img src={appSettings.sidebarLogoUrl} alt="Pré-visualização do Ícone" className="max-w-full max-h-full object-contain" />
                 ) : (
                   <Briefcase className="h-8 w-8 text-muted-foreground" />
                 )}
@@ -209,9 +244,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button onClick={() => fileInputRefs.sidebarLogoUrl.current?.click()} disabled={anyUploading}>
                   {isUploading.sidebarLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {settings?.sidebarLogoUrl ? 'Alterar Ícone' : 'Enviar Ícone'}
+                  {appSettings?.sidebarLogoUrl ? 'Alterar Ícone' : 'Enviar Ícone'}
                 </Button>
-                {settings?.sidebarLogoUrl && (
+                {appSettings?.sidebarLogoUrl && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
@@ -238,8 +273,8 @@ export default function SettingsPage() {
             <Label>Imagem de Fundo</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
-                {settings?.loginBackgroundUrl ? (
-                  <img src={settings.loginBackgroundUrl} alt="Pré-visualização do Fundo" className="w-full h-full object-cover" />
+                {appSettings?.loginBackgroundUrl ? (
+                  <img src={appSettings.loginBackgroundUrl} alt="Pré-visualização do Fundo" className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center text-muted-foreground"><Wallpaper className="mx-auto h-8 w-8" /><p className="text-xs">Sem imagem</p></div>
                 )}
@@ -247,9 +282,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button onClick={() => fileInputRefs.loginBackgroundUrl.current?.click()} disabled={anyUploading}>
                   {isUploading.loginBackgroundUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {settings?.loginBackgroundUrl ? 'Alterar Imagem' : 'Enviar Imagem'}
+                  {appSettings?.loginBackgroundUrl ? 'Alterar Imagem' : 'Enviar Imagem'}
                 </Button>
-                {settings?.loginBackgroundUrl && (
+                {appSettings?.loginBackgroundUrl && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
@@ -276,8 +311,8 @@ export default function SettingsPage() {
             <Label>Logo da Empresa</Label>
             <div className="flex items-center gap-4">
               <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50">
-                {settings?.proposalLogoUrl ? (
-                  <img src={settings.proposalLogoUrl} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
+                {appSettings?.proposalLogoUrl ? (
+                  <img src={appSettings.proposalLogoUrl} alt="Pré-visualização do Logo" className="max-w-full max-h-full object-contain" />
                 ) : (
                   <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto h-8 w-8" /><p className="text-xs">Sem logo</p></div>
                 )}
@@ -285,9 +320,9 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <Button onClick={() => fileInputRefs.proposalLogoUrl.current?.click()} disabled={anyUploading}>
                   {isUploading.proposalLogoUrl ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                  {settings?.proposalLogoUrl ? 'Alterar Logo' : 'Enviar Logo'}
+                  {appSettings?.proposalLogoUrl ? 'Alterar Logo' : 'Enviar Logo'}
                 </Button>
-                {settings?.proposalLogoUrl && (
+                {appSettings?.proposalLogoUrl && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="destructive" disabled={anyUploading}><Trash2 className="mr-2 h-4 w-4" />Remover</Button></AlertDialogTrigger>
                     <AlertDialogContent>
