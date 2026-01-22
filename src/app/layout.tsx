@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './globals.css';
-import 'react-day-picker/dist/style.css';
 import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/layout/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
