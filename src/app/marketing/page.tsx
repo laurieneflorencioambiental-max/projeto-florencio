@@ -1,15 +1,30 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DollarSign, TrendingUp, Activity } from 'lucide-react';
 import { useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { contactSources } from '@/lib/types';
 
 export default function MarketingPage() {
   const [investment, setInvestment] = useState('');
   const [revenue, setRevenue] = useState('');
+  const [source, setSource] = useState('');
   const [roi, setRoi] = useState<number | null>(null);
 
   const handleCalculateRoi = (e: React.FormEvent) => {
@@ -22,7 +37,8 @@ export default function MarketingPage() {
       return;
     }
 
-    const calculatedRoi = ((revenueValue - investmentValue) / investmentValue) * 100;
+    const calculatedRoi =
+      ((revenueValue - investmentValue) / investmentValue) * 100;
     setRoi(calculatedRoi);
   };
 
@@ -35,12 +51,15 @@ export default function MarketingPage() {
             Plano de Ação de Marketing
           </CardTitle>
           <CardDescription>
-            Defina e acompanhe suas iniciativas de marketing. Esta é uma área em desenvolvimento.
+            Defina e acompanhe suas iniciativas de marketing. Esta é uma área em
+            desenvolvimento.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-            <p className="text-muted-foreground">Funcionalidade de Plano de Ação em breve.</p>
+            <p className="text-muted-foreground">
+              Funcionalidade de Plano de Ação em breve.
+            </p>
             <p className="text-sm text-muted-foreground mt-2">
               Aqui você poderá criar campanhas, definir metas e prazos.
             </p>
@@ -55,12 +74,29 @@ export default function MarketingPage() {
             Cálculo de Retorno sobre Investimento (ROI)
           </CardTitle>
           <CardDescription>
-            Calcule o ROI de suas campanhas de marketing para avaliar a eficácia.
+            Calcule o ROI de suas campanhas de marketing para avaliar a
+            eficácia.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCalculateRoi} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="source">Fonte do Investimento</Label>
+                <Select value={source} onValueChange={setSource}>
+                  <SelectTrigger id="source">
+                    <SelectValue placeholder="Selecione a fonte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactSources.map(source => (
+                      <SelectItem key={source} value={source}>
+                        {source}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="investment">Investimento Total (R$)</Label>
                 <Input
@@ -68,7 +104,7 @@ export default function MarketingPage() {
                   type="number"
                   placeholder="Ex: 5000"
                   value={investment}
-                  onChange={(e) => setInvestment(e.target.value)}
+                  onChange={e => setInvestment(e.target.value)}
                   min="0"
                 />
               </div>
@@ -79,7 +115,7 @@ export default function MarketingPage() {
                   type="number"
                   placeholder="Ex: 25000"
                   value={revenue}
-                  onChange={(e) => setRevenue(e.target.value)}
+                  onChange={e => setRevenue(e.target.value)}
                   min="0"
                 />
               </div>
@@ -91,23 +127,29 @@ export default function MarketingPage() {
               </Button>
             </div>
           </form>
-           <div className="mt-6 p-6 bg-muted/50 rounded-lg text-center">
-             <h3 className="text-lg font-medium text-muted-foreground">Seu ROI</h3>
-              {roi !== null ? (
-                <p className={`text-4xl font-bold mt-2 ${roi >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                  {roi.toFixed(2)}%
-                </p>
-              ) : (
-                <p className="text-4xl font-bold text-primary mt-2">-%</p>
-              )}
-             <p className="text-sm text-muted-foreground mt-1">
+          <div className="mt-6 p-6 bg-muted/50 rounded-lg text-center">
+            <h3 className="text-lg font-medium text-muted-foreground">
+              Seu ROI {source && `em ${source}`}
+            </h3>
+            {roi !== null ? (
+              <p
+                className={`text-4xl font-bold mt-2 ${
+                  roi >= 0 ? 'text-green-600' : 'text-destructive'
+                }`}
+              >
+                {roi.toFixed(2)}%
+              </p>
+            ) : (
+              <p className="text-4xl font-bold text-primary mt-2">-%</p>
+            )}
+            <p className="text-sm text-muted-foreground mt-1">
               {roi === null
-                  ? 'O resultado do seu cálculo aparecerá aqui.'
-                  : roi >= 0
-                  ? 'Retorno positivo sobre o investimento.'
-                  : 'Retorno negativo sobre o investimento.'}
+                ? 'O resultado do seu cálculo aparecerá aqui.'
+                : roi >= 0
+                ? 'Retorno positivo sobre o investimento.'
+                : 'Retorno negativo sobre o investimento.'}
             </p>
-           </div>
+          </div>
         </CardContent>
       </Card>
     </div>
