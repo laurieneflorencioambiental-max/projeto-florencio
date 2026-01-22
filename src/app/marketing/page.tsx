@@ -4,13 +4,26 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DollarSign, Target, TrendingUp, Activity } from 'lucide-react';
+import { DollarSign, TrendingUp, Activity } from 'lucide-react';
+import { useState } from 'react';
 
 export default function MarketingPage() {
-  // Placeholder state and functions for ROI calculation
+  const [investment, setInvestment] = useState('');
+  const [revenue, setRevenue] = useState('');
+  const [roi, setRoi] = useState<number | null>(null);
+
   const handleCalculateRoi = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, you would calculate ROI here
+    const investmentValue = parseFloat(investment);
+    const revenueValue = parseFloat(revenue);
+
+    if (isNaN(investmentValue) || isNaN(revenueValue) || investmentValue <= 0) {
+      setRoi(null);
+      return;
+    }
+
+    const calculatedRoi = ((revenueValue - investmentValue) / investmentValue) * 100;
+    setRoi(calculatedRoi);
   };
 
   return (
@@ -50,11 +63,25 @@ export default function MarketingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="investment">Investimento Total (R$)</Label>
-                <Input id="investment" type="number" placeholder="Ex: 5000" />
+                <Input
+                  id="investment"
+                  type="number"
+                  placeholder="Ex: 5000"
+                  value={investment}
+                  onChange={(e) => setInvestment(e.target.value)}
+                  min="0"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="revenue">Receita Gerada (R$)</Label>
-                <Input id="revenue" type="number" placeholder="Ex: 25000" />
+                <Input
+                  id="revenue"
+                  type="number"
+                  placeholder="Ex: 25000"
+                  value={revenue}
+                  onChange={(e) => setRevenue(e.target.value)}
+                  min="0"
+                />
               </div>
             </div>
             <div className="flex justify-start">
@@ -66,8 +93,20 @@ export default function MarketingPage() {
           </form>
            <div className="mt-6 p-6 bg-muted/50 rounded-lg text-center">
              <h3 className="text-lg font-medium text-muted-foreground">Seu ROI</h3>
-             <p className="text-4xl font-bold text-primary mt-2">-%</p>
-             <p className="text-sm text-muted-foreground mt-1">O resultado do seu cálculo aparecerá aqui.</p>
+              {roi !== null ? (
+                <p className={`text-4xl font-bold mt-2 ${roi >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                  {roi.toFixed(2)}%
+                </p>
+              ) : (
+                <p className="text-4xl font-bold text-primary mt-2">-%</p>
+              )}
+             <p className="text-sm text-muted-foreground mt-1">
+              {roi === null
+                  ? 'O resultado do seu cálculo aparecerá aqui.'
+                  : roi >= 0
+                  ? 'Retorno positivo sobre o investimento.'
+                  : 'Retorno negativo sobre o investimento.'}
+            </p>
            </div>
         </CardContent>
       </Card>
