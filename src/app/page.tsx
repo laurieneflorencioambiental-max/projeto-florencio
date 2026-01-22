@@ -41,7 +41,7 @@ import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ContactSourceChart from '@/components/charts/contact-source-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import {
@@ -364,13 +364,13 @@ export default function Home() {
     );
   };
   
-  const handleAddLead = async (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
       if (!user || !firestore) return;
       const newDocRef = doc(collection(firestore, 'users', user.uid, 'budgets'));
-      const newLead: Lead = {
+      
+      const newLeadData = {
           ...values,
           id: newDocRef.id,
-          createdAt: serverTimestamp(),
           status: 'Novos',
           createdBy: currentSeller,
           proposalGeneratedCount: 0,
@@ -381,34 +381,71 @@ export default function Home() {
           proposalVersion: 0,
           comments: [],
       };
-      await setDoc(newDocRef, newLead);
+      
+      const newLeadWithTimestamp = {...newLeadData, createdAt: serverTimestamp()};
+
+      setDoc(newDocRef, newLeadWithTimestamp).catch(serverError => {
+          const { createdAt, ...serializableData } = newLeadWithTimestamp;
+          const errorData = { ...serializableData, createdAt: new Date().toISOString() };
+          const permissionError = new FirestorePermissionError({
+              path: newDocRef.path,
+              operation: 'create',
+              requestResourceData: errorData,
+            });
+          errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
-  const handleUpdateLead = async (updatedLead: Lead) => {
+  const handleUpdateLead = (updatedLead: Lead) => {
       if (!user || !firestore) return;
       const leadRef = doc(firestore, 'users', user.uid, 'budgets', updatedLead.id);
-      await setDoc(leadRef, updatedLead, { merge: true });
+      
+      // Firestore timestamps are not directly JSON-serializable for error reporting.
+      const serializableLead = {
+        ...updatedLead,
+        createdAt: updatedLead.createdAt?.toDate ? updatedLead.createdAt.toDate().toISOString() : updatedLead.createdAt
+      };
+
+      setDoc(leadRef, updatedLead, { merge: true }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: leadRef.path,
+            operation: 'update',
+            requestResourceData: serializableLead,
+          });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
   
-  const handleDeleteLead = async (leadId: string) => {
+  const handleDeleteLead = (leadId: string) => {
       if (!user || !firestore) return;
       const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
-      await deleteDoc(leadRef);
+      deleteDoc(leadRef).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: leadRef.path,
+            operation: 'delete',
+          });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   }
 
-  const handleLeadStatusChange = async (leadId: string, newStatus: Status) => {
+  const handleLeadStatusChange = (leadId: string, newStatus: Status) => {
     if (!user || !firestore || !leads) return;
     const lead = leads.find(l => l.id === leadId);
     if(lead) {
         const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
-        await updateDoc(leadRef, {
-            status: newStatus,
-            previousStatus: lead.status
+        const updateData = { status: newStatus, previousStatus: lead.status };
+        updateDoc(leadRef, updateData).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: leadRef.path,
+                operation: 'update',
+                requestResourceData: updateData,
+              });
+            errorEmitter.emit('permission-error', permissionError);
         });
     }
   };
 
-  const handleAddComment = async (leadId: string, commentText: string) => {
+  const handleAddComment = (leadId: string, commentText: string) => {
     if (!user || !firestore || !leads || !currentSeller) return;
     const lead = leads.find(l => l.id === leadId);
     if (lead) {
@@ -419,8 +456,15 @@ export default function Home() {
         author: currentSeller,
         createdAt: serverTimestamp(),
       };
-      await updateDoc(leadRef, {
+      updateDoc(leadRef, {
         comments: arrayUnion(newComment)
+      }).catch(serverError => {
+          const permissionError = new FirestorePermissionError({
+              path: leadRef.path,
+              operation: 'update',
+              requestResourceData: { comments: 'Error: Could not serialize new comment with FieldValue' },
+            });
+          errorEmitter.emit('permission-error', permissionError);
       });
     }
   };
