@@ -16,6 +16,7 @@ type KanbanBoardProps = {
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
   proposalClosingUrl?: string | null;
+  currentSeller: string;
 };
 
 export default function KanbanBoard({
@@ -30,6 +31,7 @@ export default function KanbanBoard({
   logoUrl,
   proposalCoverUrl,
   proposalClosingUrl,
+  currentSeller,
 }: KanbanBoardProps) {
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
@@ -59,6 +61,7 @@ export default function KanbanBoard({
             logoUrl={logoUrl}
             proposalCoverUrl={proposalCoverUrl}
             proposalClosingUrl={proposalClosingUrl}
+            currentSeller={currentSeller}
           />
         ))}
       </div>

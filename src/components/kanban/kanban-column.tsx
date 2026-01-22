@@ -19,6 +19,7 @@ type KanbanColumnProps = {
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
   proposalClosingUrl?: string | null;
+  currentSeller: string;
 };
 
 export default function KanbanColumn({
@@ -33,6 +34,7 @@ export default function KanbanColumn({
   logoUrl,
   proposalCoverUrl,
   proposalClosingUrl,
+  currentSeller,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
 
@@ -95,6 +97,7 @@ export default function KanbanColumn({
               logoUrl={logoUrl}
               proposalCoverUrl={proposalCoverUrl}
               proposalClosingUrl={proposalClosingUrl}
+              currentSeller={currentSeller}
             />
           ))}
         </CardContent>

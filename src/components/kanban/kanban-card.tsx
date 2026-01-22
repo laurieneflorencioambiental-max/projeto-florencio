@@ -72,6 +72,7 @@ type KanbanCardProps = {
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
   proposalClosingUrl?: string | null;
+  currentSeller: string;
 };
 
 const getLeadDate = (date: any): Date => {
@@ -113,6 +114,7 @@ export default function KanbanCard({
   logoUrl,
   proposalCoverUrl,
   proposalClosingUrl,
+  currentSeller,
 }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -353,7 +355,7 @@ export default function KanbanCard({
                     <div className="space-y-3">
                         <div className="flex gap-2">
                             <Input
-                                placeholder="Adicionar um comentário..."
+                                placeholder={currentSeller ? "Adicionar um comentário..." : "Selecione um vendedor..."}
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 onKeyDown={(e) => {
@@ -362,8 +364,9 @@ export default function KanbanCard({
                                         handleAddComment();
                                     }
                                 }}
+                                disabled={!currentSeller}
                             />
-                            <Button size="icon" onClick={handleAddComment} disabled={!newComment.trim()}>
+                            <Button size="icon" onClick={handleAddComment} disabled={!newComment.trim() || !currentSeller}>
                                 <Send className="h-4 w-4" />
                             </Button>
                         </div>

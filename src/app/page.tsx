@@ -723,6 +723,7 @@ export default function Home() {
         logoUrl={settings?.proposalLogoUrl}
         proposalCoverUrl={settings?.proposalCoverUrl}
         proposalClosingUrl={settings?.proposalClosingUrl}
+        currentSeller={currentSeller}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
