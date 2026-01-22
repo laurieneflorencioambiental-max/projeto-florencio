@@ -24,6 +24,7 @@ import {
   Sparkles,
   Loader2,
   Wrench,
+  AlertCircle,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -1023,7 +1024,7 @@ export default function MarketingPage() {
                 <TableRow>
                   <TableHead>Ferramenta</TableHead>
                   <TableHead>Periodicidade</TableHead>
-                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Próximo Venc./Prazo</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="w-[100px] text-center">
                     Ações
@@ -1031,37 +1032,55 @@ export default function MarketingPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTools.map(tool => (
-                  <TableRow key={tool.id}>
-                    <TableCell className="font-medium">{tool.name}</TableCell>
-                    <TableCell>{tool.periodicity}</TableCell>
-                    <TableCell>
-                      {format(tool.dueDate, 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {tool.value.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleStartEditingTool(tool)}
+                {filteredTools.map(tool => {
+                  const isToolOverdue =
+                    tool.periodicity === 'Único' &&
+                    isPast(tool.dueDate) &&
+                    !isToday(tool.dueDate);
+
+                  return (
+                    <TableRow
+                      key={tool.id}
+                      className={cn(isToolOverdue && 'bg-destructive/10')}
+                    >
+                      <TableCell className="font-medium">{tool.name}</TableCell>
+                      <TableCell>{tool.periodicity}</TableCell>
+                      <TableCell
+                        className={cn(isToolOverdue && 'text-destructive')}
                       >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteTool(tool.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        <div className="flex items-center gap-1.5">
+                          {isToolOverdue && <AlertCircle className="h-4 w-4" />}
+                          <span className={cn(isToolOverdue && 'font-bold')}>
+                            {isToolOverdue && 'Vencido em '}
+                            {format(tool.dueDate, 'dd/MM/yyyy')}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {tool.value.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleStartEditingTool(tool)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteTool(tool.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : (
