@@ -2,8 +2,9 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Matches the folder where all customization images are stored.
-    match /customization/{fileName} {
+    // Matches any file within the /customization folder and its subdirectories.
+    // Using a recursive wildcard to ensure all paths are covered.
+    match /customization/{allPaths=**} {
 
       // Anyone can read the images (logos, backgrounds).
       // This is safe because they are just visual assets.
@@ -11,7 +12,7 @@ service firebase.storage {
 
       // Only an authenticated user can upload, update, or delete images.
       // This prevents unauthorized users from changing the app's appearance.
-      allow create, update, delete: if request.auth != null;
+      allow write: if request.auth != null;
     }
   }
 }
