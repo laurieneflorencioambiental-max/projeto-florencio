@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings, Loader2 } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
@@ -43,6 +43,15 @@ import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -76,6 +85,9 @@ export default function Home() {
   // Seller Management State
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
+  // Goal state
+  const [monthlyGoal, setMonthlyGoal] = useState<number>(10);
+
   // Fetch leads from Firestore
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -108,7 +120,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Load current seller preference from localStorage
+  // Load current seller preference and goal from localStorage
   useEffect(() => {
     if (user) {
         try {
@@ -119,12 +131,26 @@ export default function Home() {
         } else if (sellers && sellers.length > 0) {
             setCurrentSeller(sellers[0].name);
         }
+
+        const savedGoal = localStorage.getItem('monthlyGoal');
+        if (savedGoal) {
+            setMonthlyGoal(Number(savedGoal));
+        }
         } catch (error) {
             console.error("Failed to access localStorage on initial load:", error);
         }
     }
   }, [user, sellers]);
   
+  // Persist monthlyGoal to localStorage
+  useEffect(() => {
+    try {
+        localStorage.setItem('monthlyGoal', monthlyGoal.toString());
+    } catch (error) {
+        console.error("Failed to save goal to localStorage:", error);
+    }
+  }, [monthlyGoal]);
+
   // Set initial seller when sellers load
   useEffect(() => {
     if(!currentSeller && sellers && sellers.length > 0) {
@@ -375,6 +401,22 @@ export default function Home() {
     }
   };
 
+  const approvedThisMonthCount = useMemo(() => {
+    const now = new Date();
+    const start = startOfMonth(now);
+    const end = endOfMonth(now);
+    return (leads || []).filter(lead => {
+        if (lead.status !== 'Aprovado' || !lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
+            return false;
+        }
+        const leadDate = lead.createdAt.toDate();
+        return isWithinInterval(leadDate, { start, end });
+    }).length;
+  }, [leads]);
+
+  const goalMet = approvedThisMonthCount >= monthlyGoal;
+  const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
+
 
   const filteredLeads = useMemo(() => {
     const leadsData = leads || [];
@@ -433,6 +475,44 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4">
+       <Card>
+        <CardHeader>
+            <CardTitle>Metas e Resumo do Mês</CardTitle>
+            <CardDescription>Acompanhe o progresso da sua equipe em tempo real.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 sm:grid-cols-3">
+            <div className="flex flex-col justify-between p-4 border rounded-lg">
+                <Label className="text-muted-foreground">Total de Orçamentos</Label>
+                <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{leads?.length || 0}</p>
+                    <Briefcase className="h-5 w-5 text-muted-foreground" />
+                </div>
+            </div>
+            <div className="flex flex-col justify-between p-4 border rounded-lg">
+                  <Label className="text-muted-foreground">Aprovados este Mês</Label>
+                <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{approvedThisMonthCount}</p>
+                    {goalMet && <Trophy className="h-6 w-6 text-yellow-500 animate-bounce" />}
+                </div>
+            </div>
+              <div className="flex flex-col justify-between p-4 border rounded-lg space-y-2">
+                <div className="flex justify-between items-center">
+                    <Label htmlFor="monthly-goal-input">Meta de Aprovados</Label>
+                    <Target className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <Input
+                    id="monthly-goal-input"
+                    type="number"
+                    value={monthlyGoal}
+                    onChange={e => setMonthlyGoal(Number(e.target.value) >= 0 ? Number(e.target.value) : 0)}
+                    className="h-9"
+                    min="0"
+                />
+                  <Progress value={progressPercentage} className="h-2" />
+            </div>
+        </CardContent>
+      </Card>
+
        <div className='flex items-center justify-between gap-4 flex-wrap bg-card p-3 rounded-lg border'>
         <div className='flex items-center gap-2'>
             <User className='h-5 w-5 text-primary' />
