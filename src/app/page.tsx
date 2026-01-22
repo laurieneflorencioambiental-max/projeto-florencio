@@ -39,6 +39,7 @@ import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
+import ContactSourceChart from '@/components/charts/contact-source-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -655,9 +656,10 @@ export default function Home() {
         proposalCoverUrl={settings?.proposalCoverUrl}
         proposalClosingUrl={settings?.proposalClosingUrl}
       />
-      <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
+      <div className='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
         <LostLeadsChart leads={filteredLeads} />
+        <ContactSourceChart leads={filteredLeads} />
       </div>
       <AddLeadModal
         isOpen={isAddModalOpen}
@@ -673,5 +675,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
