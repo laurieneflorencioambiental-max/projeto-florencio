@@ -72,5 +72,15 @@ service cloud.firestore {
     match /proposal-templates/{templateId} {
        allow read, write: if isSignedIn();
     }
+
+    /**
+     * @description Secures the 'app-settings' collection.
+     * Any user can read the global settings (for logos, etc.),
+     * but only authenticated users can write to them.
+     */
+    match /app-settings/{settingsId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
   }
 }

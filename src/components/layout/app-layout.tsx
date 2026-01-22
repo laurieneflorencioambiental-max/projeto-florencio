@@ -16,39 +16,21 @@ import {
 import { Briefcase, Home, FileText, LogOut, Settings } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import type { AppSettings } from '@/lib/types';
+import { doc } from 'firebase/firestore';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
   const { user } = useUser();
-  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    // This effect runs on the client-side after initial render.
-    // It's safe to access localStorage here.
-    const savedLogo = localStorage.getItem('sidebarLogoUrl');
-    if (savedLogo) {
-      setSidebarLogo(savedLogo);
-    }
-
-    // This listener will update the logo if it's changed in another tab (e.g., the settings page)
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'sidebarLogoUrl') {
-        setSidebarLogo(event.newValue);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // Clean up the event listener when the component unmounts
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount.
-
+  const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
+  const { data: settings } = useDoc<AppSettings>(settingsRef);
+  
   const getPageTitle = () => {
     if (pathname === '/') return 'Gestão de Orçamentos';
     if (pathname === '/templates') return 'Modelos de Proposta';
@@ -71,8 +53,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
-            {sidebarLogo ? (
-                 <img src={sidebarLogo} alt="Logo da Empresa" className="h-8 w-8 object-contain" />
+            {settings?.sidebarLogoUrl ? (
+                 <img src={settings.sidebarLogoUrl} alt="Logo da Empresa" className="h-8 w-8 object-contain" />
             ) : (
                 <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
             )}

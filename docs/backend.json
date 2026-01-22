@@ -105,6 +105,16 @@
             "value": { "type": "number" }
         },
         "required": ["id", "service", "value"]
+    },
+    "AppSettings": {
+      "title": "Application Settings",
+      "description": "Global application settings like logos and theme.",
+      "type": "object",
+      "properties": {
+        "sidebarLogoUrl": { "type": "string", "format": "uri" },
+        "proposalLogoUrl": { "type": "string", "format": "uri" },
+        "loginBackgroundUrl": { "type": "string", "format": "uri" }
+      }
     }
   },
   "auth": {
@@ -139,6 +149,14 @@
           "entityName": "ProposalTemplate",
           "schema": { "$ref": "#/backend/entities/ProposalTemplate" },
           "description": "Stores global proposal templates available to all users."
+        }
+      },
+      {
+        "path": "/app-settings/{settingsId}",
+        "definition": {
+          "entityName": "AppSettings",
+          "schema": { "$ref": "#/backend/entities/AppSettings" },
+          "description": "Stores global application settings. There should only be one document with a known ID like 'global'."
         }
       }
     ]

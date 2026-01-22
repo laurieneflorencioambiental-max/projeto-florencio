@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
-import type { ProposalData, Plan, Exam } from '@/lib/types';
+import type { ProposalData, Plan, Exam, AppSettings } from '@/lib/types';
 import {
   Loader2,
   Leaf,
@@ -542,7 +542,6 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
 export default function ProposalViewerPage() {
   const params = useParams();
-  const firestore = useFirestore();
   const [proposalData, setProposalData] = useState<ProposalData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -550,34 +549,55 @@ export default function ProposalViewerPage() {
   const id = params.id as string;
 
   useEffect(() => {
-    if (!firestore || !id) {
+    if (!id) {
       setIsLoading(false);
-      if (!id) setError('ID da proposta não encontrado.');
-      if (!firestore) setError('Serviço de banco de dados não disponível.');
+      setError('ID da proposta não encontrado.');
       return;
     }
 
-    const fetchProposal = async () => {
+    const fetchProposalAndSettings = async () => {
       setIsLoading(true);
       try {
+        const { firestore } = initializeFirebase();
+        
+        // Fetch proposal data
         const proposalRef = doc(firestore, 'proposals', id);
-        const docSnap = await getDoc(proposalRef);
+        const proposalSnap = await getDoc(proposalRef);
 
-        if (docSnap.exists()) {
-          setProposalData(docSnap.data() as ProposalData);
-        } else {
+        if (!proposalSnap.exists()) {
           setError('Proposta não encontrada.');
+          setIsLoading(false);
+          return;
         }
+        
+        const fetchedProposalData = proposalSnap.data() as ProposalData;
+
+        // Fetch global settings
+        const settingsRef = doc(firestore, 'app-settings', 'global');
+        const settingsSnap = await getDoc(settingsRef);
+        
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data() as AppSettings;
+          // Combine proposal data with the logo URL from settings
+          setProposalData({
+            ...fetchedProposalData,
+            logoUrl: settings.proposalLogoUrl
+          });
+        } else {
+          // If no settings, just set proposal data
+          setProposalData(fetchedProposalData);
+        }
+
       } catch (err) {
-        console.error('Error fetching proposal:', err);
+        console.error('Error fetching data:', err);
         setError('Ocorreu um erro ao carregar a proposta.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProposal();
-  }, [firestore, id]);
+    fetchProposalAndSettings();
+  }, [id]);
 
   if (isLoading) {
     return (

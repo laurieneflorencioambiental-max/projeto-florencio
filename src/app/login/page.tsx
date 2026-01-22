@@ -18,11 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, initializeFirebase } from '@/firebase';
 import { Briefcase, Loader2, Eye, EyeOff } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import type { AppSettings } from '@/lib/types';
+import { doc, getDoc } from 'firebase/firestore';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Por favor, insira um email válido.'),
@@ -37,9 +39,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sidebarLogo, setSidebarLogo] = useState<string | null>(null);
-  const [loginBackground, setLoginBackground] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [settings, setSettings] = useState<Partial<AppSettings>>({});
 
   const {
     register,
@@ -50,27 +51,27 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      try {
-        const savedSidebarLogo = localStorage.getItem('sidebarLogoUrl');
-        if (savedSidebarLogo) {
-          setSidebarLogo(savedSidebarLogo);
-        }
-        const savedLoginBg = localStorage.getItem('loginBackgroundUrl');
-        if (savedLoginBg) {
-          setLoginBackground(savedLoginBg);
-        }
-      } catch (error) {
-        console.error('Failed to load from localStorage:', error);
-      }
-    }
-  }, [isUserLoading, user]);
-
-  useEffect(() => {
     if (!isUserLoading && user) {
       router.replace('/');
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    // Fetch settings from Firestore for unauthenticated users
+    const fetchSettings = async () => {
+      try {
+        const { firestore } = initializeFirebase();
+        const settingsRef = doc(firestore, 'app-settings', 'global');
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+          setSettings(docSnap.data() as AppSettings);
+        }
+      } catch (error) {
+        console.error('Failed to load global settings from Firestore:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
@@ -122,9 +123,9 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen w-full md:grid-cols-2">
       <div className="relative hidden bg-muted md:block">
-        {loginBackground ? (
+        {settings.loginBackgroundUrl ? (
           <Image
-            src={loginBackground}
+            src={settings.loginBackgroundUrl}
             alt="Imagem de fundo da tela de login"
             fill
             className="object-cover"
@@ -141,9 +142,9 @@ export default function LoginPage() {
           <Card className="w-full bg-sidebar text-sidebar-foreground shadow-2xl border-sidebar-border">
             <CardHeader className="text-center">
               <div className="flex justify-center items-center gap-3 mb-4">
-                {sidebarLogo ? (
+                {settings.sidebarLogoUrl ? (
                   <img
-                    src={sidebarLogo}
+                    src={settings.sidebarLogoUrl}
                     alt="Logo da Empresa"
                     className="h-10 w-10 object-contain"
                   />

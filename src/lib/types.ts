@@ -122,8 +122,10 @@ export type ProposalData = {
   logoUrl?: string | null;
 };
 
-export type AppSettings = {
-    sidebarLogoUrl?: string;
-    proposalLogoUrl?: string;
-    loginBackgroundUrl?: string;
-}
+export const appSettingsSchema = z.object({
+  sidebarLogoUrl: z.string().url().optional().nullable(),
+  proposalLogoUrl: z.string().url().optional().nullable(),
+  loginBackgroundUrl: z.string().url().optional().nullable(),
+});
+
+export type AppSettings = z.infer<typeof appSettingsSchema>;

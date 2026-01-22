@@ -33,6 +33,7 @@ type ProposalModalProps = {
   onOpenChange: (isOpen: boolean) => void;
   onUpdateLead: (lead: Lead) => void;
   proposalTemplates: ProposalTemplate[];
+  logoUrl?: string | null;
 };
 
 export default function ProposalModal({
@@ -42,13 +43,13 @@ export default function ProposalModal({
   onOpenChange,
   onUpdateLead,
   proposalTemplates,
+  logoUrl,
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
@@ -114,13 +115,6 @@ export default function ProposalModal({
   useEffect(() => {
     if (isOpen) {
      resetState();
-      try {
-        const localLogoUrl = localStorage.getItem('proposalLogoUrl');
-        setLogoUrl(localLogoUrl);
-      } catch (e) {
-        console.error("Could not read from localStorage", e);
-        setLogoUrl(null);
-      }
     }
   }, [isOpen, lead, allLeads]);
 

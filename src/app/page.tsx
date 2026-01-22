@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import type { Lead, Status, ProposalTemplate } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
 import { leadSchema, statuses } from '@/lib/types';
 import {
   Select,
@@ -40,7 +40,7 @@ import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
@@ -96,6 +96,10 @@ export default function Home() {
     return collection(firestore, 'proposal-templates');
   }, [firestore]);
   const { data: proposalTemplates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesQuery);
+
+  // Fetch global app settings from Firestore
+  const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
+  const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
 
 
   useEffect(() => {
@@ -417,7 +421,7 @@ export default function Home() {
 
   }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
 
-  if (isUserLoading || !user || areLeadsLoading || areSellersLoading || areTemplatesLoading) {
+  if (isUserLoading || !user || areLeadsLoading || areSellersLoading || areTemplatesLoading || areSettingsLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -562,6 +566,7 @@ export default function Home() {
         onDeleteLead={handleDeleteLead}
         onLeadStatusChange={handleLeadStatusChange}
         proposalTemplates={proposalTemplates || []}
+        logoUrl={settings?.proposalLogoUrl}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />

@@ -15,6 +15,7 @@ type KanbanColumnProps = {
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
   proposalTemplates: ProposalTemplate[];
+  logoUrl?: string | null;
 };
 
 export default function KanbanColumn({
@@ -25,6 +26,7 @@ export default function KanbanColumn({
   onUpdateLead,
   onDeleteLead,
   proposalTemplates,
+  logoUrl,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
 
@@ -76,7 +78,7 @@ export default function KanbanColumn({
       <ScrollArea className="flex-1">
         <CardContent className="flex flex-col gap-4 p-2 md:p-4 h-full">
           {leads.map(lead => (
-            <KanbanCard key={lead.id} lead={lead} allLeads={allLeads} onUpdateLead={onUpdateLead} onDeleteLead={onDeleteLead} proposalTemplates={proposalTemplates} />
+            <KanbanCard key={lead.id} lead={lead} allLeads={allLeads} onUpdateLead={onUpdateLead} onDeleteLead={onDeleteLead} proposalTemplates={proposalTemplates} logoUrl={logoUrl} />
           ))}
         </CardContent>
       </ScrollArea>

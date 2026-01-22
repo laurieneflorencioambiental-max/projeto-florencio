@@ -59,6 +59,7 @@ type KanbanCardProps = {
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
   proposalTemplates: ProposalTemplate[];
+  logoUrl?: string | null;
 };
 
 const getLeadDate = (date: any): Date => {
@@ -68,7 +69,7 @@ const getLeadDate = (date: any): Date => {
   return date;
 };
 
-export default function KanbanCard({ lead, allLeads, onUpdateLead, onDeleteLead, proposalTemplates }: KanbanCardProps) {
+export default function KanbanCard({ lead, allLeads, onUpdateLead, onDeleteLead, proposalTemplates, logoUrl }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
@@ -293,6 +294,7 @@ export default function KanbanCard({ lead, allLeads, onUpdateLead, onDeleteLead,
         onOpenChange={setIsProposalModalOpen}
         onUpdateLead={onUpdateLead}
         proposalTemplates={proposalTemplates}
+        logoUrl={logoUrl}
       />
     </>
   );
