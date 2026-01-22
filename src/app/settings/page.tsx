@@ -55,14 +55,7 @@ export default function SettingsPage() {
   const [isUploading, setIsUploading] = useState<Partial<Record<ImageType, boolean>>>({});
   
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
-  const { data: remoteSettings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
-  const [settings, setSettings] = useState<Partial<AppSettings> | null>(null);
-
-  useEffect(() => {
-    if (remoteSettings) {
-      setSettings(remoteSettings);
-    }
-  }, [remoteSettings]);
+  const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
   
   const anyUploading = Object.values(isUploading).some(v => v);
 
@@ -117,13 +110,10 @@ export default function SettingsPage() {
       // Upload the new image
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
-      // Update the URL in Firestore
+      // Update the URL in Firestore. The useDoc hook will handle the UI update.
       await setDoc(settingsRef!, { [imageType]: newUrl }, { merge: true });
 
-      // Update local state to show new image immediately
-      setSettings(prev => ({ ...prev, [imageType]: newUrl }));
-
-      // AFTER updating the doc, delete the old image
+      // AFTER updating the doc, delete the old image if it existed.
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
       }
@@ -152,12 +142,9 @@ export default function SettingsPage() {
     try {
       const oldUrl = settings?.[imageType];
 
-      // First, remove the URL from Firestore
+      // First, remove the URL from Firestore. The useDoc hook will handle the UI update.
       await setDoc(settingsRef, { [imageType]: null }, { merge: true });
       
-      // Update local state
-      setSettings(prev => ({ ...prev, [imageType]: null }));
-
       // Then, delete the image from Storage if it existed
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
@@ -170,7 +157,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isUserLoading || !user || (areSettingsLoading && !settings)) {
+  if (isUserLoading || !user || areSettingsLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
