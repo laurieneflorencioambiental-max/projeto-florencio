@@ -10,8 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DollarSign, TrendingUp, Activity } from 'lucide-react';
-import { useState } from 'react';
+import { DollarSign, Activity, PlusCircle, Trash2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import {
   Select,
   SelectContent,
@@ -20,27 +20,94 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { contactSources } from '@/lib/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+
+interface RoiEntry {
+  id: number;
+  source: string;
+  investment: number;
+  revenue: number;
+  roi: number;
+}
 
 export default function MarketingPage() {
-  const [investment, setInvestment] = useState('');
-  const [revenue, setRevenue] = useState('');
-  const [source, setSource] = useState('');
-  const [roi, setRoi] = useState<number | null>(null);
+  const { toast } = useToast();
+  const [entries, setEntries] = useState<RoiEntry[]>([]);
+  const [newInvestment, setNewInvestment] = useState('');
+  const [newRevenue, setNewRevenue] = useState('');
+  const [newSource, setNewSource] = useState('');
 
-  const handleCalculateRoi = (e: React.FormEvent) => {
+  const handleAddEntry = (e: React.FormEvent) => {
     e.preventDefault();
-    const investmentValue = parseFloat(investment);
-    const revenueValue = parseFloat(revenue);
+    const investmentValue = parseFloat(newInvestment);
+    const revenueValue = parseFloat(newRevenue);
 
-    if (isNaN(investmentValue) || isNaN(revenueValue) || investmentValue <= 0) {
-      setRoi(null);
+    if (
+      !newSource ||
+      isNaN(investmentValue) ||
+      isNaN(revenueValue) ||
+      investmentValue <= 0
+    ) {
+      toast({
+        variant: 'destructive',
+        title: 'Dados inválidos',
+        description:
+          'Por favor, preencha a fonte, investimento (maior que zero) e receita.',
+      });
       return;
     }
 
     const calculatedRoi =
       ((revenueValue - investmentValue) / investmentValue) * 100;
-    setRoi(calculatedRoi);
+
+    const newEntry: RoiEntry = {
+      id: Date.now(),
+      source: newSource,
+      investment: investmentValue,
+      revenue: revenueValue,
+      roi: calculatedRoi,
+    };
+
+    setEntries([...entries, newEntry]);
+
+    // Reset form
+    setNewInvestment('');
+    setNewRevenue('');
+    setNewSource('');
+
+    toast({
+      title: 'Cálculo Adicionado',
+      description: `ROI para ${newSource} foi adicionado à lista.`,
+    });
   };
+
+  const handleDeleteEntry = (id: number) => {
+    setEntries(entries.filter(entry => entry.id !== id));
+  };
+
+  const totals = useMemo(() => {
+    const totalInvestment = entries.reduce(
+      (acc, entry) => acc + entry.investment,
+      0
+    );
+    const totalRevenue = entries.reduce((acc, entry) => acc + entry.revenue, 0);
+
+    let totalRoi = 0;
+    if (totalInvestment > 0) {
+      totalRoi = ((totalRevenue - totalInvestment) / totalInvestment) * 100;
+    }
+
+    return { totalInvestment, totalRevenue, totalRoi };
+  }, [entries]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -74,16 +141,19 @@ export default function MarketingPage() {
             Cálculo de Retorno sobre Investimento (ROI)
           </CardTitle>
           <CardDescription>
-            Calcule o ROI de suas campanhas de marketing para avaliar a
-            eficácia.
+            Adicione múltiplos investimentos para calcular o ROI de forma
+            individual e consolidada.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCalculateRoi} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
+          <form
+            onSubmit={handleAddEntry}
+            className="space-y-4 p-4 border rounded-lg bg-muted/50"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+              <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="source">Fonte do Investimento</Label>
-                <Select value={source} onValueChange={setSource}>
+                <Select value={newSource} onValueChange={setNewSource}>
                   <SelectTrigger id="source">
                     <SelectValue placeholder="Selecione a fonte" />
                   </SelectTrigger>
@@ -97,58 +167,127 @@ export default function MarketingPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="investment">Investimento Total (R$)</Label>
                 <Input
                   id="investment"
                   type="number"
                   placeholder="Ex: 5000"
-                  value={investment}
-                  onChange={e => setInvestment(e.target.value)}
-                  min="0"
+                  value={newInvestment}
+                  onChange={e => setNewInvestment(e.target.value)}
+                  min="0.01"
+                  step="0.01"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="revenue">Receita Gerada (R$)</Label>
                 <Input
                   id="revenue"
                   type="number"
                   placeholder="Ex: 25000"
-                  value={revenue}
-                  onChange={e => setRevenue(e.target.value)}
+                  value={newRevenue}
+                  onChange={e => setNewRevenue(e.target.value)}
                   min="0"
+                  step="0.01"
                 />
               </div>
-            </div>
-            <div className="flex justify-start">
-              <Button type="submit">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Calcular ROI
+              <Button type="submit" className="w-full md:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Cálculo
               </Button>
             </div>
           </form>
-          <div className="mt-6 p-6 bg-muted/50 rounded-lg text-center">
-            <h3 className="text-lg font-medium text-muted-foreground">
-              Seu ROI {source && `em ${source}`}
-            </h3>
-            {roi !== null ? (
-              <p
-                className={`text-4xl font-bold mt-2 ${
-                  roi >= 0 ? 'text-green-600' : 'text-destructive'
-                }`}
-              >
-                {roi.toFixed(2)}%
-              </p>
+
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-4">Resultados de ROI</h3>
+            {entries.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fonte</TableHead>
+                    <TableHead className="text-right">Investimento</TableHead>
+                    <TableHead className="text-right">Receita</TableHead>
+                    <TableHead className="text-right">ROI</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map(entry => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">
+                        {entry.source}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {entry.investment.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {entry.revenue.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-bold ${
+                          entry.roi >= 0 ? 'text-green-600' : 'text-destructive'
+                        }`}
+                      >
+                        {entry.roi.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteEntry(entry.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="bg-muted/80">
+                    <TableCell className="font-bold">
+                      Total Consolidado
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {totals.totalInvestment.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {totals.totalRevenue.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-extrabold text-lg ${
+                        totals.totalRoi >= 0
+                          ? 'text-green-600'
+                          : 'text-destructive'
+                      }`}
+                    >
+                      {totals.totalRoi.toFixed(2)}%
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
             ) : (
-              <p className="text-4xl font-bold text-primary mt-2">-%</p>
+              <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">
+                  Nenhum cálculo de ROI foi adicionado ainda.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Use o formulário acima para começar.
+                </p>
+              </div>
             )}
-            <p className="text-sm text-muted-foreground mt-1">
-              {roi === null
-                ? 'O resultado do seu cálculo aparecerá aqui.'
-                : roi >= 0
-                ? 'Retorno positivo sobre o investimento.'
-                : 'Retorno negativo sobre o investimento.'}
-            </p>
           </div>
         </CardContent>
       </Card>
