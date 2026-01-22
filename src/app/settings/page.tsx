@@ -55,7 +55,14 @@ export default function SettingsPage() {
   const [isUploading, setIsUploading] = useState<Partial<Record<ImageType, boolean>>>({});
   
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
-  const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
+  const { data: remoteSettings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
+  const [settings, setSettings] = useState<Partial<AppSettings> | null>(null);
+
+  useEffect(() => {
+    if (remoteSettings) {
+      setSettings(remoteSettings);
+    }
+  }, [remoteSettings]);
   
   const anyUploading = Object.values(isUploading).some(v => v);
 
@@ -87,7 +94,7 @@ export default function SettingsPage() {
   };
   
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, imageType: ImageType) => {
-    if (!firestore) return;
+    if (!firestore || !settingsRef) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -105,17 +112,21 @@ export default function SettingsPage() {
 
     setIsUploading(prev => ({ ...prev, [imageType]: true }));
     try {
-      // First, delete the old image if it exists
       const oldUrl = settings?.[imageType];
+
+      // Upload the new image
+      const newUrl = await uploadImageAndGetUrl(file, imageType);
+
+      // Update the URL in Firestore
+      await setDoc(settingsRef!, { [imageType]: newUrl }, { merge: true });
+
+      // Update local state to show new image immediately
+      setSettings(prev => ({ ...prev, [imageType]: newUrl }));
+
+      // AFTER updating the doc, delete the old image
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
       }
-
-      // Then, upload the new image
-      const newUrl = await uploadImageAndGetUrl(file, imageType);
-
-      // Finally, update the URL in Firestore
-      await setDoc(settingsRef!, { [imageType]: newUrl }, { merge: true });
 
       toast({ title: `${config.name} atualizado(a)!`, description: 'Sua nova imagem foi salva com sucesso na nuvem.' });
     } catch (error) {
@@ -139,14 +150,18 @@ export default function SettingsPage() {
     const config = configMap[imageType];
 
     try {
-      // First, delete the image from Storage
       const oldUrl = settings?.[imageType];
+
+      // First, remove the URL from Firestore
+      await setDoc(settingsRef, { [imageType]: null }, { merge: true });
+      
+      // Update local state
+      setSettings(prev => ({ ...prev, [imageType]: null }));
+
+      // Then, delete the image from Storage if it existed
       if (oldUrl) {
         await deleteImageByUrl(oldUrl);
       }
-
-      // Then, remove the URL from Firestore
-      await setDoc(settingsRef, { [imageType]: null }, { merge: true });
 
       toast({ title: 'Imagem removida', description: `O(a) ${config.name} foi removido(a).` });
     } catch (error) {
@@ -155,7 +170,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isUserLoading || !user || areSettingsLoading) {
+  if (isUserLoading || !user || (areSettingsLoading && !settings)) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
