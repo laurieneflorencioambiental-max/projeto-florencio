@@ -23,11 +23,11 @@ type ContactSourceChartProps = {
 const chartConfig = {
   count: {
     label: 'Total',
-    color: 'hsl(var(--chart-2))',
+    color: 'hsl(var(--chart-1))',
   },
   highlight: {
     label: 'Fonte Principal',
-    color: 'hsl(var(--chart-1))',
+    color: 'hsl(var(--chart-2))',
   },
 };
 
