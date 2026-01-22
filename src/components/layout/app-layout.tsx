@@ -13,7 +13,7 @@ import {
   SidebarFooter,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Briefcase, Home, FileText, LogOut, Settings } from 'lucide-react';
+import { Briefcase, Home, FileText, LogOut, Settings, TrendingUp } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -34,6 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     if (pathname === '/') return 'Gestão de Orçamentos';
     if (pathname === '/templates') return 'Modelos de Proposta';
+    if (pathname === '/marketing') return 'Gestão de Marketing';
     if (pathname === '/settings') return 'Configurações';
     return 'Comercial Florencio';
   };
@@ -80,6 +81,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
                 <FileText />
                 <span>Modelos de Proposta</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
+                <TrendingUp />
+                <span>Marketing</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
