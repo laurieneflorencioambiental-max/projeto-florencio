@@ -14,10 +14,21 @@ type KanbanBoardProps = {
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
+  proposalClosingUrl?: string | null;
 };
 
-export default function KanbanBoard({ allLeads, leads, visibleStatuses, onUpdateLead, onDeleteLead, onLeadStatusChange, proposalTemplates, logoUrl, proposalCoverUrl }: KanbanBoardProps) {
-
+export default function KanbanBoard({
+  allLeads,
+  leads,
+  visibleStatuses,
+  onUpdateLead,
+  onDeleteLead,
+  onLeadStatusChange,
+  proposalTemplates,
+  logoUrl,
+  proposalCoverUrl,
+  proposalClosingUrl,
+}: KanbanBoardProps) {
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
     newStatus: Status
@@ -44,6 +55,7 @@ export default function KanbanBoard({ allLeads, leads, visibleStatuses, onUpdate
             proposalTemplates={proposalTemplates}
             logoUrl={logoUrl}
             proposalCoverUrl={proposalCoverUrl}
+            proposalClosingUrl={proposalClosingUrl}
           />
         ))}
       </div>

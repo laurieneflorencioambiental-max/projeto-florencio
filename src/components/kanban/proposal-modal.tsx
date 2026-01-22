@@ -51,6 +51,7 @@ type ProposalModalProps = {
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
+  proposalClosingUrl?: string | null;
 };
 
 export default function ProposalModal({
@@ -62,6 +63,7 @@ export default function ProposalModal({
   proposalTemplates,
   logoUrl,
   proposalCoverUrl,
+  proposalClosingUrl,
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
@@ -199,6 +201,7 @@ export default function ProposalModal({
           createdAt: serverTimestamp(),
           logoUrl: logoUrl,
           proposalCoverUrl: proposalCoverUrl,
+          proposalClosingUrl: proposalClosingUrl,
         };
 
         if (!firestore) {
@@ -806,6 +809,18 @@ export default function ProposalModal({
                 <p className="text-xs">www.grupoflorencio.com.br</p>
               </footer>
             </div>
+            {proposalClosingUrl && (
+              <div
+                className="a4-page"
+                style={{ padding: 0, marginTop: '1rem' }}
+              >
+                <img
+                  src={proposalClosingUrl}
+                  alt="Página de Encerramento da Proposta"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
           </div>
         </ScrollArea>
 

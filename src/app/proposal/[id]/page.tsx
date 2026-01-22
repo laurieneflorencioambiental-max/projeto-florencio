@@ -30,8 +30,14 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
-  const { lead, proposalState, fullProposalNumber, logoUrl, proposalCoverUrl } =
-    proposalData;
+  const {
+    lead,
+    proposalState,
+    fullProposalNumber,
+    logoUrl,
+    proposalCoverUrl,
+    proposalClosingUrl,
+  } = proposalData;
   const [mediaConsent, setMediaConsent] = useState<'yes' | 'no' | undefined>(
     undefined
   );
@@ -554,6 +560,15 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <p className="text-xs">www.grupoflorencio.com.br</p>
         </footer>
       </div>
+      {proposalClosingUrl && (
+        <div className="a4-page shadow-lg mt-8" style={{ padding: 0 }}>
+          <img
+            src={proposalClosingUrl}
+            alt="Página de Encerramento da Proposta"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
     </main>
   );
 }
@@ -604,6 +619,9 @@ export default function ProposalViewerPage() {
           logoUrl: fetchedProposalData.logoUrl ?? settings.proposalLogoUrl,
           proposalCoverUrl:
             fetchedProposalData.proposalCoverUrl ?? settings.proposalCoverUrl,
+          proposalClosingUrl:
+            fetchedProposalData.proposalClosingUrl ??
+            settings.proposalClosingUrl,
         });
       } catch (err) {
         console.error('Error fetching data:', err);

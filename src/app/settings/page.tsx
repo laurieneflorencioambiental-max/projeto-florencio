@@ -50,6 +50,7 @@ const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
 const MAX_LOGIN_BG_SIZE_KB = 2000;
 const MAX_PROPOSAL_COVER_SIZE_KB = 2000;
+const MAX_PROPOSAL_CLOSING_SIZE_KB = 2000;
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -101,6 +102,7 @@ export default function SettingsPage() {
     sidebarLogoUrl: useRef<HTMLInputElement>(null),
     loginBackgroundUrl: useRef<HTMLInputElement>(null),
     proposalCoverUrl: useRef<HTMLInputElement>(null),
+    proposalClosingUrl: useRef<HTMLInputElement>(null),
   };
 
   useEffect(() => {
@@ -158,6 +160,10 @@ export default function SettingsPage() {
         maxSize: MAX_PROPOSAL_COVER_SIZE_KB,
         name: 'Capa da Proposta',
       },
+      proposalClosingUrl: {
+        maxSize: MAX_PROPOSAL_CLOSING_SIZE_KB,
+        name: 'Página de Encerramento',
+      },
     };
     const config = configMap[imageType];
 
@@ -213,6 +219,7 @@ export default function SettingsPage() {
       sidebarLogoUrl: { name: 'Ícone (Barra Lateral e Login)' },
       loginBackgroundUrl: { name: 'Imagem de fundo' },
       proposalCoverUrl: { name: 'Capa da proposta' },
+      proposalClosingUrl: { name: 'Página de encerramento' },
     };
     const config = configMap[imageType];
 
@@ -600,6 +607,83 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground mt-2">
               Recomendado: Imagem em formato A4 (vertical, ex: 2480x3508
               pixels), até {MAX_PROPOSAL_COVER_SIZE_KB}KB.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Página de Encerramento</Label>
+            <div className="flex items-center gap-4">
+              <div className="w-48 h-24 rounded-md border border-dashed flex items-center justify-center bg-muted/50 overflow-hidden">
+                {appSettings?.proposalClosingUrl ? (
+                  <img
+                    src={appSettings.proposalClosingUrl}
+                    alt="Pré-visualização do Encerramento"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <FileImage className="mx-auto h-8 w-8" />
+                    <p className="text-xs">Sem encerramento</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() =>
+                    fileInputRefs.proposalClosingUrl.current?.click()
+                  }
+                  disabled={anyUploading}
+                >
+                  {isUploading?.proposalClosingUrl ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                  )}
+                  {appSettings?.proposalClosingUrl
+                    ? 'Alterar Encerramento'
+                    : 'Enviar Encerramento'}
+                </Button>
+                {appSettings?.proposalClosingUrl && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={anyUploading}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação removerá permanentemente a página de
+                          encerramento.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            handleRemoveImage('proposalClosingUrl')
+                          }
+                        >
+                          Sim, remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+              <Input
+                ref={fileInputRefs.proposalClosingUrl}
+                type="file"
+                className="hidden"
+                accept="image/png, image/jpeg, image/webp"
+                onChange={e => handleImageUpload(e, 'proposalClosingUrl')}
+                disabled={anyUploading}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Recomendado: Imagem em formato A4 (vertical, ex: 2480x3508
+              pixels), até {MAX_PROPOSAL_CLOSING_SIZE_KB}KB.
             </p>
           </div>
         </CardContent>
