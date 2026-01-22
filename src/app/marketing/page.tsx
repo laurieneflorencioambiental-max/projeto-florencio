@@ -51,7 +51,18 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { format, isPast, isToday } from 'date-fns';
+import {
+  format,
+  isPast,
+  isToday,
+  isWithinInterval,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  getYear,
+  getMonth,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { suggestCampaignGoalAction } from '@/app/actions';
@@ -77,6 +88,13 @@ interface MarketingAction {
   percentageGoal?: number;
 }
 
+type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
+
+const months = Array.from({ length: 12 }, (_, i) => ({
+  value: i,
+  label: ptBR.localize?.month(i, { width: 'wide' }),
+}));
+
 export default function MarketingPage() {
   const { toast } = useToast();
 
@@ -98,6 +116,77 @@ export default function MarketingPage() {
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
   const [isSuggestingGoal, setIsSuggestingGoal] = useState(false);
   const [goalSuggestion, setGoalSuggestion] = useState<string | null>(null);
+
+  // Filter state
+  const [filter, setFilter] = useState<FilterPeriod>('all');
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth()
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  );
+
+  const filteredActions = useMemo(() => {
+    if (filter === 'all') {
+      return actions;
+    }
+    const now = new Date();
+    return actions.filter(action => {
+      const actionDate = action.deadline;
+      switch (filter) {
+        case 'today':
+          return isWithinInterval(actionDate, {
+            start: startOfDay(now),
+            end: endOfDay(now),
+          });
+        case 'week':
+          return isWithinInterval(actionDate, {
+            start: startOfWeek(now),
+            end: endOfWeek(now),
+          });
+        case 'month':
+          return (
+            getMonth(actionDate) === selectedMonth &&
+            getYear(actionDate) === selectedYear
+          );
+        case 'year':
+          return getYear(actionDate) === selectedYear;
+        default:
+          return true;
+      }
+    });
+  }, [actions, filter, selectedMonth, selectedYear]);
+
+  const filteredEntries = useMemo(() => {
+    if (filter === 'all') {
+      return entries;
+    }
+    const now = new Date();
+    return entries.filter(entry => {
+      const entryDate = new Date(entry.id);
+      switch (filter) {
+        case 'today':
+          return isWithinInterval(entryDate, {
+            start: startOfDay(now),
+            end: endOfDay(now),
+          });
+        case 'week':
+          return isWithinInterval(entryDate, {
+            start: startOfWeek(now),
+            end: endOfWeek(now),
+          });
+        case 'month':
+          return (
+            getMonth(entryDate) === selectedMonth &&
+            getYear(entryDate) === selectedYear
+          );
+        case 'year':
+          return getYear(entryDate) === selectedYear;
+        default:
+          return true;
+      }
+    });
+  }, [entries, filter, selectedMonth, selectedYear]);
 
   // ROI Handlers
   const handleAddEntry = (e: React.FormEvent) => {
@@ -149,11 +238,14 @@ export default function MarketingPage() {
   };
 
   const totals = useMemo(() => {
-    const totalInvestment = entries.reduce(
+    const totalInvestment = filteredEntries.reduce(
       (acc, entry) => acc + entry.investment,
       0
     );
-    const totalRevenue = entries.reduce((acc, entry) => acc + entry.revenue, 0);
+    const totalRevenue = filteredEntries.reduce(
+      (acc, entry) => acc + entry.revenue,
+      0
+    );
 
     let totalRoi = 0;
     if (totalInvestment > 0) {
@@ -161,7 +253,7 @@ export default function MarketingPage() {
     }
 
     return { totalInvestment, totalRevenue, totalRoi };
-  }, [entries]);
+  }, [filteredEntries]);
 
   // Action Plan Handlers
   const handleStartEditing = (action: MarketingAction) => {
@@ -302,13 +394,13 @@ export default function MarketingPage() {
       Futura: 3,
       Concluída: 4,
     };
-    return [...actions].sort((a, b) => {
+    return [...filteredActions].sort((a, b) => {
       if (statusOrder[a.status] !== statusOrder[b.status]) {
         return statusOrder[a.status] - statusOrder[b.status];
       }
       return a.deadline.getTime() - b.deadline.getTime();
     });
-  }, [actions]);
+  }, [filteredActions]);
 
   const statusBadgeConfig: Record<
     CampaignStatus,
@@ -334,6 +426,71 @@ export default function MarketingPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex items-center justify-start gap-4 flex-wrap bg-card p-3 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <label htmlFor="period-filter" className="text-sm font-medium">
+            Filtrar por:
+          </label>
+          <Select
+            value={filter}
+            onValueChange={value => setFilter(value as FilterPeriod)}
+          >
+            <SelectTrigger className="w-[180px]" id="period-filter">
+              <SelectValue placeholder="Selecione o período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="week">Esta Semana</SelectItem>
+              <SelectItem value="month">Mês Específico</SelectItem>
+              <SelectItem value="year">Ano Específico</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {filter === 'month' && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="month-filter" className="text-sm font-medium">
+              Mês:
+            </label>
+            <Select
+              value={selectedMonth.toString()}
+              onValueChange={value => setSelectedMonth(Number(value))}
+            >
+              <SelectTrigger className="w-[180px]" id="month-filter">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map(month => (
+                  <SelectItem
+                    key={month.value}
+                    value={month.value.toString()}
+                  >
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {(filter === 'month' || filter === 'year') && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="year-filter" className="text-sm font-medium">
+              Ano:
+            </label>
+            <Input
+              id="year-filter"
+              type="number"
+              value={selectedYear}
+              onChange={e => setSelectedYear(Number(e.target.value))}
+              className="w-[120px]"
+              placeholder="Ex: 2024"
+            />
+          </div>
+        )}
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -532,7 +689,9 @@ export default function MarketingPage() {
                         </Label>
                         <Badge
                           variant={statusBadgeConfig[action.status].variant}
-                          className={cn(statusBadgeConfig[action.status].className)}
+                          className={cn(
+                            statusBadgeConfig[action.status].className
+                          )}
                         >
                           {action.status}
                         </Badge>
@@ -605,10 +764,11 @@ export default function MarketingPage() {
           ) : (
             <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
               <p className="text-muted-foreground">
-                Nenhuma ação planejada ainda.
+                Nenhuma ação planejada para este período.
               </p>
               <p className="text-sm text-muted-foreground mt-2">
-                Use o formulário acima para começar a planejar.
+                Use o formulário acima para começar a planejar ou altere o
+                filtro.
               </p>
             </div>
           )}
@@ -681,7 +841,7 @@ export default function MarketingPage() {
 
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-4">Resultados de ROI</h3>
-            {entries.length > 0 ? (
+            {filteredEntries.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -693,7 +853,7 @@ export default function MarketingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.map(entry => (
+                  {filteredEntries.map(entry => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">
                         {entry.source}
@@ -762,10 +922,10 @@ export default function MarketingPage() {
             ) : (
               <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
                 <p className="text-muted-foreground">
-                  Nenhum cálculo de ROI foi adicionado ainda.
+                  Nenhum cálculo de ROI para este período.
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Use o formulário acima para começar.
+                  Use o formulário acima para começar a ou altere o filtro.
                 </p>
               </div>
             )}
