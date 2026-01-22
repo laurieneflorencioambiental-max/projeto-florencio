@@ -26,6 +26,7 @@ function getStorageInstance(): FirebaseStorage {
 
 /**
  * Uploads a file to a specified path in Firebase Storage and returns the public URL.
+ * Includes a timeout to prevent infinite loading states.
  *
  * @param path - The full path in Firebase Storage where the file will be saved.
  * @param file - The file as a File object.
@@ -35,17 +36,29 @@ export const uploadFile = async (
   path: string,
   file: File
 ): Promise<string> => {
-  if (!file) {
-    throw new Error('File is invalid. Cannot upload file.');
-  }
+  const UPLOAD_TIMEOUT = 30000; // 30 seconds
 
-  const storage = getStorageInstance();
-  const storageRef = ref(storage, path);
+  const uploadPromise = (async () => {
+    if (!file) {
+      throw new Error('File is invalid. Cannot upload file.');
+    }
+
+    const storage = getStorageInstance();
+    const storageRef = ref(storage, path);
+
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
+  })();
+
+  const timeoutPromise = new Promise<string>((_, reject) =>
+    setTimeout(
+      () => reject(new Error('O upload demorou muito. Verifique sua conexão e as regras de segurança do Firebase Storage.')),
+      UPLOAD_TIMEOUT
+    )
+  );
 
   try {
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadUrl = await getDownloadURL(snapshot.ref);
-    return downloadUrl;
+    return await Promise.race([uploadPromise, timeoutPromise]);
   } catch (error) {
     console.error('Error during Firebase Storage upload operation:', error);
     // Re-throw to be handled by the UI component

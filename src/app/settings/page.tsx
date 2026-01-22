@@ -96,16 +96,19 @@ export default function SettingsPage() {
         sidebarLogoUrl: settings.sidebarLogoUrl || null,
         loginBackgroundUrl: settings.loginBackgroundUrl || null,
       });
-      // Sync Firestore with localStorage for login page
+      // Sync settings to localStorage for other parts of the app that don't use Firestore directly.
       try {
-        if(settings.proposalLogoUrl) localStorage.setItem('companyLogoUrl', settings.proposalLogoUrl);
-        else localStorage.removeItem('companyLogoUrl');
-        
-        if(settings.sidebarLogoUrl) localStorage.setItem('sidebarLogoUrl', settings.sidebarLogoUrl);
-        else localStorage.removeItem('sidebarLogoUrl');
+        if(settings.sidebarLogoUrl) {
+            localStorage.setItem('sidebarLogoUrl', settings.sidebarLogoUrl);
+        } else {
+            localStorage.removeItem('sidebarLogoUrl');
+        }
 
-        if(settings.loginBackgroundUrl) localStorage.setItem('loginBackgroundUrl', settings.loginBackgroundUrl);
-        else localStorage.removeItem('loginBackgroundUrl');
+        if(settings.loginBackgroundUrl) {
+            localStorage.setItem('loginBackgroundUrl', settings.loginBackgroundUrl);
+        } else {
+            localStorage.removeItem('loginBackgroundUrl');
+        }
       } catch (e) {
         console.error("Could not update localStorage from Firestore settings", e);
       }
@@ -146,14 +149,10 @@ export default function SettingsPage() {
       await setDoc(settingsDocRef, { [imageType]: downloadUrl }, { merge: true });
 
       toast({ title: `${config.name} atualizado(a)!`, description: 'Sua nova imagem foi salva com sucesso.' });
-       // Manually trigger localStorage update for other tabs
-       localStorage.setItem(imageType === 'proposalLogoUrl' ? 'companyLogoUrl' : imageType, downloadUrl);
-       window.dispatchEvent(new StorageEvent('storage', { key: imageType === 'proposalLogoUrl' ? 'companyLogoUrl' : imageType, newValue: downloadUrl }));
-
-
     } catch (error) {
       console.error(`Failed to upload ${imageType}:`, error);
-      toast({ variant: 'destructive', title: 'Erro no Upload', description: 'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.' });
+      const errorMessage = error instanceof Error ? error.message : 'Não foi possível enviar a imagem. Verifique sua conexão e as permissões de armazenamento do Firebase.';
+      toast({ variant: 'destructive', title: 'Erro no Upload', description: errorMessage });
     } finally {
       setIsUploading(prev => ({ ...prev, [imageType]: false }));
       if (event.target) event.target.value = '';
@@ -162,9 +161,9 @@ export default function SettingsPage() {
 
   const handleRemoveImage = async (imageType: ImageType) => {
     const configMap = {
-      proposalLogoUrl: { key: 'companyLogoUrl', path: 'customization/proposal_logo', name: 'Logo da proposta' },
-      sidebarLogoUrl: { key: 'sidebarLogoUrl', path: 'customization/sidebar_logo', name: 'Ícone (Barra Lateral e Login)' },
-      loginBackgroundUrl: { key: 'loginBackgroundUrl', path: 'customization/login_background', name: 'Imagem de fundo' },
+      proposalLogoUrl: { path: 'customization/proposal_logo', name: 'Logo da proposta' },
+      sidebarLogoUrl: { path: 'customization/sidebar_logo', name: 'Ícone (Barra Lateral e Login)' },
+      loginBackgroundUrl: { path: 'customization/login_background', name: 'Imagem de fundo' },
     };
     const config = configMap[imageType];
 
@@ -175,10 +174,6 @@ export default function SettingsPage() {
       await setDoc(settingsDocRef, { [imageType]: null }, { merge: true });
 
       toast({ title: 'Imagem removida', description: `O(a) ${config.name} foi removido(a).` });
-       // Manually trigger localStorage update for other tabs
-      localStorage.removeItem(config.key);
-      window.dispatchEvent(new StorageEvent('storage', { key: config.key, newValue: null }));
-
     } catch (error) {
       console.error(`Failed to remove ${imageType}:`, error);
       toast({ variant: 'destructive', title: 'Erro ao remover', description: `Não foi possível remover o(a) ${config.name}. Verifique as permissões do Firebase Storage.` });
