@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Lead, ProposalTemplate } from '@/lib/types';
+import type { Lead, ProposalTemplate, Comment } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -127,6 +127,7 @@ export default function KanbanCard({
       if (newComment.trim() === '' || !lead) return;
       onAddComment(lead.id, newComment);
       setNewComment('');
+      setCommentsOpen(true);
   };
 
   const sortedComments = useMemo(() => {
@@ -135,13 +136,15 @@ export default function KanbanCard({
         const dateA = getCommentDate(a.createdAt);
         const dateB = getCommentDate(b.createdAt);
         
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return -1; // a is newer/pending, put it at the top
-        if (!dateB) return 1;  // b is newer/pending, put it at the top
+        // Treat comments without a server date (pending writes) as the newest
+        if (!dateA && !dateB) return 0; // Keep original order if both are pending
+        if (!dateA) return -1; // 'a' is pending, so it's newer, should come first
+        if (!dateB) return 1;  // 'b' is pending, so it's newer, should come first
 
+        // Both have dates, sort descending (newest first)
         return dateB.getTime() - dateA.getTime();
     });
-  }, [lead.comments]);
+  }, [lead]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -372,7 +375,7 @@ export default function KanbanCard({
                         </div>
                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                             {sortedComments.length > 0 ? (
-                                sortedComments.map((comment: any) => {
+                                sortedComments.map((comment: Comment) => {
                                     const commentDate = getCommentDate(comment.createdAt);
                                     return (
                                         <div key={comment.id} className="text-xs p-2 bg-muted/70 rounded-md">
