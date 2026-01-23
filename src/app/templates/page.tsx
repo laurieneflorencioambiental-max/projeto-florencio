@@ -37,60 +37,6 @@ const templateFormSchema = z.object({
 
 const defaultText = 'A ser definido na proposta.';
 
-const defaultProposalTemplates: Omit<ProposalTemplate, 'id'>[] = [
-    {
-      name: 'Consultoria Completa em SST',
-      proposalObject: `A presente proposta tem por objeto a prestação de serviços de consultoria completa em Saúde e Segurança do Trabalho (SST), incluindo:
-- Elaboração e gestão do Programa de Gerenciamento de Riscos (PGR).
-- Elaboração e gestão do Programa de Controle Médico de Saúde Ocupacional (PCMSO).
-- Emissão de Laudos Técnicos (LTCAT, Laudo de Insalubridade e Periculosidade).
-- Realização de Análise Ergonômica do Trabalho (AET).
-- Suporte contínuo e assessoria para atendimento às Normas Regulamentadoras.`,
-      serviceScope: defaultText,
-      clientResponsibilities: defaultText,
-      contractorResponsibilities: defaultText,
-      deadline: defaultText,
-      strategicVision: defaultText,
-      investment: defaultText,
-      plans: [],
-      exams: [],
-    },
-    {
-      name: 'Treinamento NR-12 (Máquinas e Equipamentos)',
-      proposalObject: `Objeto: Capacitação dos colaboradores para atendimento à Norma Regulamentadora nº 12 - Segurança no Trabalho em Máquinas e Equipamentos.
-
-Conteúdo Programático:
-- Apresentação da NR-12 e seus anexos.
-- Identificação de riscos em máquinas e equipamentos.
-- Sistemas de segurança e proteções.
-- Procedimentos de trabalho e segurança.
-- Práticas de operação segura e manutenção.`,
-      serviceScope: defaultText,
-      clientResponsibilities: defaultText,
-      contractorResponsibilities: defaultText,
-      deadline: defaultText,
-      strategicVision: defaultText,
-      investment: defaultText,
-      plans: [],
-      exams: [],
-    },
-    {
-      name: 'AVCB e Brigada de Incêndio',
-      proposalObject: `Esta proposta contempla os seguintes serviços para regularização e segurança contra incêndio:
-- Elaboração ou renovação do Auto de Vistoria do Corpo de Bombeiros (AVCB).
-- Análise e adequação do projeto de prevenção e combate a incêndio.
-- Formação e treinamento de Brigada de Incêndio, em conformidade com a legislação vigente.`,
-      serviceScope: defaultText,
-      clientResponsibilities: defaultText,
-      contractorResponsibilities: defaultText,
-      deadline: defaultText,
-      strategicVision: defaultText,
-      investment: defaultText,
-      plans: [],
-      exams: [],
-    },
-  ];
-
 export default function ManageTemplatesPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -118,31 +64,6 @@ export default function ManageTemplatesPage() {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
-
-  // Seed default templates if the collection is empty
-  useEffect(() => {
-    if (areTemplatesLoading || !firestore || templates === null) return;
-    
-    if (templates.length === 0) {
-      const seedData = async () => {
-        const batch = writeBatch(firestore);
-        defaultProposalTemplates.forEach(templateData => {
-          const newTemplateRef = doc(templatesCollectionRef!);
-          const newTemplate: ProposalTemplate = {
-            id: newTemplateRef.id,
-            ...templateData,
-          };
-          batch.set(newTemplateRef, newTemplate);
-        });
-        await batch.commit();
-      };
-      
-      const isSeeded = sessionStorage.getItem('templates_seeded');
-      if (isSeeded !== 'true') {
-        seedData().then(() => sessionStorage.setItem('templates_seeded', 'true'));
-      }
-    }
-  }, [areTemplatesLoading, templates, firestore, templatesCollectionRef]);
 
   const resetForm = () => {
     form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', plans: [], exams: [] });
