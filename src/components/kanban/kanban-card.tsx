@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate } from '@/lib/types';
+import { useState, useEffect, useMemo } from 'react';
+import type { Lead, ProposalTemplate, AppSettings } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -36,11 +36,12 @@ import {
   Save,
   X,
   History,
+  Clock,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import ProposalModal from './proposal-modal';
 import {
   AlertDialog,
@@ -69,9 +70,7 @@ type KanbanCardProps = {
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
   proposalTemplates: ProposalTemplate[];
-  logoUrl?: string | null;
-  proposalCoverUrl?: string | null;
-  proposalClosingUrl?: string | null;
+  appSettings?: Partial<AppSettings> | null;
   currentSeller: string;
 };
 
@@ -91,9 +90,7 @@ export default function KanbanCard({
   onUpdateLead,
   onDeleteLead,
   proposalTemplates,
-  logoUrl,
-  proposalCoverUrl,
-  proposalClosingUrl,
+  appSettings,
   currentSeller,
 }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
@@ -106,11 +103,6 @@ export default function KanbanCard({
   const [isEditingObservation, setIsEditingObservation] = useState(false);
   const [observationText, setObservationText] = useState(lead.observations || '');
 
-  const lastEdit =
-    lead.versionHistory && lead.versionHistory.length > 0
-      ? lead.versionHistory[lead.versionHistory.length - 1]
-      : null;
-
   useEffect(() => {
     setObservationText(lead.observations || '');
     // If the observation is deleted from outside, exit editing mode
@@ -118,6 +110,21 @@ export default function KanbanCard({
       setIsEditingObservation(false);
     }
   }, [lead.observations]);
+  
+  const staleDays = appSettings?.staleLeadDays || 7;
+  const isStale = useMemo(() => {
+    if (lead.status !== 'Pendente/Em negociação') {
+        return false;
+    }
+    const history = lead.versionHistory || [];
+    const lastActivityDate = history.length > 0
+        ? getLeadDate(history[history.length - 1].editedAt)
+        : getLeadDate(lead.createdAt);
+
+    if (!lastActivityDate) return false;
+    
+    return differenceInDays(new Date(), lastActivityDate) > staleDays;
+  }, [lead, staleDays]);
 
   const handleSaveObservation = () => {
     if (observationText.trim() !== (lead.observations || '').trim()) {
@@ -378,6 +385,15 @@ export default function KanbanCard({
                 ))}
               </div>
             </div>
+            {isStale && (
+              <div className="flex items-start gap-2 mt-4 p-2.5 bg-amber-500/10 rounded-md border border-dashed border-amber-500/30">
+                <Clock className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700">
+                  <span className="font-semibold">Atenção:</span> Lead
+                  inativo há mais de {staleDays} dias.
+                </p>
+              </div>
+            )}
             {(lead.status === 'Rejeitado' ||
               lead.status === 'Desistência') &&
               lead.rejectionReason && (
@@ -467,10 +483,12 @@ export default function KanbanCard({
                       <History className="h-3 w-3" /> v{lead.proposalVersion}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    {lead.proposalVersion > 0
-                      ? 'Ver histórico de edições'
-                      : 'Proposta nunca editada'}
+                   <TooltipContent>
+                    {lead.versionHistory && lead.versionHistory.length > 0 ? (
+                      `Última edição por ${lead.versionHistory[lead.versionHistory.length - 1].editedBy} em ${format(getLeadDate(lead.versionHistory[lead.versionHistory.length - 1].editedAt), "dd/MM/yy")}`
+                    ) : (
+                      lead.proposalVersion > 0 ? 'Histórico de edição não disponível' : 'Proposta nunca editada'
+                    )}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -537,9 +555,9 @@ export default function KanbanCard({
         onOpenChange={setIsProposalModalOpen}
         onUpdateLead={onUpdateLead}
         proposalTemplates={proposalTemplates}
-        logoUrl={logoUrl}
-        proposalCoverUrl={proposalCoverUrl}
-        proposalClosingUrl={proposalClosingUrl}
+        logoUrl={appSettings?.proposalLogoUrl}
+        proposalCoverUrl={appSettings?.proposalCoverUrl}
+        proposalClosingUrl={appSettings?.proposalClosingUrl}
       />
       <VersionHistoryModal
         lead={lead}

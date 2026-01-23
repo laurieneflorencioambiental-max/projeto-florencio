@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -25,6 +25,8 @@ import {
   Sun,
   Wallpaper,
   FileImage,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -38,13 +40,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import type { AppSettings } from '@/lib/types';
+import type { AppSettings, Lead } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
   deleteImageByUrl,
   ImageType,
 } from '@/firebase/storage';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, writeBatch } from 'firebase/firestore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -64,10 +67,19 @@ export default function SettingsPage() {
   const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
   const [areSettingsLoading, setAreSettingsLoading] = useState(true);
 
+  const [cleanupPeriod, setCleanupPeriod] = useState<string>('90');
+  const [isCleaning, setIsCleaning] = useState(false);
+
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
     [firestore]
   );
+  
+  const leadsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'budgets');
+  }, [firestore, user]);
+  const { data: leads } = useCollection<Lead>(leadsQuery);
 
   useEffect(() => {
     if (settingsRef) {
@@ -134,6 +146,25 @@ export default function SettingsPage() {
       new StorageEvent('storage', { key: 'theme', newValue: newTheme })
     );
   };
+  
+  const handleSettingChange = async (key: keyof AppSettings, value: any) => {
+    if (!settingsRef) return;
+    try {
+        const newSettings = {...appSettings, [key]: value};
+        await setDoc(settingsRef, { [key]: value }, { merge: true });
+        setAppSettings(newSettings);
+        toast({
+            title: 'Configuração salva!',
+        });
+    } catch (error) {
+        console.error('Failed to save setting:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao salvar',
+            description: 'Não foi possível salvar a configuração.'
+        });
+    }
+  }
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -248,6 +279,71 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCleanData = async () => {
+    if (!firestore || !user || !leads) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro',
+            description: 'Não foi possível carregar os dados para a limpeza.'
+        });
+        return;
+    }
+    setIsCleaning(true);
+
+    const now = new Date();
+    const cutoffDate = new Date(now.setDate(now.getDate() - parseInt(cleanupPeriod)));
+    
+    const getLeadDate = (date: any): Date => {
+      if (date && typeof date.toDate === 'function') {
+        return date.toDate();
+      }
+      return new Date(date);
+    };
+
+    const leadsToDelete = leads.filter(lead => {
+        const leadDate = getLeadDate(lead.createdAt);
+        return leadDate < cutoffDate;
+    });
+
+    if (leadsToDelete.length === 0) {
+        toast({
+            title: 'Nenhum dado para limpar',
+            description: `Não há orçamentos mais antigos que ${cleanupPeriod} dias.`
+        });
+        setIsCleaning(false);
+        return;
+    }
+
+    try {
+        const batches = [];
+        for (let i = 0; i < leadsToDelete.length; i += 500) {
+            const batch = writeBatch(firestore);
+            const chunk = leadsToDelete.slice(i, i + 500);
+            chunk.forEach(lead => {
+                const docRef = doc(firestore, 'users', user.uid, 'budgets', lead.id);
+                batch.delete(docRef);
+            });
+            batches.push(batch);
+        }
+        
+        await Promise.all(batches.map(b => b.commit()));
+
+        toast({
+            title: 'Limpeza Concluída!',
+            description: `${leadsToDelete.length} orçamento(s) antigo(s) foram removidos.`
+        });
+    } catch (error) {
+        console.error("Error cleaning data:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro na Limpeza',
+            description: 'Não foi possível remover os dados antigos. Tente novamente.'
+        });
+    } finally {
+        setIsCleaning(false);
+    }
+};
+
   if (isUserLoading || !user || areSettingsLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
@@ -295,6 +391,33 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Configurações do Funil</CardTitle>
+          <CardDescription>
+            Personalize as regras e comportamento do seu funil de vendas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 max-w-sm">
+            <Label htmlFor="stale-days">Dias para lead ser considerado inativo</Label>
+            <div className='flex items-center gap-2'>
+              <Clock className='h-5 w-5 text-muted-foreground'/>
+              <Input
+                id="stale-days"
+                type="number"
+                value={appSettings.staleLeadDays ?? 7}
+                onChange={e => handleSettingChange('staleLeadDays', Number(e.target.value))}
+                min="1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pt-1">
+              Um alerta visual aparecerá nos cards da coluna "Pendente" que não forem atualizados por este período.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>Aparência do Aplicativo</CardTitle>
@@ -685,6 +808,65 @@ export default function SettingsPage() {
               Recomendado: Imagem em formato A4 (vertical, ex: 2480x3508
               pixels), até {MAX_PROPOSAL_CLOSING_SIZE_KB}KB.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle>Zona de Perigo</CardTitle>
+          <CardDescription>
+            Ações nesta seção são permanentes e não podem ser desfeitas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
+            <div className="space-y-1">
+              <Label
+                htmlFor="dark-mode"
+                className="text-base flex items-center gap-2"
+              >
+                Limpar Dados Antigos
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Remove permanentemente orçamentos antigos do sistema.
+              </p>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Select value={cleanupPeriod} onValueChange={setCleanupPeriod} disabled={isCleaning}>
+                <SelectTrigger className='w-[220px]'>
+                  <SelectValue placeholder="Selecione o período"/>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">Mais antigos que 30 dias</SelectItem>
+                  <SelectItem value="90">Mais antigos que 90 dias</SelectItem>
+                  <SelectItem value="365">Mais antigos que 1 ano</SelectItem>
+                </SelectContent>
+              </Select>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isCleaning}>
+                    {isCleaning ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    {isCleaning ? 'Limpando...' : 'Limpar Dados'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className='flex items-center gap-2'><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação é irreversível. Todos os orçamentos com mais de{' '}
+                      <span className='font-bold'>{cleanupPeriod}</span> dias serão
+                      excluídos permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCleanData}>
+                      Sim, excluir dados antigos
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </CardContent>
       </Card>

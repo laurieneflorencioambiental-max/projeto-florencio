@@ -1,6 +1,6 @@
 'use client';
 
-import type { Lead, Status, ProposalTemplate } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
 import KanbanColumn from './kanban-column';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
@@ -12,9 +12,7 @@ type KanbanBoardProps = {
   onDeleteLead: (leadId: string) => void;
   onLeadStatusChange: (leadId: string, newStatus: Status) => void;
   proposalTemplates: ProposalTemplate[];
-  logoUrl?: string | null;
-  proposalCoverUrl?: string | null;
-  proposalClosingUrl?: string | null;
+  settings?: Partial<AppSettings> | null;
   currentSeller: string;
 };
 
@@ -26,9 +24,7 @@ export default function KanbanBoard({
   onDeleteLead,
   onLeadStatusChange,
   proposalTemplates,
-  logoUrl,
-  proposalCoverUrl,
-  proposalClosingUrl,
+  settings,
   currentSeller,
 }: KanbanBoardProps) {
   const handleDrop = (
@@ -55,9 +51,7 @@ export default function KanbanBoard({
             onUpdateLead={onUpdateLead}
             onDeleteLead={onDeleteLead}
             proposalTemplates={proposalTemplates}
-            logoUrl={logoUrl}
-            proposalCoverUrl={proposalCoverUrl}
-            proposalClosingUrl={proposalClosingUrl}
+            settings={settings}
             currentSeller={currentSeller}
           />
         ))}

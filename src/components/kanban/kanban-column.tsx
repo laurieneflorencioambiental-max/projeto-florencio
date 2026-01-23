@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Lead, Status, ProposalTemplate } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
 import KanbanCard from './kanban-card';
 import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,9 +15,7 @@ type KanbanColumnProps = {
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
   proposalTemplates: ProposalTemplate[];
-  logoUrl?: string | null;
-  proposalCoverUrl?: string | null;
-  proposalClosingUrl?: string | null;
+  settings?: Partial<AppSettings> | null;
   currentSeller: string;
 };
 
@@ -29,9 +27,7 @@ export default function KanbanColumn({
   onUpdateLead,
   onDeleteLead,
   proposalTemplates,
-  logoUrl,
-  proposalCoverUrl,
-  proposalClosingUrl,
+  settings,
   currentSeller,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
@@ -91,9 +87,7 @@ export default function KanbanColumn({
               onUpdateLead={onUpdateLead}
               onDeleteLead={onDeleteLead}
               proposalTemplates={proposalTemplates}
-              logoUrl={logoUrl}
-              proposalCoverUrl={proposalCoverUrl}
-              proposalClosingUrl={proposalClosingUrl}
+              appSettings={settings}
               currentSeller={currentSeller}
             />
           ))}

@@ -731,9 +731,7 @@ export default function Home() {
         onDeleteLead={handleDeleteLead}
         onLeadStatusChange={handleLeadStatusChange}
         proposalTemplates={proposalTemplates || []}
-        logoUrl={settings?.proposalLogoUrl}
-        proposalCoverUrl={settings?.proposalCoverUrl}
-        proposalClosingUrl={settings?.proposalClosingUrl}
+        settings={settings}
         currentSeller={currentSeller}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>

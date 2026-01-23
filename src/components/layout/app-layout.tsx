@@ -21,6 +21,7 @@ import {
   Settings,
   TrendingUp,
   Calendar,
+  BarChartHorizontal,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -46,6 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/') return 'Gestão de Orçamentos';
     if (pathname === '/templates') return 'Modelos de Proposta';
     if (pathname === '/marketing') return 'Gestão de Marketing';
+    if (pathname === '/analytics') return 'Análise de Desempenho';
     if (pathname === '/agenda') return 'Agenda';
     if (pathname === '/settings') return 'Configurações';
     return 'Comercial Florencio';
@@ -115,6 +117,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               >
                 <TrendingUp />
                 <span>Marketing</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push('/analytics')}
+                isActive={pathname === '/analytics'}
+                tooltip="Análise"
+              >
+                <BarChartHorizontal />
+                <span>Análise</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

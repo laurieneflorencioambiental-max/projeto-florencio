@@ -141,6 +141,7 @@ export const appSettingsSchema = z.object({
   loginBackgroundUrl: z.string().url().optional().nullable(),
   proposalCoverUrl: z.string().url().optional().nullable(),
   proposalClosingUrl: z.string().url().optional().nullable(),
+  staleLeadDays: z.number().optional().nullable(),
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
