@@ -193,26 +193,35 @@ export default function BudgetsPage() {
       if (!user || !firestore) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
-      const newLeadData: Omit<Lead, 'createdAt'> = {
-          ...values,
-          id: newDocRef.id,
-          status: 'Novos',
-          createdBy: currentSeller,
-          createdByUid: user.uid,
-          proposalGeneratedCount: 0,
-          whatsappSentCount: 0,
-          editCount: 0,
-          previousStatus: null,
-          proposalNumber: null,
-          proposalVersion: 0,
-          observations: null,
-          versionHistory: [],
-      };
-      
-      const newLeadWithTimestamp = {...newLeadData, createdAt: serverTimestamp()};
+       const newLeadData = {
+        name: values.name,
+        role: values.role || '',
+        company: values.company,
+        cnpj: values.cnpj,
+        proposalSummary: values.proposalSummary,
+        value: values.value,
+        paymentMethods: values.paymentMethods,
+        contactSource: values.contactSource,
+        email: values.email,
+        whatsapp: values.whatsapp,
+        rejectionReason: values.rejectionReason || null,
+        id: newDocRef.id,
+        status: 'Novos' as Status,
+        createdBy: currentSeller,
+        createdByUid: user.uid,
+        proposalGeneratedCount: 0,
+        whatsappSentCount: 0,
+        editCount: 0,
+        previousStatus: null,
+        proposalNumber: null,
+        proposalVersion: 0,
+        observations: null,
+        versionHistory: [],
+        createdAt: serverTimestamp(),
+    };
 
-      setDoc(newDocRef, newLeadWithTimestamp).catch(serverError => {
-          const { createdAt, ...serializableData } = newLeadWithTimestamp;
+      setDoc(newDocRef, newLeadData).catch(serverError => {
+          const { createdAt, ...serializableData } = newLeadData;
           const errorData = { ...serializableData, createdAt: new Date().toISOString() };
           const permissionError = new FirestorePermissionError({
               path: newDocRef.path,
