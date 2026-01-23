@@ -271,7 +271,24 @@ export default function ProposalModal({
     } else {
       // email
       const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
-      const body = `Prezado(a) ${lead.name},\n\nConforme conversamos, segue o link para nossa proposta comercial elaborada para a ${lead.company}:\n\n${proposalLink}\n\nEstamos à disposição para qualquer esclarecimento.\n\nAtenciosamente,\nGrupo Florencio`;
+      const body = `Prezado(a) *${lead.name}*,
+
+Parabéns pela escolha de entrar em contato com o Grupo Florencio, somos especialistas em Saúde Ocupacional Estratégica.
+
+Nosso propósito é blindar a *${lead.company}* com uma gestão eficiente em Segurança do Trabalho, protegendo o seu negócio contra passivos trabalhistas e garantindo a conformidade legal.
+
+Segue neste link a Proposta Comercial nº *${fullProposalNumber}*, com diferentes opções de planos para a gestão completa da Segurança do Trabalho. Assim, você poderá escolher a alternativa que melhor se adequa à estratégia financeira da sua empresa:
+
+${proposalLink}
+
+Clique ou copie o link para abrir a proposta
+
+Contamos com uma ampla rede de clínicas de Medicina do Trabalho no Rio de Janeiro, permitindo que seus colaboradores realizem os exames na unidade mais próxima da empresa ou de suas residências, oferecendo praticidade e agilidade no atendimento.
+
+Fico à disposição para esclarecer qualquer dúvida e apoiar na definição do melhor plano para o seu negócio.
+
+Atenciosamente,
+Grupo Florencio`;
       url = `mailto:${lead.email}?subject=${encodeURIComponent(
         subject
       )}&body=${encodeURIComponent(body)}`;
