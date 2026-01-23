@@ -31,6 +31,7 @@ service cloud.firestore {
      * @description Secures the central 'budgets' collection.
      * This allows any authenticated user (like a manager) to view all budgets,
      * but restricts creation and modification to the budget's owner.
+     * Deletion is allowed for any authenticated user to support admin cleanup tasks.
      * @path /budgets/{budgetId}
      */
     match /budgets/{budgetId} {
@@ -41,22 +42,27 @@ service cloud.firestore {
       // Users can only create budgets where they are the owner.
       allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
       
-      // Users can only update or delete their own budgets.
+      // Users can only update their own budgets.
       // The `get()` call ensures the owner of the existing document is checked.
-      allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid;
+      allow update: if isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid;
+      
+      // Allow any authenticated user to delete budgets (for cleanup functionality).
+      allow delete: if isSignedIn();
     }
     
     /**
      * @description Secures the 'proposals' collection.
      * Proposals are public to anyone with the link (for sharing with clients), but can only be
-     * created by authenticated users. Updates and deletes are disallowed from the client for simplicity and security.
+     * created by authenticated users. Updates are disallowed from the client.
+     * Deletion is allowed for authenticated users to support admin cleanup.
      * @path /proposals/{proposalId}
      */
     match /proposals/{proposalId} {
       allow get: if true; // Public read for sharing
       allow list: if isSignedIn(); // Allow authenticated users to list for cleanup.
       allow create: if isSignedIn();
-      allow update, delete: if false; // Prevent modification after creation
+      allow update: if false; // Prevent modification after creation
+      allow delete: if isSignedIn(); // Allow authenticated users to delete for cleanup.
     }
 
     /**
