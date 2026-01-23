@@ -1,6 +1,8 @@
 'use client';
 
 import { z } from 'zod';
+import type { DocumentReference } from 'firebase/firestore';
+
 
 export type Status =
   | 'Novos'
@@ -108,6 +110,7 @@ export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
+export type { DocumentReference };
 
 export type ProposalTemplate = {
   id: string;

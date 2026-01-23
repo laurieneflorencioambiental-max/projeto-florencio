@@ -40,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import type { AppSettings, Lead, ProposalTemplate, Service } from '@/lib/types';
+import type { AppSettings, Lead, ProposalTemplate, Service, DocumentReference } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
   deleteImageByUrl,
@@ -301,8 +301,8 @@ export default function SettingsPage() {
     setIsCleaning(true);
 
     try {
-      const batch = writeBatch(firestore);
-      let deletedCount = 0;
+      const BATCH_LIMIT = 500; // Firestore batch limit
+      const docRefsToDelete: DocumentReference[] = [];
 
       // Time-based data to be cleaned
       const timeBasedCollections = [
@@ -320,9 +320,7 @@ export default function SettingsPage() {
             for (const item of coll.data) {
               const itemDate = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
               if (itemDate < cutoffDate) {
-                const docRef = doc(firestore, coll.name, item.id);
-                batch.delete(docRef);
-                deletedCount++;
+                docRefsToDelete.push(doc(firestore, coll.name, item.id));
               }
             }
           }
@@ -337,13 +335,13 @@ export default function SettingsPage() {
         for (const coll of allCollections) {
             if (coll.data) {
                 for (const item of coll.data) {
-                    const docRef = doc(firestore, coll.name, item.id);
-                    batch.delete(docRef);
-                    deletedCount++;
+                    docRefsToDelete.push(doc(firestore, coll.name, item.id));
                 }
             }
         }
       }
+
+      const deletedCount = docRefsToDelete.length;
 
       if (deletedCount === 0) {
         toast({
@@ -354,7 +352,15 @@ export default function SettingsPage() {
         return;
       }
 
-      await batch.commit();
+      // Process deletions in batches to avoid exceeding the 500-operation limit.
+      for (let i = 0; i < deletedCount; i += BATCH_LIMIT) {
+        const batch = writeBatch(firestore);
+        const chunk = docRefsToDelete.slice(i, i + BATCH_LIMIT);
+        for (const docRef of chunk) {
+          batch.delete(docRef);
+        }
+        await batch.commit();
+      }
 
       toast({
         title: 'Limpeza Concluída!',
@@ -371,6 +377,7 @@ export default function SettingsPage() {
       setIsCleaning(false);
     }
   };
+
 
   const getCleanupDescription = () => {
     switch (cleanupPeriod) {
