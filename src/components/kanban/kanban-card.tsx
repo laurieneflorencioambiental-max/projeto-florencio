@@ -35,6 +35,7 @@ import {
   StickyNote,
   Save,
   X,
+  GitBranch,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
@@ -77,6 +78,9 @@ const getLeadDate = (date: any): Date => {
   if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
+  if (typeof date === 'string' || typeof date === 'number') {
+    return new Date(date);
+  }
   return date;
 };
 
@@ -89,6 +93,7 @@ export default function KanbanCard({
   logoUrl,
   proposalCoverUrl,
   proposalClosingUrl,
+  currentSeller,
 }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -98,6 +103,11 @@ export default function KanbanCard({
   // State for observations
   const [isEditingObservation, setIsEditingObservation] = useState(false);
   const [observationText, setObservationText] = useState(lead.observations || '');
+
+  const lastEdit =
+    lead.versionHistory && lead.versionHistory.length > 0
+      ? lead.versionHistory[lead.versionHistory.length - 1]
+      : null;
 
   useEffect(() => {
     setObservationText(lead.observations || '');
@@ -447,6 +457,21 @@ export default function KanbanCard({
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger className="flex items-center gap-1">
+                    <GitBranch className="h-3 w-3" /> v{lead.proposalVersion}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {lastEdit ? (
+                      <span>
+                        Última edição por {lastEdit.editedBy.split(' ')[0]} em{' '}
+                        {format(getLeadDate(lastEdit.editedAt), 'dd/MM/yy')}
+                      </span>
+                    ) : (
+                      <span>Proposta nunca editada</span>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
                     <Repeat className="h-3 w-3" /> {lead.editCount}
                   </TooltipTrigger>
                   <TooltipContent>
@@ -500,6 +525,7 @@ export default function KanbanCard({
         isOpen={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         onSave={onUpdateLead}
+        currentSeller={currentSeller}
       />
       <ProposalModal
         lead={lead}

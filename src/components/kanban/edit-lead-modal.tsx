@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Lead } from '@/lib/types';
+import type { Lead, VersionHistoryEntry } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
@@ -41,6 +41,7 @@ type EditLeadModalProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (lead: Lead) => void;
+  currentSeller: string;
 };
 
 const getLeadDate = (date: any): Date => {
@@ -55,6 +56,7 @@ export default function EditLeadModal({
   isOpen,
   onOpenChange,
   onSave,
+  currentSeller,
 }: EditLeadModalProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof leadSchema>>({
@@ -70,6 +72,7 @@ export default function EditLeadModal({
         value: lead.value === null ? 0 : lead.value,
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
         createdAt: getLeadDate(lead.createdAt), // Convert timestamp to Date for the form
+        versionHistory: lead.versionHistory || [],
       });
     }
   }, [lead, form]);
@@ -80,11 +83,22 @@ export default function EditLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof leadSchema>) => {
+    const newVersionNumber = (lead.proposalVersion || 0) + 1;
+
+    const newHistoryEntry: VersionHistoryEntry = {
+        version: newVersionNumber,
+        editedBy: currentSeller,
+        editedAt: new Date(), // Use client-side Date, Firestore will convert it
+    };
+
+    const newHistory = [...(lead.versionHistory || []), newHistoryEntry];
+    
     onSave({ 
       ...lead, 
       ...values, 
       editCount: (lead.editCount || 0) + 1,
-      proposalVersion: (lead.proposalVersion || 0) + 1,
+      proposalVersion: newVersionNumber,
+      versionHistory: newHistory,
     });
     onOpenChange(false);
     toast({

@@ -67,6 +67,12 @@ export const planSchema = z.object({
     paymentType: z.enum(['unique', 'monthly']),
 });
 
+export const versionHistoryEntrySchema = z.object({
+  version: z.number(),
+  editedBy: z.string(),
+  editedAt: z.any(), // For Firestore Timestamps or Date objects
+});
+
 export const leadSchema = z.object({
   id: z.string(),
   name: z.string().min(2, 'O nome é obrigatório.'),
@@ -93,12 +99,14 @@ export const leadSchema = z.object({
   proposalNumber: z.number().nullable().optional(),
   proposalVersion: z.number().default(0),
   observations: z.string().optional().nullable(),
+  versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
 });
 
 
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Exam = z.infer<typeof examSchema>;
+export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 
 export type ProposalTemplate = {
   id: string;
