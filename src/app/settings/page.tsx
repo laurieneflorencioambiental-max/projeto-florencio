@@ -68,6 +68,8 @@ export default function SettingsPage() {
   const [areSettingsLoading, setAreSettingsLoading] = useState(true);
 
   const [isCleaning, setIsCleaning] = useState(false);
+  const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
+
 
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
@@ -87,7 +89,7 @@ export default function SettingsPage() {
   const { data: services } = useCollection<Service>(servicesQuery);
 
   const proposalsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'proposals') : null), [firestore]);
-  const { data: proposals } = useCollection<{id: string}>(proposalsQuery);
+  const { data: proposals } = useCollection<any>(proposalsQuery);
 
   useEffect(() => {
     if (settingsRef) {
@@ -289,28 +291,50 @@ export default function SettingsPage() {
 
   const handleCleanData = async () => {
     if (!firestore || !user) {
-        toast({
-            variant: 'destructive',
-            title: 'Erro',
-            description: 'Não foi possível conectar ao banco de dados.'
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível conectar ao banco de dados.',
+      });
+      return;
     }
     setIsCleaning(true);
 
     try {
-        const collectionsToClean = [
-            { data: leads, name: 'budgets' },
+      const batch = writeBatch(firestore);
+      let deletedCount = 0;
+
+      // Time-based data to be cleaned
+      const timeBasedCollections = [
+        { data: leads, name: 'budgets' },
+        { data: proposals, name: 'proposals' },
+      ];
+
+      if (cleanupPeriod !== 'all') {
+        const now = new Date();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(now.getDate() - cleanupPeriod);
+
+        for (const coll of timeBasedCollections) {
+          if (coll.data) {
+            for (const item of coll.data) {
+              const itemDate = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+              if (itemDate < cutoffDate) {
+                const docRef = doc(firestore, coll.name, item.id);
+                batch.delete(docRef);
+                deletedCount++;
+              }
+            }
+          }
+        }
+      } else { // cleanupPeriod is 'all', so delete everything
+        const allCollections = [
+            ...timeBasedCollections,
             { data: sellers, name: 'sellers' },
             { data: templates, name: 'proposal-templates' },
             { data: services, name: 'services' },
-            { data: proposals, name: 'proposals' },
         ];
-
-        let deletedCount = 0;
-        const batch = writeBatch(firestore);
-        
-        for (const coll of collectionsToClean) {
+        for (const coll of allCollections) {
             if (coll.data) {
                 for (const item of coll.data) {
                     const docRef = doc(firestore, coll.name, item.id);
@@ -319,33 +343,50 @@ export default function SettingsPage() {
                 }
             }
         }
+      }
 
-        if (deletedCount === 0) {
-            toast({
-                title: 'Nenhum dado para limpar',
-                description: `O sistema já está zerado.`
-            });
-            setIsCleaning(false);
-            return;
-        }
-
-        await batch.commit();
-
+      if (deletedCount === 0) {
         toast({
-            title: 'Limpeza Completa!',
-            description: `${deletedCount} registro(s) foram removidos com sucesso. O sistema está zerado.`
+          title: 'Nenhum dado para limpar',
+          description: `Nenhum registro corresponde ao período selecionado.`,
         });
-    } catch (error) {
-        console.error("Error cleaning all data:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Erro na Limpeza',
-            description: 'Não foi possível remover todos os dados. Tente novamente.'
-        });
-    } finally {
         setIsCleaning(false);
+        return;
+      }
+
+      await batch.commit();
+
+      toast({
+        title: 'Limpeza Concluída!',
+        description: `${deletedCount} registro(s) foram removidos com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error cleaning data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro na Limpeza',
+        description: 'Não foi possível remover os dados. Tente novamente.',
+      });
+    } finally {
+      setIsCleaning(false);
     }
-};
+  };
+
+  const getCleanupDescription = () => {
+    switch (cleanupPeriod) {
+        case 'all':
+            return 'Esta ação é irreversível e apagará TODOS OS DADOS da aplicação (orçamentos, vendedores, modelos, etc).';
+        case 30:
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 30 dias.';
+        case 60:
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 60 dias.';
+        case 90:
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 90 dias.';
+        case 365:
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 1 ano.';
+    }
+  };
+
 
   if (isUserLoading || !user || areSettingsLoading) {
     return (
@@ -827,31 +868,43 @@ export default function SettingsPage() {
               <Label
                 className="text-base flex items-center gap-2"
               >
-                Limpar Todos os Dados
+                Limpar Dados do Sistema
               </Label>
               <p className="text-sm text-muted-foreground">
-                Remove permanentemente todos os orçamentos, vendedores, modelos e serviços.
+                Remove permanentemente dados de acordo com o período selecionado.
               </p>
             </div>
             <div className='flex items-center gap-2'>
+               <Select value={String(cleanupPeriod)} onValueChange={(value) => setCleanupPeriod(value === 'all' ? 'all' : Number(value) as any)}>
+                <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Zerar todo o sistema</SelectItem>
+                    <SelectItem value="365">Orçamentos com +1 ano</SelectItem>
+                    <SelectItem value="90">Orçamentos com +90 dias</SelectItem>
+                    <SelectItem value="60">Orçamentos com +60 dias</SelectItem>
+                    <SelectItem value="30">Orçamentos com +30 dias</SelectItem>
+                </SelectContent>
+            </Select>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isCleaning}>
                     {isCleaning ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Trash2 className="mr-2 h-4 w-4" />}
-                    {isCleaning ? 'Limpando...' : 'Zerar Sistema'}
+                    {isCleaning ? 'Limpando...' : 'Limpar'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className='flex items-center gap-2'><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação é irreversível e apagará <span className='font-bold'>TODOS OS DADOS</span> da aplicação (orçamentos, vendedores, modelos, etc). Use isso apenas para começar do zero.
+                      {getCleanupDescription()}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={handleCleanData}>
-                      Sim, zerar o sistema
+                      Sim, limpar dados
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
