@@ -2,7 +2,7 @@
  * # Core Philosophy
  * This ruleset enforces a strict user-ownership model for the Florencio Sales Manager application.
  * All user-generated data, specifically 'budgets', is exclusively owned by and accessible only to the user who created it.
- * Global data like 'sellers', 'proposal-templates', and 'app-settings' are readable by any authenticated user, but writable only by them as well (simplification for MVP).
+ * Global data like 'sellers', 'proposal-templates', 'services', and 'app-settings' are readable by any authenticated user, but writable only by them as well (simplification for MVP).
  * The security model prioritizes data privacy and isolation for user data, while allowing collaborative management of global data.
  *
  * # Data Structure
@@ -71,6 +71,14 @@ service cloud.firestore {
      */
     match /proposal-templates/{templateId} {
        allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Secures the 'services' collection.
+     * Any authenticated user can read and write to the service catalog.
+     */
+    match /services/{serviceId} {
+      allow read, write: if isSignedIn();
     }
 
     /**
