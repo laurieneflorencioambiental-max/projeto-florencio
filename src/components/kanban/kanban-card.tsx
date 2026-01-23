@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Lead, ProposalTemplate, Comment } from '@/lib/types';
+import { useState } from 'react';
+import type { Lead, ProposalTemplate } from '@/lib/types';
 import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
@@ -29,18 +28,15 @@ import {
   MousePointer,
   Tablet,
   FileSignature,
-  History,
   User,
   Repeat,
   Send,
   ArrowRightLeft,
-  MessageSquare,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
 import { Badge } from '@/components/ui/badge';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { format } from 'date-fns';
 import ProposalModal from './proposal-modal';
 import {
   AlertDialog,
@@ -54,20 +50,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Separator } from '../ui/separator';
-import { Input } from '../ui/input';
 
 type KanbanCardProps = {
   lead: Lead;
   allLeads: Lead[];
   onUpdateLead: (lead: Lead) => void;
   onDeleteLead: (leadId: string) => void;
-  onAddComment: (leadId: string, commentText: string) => void;
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
@@ -82,69 +70,20 @@ const getLeadDate = (date: any): Date => {
   return date;
 };
 
-const getCommentDate = (date: any): Date | null => {
-    // Firestore Timestamps
-    if (date && typeof date.toDate === 'function') {
-        return date.toDate();
-    }
-    // JS Dates (from optimistic updates or serverTimestamp 'estimate')
-    if (date instanceof Date) {
-        return date;
-    }
-    // ISO strings or numbers
-    if (typeof date === 'string' || typeof date === 'number') {
-        const d = new Date(date);
-        // Check if the created date is valid
-        if (!isNaN(d.getTime())) {
-            return d;
-        }
-    }
-    // Return null for invalid or missing dates
-    return null;
-};
-
-
 export default function KanbanCard({
   lead,
   allLeads,
   onUpdateLead,
   onDeleteLead,
-  onAddComment,
   proposalTemplates,
   logoUrl,
   proposalCoverUrl,
   proposalClosingUrl,
-  currentSeller,
 }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [commentsOpen, setCommentsOpen] = useState(false);
-
-  const handleAddComment = () => {
-      if (newComment.trim() === '' || !lead) return;
-      onAddComment(lead.id, newComment);
-      setNewComment('');
-      setCommentsOpen(true);
-  };
-
-  const sortedComments = useMemo(() => {
-    if (!lead.comments) return [];
-    return [...lead.comments].sort((a, b) => {
-        const dateA = getCommentDate(a.createdAt);
-        const dateB = getCommentDate(b.createdAt);
-        
-        // Treat comments without a server date (pending writes) as the newest
-        if (!dateA && !dateB) return 0; // Keep original order if both are pending
-        if (!dateA) return -1; // 'a' is pending, so it's newer, should come first
-        if (!dateB) return 1;  // 'b' is pending, so it's newer, should come first
-
-        // Both have dates, sort descending (newest first)
-        return dateB.getTime() - dateA.getTime();
-    });
-  }, [lead]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -343,61 +282,6 @@ export default function KanbanCard({
                     </div>
                 </TooltipProvider>
             </div>
-            <Collapsible open={commentsOpen} onOpenChange={setCommentsOpen} className="w-full">
-                <Separator className="my-2" />
-                <CollapsibleTrigger asChild>
-                    <div className="w-full flex justify-between items-center cursor-pointer p-1 rounded-md hover:bg-muted">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                            <MessageSquare className="h-4 w-4" />
-                            <span>Comentários</span>
-                        </div>
-                        <Badge variant="secondary">{lead.comments?.length || 0}</Badge>
-                    </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2">
-                    <div className="space-y-3">
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder={currentSeller ? "Adicionar um comentário..." : "Selecione um vendedor..."}
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleAddComment();
-                                    }
-                                }}
-                                disabled={!currentSeller}
-                            />
-                            <Button size="icon" onClick={handleAddComment} disabled={!newComment.trim() || !currentSeller}>
-                                <Send className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                            {sortedComments.length > 0 ? (
-                                sortedComments.map((comment: Comment) => {
-                                    const commentDate = getCommentDate(comment.createdAt);
-                                    return (
-                                        <div key={comment.id} className="text-xs p-2 bg-muted/70 rounded-md">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <p className="font-semibold text-foreground">{comment.author}</p>
-                                                <p className="text-muted-foreground">
-                                                    {commentDate
-                                                        ? formatDistanceToNow(commentDate, { addSuffix: true, locale: ptBR })
-                                                        : 'agora mesmo'}
-                                                </p>
-                                            </div>
-                                            <p className="whitespace-pre-wrap break-words text-foreground/90">{comment.text}</p>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <p className="text-xs text-center text-muted-foreground py-4">Nenhum comentário ainda.</p>
-                            )}
-                        </div>
-                    </div>
-                </CollapsibleContent>
-            </Collapsible>
         </CardFooter>
       </Card>
       {lead.status === 'Rejeitado' && (

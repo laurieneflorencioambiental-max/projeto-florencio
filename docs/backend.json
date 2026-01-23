@@ -41,21 +41,7 @@
         "editCount": { "type": "number" },
         "previousStatus": { "type": "string" },
         "proposalNumber": { "type": "number" },
-        "proposalVersion": { "type": "number" },
-        "comments": {
-          "type": "array",
-          "description": "A list of comments or notes related to the budget.",
-          "items": {
-              "type": "object",
-              "properties": {
-                  "id": { "type": "string" },
-                  "text": { "type": "string" },
-                  "author": { "type": "string" },
-                  "createdAt": { "type": "object" }
-              },
-              "required": ["id", "text", "author", "createdAt"]
-          }
-      }
+        "proposalVersion": { "type": "number" }
       },
       "required": ["id", "name", "company", "status", "createdAt", "createdBy"]
     },

@@ -53,7 +53,6 @@ const newLeadSchema = leadSchema.omit({
     previousStatus: true, 
     proposalNumber: true, 
     proposalVersion: true,
-    comments: true,
 });
 
 export default function AddLeadModal({
@@ -96,7 +95,6 @@ export default function AddLeadModal({
       previousStatus: null,
       proposalNumber: null,
       proposalVersion: 0,
-      comments: [],
     };
     onSave(newLead);
     onOpenChange(false);

@@ -43,7 +43,7 @@ import ContactSourceChart from '@/components/charts/contact-source-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, arrayUnion } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -225,7 +225,6 @@ export default function Home() {
             proposalNumber: 1,
             proposalVersion: 0,
             rejectionReason: null,
-            comments: [],
           },
           {
             name: 'Bruno Lima',
@@ -247,7 +246,6 @@ export default function Home() {
             proposalNumber: 2,
             proposalVersion: 1,
             rejectionReason: null,
-            comments: [],
           },
           {
             name: 'Carla Dias',
@@ -269,7 +267,6 @@ export default function Home() {
             proposalNumber: 3,
             proposalVersion: 2,
             rejectionReason: null,
-            comments: [],
           },
           {
             name: 'Daniel Faria',
@@ -291,7 +288,6 @@ export default function Home() {
             previousStatus: 'Pendente/Em negociação',
             proposalNumber: 4,
             proposalVersion: 0,
-            comments: [],
           },
           {
             name: 'Elisa Mendes',
@@ -313,18 +309,17 @@ export default function Home() {
             previousStatus: 'Pendente/Em negociação',
             proposalNumber: 5,
             proposalVersion: 0,
-            comments: [],
           },
         ];
 
         sampleLeadsData.forEach(lead => {
           const newDocRef = doc(budgetsCollection);
-          const newLead: Lead = {
+          const newLead: Omit<Lead, 'id' | 'createdAt'> = {
             ...(lead as Omit<Lead, 'id' | 'createdAt'>), // Cast to satisfy TypeScript
             id: newDocRef.id,
-            createdAt: serverTimestamp(),
           };
-          batch.set(newDocRef, newLead);
+          const newLeadWithTimestamp = {...newLead, createdAt: serverTimestamp()};
+          batch.set(newDocRef, newLeadWithTimestamp);
         });
         dataSeeded = true;
       }
@@ -379,7 +374,6 @@ export default function Home() {
           previousStatus: null,
           proposalNumber: null,
           proposalVersion: 0,
-          comments: [],
       };
       
       const newLeadWithTimestamp = {...newLeadData, createdAt: serverTimestamp()};
@@ -442,30 +436,6 @@ export default function Home() {
               });
             errorEmitter.emit('permission-error', permissionError);
         });
-    }
-  };
-
-  const handleAddComment = (leadId: string, commentText: string) => {
-    if (!user || !firestore || !leads || !currentSeller) return;
-    const lead = leads.find(l => l.id === leadId);
-    if (lead) {
-      const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
-      const newComment = {
-        id: `comment-${Date.now()}-${Math.random()}`,
-        text: commentText,
-        author: currentSeller,
-        createdAt: serverTimestamp(),
-      };
-      updateDoc(leadRef, {
-        comments: arrayUnion(newComment)
-      }).catch(serverError => {
-          const permissionError = new FirestorePermissionError({
-              path: leadRef.path,
-              operation: 'update',
-              requestResourceData: { comments: 'Error: Could not serialize new comment with FieldValue' },
-            });
-          errorEmitter.emit('permission-error', permissionError);
-      });
     }
   };
 
@@ -760,7 +730,6 @@ export default function Home() {
         onUpdateLead={handleUpdateLead}
         onDeleteLead={handleDeleteLead}
         onLeadStatusChange={handleLeadStatusChange}
-        onAddComment={handleAddComment}
         proposalTemplates={proposalTemplates || []}
         logoUrl={settings?.proposalLogoUrl}
         proposalCoverUrl={settings?.proposalCoverUrl}

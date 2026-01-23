@@ -65,13 +65,6 @@ export const planSchema = z.object({
     paymentType: z.enum(['unique', 'monthly']),
 });
 
-export const commentSchema = z.object({
-  id: z.string(),
-  text: z.string().min(1, 'O comentário não pode estar vazio.'),
-  author: z.string(),
-  createdAt: z.any(),
-});
-
 export const leadSchema = z.object({
   id: z.string(),
   name: z.string().min(2, 'O nome é obrigatório.'),
@@ -97,14 +90,12 @@ export const leadSchema = z.object({
   previousStatus: z.enum(statuses).optional().nullable(),
   proposalNumber: z.number().nullable().optional(),
   proposalVersion: z.number().default(0),
-  comments: z.array(commentSchema).optional(),
 });
 
 
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Exam = z.infer<typeof examSchema>;
-export type Comment = z.infer<typeof commentSchema>;
 
 export type ProposalTemplate = {
   id: string;
