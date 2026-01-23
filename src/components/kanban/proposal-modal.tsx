@@ -266,7 +266,23 @@ export default function ProposalModal({
         ...lead,
         whatsappSentCount: (lead.whatsappSentCount || 0) + 1,
       });
-      text = `Olá ${lead.name}, conforme conversamos, segue o link da proposta comercial para a ${lead.company}: ${proposalLink}`;
+      text = `Prezado(a) *${lead.name}*,
+Parabéns pela escolha de entrar em contato com o Grupo Florencio, somos especialistas em Saúde Ocupacional Estratégica.
+
+Nosso propósito é blindar a *${lead.company}* com uma gestão eficiente em Segurança do Trabalho, protegendo o seu negócio contra passivos trabalhistas e garantindo a conformidade legal.
+
+Segue neste link a *Proposta Comercial nº ${fullProposalNumber}*, com diferentes opções de planos para a gestão completa da Segurança do Trabalho. Assim, você poderá escolher a alternativa que melhor se adequa à estratégia financeira da sua empresa:
+
+🔗 ${proposalLink}
+
+🔴 *Para abrir a proposta, clique ou copie e cole o link acima no seu navegador.*
+
+Contamos com uma ampla rede de clínicas de Medicina do Trabalho no Rio de Janeiro, permitindo que seus colaboradores realizem os exames na unidade mais próxima da empresa ou de suas residências, oferecendo praticidade e agilidade no atendimento.
+
+Fico à disposição para esclarecer qualquer dúvida e apoiar na definição do melhor plano para o seu negócio.
+
+Atenciosamente,
+*Grupo Florencio*`;
       url = `https://wa.me/${lead.whatsapp}?text=${encodeURIComponent(text)}`;
     } else {
       // email
