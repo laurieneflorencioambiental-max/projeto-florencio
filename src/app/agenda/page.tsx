@@ -14,12 +14,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  ExternalLink,
   Clock,
   Calendar as CalendarIcon,
   PlusCircle,
+  Pencil,
+  Trash2,
+  Save,
+  X,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -27,7 +32,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Meeting {
   id: number;
@@ -35,18 +52,23 @@ interface Meeting {
   date: Date;
   time: string;
   description: string;
+  status: 'agendada' | 'realizada';
 }
 
 export default function AgendaPage() {
   const { toast } = useToast();
-  // State for the form
-  const [newMeetingDate, setNewMeetingDate] = useState<Date | undefined>();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+
+  // State for the form
   const [newMeetingTitle, setNewMeetingTitle] = useState('');
+  const [newMeetingDate, setNewMeetingDate] = useState<Date | undefined>();
   const [newMeetingTime, setNewMeetingTime] = useState('09:00');
   const [newMeetingDescription, setNewMeetingDescription] = useState('');
 
-  const handleAddMeeting = (e: React.FormEvent) => {
+  // State for editing
+  const [editingMeetingId, setEditingMeetingId] = useState<number | null>(null);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMeetingTitle || !newMeetingDate || !newMeetingTime) {
       toast({
@@ -57,59 +79,88 @@ export default function AgendaPage() {
       return;
     }
 
-    const newMeeting: Meeting = {
-      id: Date.now(),
-      title: newMeetingTitle,
-      date: newMeetingDate,
-      time: newMeetingTime,
-      description: newMeetingDescription,
-    };
-    setMeetings(
-      [...meetings, newMeeting].sort(
-        (a, b) =>
-          new Date(`${format(a.date, 'yyyy-MM-dd')}T${a.time}`).getTime() -
-          new Date(`${format(b.date, 'yyyy-MM-dd')}T${b.time}`).getTime()
-      )
-    );
+    if (editingMeetingId) {
+      setMeetings(
+        meetings.map(m =>
+          m.id === editingMeetingId
+            ? {
+                ...m,
+                title: newMeetingTitle,
+                date: newMeetingDate,
+                time: newMeetingTime,
+                description: newMeetingDescription,
+              }
+            : m
+        )
+      );
+      toast({
+        title: 'Reunião Atualizada!',
+        description: 'Os detalhes da reunião foram salvos.',
+      });
+    } else {
+      const newMeeting: Meeting = {
+        id: Date.now(),
+        title: newMeetingTitle,
+        date: newMeetingDate,
+        time: newMeetingTime,
+        description: newMeetingDescription,
+        status: 'agendada',
+      };
+      setMeetings([...meetings, newMeeting]);
+      toast({
+        title: 'Reunião Agendada!',
+        description: 'Sua reunião foi adicionada com sucesso.',
+      });
+    }
+    handleCancelEditing();
+  };
+  
+  const handleStartEditing = (meeting: Meeting) => {
+    setEditingMeetingId(meeting.id);
+    setNewMeetingTitle(meeting.title);
+    setNewMeetingDate(meeting.date);
+    setNewMeetingTime(meeting.time);
+    setNewMeetingDescription(meeting.description);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-    // Generate Google Calendar URL
-    const [hour, minute] = newMeetingTime.split(':').map(Number);
-    const startDate = new Date(newMeetingDate);
-    startDate.setHours(hour, minute, 0, 0);
-
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Assume 1 hour duration
-
-    const toGoogleISOString = (date: Date) =>
-      date.toISOString().replace(/-|:|\.\d{3}/g, '');
-
-    const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      newMeeting.title
-    )}&dates=${toGoogleISOString(startDate)}/${toGoogleISOString(
-      endDate
-    )}&details=${encodeURIComponent(newMeeting.description)}`;
-
-    toast({
-      title: 'Reunião Agendada!',
-      description: 'Sua reunião foi adicionada com sucesso.',
-      action: (
-        <Button asChild variant="outline">
-          <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Abrir no Google Agenda
-          </a>
-        </Button>
-      ),
-    });
-
-    // Reset form
+  const handleCancelEditing = () => {
+    setEditingMeetingId(null);
     setNewMeetingTitle('');
     setNewMeetingDescription('');
     setNewMeetingTime('09:00');
     setNewMeetingDate(undefined);
   };
+  
+  const handleDeleteMeeting = (id: number) => {
+    setMeetings(meetings.filter(m => m.id !== id));
+    toast({
+      title: 'Reunião Removida',
+      description: 'A reunião foi excluída da sua agenda.',
+    });
+  };
+
+  const handleToggleStatus = (id: number) => {
+    setMeetings(
+      meetings.map(m =>
+        m.id === id
+          ? {
+              ...m,
+              status: m.status === 'agendada' ? 'realizada' : 'agendada',
+            }
+          : m
+      )
+    );
+  };
+
 
   const groupedMeetings = useMemo(() => {
-    return meetings.reduce((acc, meeting) => {
+    const sorted = [...meetings].sort(
+        (a, b) =>
+          new Date(`${format(a.date, 'yyyy-MM-dd')}T${a.time}`).getTime() -
+          new Date(`${format(b.date, 'yyyy-MM-dd')}T${b.time}`).getTime()
+      );
+    return sorted.reduce((acc, meeting) => {
       const dateKey = format(meeting.date, 'yyyy-MM-dd');
       if (!acc[dateKey]) {
         acc[dateKey] = [];
@@ -128,13 +179,17 @@ export default function AgendaPage() {
     <div className="flex flex-col gap-8">
       <Card>
         <CardHeader>
-          <CardTitle>Adicionar Nova Reunião</CardTitle>
+          <CardTitle>
+            {editingMeetingId ? 'Editar Reunião' : 'Adicionar Nova Reunião'}
+          </CardTitle>
           <CardDescription>
-            Preencha os detalhes para agendar uma nova reunião.
+            {editingMeetingId
+              ? 'Altere os detalhes da reunião selecionada.'
+              : 'Preencha os detalhes para agendar uma nova reunião.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddMeeting} className="space-y-4">
+          <form onSubmit={handleFormSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="meeting-title">Título da Reunião</Label>
               <Input
@@ -146,9 +201,7 @@ export default function AgendaPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="meeting-description">
-                Descrição (Opcional)
-              </Label>
+              <Label htmlFor="meeting-description">Descrição (Opcional)</Label>
               <Textarea
                 id="meeting-description"
                 placeholder="Ex: Discutir resultados da campanha do Instagram."
@@ -200,10 +253,26 @@ export default function AgendaPage() {
                 />
               </div>
             </div>
-            <Button type="submit">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Reunião
-            </Button>
+            <div className="flex justify-end items-center gap-2 pt-2">
+              {editingMeetingId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleCancelEditing}
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Cancelar
+                </Button>
+              )}
+              <Button type="submit">
+                {editingMeetingId ? (
+                  <Save className="mr-2 h-4 w-4" />
+                ) : (
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                )}
+                {editingMeetingId ? 'Salvar Alterações' : 'Adicionar Reunião'}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -212,35 +281,126 @@ export default function AgendaPage() {
         <CardHeader>
           <CardTitle>Próximas Reuniões</CardTitle>
           <CardDescription>
-            Visualize todas as reuniões agendadas.
+            Visualize, edite e acompanhe todas as reuniões agendadas.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
             {sortedDateKeys.length > 0 ? (
-              sortedDateKeys.map((dateKey) => (
+              sortedDateKeys.map(dateKey => (
                 <div key={dateKey}>
                   <h3 className="text-lg font-semibold mb-4 border-b pb-2">
                     {format(new Date(dateKey), 'PPP', { locale: ptBR })}
                   </h3>
                   <div className="space-y-4">
-                    {groupedMeetings[dateKey].map((meeting) => (
-                      <div
-                        key={meeting.id}
-                        className="p-3 border rounded-lg bg-muted/50"
-                      >
-                        <div className="flex justify-between items-start">
-                          <p className="font-semibold">{meeting.title}</p>
-                          <div className="flex items-center gap-1 text-sm text-primary font-medium">
-                            <Clock className="h-4 w-4" />
-                            <span>{meeting.time}</span>
+                    {groupedMeetings[dateKey].map(meeting => {
+                      const isCompleted = meeting.status === 'realizada';
+                      const isOverdue =
+                        isPast(meeting.date) &&
+                        !isToday(meeting.date) &&
+                        !isCompleted;
+
+                      return (
+                        <div
+                          key={meeting.id}
+                          className={cn(
+                            'p-3 border rounded-lg transition-all',
+                            isCompleted && 'bg-muted/40 opacity-70',
+                            isOverdue && 'border-destructive/50 bg-destructive/10'
+                          )}
+                        >
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex items-center gap-3 flex-1">
+                              <Checkbox
+                                id={`completed-${meeting.id}`}
+                                checked={isCompleted}
+                                onCheckedChange={() => handleToggleStatus(meeting.id)}
+                                aria-label="Marcar como realizada"
+                              />
+                              <div className="flex-1">
+                                <p
+                                  className={cn(
+                                    'font-semibold',
+                                    isCompleted && 'line-through'
+                                  )}
+                                >
+                                  {meeting.title}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleStartEditing(meeting)}
+                                disabled={isCompleted}
+                                className="h-8 w-8"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Editar</span>
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                     <span className="sr-only">Excluir</span>
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Tem certeza que deseja excluir esta reunião?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. A reunião "{meeting.title}" será removida permanentemente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteMeeting(meeting.id)}
+                                    >
+                                      Sim, Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </div>
+                          
+                          <div className='pl-9'>
+                            <div className="flex items-center gap-2 text-sm text-primary font-medium mt-1">
+                              <Clock className="h-4 w-4" />
+                              <span>{meeting.time}</span>
+                            </div>
+                          
+                            {isOverdue && (
+                              <div className="flex items-center gap-1.5 text-xs text-destructive font-bold mt-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Esta reunião está vencida.</span>
+                              </div>
+                            )}
+
+                            {isCompleted && (
+                               <div className="flex items-center gap-1.5 text-xs text-green-600 font-bold mt-2">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span>Reunião realizada.</span>
+                              </div>
+                            )}
+                            
+                            {meeting.description && (
+                                <p className={cn("text-sm text-muted-foreground mt-2", isCompleted && 'line-through')}>
+                                  {meeting.description}
+                                </p>
+                            )}
+                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {meeting.description}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))
