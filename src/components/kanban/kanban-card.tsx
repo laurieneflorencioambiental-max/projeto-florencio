@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Lead, ProposalTemplate } from '@/lib/types';
 import {
   Card,
@@ -32,6 +32,7 @@ import {
   Repeat,
   Send,
   ArrowRightLeft,
+  StickyNote,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
@@ -50,6 +51,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -84,6 +87,18 @@ export default function KanbanCard({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [observationText, setObservationText] = useState(lead.observations || '');
+
+  useEffect(() => {
+    setObservationText(lead.observations || '');
+  }, [lead.observations]);
+
+  const handleObservationBlur = () => {
+    const prevObs = lead.observations || '';
+    if (observationText.trim() !== prevObs.trim()) {
+      onUpdateLead({ ...lead, observations: observationText.trim() });
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id);
@@ -227,6 +242,20 @@ export default function KanbanCard({
                     </a>
                     </div>
                     {getContactSourceInfo()}
+                </div>
+                <div className="mt-4 border-t pt-4">
+                  <Label htmlFor={`obs-${lead.id}`} className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <StickyNote className="h-3 w-3" />
+                      Observações Internas
+                  </Label>
+                  <Textarea
+                      id={`obs-${lead.id}`}
+                      placeholder="Adicione uma nota sobre a negociação..."
+                      className="mt-1 text-xs h-24 bg-muted/50 border-dashed"
+                      value={observationText}
+                      onChange={(e) => setObservationText(e.target.value)}
+                      onBlur={handleObservationBlur}
+                  />
                 </div>
             </div>
         </CardContent>

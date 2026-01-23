@@ -41,7 +41,11 @@
         "editCount": { "type": "number" },
         "previousStatus": { "type": "string" },
         "proposalNumber": { "type": "number" },
-        "proposalVersion": { "type": "number" }
+        "proposalVersion": { "type": "number" },
+        "observations": {
+            "type": "string",
+            "description": "Internal notes for sellers about the negotiation status."
+        }
       },
       "required": ["id", "name", "company", "status", "createdAt", "createdBy"]
     },

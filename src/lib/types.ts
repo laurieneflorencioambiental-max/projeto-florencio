@@ -1,3 +1,5 @@
+'use client';
+
 import { z } from 'zod';
 
 export type Status =
@@ -90,6 +92,7 @@ export const leadSchema = z.object({
   previousStatus: z.enum(statuses).optional().nullable(),
   proposalNumber: z.number().nullable().optional(),
   proposalVersion: z.number().default(0),
+  observations: z.string().optional().nullable(),
 });
 
 
