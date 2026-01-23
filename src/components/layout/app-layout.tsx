@@ -15,7 +15,8 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Briefcase,
-  Home,
+  LayoutDashboard,
+  KanbanSquare,
   FileText,
   LogOut,
   Settings,
@@ -23,7 +24,7 @@ import {
   Calendar,
   BarChartHorizontal,
 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -44,7 +45,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: settings } = useDoc<AppSettings>(settingsRef);
 
   const getPageTitle = () => {
-    if (pathname === '/') return 'Gestão de Orçamentos';
+    if (pathname === '/') return 'Dashboard';
+    if (pathname === '/budgets') return 'Funil de Vendas';
     if (pathname === '/templates') return 'Modelos de Proposta';
     if (pathname === '/marketing') return 'Gestão de Marketing';
     if (pathname === '/analytics') return 'Análise de Desempenho';
@@ -93,10 +95,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton
                 onClick={() => router.push('/')}
                 isActive={pathname === '/'}
-                tooltip="Orçamentos"
+                tooltip="Dashboard"
               >
-                <Home />
-                <span>Orçamentos</span>
+                <LayoutDashboard />
+                <span>Dashboard</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push('/budgets')}
+                isActive={pathname === '/budgets'}
+                tooltip="Funil de Vendas"
+              >
+                <KanbanSquare />
+                <span>Funil de Vendas</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
