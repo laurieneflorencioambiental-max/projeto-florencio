@@ -1,0 +1,17 @@
+{
+  "theme_color": "#1b7689",
+  "background_color": "#d6f2f6",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "name": "Florencio Sales Manager",
+  "short_name": "Florencio CRM",
+  "description": "Gestão comercial para o Grupo Florencio",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
