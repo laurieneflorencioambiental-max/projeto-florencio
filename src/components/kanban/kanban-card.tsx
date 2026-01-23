@@ -74,14 +74,21 @@ type KanbanCardProps = {
   currentSeller: string;
 };
 
-const getLeadDate = (date: any): Date => {
+const getLeadDate = (date: any): Date | null => {
+  if (!date) {
+    return null;
+  }
   if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  if (typeof date === 'string' || typeof date === 'number') {
-    return new Date(date);
+  if (date instanceof Date) {
+    return isNaN(date.getTime()) ? null : date;
   }
-  return date;
+  if (typeof date === 'string' || typeof date === 'number') {
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 };
 
 export default function KanbanCard({
@@ -273,6 +280,7 @@ export default function KanbanCard({
     );
   };
 
+  const createdAtDate = getLeadDate(lead.createdAt);
 
   return (
     <>
@@ -297,7 +305,9 @@ export default function KanbanCard({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
                   <span>
-                    {format(getLeadDate(lead.createdAt), "dd/MM/yyyy 'às' HH:mm")}
+                    {createdAtDate
+                      ? format(createdAtDate, "dd/MM/yyyy 'às' HH:mm")
+                      : 'Salvando...'}
                   </span>
                 </div>
               </div>
@@ -485,7 +495,7 @@ export default function KanbanCard({
                   </TooltipTrigger>
                    <TooltipContent>
                     {lead.versionHistory && lead.versionHistory.length > 0 ? (
-                      `Última edição por ${lead.versionHistory[lead.versionHistory.length - 1].editedBy} em ${format(getLeadDate(lead.versionHistory[lead.versionHistory.length - 1].editedAt), "dd/MM/yy")}`
+                      `Última edição por ${lead.versionHistory[lead.versionHistory.length - 1].editedBy} em ${format(getLeadDate(lead.versionHistory[lead.versionHistory.length - 1].editedAt)!, "dd/MM/yy")}`
                     ) : (
                       lead.proposalVersion > 0 ? 'Histórico de edição não disponível' : 'Proposta nunca editada'
                     )}
