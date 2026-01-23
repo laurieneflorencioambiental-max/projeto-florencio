@@ -25,6 +25,7 @@ import {
   Bot,
   Lightbulb,
   HelpCircle,
+  Users,
 } from 'lucide-react';
 
 const tutorialSections = [
@@ -200,6 +201,37 @@ const tutorialSections = [
       },
     ],
   },
+  {
+    icon: Users,
+    title: 'Segurança e Gestão de Usuários',
+    description:
+      'Entenda como o sistema protege seus dados e como gerenciar os diferentes níveis de acesso (Gestor vs. Vendedor).',
+    content: [
+      {
+        question: 'Qual a diferença entre um login de Gestor e um de Vendedor?',
+        answer:
+          'Não há um botão "criar gestor". A lógica é simples: (1) Qualquer usuário com login criado no Firebase pode ver todos os dados, funcionando como um gestor. (2) Um "Vendedor" é um usuário que, além de ter o login, também foi adicionado à lista de "Vendedores" dentro do app, o que o permite criar orçamentos em seu nome.',
+      },
+      {
+        question:
+          'Como a segurança impede que um vendedor altere o orçamento de outro?',
+        answer:
+          'A "blindagem" acontece no servidor do Firebase. As regras de segurança garantem que, embora todos os usuários autenticados possam LER todos os orçamentos (para permitir a visão do gestor), um usuário só pode EDITAR ou APAGAR um orçamento se o seu ID de usuário for o mesmo que o do criador do orçamento. É impossível burlar essa regra pelo aplicativo.',
+      },
+      {
+        question:
+          'Passo a passo: Como crio um login de GESTOR (apenas para visualização)?',
+        answer:
+          '1. Vá ao Console do Firebase > Authentication > Users e clique em "Add user".\n2. Crie o login com email e senha (ex: gestor.comercial@grupoflorencio.com.br).\n3. Pronto! Essa pessoa já pode acessar o sistema e terá a visão completa de todos os orçamentos, análises e dashboards.',
+      },
+      {
+        question:
+          'Passo a passo: Como crio um login de VENDEDOR (que pode criar e gerenciar orçamentos)?',
+        answer:
+          '1. Crie o login com email e senha no Console do Firebase, como faria para um gestor.\n2. No seu aplicativo, vá para a página "Funil de Vendas", clique no ícone de engrenagem (⚙️) ao lado do seletor de vendedores e adicione o nome desse novo vendedor à lista.\n3. Pronto! Agora, além de ver tudo, ele poderá criar e editar seus próprios orçamentos.',
+      },
+    ],
+  },
 ];
 
 export default function TutorialPage() {
@@ -253,7 +285,7 @@ export default function TutorialPage() {
                     <h4 className="font-semibold text-foreground">
                       {item.question}
                     </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                       {item.answer}
                     </p>
                   </div>
