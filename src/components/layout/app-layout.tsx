@@ -23,6 +23,7 @@ import {
   TrendingUp,
   Calendar,
   BarChartHorizontal,
+  BookMarked,
 } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -48,6 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/') return 'Dashboard';
     if (pathname === '/budgets') return 'Funil de Vendas';
     if (pathname === '/templates') return 'Modelos de Proposta';
+    if (pathname === '/catalog') return 'Catálogo de Serviços';
     if (pathname === '/marketing') return 'Gestão de Marketing';
     if (pathname === '/analytics') return 'Análise de Desempenho';
     if (pathname === '/agenda') return 'Agenda';
@@ -119,6 +121,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               >
                 <FileText />
                 <span>Modelos de Proposta</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push('/catalog')}
+                isActive={pathname === '/catalog'}
+                tooltip="Catálogo de Serviços"
+              >
+                <BookMarked />
+                <span>Catálogo de Serviços</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

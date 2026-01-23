@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ProposalTemplate, Plan, Exam } from '@/lib/types';
-import { planSchema, examSchema } from '@/lib/types';
+import { useState, useEffect, useRef } from 'react';
+import type { ProposalTemplate, Plan, Service } from '@/lib/types';
+import { planSchema, serviceSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,6 +19,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, addDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
@@ -30,7 +32,7 @@ const templateFormSchema = z.object({
   investment: z.string(),
   strategicVision: z.string(),
   plans: z.array(planSchema),
-  exams: z.array(examSchema).optional(),
+  exams: z.array(serviceSchema).optional(),
 });
 
 const defaultText = 'A ser definido na proposta.';
@@ -99,6 +101,9 @@ export default function ManageTemplatesPage() {
 
   const templatesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
   const { data: templates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesCollectionRef);
+  
+  const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const { data: servicesCatalog, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
 
   const form = useForm<z.infer<typeof templateFormSchema>>({
     resolver: zodResolver(templateFormSchema),
@@ -155,7 +160,9 @@ export default function ManageTemplatesPage() {
       await setDoc(templateRef, { ...data, plans: plansWithIds, exams: examsWithIds }, { merge: true });
       toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
-      await addDoc(collection(firestore, 'proposal-templates'), { ...data, plans: plansWithIds, exams: examsWithIds });
+      const newDocRef = doc(templatesCollectionRef!);
+      const newTemplateWithId = { ...data, id: newDocRef.id, plans: plansWithIds, exams: examsWithIds };
+      await setDoc(newDocRef, newTemplateWithId);
       toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
     }
     resetForm();
@@ -185,10 +192,13 @@ export default function ManageTemplatesPage() {
   const handleDuplicateTemplate = async (template: ProposalTemplate) => {
     if (!firestore) return;
     const { id, ...templateData } = template;
-    await addDoc(collection(firestore, 'proposal-templates'), {
+    const newDocRef = doc(templatesCollectionRef!);
+    const duplicatedTemplate = {
       ...templateData,
+      id: newDocRef.id,
       name: `${template.name} (Cópia)`,
-    });
+    };
+    await setDoc(newDocRef, duplicatedTemplate);
     toast({ title: 'Sucesso', description: `Modelo "${template.name}" duplicado.` });
   };
 
@@ -206,7 +216,7 @@ export default function ManageTemplatesPage() {
     />
   );
   
-  if (isUserLoading || !user || areTemplatesLoading) {
+  if (isUserLoading || !user || areTemplatesLoading || areServicesLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -233,7 +243,7 @@ export default function ManageTemplatesPage() {
               {renderFormField('Nossa Visão Estratégica', 'strategicVision')}
 
               <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Planos de Investimento</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-6">
                   {planFields.map((field, index) => (
                     <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
                       <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removePlan(index)}><Trash2 className="h-4 w-4" /></Button>
@@ -252,8 +262,8 @@ export default function ManageTemplatesPage() {
                 </CardContent>
               </Card>
 
-              <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Investimentos - Exames</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
+              <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Investimentos - Exames/Serviços Avulsos</CardTitle></CardHeader>
+                <CardContent className="space-y-4 pt-6">
                   {examFields.map((field, index) => (
                     <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
                       <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeExam(index)}><Trash2 className="h-4 w-4" /></Button>
@@ -264,7 +274,35 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}><Plus className="mr-2 h-4 w-4" /> Adicionar Exame</Button>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button type="button" variant="outline"><Plus className="mr-2 h-4 w-4" /> Adicionar Exame do Catálogo</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                            <Command>
+                                <CommandInput placeholder="Buscar serviço..." />
+                                <CommandList>
+                                    <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
+                                    <CommandGroup>
+                                        {(servicesCatalog || []).map((service) => (
+                                            <CommandItem
+                                                key={service.id}
+                                                value={service.service}
+                                                onSelect={() => {
+                                                    appendExam({ id: `exam-${Date.now()}`, service: service.service, description: service.description, value: service.value });
+                                                }}
+                                            >
+                                                {service.service}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    <Button type="button" variant="secondary" className="ml-2" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}>
+                        <Plus className="mr-2 h-4 w-4" /> Adicionar Manualmente
+                    </Button>
                 </CardContent>
               </Card>
 

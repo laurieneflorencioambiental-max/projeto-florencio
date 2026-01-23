@@ -79,7 +79,7 @@
         },
         "exams": {
           "type": "array",
-          "items": { "$ref": "#/backend/entities/Exam" }
+          "items": { "$ref": "#/backend/entities/Service" }
         }
       },
       "required": ["id", "name", "proposalObject"]
@@ -98,9 +98,9 @@
         },
         "required": ["id", "name", "investment", "paymentType"]
     },
-    "Exam": {
-        "title": "Exam",
-        "description": "A specific exam with its price.",
+    "Service": {
+        "title": "Service",
+        "description": "A specific service or exam with its price.",
         "type": "object",
         "properties": {
             "id": { "type": "string" },
@@ -155,6 +155,14 @@
           "entityName": "ProposalTemplate",
           "schema": { "$ref": "#/backend/entities/ProposalTemplate" },
           "description": "Stores global proposal templates available to all users."
+        }
+      },
+      {
+        "path": "/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": { "$ref": "#/backend/entities/Service" },
+          "description": "Stores the global catalog of individual services and exams."
         }
       },
       {

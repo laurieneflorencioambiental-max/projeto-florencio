@@ -51,7 +51,7 @@ export const paymentMethodSchema = z.object({
   cardFee: z.number().optional(),
 });
 
-export const examSchema = z.object({
+export const serviceSchema = z.object({
     id: z.string(),
     service: z.string().min(1, 'O serviço é obrigatório.'),
     description: z.string().min(1, 'A descrição é obrigatória.'),
@@ -105,7 +105,7 @@ export const leadSchema = z.object({
 
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
-export type Exam = z.infer<typeof examSchema>;
+export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 
 export type ProposalTemplate = {
@@ -119,7 +119,7 @@ export type ProposalTemplate = {
   strategicVision: string;
   investment: string;
   plans: Plan[];
-  exams: Exam[];
+  exams: Service[];
 };
 
 export type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;
