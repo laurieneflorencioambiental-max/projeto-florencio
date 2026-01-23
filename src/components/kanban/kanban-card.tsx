@@ -35,7 +35,7 @@ import {
   StickyNote,
   Save,
   X,
-  GitBranch,
+  History,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
@@ -61,6 +61,7 @@ import {
 } from '../ui/tooltip';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
+import VersionHistoryModal from './version-history-modal';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -99,6 +100,7 @@ export default function KanbanCard({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // State for observations
   const [isEditingObservation, setIsEditingObservation] = useState(false);
@@ -456,20 +458,19 @@ export default function KanbanCard({
                   <TooltipContent>Criado por: {lead.createdBy}</TooltipContent>
                 </Tooltip>
                 <Tooltip>
-                  <TooltipTrigger className="flex items-center gap-1">
-                    <GitBranch className="h-3 w-3" /> v{lead.proposalVersion}
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setIsHistoryModalOpen(true)}
+                      className="flex items-center gap-1"
+                      disabled={lead.proposalVersion === 0}
+                    >
+                      <History className="h-3 w-3" /> v{lead.proposalVersion}
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {lastEdit ? (
-                      <span>
-                        Última edição por {lastEdit.editedBy.split(' ')[0]} em{' '}
-                        {format(getLeadDate(lastEdit.editedAt), 'dd/MM/yy')}
-                      </span>
-                    ) : lead.proposalVersion > 0 ? (
-                      <span>Histórico de edição não disponível.</span>
-                    ) : (
-                      <span>Proposta nunca editada</span>
-                    )}
+                    {lead.proposalVersion > 0
+                      ? 'Ver histórico de edições'
+                      : 'Proposta nunca editada'}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -539,6 +540,11 @@ export default function KanbanCard({
         logoUrl={logoUrl}
         proposalCoverUrl={proposalCoverUrl}
         proposalClosingUrl={proposalClosingUrl}
+      />
+      <VersionHistoryModal
+        lead={lead}
+        isOpen={isHistoryModalOpen}
+        onOpenChange={setIsHistoryModalOpen}
       />
     </>
   );
