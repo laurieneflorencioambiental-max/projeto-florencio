@@ -35,13 +35,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-type AddLeadModalProps = {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onSave: (lead: Omit<Lead, 'id' | 'createdAt' | 'createdByUid'>) => void;
-  seller: string;
-};
-
 const newLeadSchema = leadSchema.omit({ 
     id: true, 
     createdAt: true, 
@@ -55,6 +48,13 @@ const newLeadSchema = leadSchema.omit({
     proposalNumber: true, 
     proposalVersion: true,
 });
+
+type AddLeadModalProps = {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onSave: (lead: z.infer<typeof newLeadSchema>) => void;
+  seller: string;
+};
 
 export default function AddLeadModal({
   isOpen,
@@ -86,18 +86,7 @@ export default function AddLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof newLeadSchema>) => {
-    const newLead: Omit<Lead, 'id' | 'createdAt' | 'createdByUid'> = {
-      ...values,
-      status: 'Novos',
-      createdBy: seller,
-      proposalGeneratedCount: 0,
-      whatsappSentCount: 0,
-      editCount: 0,
-      previousStatus: null,
-      proposalNumber: null,
-      proposalVersion: 0,
-    };
-    onSave(newLead);
+    onSave(values);
     onOpenChange(false);
     form.reset();
     toast({

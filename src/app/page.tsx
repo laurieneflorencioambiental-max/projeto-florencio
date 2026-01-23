@@ -40,9 +40,11 @@ import {
   useCollection,
   useMemoFirebase,
   useDoc,
+  errorEmitter,
+  FirestorePermissionError,
 } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
   isWithinInterval,
   startOfMonth,
@@ -119,6 +121,38 @@ export default function DashboardPage() {
         console.error("Failed to save goal to localStorage:", error);
     }
   }, [monthlyGoal]);
+
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
+      if (!user || !firestore) return;
+      const newDocRef = doc(collection(firestore, 'budgets'));
+      
+      const newLeadData = {
+          ...values,
+          id: newDocRef.id,
+          status: 'Novos',
+          createdBy: currentSeller,
+          createdByUid: user.uid,
+          proposalGeneratedCount: 0,
+          whatsappSentCount: 0,
+          editCount: 0,
+          previousStatus: null,
+          proposalNumber: null,
+          proposalVersion: 0,
+      };
+      
+      const newLeadWithTimestamp = {...newLeadData, createdAt: serverTimestamp()};
+
+      setDoc(newDocRef, newLeadWithTimestamp).catch(serverError => {
+          const { createdAt, ...serializableData } = newLeadWithTimestamp;
+          const errorData = { ...serializableData, createdAt: new Date().toISOString() };
+          const permissionError = new FirestorePermissionError({
+              path: newDocRef.path,
+              operation: 'create',
+              requestResourceData: errorData,
+            });
+          errorEmitter.emit('permission-error', permissionError);
+      });
+  };
 
   const approvedThisMonthCount = useMemo(() => {
     const now = new Date();
@@ -340,7 +374,7 @@ export default function DashboardPage() {
        <AddLeadModal
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
-        onSave={() => {}} // This is a view-only dashboard for now. AddLead will be handled from funnel page.
+        onSave={handleAddLead}
         seller={currentSeller}
       />
     </div>
