@@ -44,12 +44,21 @@ type EditLeadModalProps = {
   currentSeller: string;
 };
 
-const getLeadDate = (date: any): Date => {
+const getSanitizedDate = (date: any): Date | undefined => {
+  if (!date) return undefined;
   if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  return date;
+  if (typeof date === 'string' || typeof date === 'number') {
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+  if (date instanceof Date) {
+    return date;
+  }
+  return undefined;
 };
+
 
 export default function EditLeadModal({
   lead,
@@ -66,13 +75,18 @@ export default function EditLeadModal({
 
   useEffect(() => {
     if (lead) {
+       const processedHistory = (lead.versionHistory || []).map(entry => ({
+        ...entry,
+        editedAt: getSanitizedDate(entry.editedAt),
+      }));
+
       form.reset({
         ...lead,
         role: lead.role || '',
         value: lead.value === null ? 0 : lead.value,
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
-        createdAt: getLeadDate(lead.createdAt), // Convert timestamp to Date for the form
-        versionHistory: lead.versionHistory || [],
+        createdAt: getSanitizedDate(lead.createdAt), // Convert timestamp to Date for the form
+        versionHistory: processedHistory,
       });
     }
   }, [lead, form]);
@@ -91,7 +105,7 @@ export default function EditLeadModal({
         editedAt: new Date(), // Use client-side Date, Firestore will convert it
     };
 
-    const newHistory = [...(lead.versionHistory || []), newHistoryEntry];
+    const newHistory = [...(values.versionHistory || []), newHistoryEntry];
     
     onSave({ 
       ...lead, 
