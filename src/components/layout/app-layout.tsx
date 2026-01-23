@@ -24,6 +24,7 @@ import {
   Calendar,
   BarChartHorizontal,
   BookMarked,
+  HelpCircle,
 } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -53,6 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/marketing') return 'Gestão de Marketing';
     if (pathname === '/analytics') return 'Análise de Desempenho';
     if (pathname === '/agenda') return 'Agenda';
+    if (pathname === '/tutorial') return 'Tutorial do Sistema';
     if (pathname === '/settings') return 'Configurações';
     return 'Comercial Florencio';
   };
@@ -161,6 +163,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               >
                 <Calendar />
                 <span>Agenda</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push('/tutorial')}
+                isActive={pathname === '/tutorial'}
+                tooltip="Tutorial do Sistema"
+              >
+                <HelpCircle />
+                <span>Tutorial</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
