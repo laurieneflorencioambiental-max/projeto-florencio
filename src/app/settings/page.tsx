@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -40,13 +41,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import type { AppSettings, Lead, ProposalTemplate, Service, DocumentReference } from '@/lib/types';
+import type { AppSettings, DocumentReference } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
   deleteImageByUrl,
   ImageType,
 } from '@/firebase/storage';
-import { doc, setDoc, getDoc, collection, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, writeBatch, getDocs } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
@@ -75,21 +76,6 @@ export default function SettingsPage() {
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
     [firestore]
   );
-  
-  const leadsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'budgets') : null), [firestore]);
-  const { data: leads } = useCollection<Lead>(leadsQuery);
-
-  const sellersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'sellers') : null), [firestore]);
-  const { data: sellers } = useCollection<{id: string; name: string;}>(sellersQuery);
-
-  const templatesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'proposal-templates') : null), [firestore]);
-  const { data: templates } = useCollection<ProposalTemplate>(templatesQuery);
-
-  const servicesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'services') : null), [firestore]);
-  const { data: services } = useCollection<Service>(servicesQuery);
-
-  const proposalsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'proposals') : null), [firestore]);
-  const { data: proposals } = useCollection<any>(proposalsQuery);
 
   useEffect(() => {
     if (settingsRef) {
@@ -301,43 +287,41 @@ export default function SettingsPage() {
     setIsCleaning(true);
 
     try {
-      const BATCH_LIMIT = 500; // Firestore batch limit
+      const BATCH_LIMIT = 500;
       const docRefsToDelete: DocumentReference[] = [];
 
-      // Time-based data to be cleaned
-      const timeBasedCollections = [
-        { data: leads, name: 'budgets' },
-        { data: proposals, name: 'proposals' },
+      const collectionNames = [
+        'budgets',
+        'proposals',
+        'sellers',
+        'proposal-templates',
+        'services',
       ];
 
-      if (cleanupPeriod !== 'all') {
+      if (cleanupPeriod === 'all') {
+        for (const name of collectionNames) {
+          const collRef = collection(firestore, name);
+          const snapshot = await getDocs(collRef);
+          snapshot.forEach(doc => docRefsToDelete.push(doc.ref));
+        }
+      } else {
+        const timeBasedCollectionNames = ['budgets', 'proposals'];
         const now = new Date();
         const cutoffDate = new Date();
         cutoffDate.setDate(now.getDate() - cleanupPeriod);
 
-        for (const coll of timeBasedCollections) {
-          if (coll.data) {
-            for (const item of coll.data) {
-              const itemDate = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-              if (itemDate < cutoffDate) {
-                docRefsToDelete.push(doc(firestore, coll.name, item.id));
-              }
-            }
-          }
-        }
-      } else { // cleanupPeriod is 'all', so delete everything
-        const allCollections = [
-            ...timeBasedCollections,
-            { data: sellers, name: 'sellers' },
-            { data: templates, name: 'proposal-templates' },
-            { data: services, name: 'services' },
-        ];
-        for (const coll of allCollections) {
-            if (coll.data) {
-                for (const item of coll.data) {
-                    docRefsToDelete.push(doc(firestore, coll.name, item.id));
+        for (const name of timeBasedCollectionNames) {
+           const collRef = collection(firestore, name);
+           const snapshot = await getDocs(collRef);
+           snapshot.forEach(docSnap => {
+              const item = docSnap.data();
+              if (item.createdAt) {
+                const itemDate = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+                if (itemDate < cutoffDate) {
+                  docRefsToDelete.push(docSnap.ref);
                 }
-            }
+              }
+           });
         }
       }
 
@@ -352,7 +336,6 @@ export default function SettingsPage() {
         return;
       }
 
-      // Process deletions in batches to avoid exceeding the 500-operation limit.
       for (let i = 0; i < deletedCount; i += BATCH_LIMIT) {
         const batch = writeBatch(firestore);
         const chunk = docRefsToDelete.slice(i, i + BATCH_LIMIT);
@@ -371,7 +354,7 @@ export default function SettingsPage() {
       toast({
         variant: 'destructive',
         title: 'Erro na Limpeza',
-        description: 'Não foi possível remover os dados. Tente novamente.',
+        description: 'Não foi possível remover os dados. Verifique as permissões do Firestore e tente novamente.',
       });
     } finally {
       setIsCleaning(false);
