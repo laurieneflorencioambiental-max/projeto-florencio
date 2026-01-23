@@ -2,6 +2,7 @@
 
 import { generatePersonalizedFollowUp } from '@/ai/flows/generate-personalized-follow-up';
 import { suggestCampaignGoal } from '@/ai/flows/suggest-campaign-goal';
+import { analyzeCampaignPerformance } from '@/ai/flows/analyze-campaign-performance';
 import type { Lead } from '@/lib/types';
 
 export async function getFollowUpMessageAction(lead: Lead) {
@@ -81,6 +82,63 @@ export async function suggestCampaignGoalAction(
       suggestedPercentage: 0,
       justification:
         'Ocorreu um erro ao gerar a sugestão. Tente novamente.',
+    };
+  }
+}
+
+export async function analyzeCampaignPerformanceAction(
+  roiHistory: RoiEntryForAI[]
+) {
+  try {
+    if (roiHistory.length === 0) {
+      return {
+        analysis:
+          'Não há dados de ROI suficientes para realizar uma análise. Por favor, adicione alguns cálculos de ROI primeiro.',
+      };
+    }
+
+    const roiSummary = roiHistory
+      .map(
+        entry =>
+          `Fonte: ${entry.source}, Investimento: R$ ${entry.investment.toFixed(
+            2
+          )}, Receita: R$ ${entry.revenue.toFixed(2)}, ROI: ${entry.roi.toFixed(
+            2
+          )}%`
+      )
+      .join('\n');
+
+    const totalInvestment = roiHistory.reduce(
+      (sum, entry) => sum + entry.investment,
+      0
+    );
+    const totalRevenue = roiHistory.reduce(
+      (sum, entry) => sum + entry.revenue,
+      0
+    );
+    const overallRoi =
+      totalInvestment > 0
+        ? ((totalRevenue - totalInvestment) / totalInvestment) * 100
+        : 0;
+
+    const fullSummary = `Resumo Geral:
+Investimento Total: R$ ${totalInvestment.toFixed(2)}
+Receita Total: R$ ${totalRevenue.toFixed(2)}
+ROI Consolidado: ${overallRoi.toFixed(2)}%
+
+Detalhes por Fonte:
+${roiSummary}`;
+
+    const result = await analyzeCampaignPerformance({
+      roiSummary: fullSummary,
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Error analyzing campaign performance:', error);
+    return {
+      analysis:
+        'Ocorreu um erro ao gerar a análise estratégica. Tente novamente.',
     };
   }
 }

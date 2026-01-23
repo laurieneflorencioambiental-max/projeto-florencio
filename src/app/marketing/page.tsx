@@ -25,6 +25,7 @@ import {
   Loader2,
   Wrench,
   AlertCircle,
+  Bot,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -53,6 +54,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   format,
   isPast,
@@ -67,7 +69,10 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { suggestCampaignGoalAction } from '@/app/actions';
+import {
+  suggestCampaignGoalAction,
+  analyzeCampaignPerformanceAction,
+} from '@/app/actions';
 
 interface RoiEntry {
   id: number;
@@ -130,6 +135,8 @@ export default function MarketingPage() {
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
   const [isSuggestingGoal, setIsSuggestingGoal] = useState(false);
   const [goalSuggestion, setGoalSuggestion] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
   // Digital Tools State
   const [tools, setTools] = useState<DigitalTool[]>([]);
@@ -439,6 +446,26 @@ export default function MarketingPage() {
       });
     } finally {
       setIsSuggestingGoal(false);
+    }
+  };
+
+  const handleAnalyzePerformance = async () => {
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    try {
+      const result = await analyzeCampaignPerformanceAction(entries);
+      setAnalysisResult(result.analysis);
+    } catch (error) {
+      console.error(error);
+      setAnalysisResult('Não foi possível gerar a análise. Tente novamente.');
+      toast({
+        variant: 'destructive',
+        title: 'Erro na Análise',
+        description: 'Ocorreu um erro ao se comunicar com o serviço de IA.',
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -1273,6 +1300,61 @@ export default function MarketingPage() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="h-6 w-6 text-primary" />
+            Estrategista de Vendas com IA
+          </CardTitle>
+          <CardDescription>
+            Receba insights e recomendações estratégicas com base nos seus dados
+            de ROI.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center gap-4">
+            <Button
+              onClick={handleAnalyzePerformance}
+              disabled={isAnalyzing || entries.length === 0}
+            >
+              {isAnalyzing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {isAnalyzing ? 'Analisando...' : 'Gerar Análise Estratégica'}
+            </Button>
+            {entries.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Adicione pelo menos um cálculo de ROI para habilitar a análise.
+              </p>
+            )}
+          </div>
+          {(isAnalyzing || analysisResult) && (
+            <div className="mt-6 border-t pt-6">
+              {isAnalyzing ? (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-4 w-[200px]" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : (
+                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                  <h4 className="font-semibold">Análise da IA:</h4>
+                  <p>{analysisResult}</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
