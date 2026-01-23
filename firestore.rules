@@ -54,7 +54,7 @@ service cloud.firestore {
      */
     match /proposals/{proposalId} {
       allow get: if true; // Public read for sharing
-      allow list: if false; // Disallow listing all proposals for privacy
+      allow list: if isSignedIn(); // Allow authenticated users to list for cleanup.
       allow create: if isSignedIn();
       allow update, delete: if false; // Prevent modification after creation
     }
