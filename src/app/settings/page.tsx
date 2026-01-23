@@ -40,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import type { AppSettings, Lead } from '@/lib/types';
+import type { AppSettings, Lead, ProposalTemplate, Service } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
   deleteImageByUrl,
@@ -67,7 +67,6 @@ export default function SettingsPage() {
   const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
   const [areSettingsLoading, setAreSettingsLoading] = useState(true);
 
-  const [cleanupPeriod, setCleanupPeriod] = useState<string>('90');
   const [isCleaning, setIsCleaning] = useState(false);
 
   const settingsRef = useMemoFirebase(
@@ -75,11 +74,20 @@ export default function SettingsPage() {
     [firestore]
   );
   
-  const leadsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, 'budgets');
-  }, [firestore, user]);
+  const leadsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'budgets') : null), [firestore]);
   const { data: leads } = useCollection<Lead>(leadsQuery);
+
+  const sellersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'sellers') : null), [firestore]);
+  const { data: sellers } = useCollection<{id: string; name: string;}>(sellersQuery);
+
+  const templatesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'proposal-templates') : null), [firestore]);
+  const { data: templates } = useCollection<ProposalTemplate>(templatesQuery);
+
+  const servicesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'services') : null), [firestore]);
+  const { data: services } = useCollection<Service>(servicesQuery);
+
+  const proposalsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'proposals') : null), [firestore]);
+  const { data: proposals } = useCollection<{id: string}>(proposalsQuery);
 
   useEffect(() => {
     if (settingsRef) {
@@ -280,64 +288,59 @@ export default function SettingsPage() {
   };
 
   const handleCleanData = async () => {
-    if (!firestore || !user || !leads) {
+    if (!firestore || !user) {
         toast({
             variant: 'destructive',
             title: 'Erro',
-            description: 'Não foi possível carregar os dados para a limpeza.'
+            description: 'Não foi possível conectar ao banco de dados.'
         });
         return;
     }
     setIsCleaning(true);
 
-    const now = new Date();
-    const cutoffDate = new Date(now.setDate(now.getDate() - parseInt(cleanupPeriod)));
-    
-    const getLeadDate = (date: any): Date => {
-      if (date && typeof date.toDate === 'function') {
-        return date.toDate();
-      }
-      return new Date(date);
-    };
-
-    const leadsToDelete = leads.filter(lead => {
-        const leadDate = getLeadDate(lead.createdAt);
-        return leadDate < cutoffDate;
-    });
-
-    if (leadsToDelete.length === 0) {
-        toast({
-            title: 'Nenhum dado para limpar',
-            description: `Não há orçamentos mais antigos que ${cleanupPeriod} dias.`
-        });
-        setIsCleaning(false);
-        return;
-    }
-
     try {
-        const batches = [];
-        for (let i = 0; i < leadsToDelete.length; i += 500) {
-            const batch = writeBatch(firestore);
-            const chunk = leadsToDelete.slice(i, i + 500);
-            chunk.forEach(lead => {
-                const docRef = doc(firestore, 'budgets', lead.id);
-                batch.delete(docRef);
-            });
-            batches.push(batch);
-        }
+        const collectionsToClean = [
+            { data: leads, name: 'budgets' },
+            { data: sellers, name: 'sellers' },
+            { data: templates, name: 'proposal-templates' },
+            { data: services, name: 'services' },
+            { data: proposals, name: 'proposals' },
+        ];
+
+        let deletedCount = 0;
+        const batch = writeBatch(firestore);
         
-        await Promise.all(batches.map(b => b.commit()));
+        for (const coll of collectionsToClean) {
+            if (coll.data) {
+                for (const item of coll.data) {
+                    const docRef = doc(firestore, coll.name, item.id);
+                    batch.delete(docRef);
+                    deletedCount++;
+                }
+            }
+        }
+
+        if (deletedCount === 0) {
+            toast({
+                title: 'Nenhum dado para limpar',
+                description: `O sistema já está zerado.`
+            });
+            setIsCleaning(false);
+            return;
+        }
+
+        await batch.commit();
 
         toast({
-            title: 'Limpeza Concluída!',
-            description: `${leadsToDelete.length} orçamento(s) antigo(s) foram removidos.`
+            title: 'Limpeza Completa!',
+            description: `${deletedCount} registro(s) foram removidos com sucesso. O sistema está zerado.`
         });
     } catch (error) {
-        console.error("Error cleaning data:", error);
+        console.error("Error cleaning all data:", error);
         toast({
             variant: 'destructive',
             title: 'Erro na Limpeza',
-            description: 'Não foi possível remover os dados antigos. Tente novamente.'
+            description: 'Não foi possível remover todos os dados. Tente novamente.'
         });
     } finally {
         setIsCleaning(false);
@@ -822,46 +825,33 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
             <div className="space-y-1">
               <Label
-                htmlFor="dark-mode"
                 className="text-base flex items-center gap-2"
               >
-                Limpar Dados Antigos
+                Limpar Todos os Dados
               </Label>
               <p className="text-sm text-muted-foreground">
-                Remove permanentemente orçamentos antigos do sistema.
+                Remove permanentemente todos os orçamentos, vendedores, modelos e serviços.
               </p>
             </div>
             <div className='flex items-center gap-2'>
-              <Select value={cleanupPeriod} onValueChange={setCleanupPeriod} disabled={isCleaning}>
-                <SelectTrigger className='w-[220px]'>
-                  <SelectValue placeholder="Selecione o período"/>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">Mais antigos que 30 dias</SelectItem>
-                  <SelectItem value="90">Mais antigos que 90 dias</SelectItem>
-                  <SelectItem value="365">Mais antigos que 1 ano</SelectItem>
-                </SelectContent>
-              </Select>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isCleaning}>
                     {isCleaning ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Trash2 className="mr-2 h-4 w-4" />}
-                    {isCleaning ? 'Limpando...' : 'Limpar Dados'}
+                    {isCleaning ? 'Limpando...' : 'Zerar Sistema'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className='flex items-center gap-2'><AlertTriangle />Você tem certeza absoluta?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação é irreversível. Todos os orçamentos com mais de{' '}
-                      <span className='font-bold'>{cleanupPeriod}</span> dias serão
-                      excluídos permanentemente.
+                      Esta ação é irreversível e apagará <span className='font-bold'>TODOS OS DADOS</span> da aplicação (orçamentos, vendedores, modelos, etc). Use isso apenas para começar do zero.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={handleCleanData}>
-                      Sim, excluir dados antigos
+                      Sim, zerar o sistema
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
