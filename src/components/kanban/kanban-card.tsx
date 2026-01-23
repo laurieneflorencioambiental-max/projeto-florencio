@@ -465,6 +465,8 @@ export default function KanbanCard({
                         Última edição por {lastEdit.editedBy.split(' ')[0]} em{' '}
                         {format(getLeadDate(lastEdit.editedAt), 'dd/MM/yy')}
                       </span>
+                    ) : lead.proposalVersion > 0 ? (
+                      <span>Histórico de edição não disponível.</span>
                     ) : (
                       <span>Proposta nunca editada</span>
                     )}
