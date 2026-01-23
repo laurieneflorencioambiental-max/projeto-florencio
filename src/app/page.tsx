@@ -122,11 +122,11 @@ export default function DashboardPage() {
     }
   }, [monthlyGoal]);
 
-  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory'>) => {
       if (!user || !firestore) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
-      const newLeadData = {
+      const newLeadData: Omit<Lead, 'createdAt'> = {
           ...values,
           id: newDocRef.id,
           status: 'Novos',
@@ -138,6 +138,8 @@ export default function DashboardPage() {
           previousStatus: null,
           proposalNumber: null,
           proposalVersion: 0,
+          observations: null,
+          versionHistory: [],
       };
       
       const newLeadWithTimestamp = {...newLeadData, createdAt: serverTimestamp()};

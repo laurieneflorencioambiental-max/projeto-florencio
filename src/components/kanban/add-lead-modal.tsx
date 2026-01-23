@@ -35,18 +35,20 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const newLeadSchema = leadSchema.omit({ 
-    id: true, 
-    createdAt: true, 
-    status: true, 
-    createdBy: true,
-    createdByUid: true,
-    proposalGeneratedCount: true, 
-    whatsappSentCount: true, 
-    editCount: true, 
-    previousStatus: true, 
-    proposalNumber: true, 
-    proposalVersion: true,
+const newLeadSchema = leadSchema.omit({
+  id: true,
+  createdAt: true,
+  status: true,
+  createdBy: true,
+  createdByUid: true,
+  proposalGeneratedCount: true,
+  whatsappSentCount: true,
+  editCount: true,
+  previousStatus: true,
+  proposalNumber: true,
+  proposalVersion: true,
+  observations: true,
+  versionHistory: true,
 });
 
 type AddLeadModalProps = {
