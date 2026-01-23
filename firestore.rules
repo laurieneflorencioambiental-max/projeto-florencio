@@ -76,6 +76,7 @@ service cloud.firestore {
     /**
      * @description Secures the 'services' collection.
      * Any authenticated user can read and write to the service catalog.
+     * Re-triggering deployment to fix permission error.
      */
     match /services/{serviceId} {
       allow read, write: if isSignedIn();
