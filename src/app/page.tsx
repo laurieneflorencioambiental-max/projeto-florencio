@@ -72,7 +72,7 @@ export default function DashboardPage() {
   const [monthlyGoal, setMonthlyGoal] = useState<number>(10);
 
   const leadsQuery = useMemoFirebase(
-    () => (user && firestore ? collection(firestore, 'users', user.uid, 'budgets') : null),
+    () => (user && firestore ? collection(firestore, 'budgets') : null),
     [firestore, user]
   );
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);

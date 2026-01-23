@@ -77,7 +77,7 @@ export default function SettingsPage() {
   
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'budgets');
+    return collection(firestore, 'budgets');
   }, [firestore, user]);
   const { data: leads } = useCollection<Lead>(leadsQuery);
 
@@ -320,7 +320,7 @@ export default function SettingsPage() {
             const batch = writeBatch(firestore);
             const chunk = leadsToDelete.slice(i, i + 500);
             chunk.forEach(lead => {
-                const docRef = doc(firestore, 'users', user.uid, 'budgets', lead.id);
+                const docRef = doc(firestore, 'budgets', lead.id);
                 batch.delete(docRef);
             });
             batches.push(batch);

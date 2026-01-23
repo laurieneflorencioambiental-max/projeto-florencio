@@ -92,7 +92,7 @@ export default function BudgetsPage() {
   // Fetch leads from Firestore
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'budgets');
+    return collection(firestore, 'budgets');
   }, [firestore, user]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
@@ -203,7 +203,7 @@ export default function BudgetsPage() {
       
       // Check if leads are empty
       if (leads && leads.length === 0) {
-        const budgetsCollection = collection(firestore, 'users', user.uid, 'budgets');
+        const budgetsCollection = collection(firestore, 'budgets');
         const sampleLeadsData = [ // This is an array of partial lead objects
           {
             name: 'Ana Costa',
@@ -314,11 +314,11 @@ export default function BudgetsPage() {
 
         sampleLeadsData.forEach(lead => {
           const newDocRef = doc(budgetsCollection);
-          const newLead: Omit<Lead, 'id' | 'createdAt'> = {
-            ...(lead as Omit<Lead, 'id' | 'createdAt'>), // Cast to satisfy TypeScript
+          const newLead: Omit<Lead, 'id' | 'createdAt' | 'createdByUid'> = {
+            ...(lead as Omit<Lead, 'id' | 'createdAt' | 'createdByUid'>), // Cast to satisfy TypeScript
             id: newDocRef.id,
           };
-          const newLeadWithTimestamp = {...newLead, createdAt: serverTimestamp()};
+          const newLeadWithTimestamp = {...newLead, createdAt: serverTimestamp(), createdByUid: user.uid};
           batch.set(newDocRef, newLeadWithTimestamp);
         });
         dataSeeded = true;
@@ -359,15 +359,16 @@ export default function BudgetsPage() {
     );
   };
   
-  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion'>) => {
       if (!user || !firestore) return;
-      const newDocRef = doc(collection(firestore, 'users', user.uid, 'budgets'));
+      const newDocRef = doc(collection(firestore, 'budgets'));
       
       const newLeadData = {
           ...values,
           id: newDocRef.id,
           status: 'Novos',
           createdBy: currentSeller,
+          createdByUid: user.uid,
           proposalGeneratedCount: 0,
           whatsappSentCount: 0,
           editCount: 0,
@@ -392,7 +393,7 @@ export default function BudgetsPage() {
 
   const handleUpdateLead = (updatedLead: Lead) => {
       if (!user || !firestore) return;
-      const leadRef = doc(firestore, 'users', user.uid, 'budgets', updatedLead.id);
+      const leadRef = doc(firestore, 'budgets', updatedLead.id);
       
       // Firestore timestamps are not directly JSON-serializable for error reporting.
       const serializableLead = {
@@ -412,7 +413,7 @@ export default function BudgetsPage() {
   
   const handleDeleteLead = (leadId: string) => {
       if (!user || !firestore) return;
-      const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
+      const leadRef = doc(firestore, 'budgets', leadId);
       deleteDoc(leadRef).catch(serverError => {
         const permissionError = new FirestorePermissionError({
             path: leadRef.path,
@@ -426,7 +427,7 @@ export default function BudgetsPage() {
     if (!user || !firestore || !leads) return;
     const lead = leads.find(l => l.id === leadId);
     if(lead) {
-        const leadRef = doc(firestore, 'users', user.uid, 'budgets', leadId);
+        const leadRef = doc(firestore, 'budgets', leadId);
         const updateData = { status: newStatus, previousStatus: lead.status };
         updateDoc(leadRef, updateData).catch(serverError => {
             const permissionError = new FirestorePermissionError({

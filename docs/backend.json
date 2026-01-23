@@ -36,6 +36,7 @@
         "rejectionReason": { "type": "string" },
         "createdAt": { "type": "object" },
         "createdBy": { "type": "string" },
+        "createdByUid": { "type": "string" },
         "proposalGeneratedCount": { "type": "number" },
         "whatsappSentCount": { "type": "number" },
         "editCount": { "type": "number" },
@@ -47,7 +48,7 @@
             "description": "Internal notes for sellers about the negotiation status."
         }
       },
-      "required": ["id", "name", "company", "status", "createdAt", "createdBy"]
+      "required": ["id", "name", "company", "status", "createdAt", "createdBy", "createdByUid"]
     },
     "Seller": {
       "title": "Seller",
@@ -132,13 +133,13 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/budgets/{budgetId}",
+        "path": "/budgets/{budgetId}",
         "definition": {
           "entityName": "Budget",
           "schema": {
             "$ref": "#/backend/entities/Budget"
           },
-          "description": "Stores budget documents for each user. Path-based ownership ensures only the user can access their own budgets."
+          "description": "Stores all budget documents in a central collection. Ownership is enforced by security rules based on the 'createdByUid' field."
         }
       },
       {

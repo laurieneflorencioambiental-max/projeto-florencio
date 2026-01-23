@@ -38,7 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 type AddLeadModalProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
+  onSave: (lead: Omit<Lead, 'id' | 'createdAt' | 'createdByUid'>) => void;
   seller: string;
 };
 
@@ -46,7 +46,8 @@ const newLeadSchema = leadSchema.omit({
     id: true, 
     createdAt: true, 
     status: true, 
-    createdBy: true, 
+    createdBy: true,
+    createdByUid: true,
     proposalGeneratedCount: true, 
     whatsappSentCount: true, 
     editCount: true, 
@@ -85,7 +86,7 @@ export default function AddLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof newLeadSchema>) => {
-    const newLead: Omit<Lead, 'id' | 'createdAt'> = {
+    const newLead: Omit<Lead, 'id' | 'createdAt' | 'createdByUid'> = {
       ...values,
       status: 'Novos',
       createdBy: seller,

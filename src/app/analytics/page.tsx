@@ -58,7 +58,7 @@ export default function AnalyticsPage() {
 
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'budgets');
+    return collection(firestore, 'budgets');
   }, [firestore, user]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 

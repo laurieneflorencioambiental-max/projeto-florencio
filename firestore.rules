@@ -6,47 +6,44 @@
  * The security model prioritizes data privacy and isolation for user data, while allowing collaborative management of global data. This aligns with LGPD principles by ensuring data is only accessible by authorized personnel.
  *
  * # Data Structure
- * - Private user data is nested under `/users/{userId}`. This is the cornerstone of our multi-tenant security.
+ * - All budgets are stored in a central `/budgets` collection. Ownership is managed by a `createdByUid` field in each document.
  * - Global configuration data is stored in top-level collections.
  *
  * # Key Security Decisions & "Blindagem"
- * - **Path-Based Ownership**: For `/users/{userId}`, access control is determined entirely by the `{userId}` in the document path matching the authenticated user's ID. This prevents any user from accessing another user's data.
- * - **Global Read/Write for Authenticated Users**: For simplicity in this stage, any logged-in user can manage sellers, templates, and app settings. This is secure because only verified users of your organization have accounts. This can be locked down further with custom claims (e.g., admin roles) in the future if needed.
- * - **No User Listing**: There are no rules allowing clients to list documents in the top-level `/users` collection, preventing enumeration of all users in the system.
+ * - **Field-Based Ownership**: For `/budgets/{budgetId}`, write access is determined by the `createdByUid` field matching the authenticated user's ID. This prevents any user from modifying another user's data.
+ * - **Global Read for Managers**: Any authenticated user can read all budget documents. This enables the central "manager view" and analytics across all sellers. While sellers can also read all data, they are only able to modify their own, preventing unauthorized changes.
+ * - **No User Listing**: There are no rules allowing clients to list documents in a top-level `/users` collection, preventing enumeration of all users in the system.
  * - **Public Proposal Read, Secure Create**: Proposals are viewable by anyone with the link (`allow get: if true`), which is required for sharing with clients. However, only authenticated users can create new ones (`allow create: if isSignedIn()`). Updates and deletes are disabled from the client to prevent tampering.
  * - **Deny by Default**: The most important rule of all. Any path or method not explicitly matched by an `allow` rule is automatically denied. This prevents accidental exposure of data.
+ *
+ * This comment was added to force a redeploy of the security rules.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper Functions for Readability and Reuse
-
-    /**
-     * Checks if the user is authenticated.
-     * This is the first layer of defense for most actions.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Checks if the currently authenticated user's UID matches the provided userId from the path.
-     * This is the core of our user data ownership model.
+     * @description Secures the central 'budgets' collection.
+     * This allows any authenticated user (like a manager) to view all budgets,
+     * but restricts creation and modification to the budget's owner.
+     * @path /budgets/{budgetId}
      */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
+    match /budgets/{budgetId} {
+      // Allow any authenticated user to read all budget documents.
+      // This enables the central manager view.
+      allow get, list: if isSignedIn();
 
-    /**
-     * @description Secures the 'budgets' subcollection. This is the most sensitive user data.
-     * The rule ensures a user can ONLY manage their own budget documents. It's impossible for
-     * user 'A' to read, update, or delete data belonging to user 'B'.
-     * @path /users/{userId}/budgets/{budgetId}
-     */
-    match /users/{userId}/budgets/{budgetId} {
-      // READ, WRITE: Only the owner can manage their own budgets.
-      allow read, write: if isOwner(userId);
+      // Users can only create budgets where they are the owner.
+      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
+      
+      // Users can only update or delete their own budgets.
+      // The `get()` call ensures the owner of the existing document is checked.
+      allow update, delete: if isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid;
     }
     
     /**
