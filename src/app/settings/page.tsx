@@ -377,13 +377,13 @@ export default function SettingsPage() {
         case 'all':
             return 'Esta ação é irreversível e apagará TODOS OS DADOS da aplicação (orçamentos, vendedores, modelos, etc).';
         case 30:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 30 dias.';
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 30 dias.';
         case 60:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 60 dias.';
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 60 dias.';
         case 90:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 90 dias.';
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 90 dias.';
         case 365:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas com mais de 1 ano.';
+            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 1 ano.';
     }
   };
 
@@ -876,15 +876,15 @@ export default function SettingsPage() {
             </div>
             <div className='flex items-center gap-2'>
                <Select value={String(cleanupPeriod)} onValueChange={(value) => setCleanupPeriod(value === 'all' ? 'all' : Number(value) as any)}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="Selecione o período" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">Zerar todo o sistema</SelectItem>
-                    <SelectItem value="365">Orçamentos com +1 ano</SelectItem>
-                    <SelectItem value="90">Orçamentos com +90 dias</SelectItem>
-                    <SelectItem value="60">Orçamentos com +60 dias</SelectItem>
-                    <SelectItem value="30">Orçamentos com +30 dias</SelectItem>
+                    <SelectItem value="365">Mais antigos que 1 ano</SelectItem>
+                    <SelectItem value="90">Mais antigos que 90 dias</SelectItem>
+                    <SelectItem value="60">Mais antigos que 60 dias</SelectItem>
+                    <SelectItem value="30">Mais antigos que 30 dias</SelectItem>
                 </SelectContent>
             </Select>
               <AlertDialog>
