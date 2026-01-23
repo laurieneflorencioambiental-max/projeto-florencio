@@ -1,0 +1,168 @@
+
+'use client';
+
+import type { Lead, Service, ProposalTemplate } from './types';
+
+export const seedSellers = [
+  { id: 'seller-1', name: 'Ana Silva' },
+  { id: 'seller-2', name: 'Carlos Martins' },
+  { id: 'seller-3', name: 'Juliana Costa' },
+];
+
+export const seedServices: Omit<Service, 'id'>[] = [
+  { service: 'ASO Clínico', description: 'Exame clínico admissional, demissional ou periódico.', value: 60 },
+  { service: 'Audiometria', description: 'Avaliação da capacidade auditiva do trabalhador.', value: 45 },
+  { service: 'Espirometria', description: 'Exame do sopro para avaliação da função pulmonar.', value: 70 },
+  { service: 'Treinamento NR-35', description: 'Capacitação para trabalho em altura (8h).', value: 250 },
+  { service: 'PGR', description: 'Programa de Gerenciamento de Riscos.', value: 800 },
+  { service: 'PCMSO', description: 'Programa de Controle Médico de Saúde Ocupacional.', value: 650 },
+  { service: 'LTCAT', description: 'Laudo Técnico das Condições Ambientais de Trabalho.', value: 950 },
+];
+
+export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
+    {
+        name: 'Modelo Básico SST (PME)',
+        proposalObject: 'Assessoria em Saúde e Segurança do Trabalho, com foco no cumprimento das Normas Regulamentadoras e eSocial.',
+        serviceScope: 'Nossos serviços incluem a elaboração dos programas (PGR e PCMSO), a gestão dos exames ocupacionais (ASOs), e o envio dos eventos de SST para o eSocial.',
+        clientResponsibilities: 'Disponibilizar a relação de funcionários e suas respectivas funções; Agendar os exames periódicos; Informar sobre acidentes de trabalho.',
+        contractorResponsibilities: 'Realizar o levantamento de riscos; Elaborar e manter atualizados o PGR e o PCMSO; Realizar os exames clínicos e complementares; Enviar os eventos de SST para o eSocial.',
+        deadline: 'O prazo para elaboração dos programas é de 30 dias após a assinatura do contrato. Os exames serão agendados conforme disponibilidade.',
+        investment: 'O investimento total pode ser parcelado em até 3x sem juros no boleto bancário.',
+        strategicVision: 'Garantir a conformidade legal da empresa, reduzir acidentes e doenças do trabalho, e evitar multas e passivos trabalhistas através de uma gestão de SST proativa e eficiente.',
+        plans: [
+            { id: 'plan-1', name: 'Plano Essencial', employeeRange: 'Até 20 funcionários', servicesIncluded: 'PGR (Programa de Gerenciamento de Riscos)\nPCMSO (Programa de Controle Médico de Saúde Ocupacional)\nGestão de ASOs', investment: 1200, paymentType: 'unique' },
+            { id: 'plan-2', name: 'Plano Completo', employeeRange: 'Até 50 funcionários', servicesIncluded: 'PGR + PCMSO\nGestão de ASOs\nEnvio eSocial\nLTCAT', investment: 2500, paymentType: 'unique' },
+        ],
+        exams: []
+    }
+];
+
+
+export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
+    const leads: Omit<Lead, 'id' | 'createdAt'>[] = [
+        {
+            name: 'Roberto Andrade',
+            role: 'Gerente de TI',
+            company: 'Nexus Tech',
+            cnpj: '11.222.333/0001-44',
+            proposalSummary: 'Implementação de sistema de gestão de SST e treinamento para 25 funcionários.',
+            value: 7500,
+            paymentMethods: [{ method: 'Boleto' }, { method: 'Cartão de Crédito (Link)', cardFee: 4 }],
+            contactSource: { source: 'Google', indicatedBy: '' },
+            email: 'roberto@nexustech.com',
+            whatsapp: '21988776655',
+            status: 'Novos',
+            createdBy: sellers[0]?.name || 'Ana Silva',
+            createdByUid: 'demo-user-uid',
+            rejectionReason: null,
+            proposalGeneratedCount: 0,
+            whatsappSentCount: 0,
+            editCount: 0,
+            previousStatus: null,
+            proposalNumber: 1,
+            proposalVersion: 0,
+            observations: 'Cliente parece bem interessado, precisa de agilidade na proposta.',
+            versionHistory: []
+        },
+        {
+            name: 'Fernanda Lima',
+            role: 'Dona',
+            company: 'Padaria Doce Sonho',
+            cnpj: '44.555.666/0001-77',
+            proposalSummary: 'Renovação do PGR e PCMSO para 15 funcionários.',
+            value: 2800,
+            paymentMethods: [{ method: 'Cartão de Débito (Maquininha)' }],
+            contactSource: { source: 'Indicação', indicatedBy: 'Contador João' },
+            email: 'fernanda@docesonho.com',
+            whatsapp: '21999887766',
+            status: 'Pendente/Em negociação',
+            createdBy: sellers[1]?.name || 'Carlos Martins',
+            createdByUid: 'demo-user-uid',
+            rejectionReason: null,
+            proposalGeneratedCount: 1,
+            whatsappSentCount: 1,
+            editCount: 1,
+            previousStatus: 'Novos',
+            proposalNumber: 2,
+            proposalVersion: 1,
+            observations: 'Enviada proposta v1. Aguardando retorno sobre ajuste de valores.',
+            versionHistory: [{ version: 1, editedBy: 'Carlos Martins', editedAt: new Date(new Date().setDate(new Date().getDate() - 2)) }]
+        },
+        {
+            name: 'Marcos Paulo',
+            role: 'CEO',
+            company: 'Startup Inova',
+            cnpj: '77.888.999/0001-00',
+            proposalSummary: 'Consultoria completa de SST para 50 funcionários, incluindo todos os exames.',
+            value: 18000,
+            paymentMethods: [{ method: 'Boleto' }],
+            contactSource: { source: 'BNI' },
+            email: 'marcos.paulo@inova.io',
+            whatsapp: '21977665544',
+            status: 'Aprovado',
+            createdBy: sellers[0]?.name || 'Ana Silva',
+            createdByUid: 'demo-user-uid',
+            rejectionReason: null,
+            proposalGeneratedCount: 2,
+            whatsappSentCount: 2,
+            editCount: 2,
+            previousStatus: 'Pendente/Em negociação',
+            proposalNumber: 3,
+            proposalVersion: 2,
+            observations: 'Negócio fechado! Iniciar onboarding na próxima semana.',
+            versionHistory: [
+                { version: 1, editedBy: 'Ana Silva', editedAt: new Date(new Date().setDate(new Date().getDate() - 10)) },
+                { version: 2, editedBy: 'Ana Silva', editedAt: new Date(new Date().setDate(new Date().getDate() - 5)) }
+            ]
+        },
+        {
+            name: 'Beatriz Santos',
+            role: 'Compradora',
+            company: 'ConstruTudo Obras',
+            cnpj: '12.345.678/0001-99',
+            proposalSummary: 'Treinamento de NR-35 para equipe de 30 pessoas.',
+            value: 6500,
+            paymentMethods: [{ method: 'Boleto' }],
+            contactSource: { source: 'Google' },
+            email: 'beatriz.santos@construtudo.com',
+            whatsapp: '21987654321',
+            status: 'Rejeitado',
+            createdBy: sellers[1]?.name || 'Carlos Martins',
+            createdByUid: 'demo-user-uid',
+            rejectionReason: 'Preço elevado',
+            proposalGeneratedCount: 1,
+            whatsappSentCount: 1,
+            editCount: 0,
+            previousStatus: 'Pendente/Em negociação',
+            proposalNumber: 4,
+            proposalVersion: 0,
+            observations: 'Cliente achou o valor alto e fechou com concorrente que cobrou 20% a menos.',
+            versionHistory: []
+        },
+        {
+            name: 'Lucas Ferreira',
+            role: 'Gerente Geral',
+            company: 'Mercado Bom Preço',
+            cnpj: '98.765.432/0001-11',
+            proposalSummary: 'Elaboração de LTCAT e laudos de insalubridade.',
+            value: 4200,
+            paymentMethods: [{ method: 'Boleto' }],
+            contactSource: { source: 'Marketing Offline' },
+            email: 'lucas@mercadobompreco.com',
+            whatsapp: '21998761234',
+            status: 'Desistência',
+            createdBy: sellers[2]?.name || 'Juliana Costa',
+            createdByUid: 'demo-user-uid',
+            rejectionReason: 'Cliente sem urgência/prioridade',
+            proposalGeneratedCount: 1,
+            whatsappSentCount: 0,
+            editCount: 0,
+            previousStatus: 'Pendente/Em negociação',
+            proposalNumber: 5,
+            proposalVersion: 0,
+            observations: 'Cliente disse que vai reavaliar o orçamento para o próximo trimestre. Pausou a negociação.',
+            versionHistory: []
+        }
+    ];
+    return leads;
+};

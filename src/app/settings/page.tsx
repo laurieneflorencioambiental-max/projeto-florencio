@@ -28,6 +28,7 @@ import {
   FileImage,
   AlertTriangle,
   Clock,
+  Bot,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -47,8 +48,10 @@ import {
   deleteImageByUrl,
   ImageType,
 } from '@/firebase/storage';
-import { doc, setDoc, getDoc, collection, writeBatch, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
+
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -70,6 +73,7 @@ export default function SettingsPage() {
 
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
+  const [isSeeding, setIsSeeding] = useState(false);
 
 
   const settingsRef = useMemoFirebase(
@@ -360,6 +364,63 @@ export default function SettingsPage() {
       setIsCleaning(false);
     }
   };
+  
+  const handleSeedData = async () => {
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Banco de dados não conectado.' });
+      return;
+    }
+    setIsSeeding(true);
+
+    try {
+      const batch = writeBatch(firestore);
+
+      // Seed Sellers
+      const sellersCollectionRef = collection(firestore, 'sellers');
+      seedSellers.forEach(seller => {
+        const docRef = doc(sellersCollectionRef, seller.id);
+        batch.set(docRef, { name: seller.name });
+      });
+
+      // Seed Services
+      const servicesCollectionRef = collection(firestore, 'services');
+      seedServices.forEach(service => {
+        const docRef = doc(servicesCollectionRef);
+        batch.set(docRef, { ...service, id: docRef.id });
+      });
+
+      // Seed Templates
+      const templatesCollectionRef = collection(firestore, 'proposal-templates');
+      seedTemplates.forEach(template => {
+        const docRef = doc(templatesCollectionRef);
+        batch.set(docRef, { ...template, id: docRef.id });
+      });
+
+      // Seed Leads
+      const leadsCollectionRef = collection(firestore, 'budgets');
+      const leadsToSeed = getSeedLeads(seedSellers);
+      leadsToSeed.forEach(lead => {
+        const docRef = doc(leadsCollectionRef);
+        batch.set(docRef, { ...lead, id: docRef.id, createdAt: serverTimestamp() });
+      });
+
+      await batch.commit();
+
+      toast({
+        title: 'Sistema Populado!',
+        description: 'Dados de demonstração foram adicionados com sucesso.',
+      });
+    } catch (error) {
+      console.error('Error seeding data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao popular dados',
+        description: 'Não foi possível adicionar os dados de teste. Verifique o console para mais detalhes.',
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
 
   const getCleanupDescription = () => {
@@ -452,6 +513,31 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
       
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados de Demonstração</CardTitle>
+          <CardDescription>
+            Popule o sistema com dados de teste para demonstração. Isso irá criar vendedores, orçamentos, serviços e modelos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-1">
+              <Label className="text-base flex items-center gap-2">
+                Popular o Sistema
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Clique no botão para adicionar um conjunto de dados de exemplo.
+              </p>
+            </div>
+            <Button onClick={handleSeedData} disabled={isSeeding}>
+              {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+              {isSeeding ? 'Populando...' : 'Popular com Dados'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Aparência do Aplicativo</CardTitle>
