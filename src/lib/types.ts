@@ -174,13 +174,26 @@ export interface CostFactors {
   calibracao: number;
 }
 
-export interface PricingTemplate {
-  id: number;
-  name: string;
-  serviceType: ServiceType;
-  costs: CostFactors;
-  boletoFee: number;
-  margin: number;
-  taxes: number;
-  finalPrice: number;
-}
+export const costFactorsSchema = z.object({
+  fornecedor: z.number(),
+  art: z.number(),
+  honorarioMedico: z.number(),
+  honorarioEngenheiro: z.number(),
+  almoco: z.number(),
+  pedagio: z.number(),
+  aluguelEquipamento: z.number(),
+  calibracao: z.number(),
+});
+
+export const pricingTemplateSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    serviceType: z.enum(serviceTypes),
+    costs: costFactorsSchema,
+    boletoFee: z.number(),
+    margin: z.number(),
+    taxes: z.number(),
+    finalPrice: z.number(),
+});
+
+export type PricingTemplate = z.infer<typeof pricingTemplateSchema>;

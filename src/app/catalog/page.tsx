@@ -30,11 +30,13 @@ export default function CatalogPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [pricingTemplates, setPricingTemplates] = useState<PricingTemplate[]>([]);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
   const { data: services, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
+
+  const pricingTemplatesRef = useMemoFirebase(() => firestore ? collection(firestore, 'pricing-templates') : null, [firestore]);
+  const { data: pricingTemplates, isLoading: areTemplatesLoading } = useCollection<PricingTemplate>(pricingTemplatesRef);
 
   const form = useForm<z.infer<typeof catalogFormSchema>>({
     resolver: zodResolver(catalogFormSchema),
@@ -44,14 +46,6 @@ export default function CatalogPage() {
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
-    }
-     try {
-      const storedTemplates = localStorage.getItem('pricingTemplates');
-      if (storedTemplates) {
-        setPricingTemplates(JSON.parse(storedTemplates));
-      }
-    } catch (error) {
-      console.error("Failed to load pricing templates from localStorage", error);
     }
   }, [user, isUserLoading, router]);
 
@@ -111,7 +105,7 @@ export default function CatalogPage() {
     });
   };
   
-  if (isUserLoading || !user || areServicesLoading) {
+  if (isUserLoading || !user || areServicesLoading || areTemplatesLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -143,7 +137,7 @@ export default function CatalogPage() {
                         <Button
                             type="button"
                             variant="secondary"
-                            disabled={pricingTemplates.length === 0}
+                            disabled={!pricingTemplates || pricingTemplates.length === 0}
                         >
                             <BookUp className="mr-2 h-4 w-4" />
                             Carregar de Precificação
@@ -155,7 +149,7 @@ export default function CatalogPage() {
                             <CommandList>
                                 <CommandEmpty>Nenhum modelo de precificação encontrado.</CommandEmpty>
                                 <CommandGroup>
-                                    {pricingTemplates.map((template) => (
+                                    {(pricingTemplates || []).map((template) => (
                                         <CommandItem
                                             key={template.id}
                                             value={template.name}
@@ -178,7 +172,7 @@ export default function CatalogPage() {
                     </Button>
                 </div>
               </div>
-               {pricingTemplates.length === 0 && <p className='text-xs text-muted-foreground text-right'>Nenhum modelo de precificação encontrado. Crie um na página 'Precificação'.</p>}
+               {(!pricingTemplates || pricingTemplates.length === 0) && <p className='text-xs text-muted-foreground text-right'>Nenhum modelo de precificação encontrado. Crie um na página 'Precificação'.</p>}
             </form>
           </Form>
         </CardContent>

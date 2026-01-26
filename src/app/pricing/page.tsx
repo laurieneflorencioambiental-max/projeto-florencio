@@ -28,11 +28,11 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import type { CostFactors, PricingTemplate, ServiceType } from '@/lib/types';
 import { serviceTypes } from '@/lib/types';
-
+import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const initialCosts: CostFactors = {
   fornecedor: 0,
@@ -49,6 +49,7 @@ export default function PricingPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [name, setName] = useState('');
   const [serviceType, setServiceType] = useState<ServiceType>('Serviços Diversos');
@@ -56,40 +57,16 @@ export default function PricingPage() {
   const [boletoFee, setBoletoFee] = useState(0);
   const [margin, setMargin] = useState(20);
   const [taxes, setTaxes] = useState(15);
+  
+  const pricingTemplatesRef = useMemoFirebase(() => firestore ? collection(firestore, 'pricing-templates') : null, [firestore]);
+  const { data: savedTemplates, isLoading: areTemplatesLoading } = useCollection<PricingTemplate>(pricingTemplatesRef);
 
-  const [savedTemplates, setSavedTemplates] = useState<PricingTemplate[]>([]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
-
-   // Load saved templates from localStorage on initial render
-  useEffect(() => {
-    try {
-      const storedTemplates = localStorage.getItem('pricingTemplates');
-      if (storedTemplates) {
-        setSavedTemplates(JSON.parse(storedTemplates));
-      }
-    } catch (error) {
-      console.error("Failed to load pricing templates from localStorage", error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao carregar modelos',
-        description: 'Não foi possível carregar os modelos de precificação salvos.',
-      });
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // Save templates to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem('pricingTemplates', JSON.stringify(savedTemplates));
-    } catch (error)      {
-      console.error("Failed to save pricing templates to localStorage", error);
-    }
-  }, [savedTemplates]);
 
   const calculation = useMemo(() => {
     const totalCosts = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
@@ -128,7 +105,8 @@ export default function PricingPage() {
     setTaxes(15);
   }
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
+    if (!firestore) return;
     if (!name.trim()) {
         toast({
             variant: 'destructive',
@@ -137,8 +115,10 @@ export default function PricingPage() {
         });
         return;
     }
+
+    const newDocRef = doc(collection(firestore, 'pricing-templates'));
     const newTemplate: PricingTemplate = {
-        id: Date.now(),
+        id: newDocRef.id,
         name,
         serviceType,
         costs,
@@ -147,7 +127,8 @@ export default function PricingPage() {
         taxes,
         finalPrice: calculation.finalPrice
     };
-    setSavedTemplates(prev => [...prev, newTemplate]);
+
+    await setDoc(newDocRef, newTemplate);
     toast({ title: 'Precificação salva!', description: `"${name}" foi adicionado aos seus modelos.` });
     resetForm();
   };
@@ -162,12 +143,13 @@ export default function PricingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const deleteTemplate = (id: number) => {
-    setSavedTemplates(prev => prev.filter(t => t.id !== id));
+  const deleteTemplate = async (id: string) => {
+    if (!firestore) return;
+    await deleteDoc(doc(firestore, 'pricing-templates', id));
     toast({ title: 'Modelo removido.' });
   }
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || areTemplatesLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -258,11 +240,11 @@ export default function PricingPage() {
         <Card>
             <CardHeader><CardTitle>Modelos de Precificação Salvos</CardTitle></CardHeader>
             <CardContent>
-                {savedTemplates.length === 0 ? (
+                {(savedTemplates || []).length === 0 ? (
                     <p className="text-center text-muted-foreground p-4">Nenhum modelo salvo.</p>
                 ) : (
                     <div className="space-y-2">
-                        {savedTemplates.map(template => (
+                        {(savedTemplates || []).map(template => (
                              <div key={template.id} className="flex items-center justify-between p-3 border rounded-lg bg-background">
                                 <div>
                                     <p className="font-semibold">{template.name}</p>

@@ -90,6 +90,14 @@ service cloud.firestore {
     }
 
     /**
+     * @description Secures the 'pricing-templates' collection.
+     * Global data. Any authenticated user can read and write.
+     */
+    match /pricing-templates/{templateId} {
+       allow read, write: if isSignedIn();
+    }
+
+    /**
      * @description Secures the 'app-settings' collection.
      * Any user (even unauthenticated) can read the global settings for logos and branding on the login page.
      * However, only authenticated users can write/change these settings.

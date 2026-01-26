@@ -122,6 +122,34 @@
         "proposalCoverUrl": { "type": "string", "format": "uri" },
         "proposalClosingUrl": { "type": "string", "format": "uri" }
       }
+    },
+    "PricingTemplate": {
+      "title": "Pricing Template",
+      "description": "A reusable template for calculating service prices based on various cost factors and margins.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "serviceType": { "type": "string", "enum": ["Higiene Ocupacional", "Laudo Ergonômico", "Planos", "Ruído Ambiental", "Perícia", "Serviços Diversos"] },
+        "costs": {
+          "type": "object",
+          "properties": {
+            "fornecedor": { "type": "number" },
+            "art": { "type": "number" },
+            "honorarioMedico": { "type": "number" },
+            "honorarioEngenheiro": { "type": "number" },
+            "almoco": { "type": "number" },
+            "pedagio": { "type": "number" },
+            "aluguelEquipamento": { "type": "number" },
+            "calibracao": { "type": "number" }
+          }
+        },
+        "boletoFee": { "type": "number" },
+        "margin": { "type": "number" },
+        "taxes": { "type": "number" },
+        "finalPrice": { "type": "number" }
+      },
+      "required": ["id", "name", "serviceType", "costs", "finalPrice"]
     }
   },
   "auth": {
@@ -172,6 +200,14 @@
           "entityName": "AppSettings",
           "schema": { "$ref": "#/backend/entities/AppSettings" },
           "description": "Stores global application settings. There should only be one document with a known ID like 'global'."
+        }
+      },
+      {
+        "path": "/pricing-templates/{templateId}",
+        "definition": {
+          "entityName": "PricingTemplate",
+          "schema": { "$ref": "#/backend/entities/PricingTemplate" },
+          "description": "Stores global pricing templates available to all users."
         }
       }
     ]
