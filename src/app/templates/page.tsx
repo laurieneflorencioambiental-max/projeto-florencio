@@ -196,7 +196,7 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                    <Popover open={examsPopoverOpen} onOpenChange={setExamsPopoverOpen}>
+                    <Popover open={examsPopoverOpen} onOpenChange={setExamsPopoverOpen} modal={true}>
                         <PopoverTrigger asChild>
                             <Button type="button" variant="outline" disabled={!servicesCatalog || servicesCatalog.length === 0}><Plus className="mr-2 h-4 w-4" /> Adicionar Exame do Catálogo</Button>
                         </PopoverTrigger>

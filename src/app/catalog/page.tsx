@@ -123,7 +123,7 @@ export default function CatalogPage() {
                       <FormControl>
                         <Input type="number" placeholder="50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                       </FormControl>
-                      <Popover open={pricingPopoverOpen} onOpenChange={setPricingPopoverOpen}>
+                      <Popover open={pricingPopoverOpen} onOpenChange={setPricingPopoverOpen} modal={true}>
                         <PopoverTrigger asChild>
                           <Button type="button" variant="outline" className="shrink-0" disabled={!pricingTemplates || pricingTemplates.length === 0}>
                             <Calculator className="mr-2 h-4 w-4" /> Carregar
