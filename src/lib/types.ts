@@ -149,3 +149,38 @@ export const appSettingsSchema = z.object({
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
+
+
+// Pricing Page Types
+export const serviceTypes = [
+  'Higiene Ocupacional',
+  'Laudo Ergonômico',
+  'Planos',
+  'Ruído Ambiental',
+  'Perícia',
+  'Serviços Diversos',
+] as const;
+
+export type ServiceType = (typeof serviceTypes)[number];
+
+export interface CostFactors {
+  fornecedor: number;
+  art: number;
+  honorarioMedico: number;
+  honorarioEngenheiro: number;
+  almoco: number;
+  pedagio: number;
+  aluguelEquipamento: number;
+  calibracao: number;
+}
+
+export interface PricingTemplate {
+  id: number;
+  name: string;
+  serviceType: ServiceType;
+  costs: CostFactors;
+  boletoFee: number;
+  margin: number;
+  taxes: number;
+  finalPrice: number;
+}

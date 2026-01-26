@@ -30,28 +30,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import type { CostFactors, PricingTemplate, ServiceType } from '@/lib/types';
+import { serviceTypes } from '@/lib/types';
 
-const serviceTypes = [
-  'Higiene Ocupacional',
-  'Laudo Ergonômico',
-  'Planos',
-  'Ruído Ambiental',
-  'Perícia',
-  'Serviços Diversos',
-] as const;
-
-type ServiceType = (typeof serviceTypes)[number];
-
-interface CostFactors {
-  fornecedor: number;
-  art: number;
-  honorarioMedico: number;
-  honorarioEngenheiro: number;
-  almoco: number;
-  pedagio: number;
-  aluguelEquipamento: number;
-  calibracao: number;
-}
 
 const initialCosts: CostFactors = {
   fornecedor: 0,
@@ -63,17 +44,6 @@ const initialCosts: CostFactors = {
   aluguelEquipamento: 0,
   calibracao: 0,
 };
-
-interface PricingTemplate {
-  id: number;
-  name: string;
-  serviceType: ServiceType;
-  costs: CostFactors;
-  boletoFee: number;
-  margin: number;
-  taxes: number;
-  finalPrice: number;
-}
 
 export default function PricingPage() {
   const { user, isUserLoading } = useUser();
@@ -94,6 +64,32 @@ export default function PricingPage() {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
+
+   // Load saved templates from localStorage on initial render
+  useEffect(() => {
+    try {
+      const storedTemplates = localStorage.getItem('pricingTemplates');
+      if (storedTemplates) {
+        setSavedTemplates(JSON.parse(storedTemplates));
+      }
+    } catch (error) {
+      console.error("Failed to load pricing templates from localStorage", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar modelos',
+        description: 'Não foi possível carregar os modelos de precificação salvos.',
+      });
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Save templates to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('pricingTemplates', JSON.stringify(savedTemplates));
+    } catch (error)      {
+      console.error("Failed to save pricing templates to localStorage", error);
+    }
+  }, [savedTemplates]);
 
   const calculation = useMemo(() => {
     const totalCosts = Object.values(costs).reduce((sum, cost) => sum + cost, 0);

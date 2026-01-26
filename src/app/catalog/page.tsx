@@ -2,12 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Service } from '@/lib/types';
+import type { Service, PricingTemplate } from '@/lib/types';
 import { serviceSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Loader2 } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Loader2, BookUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,8 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useRouter } from 'next/navigation';
 import { collection, doc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const catalogFormSchema = serviceSchema.omit({ id: true });
 
@@ -28,6 +30,8 @@ export default function CatalogPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [pricingTemplates, setPricingTemplates] = useState<PricingTemplate[]>([]);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
   const { data: services, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
@@ -40,6 +44,14 @@ export default function CatalogPage() {
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
+    }
+     try {
+      const storedTemplates = localStorage.getItem('pricingTemplates');
+      if (storedTemplates) {
+        setPricingTemplates(JSON.parse(storedTemplates));
+      }
+    } catch (error) {
+      console.error("Failed to load pricing templates from localStorage", error);
     }
   }, [user, isUserLoading, router]);
 
@@ -87,6 +99,17 @@ export default function CatalogPage() {
       currency: 'BRL',
     }).format(value);
   };
+
+  const handleLoadFromTemplate = (template: PricingTemplate) => {
+    form.setValue('service', template.name);
+    form.setValue('description', `Baseado no modelo de precificação: ${template.serviceType}`);
+    form.setValue('value', template.finalPrice);
+    setPopoverOpen(false);
+    toast({
+        title: 'Dados Carregados!',
+        description: `Informações do modelo "${template.name}" foram preenchidas.`,
+    });
+  };
   
   if (isUserLoading || !user || areServicesLoading) {
     return (
@@ -101,7 +124,9 @@ export default function CatalogPage() {
       <Card>
         <CardHeader>
           <CardTitle>{editingServiceId ? 'Editar Serviço' : 'Adicionar Novo Serviço'}</CardTitle>
-          <CardDescription>Gerencie os itens que podem ser adicionados às suas propostas.</CardDescription>
+          <CardDescription>
+            Gerencie os itens do seu catálogo. Você pode adicionar manualmente ou carregar a partir de um modelo de precificação salvo.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -112,13 +137,48 @@ export default function CatalogPage() {
                 <FormField control={form.control} name="value" render={({ field }) => (<FormItem><Label>Valor Padrão (R$)</Label><FormControl><Input type="number" placeholder="50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
-                {editingServiceId && (<Button type="button" variant="ghost" onClick={resetForm}><X className="mr-2 h-4 w-4" /> Cancelar Edição</Button>)}
-                <Button type="submit">
-                  {editingServiceId ? <Save className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                  {editingServiceId ? 'Salvar Alterações' : 'Adicionar Serviço'}
-                </Button>
+              <div className="flex justify-end items-center flex-wrap gap-2 pt-4">
+                 <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={pricingTemplates.length === 0}
+                        >
+                            <BookUp className="mr-2 h-4 w-4" />
+                            Carregar de Precificação
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                        <Command>
+                            <CommandInput placeholder="Buscar modelo salvo..." />
+                            <CommandList>
+                                <CommandEmpty>Nenhum modelo de precificação encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                    {pricingTemplates.map((template) => (
+                                        <CommandItem
+                                            key={template.id}
+                                            value={template.name}
+                                            onSelect={() => handleLoadFromTemplate(template)}
+                                        >
+                                            {template.name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+
+                <div className="flex-1 flex justify-end gap-2">
+                    {editingServiceId && (<Button type="button" variant="ghost" onClick={resetForm}><X className="mr-2 h-4 w-4" /> Cancelar Edição</Button>)}
+                    <Button type="submit">
+                      {editingServiceId ? <Save className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                      {editingServiceId ? 'Salvar Alterações' : 'Adicionar Serviço'}
+                    </Button>
+                </div>
               </div>
+               {pricingTemplates.length === 0 && <p className='text-xs text-muted-foreground text-right'>Nenhum modelo de precificação encontrado. Crie um na página 'Precificação'.</p>}
             </form>
           </Form>
         </CardContent>
