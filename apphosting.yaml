@@ -8,6 +8,8 @@
 # Forcing a new deployment to resolve custom domain DNS propagation issues.
 # Final attempt to force redeploy and fix domain association.
 # This comment is a final, direct attempt to trigger a full redeployment to resolve the custom domain issue.
+# Another attempt to force redeployment after user confirmation of connected domain.
+# Final redeploy attempt after removing the problematic feature to ensure stability.
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
