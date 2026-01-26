@@ -25,6 +25,7 @@ import {
   BarChartHorizontal,
   BookMarked,
   HelpCircle,
+  Calculator,
 } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -54,6 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/marketing') return 'Gestão de Marketing';
     if (pathname === '/analytics') return 'Análise de Desempenho';
     if (pathname === '/agenda') return 'Agenda';
+    if (pathname === '/pricing') return 'Precificação de Serviços';
     if (pathname === '/tutorial') return 'Tutorial do Sistema';
     if (pathname === '/settings') return 'Configurações';
     return 'Comercial Florencio';
@@ -163,6 +165,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               >
                 <Calendar />
                 <span>Agenda</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push('/pricing')}
+                isActive={pathname === '/pricing'}
+                tooltip="Precificação"
+              >
+                <Calculator />
+                <span>Precificação</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
