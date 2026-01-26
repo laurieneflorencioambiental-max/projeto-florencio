@@ -428,6 +428,10 @@ Grupo Florencio`;
                 </div>
               </header>
 
+              <p className="text-xs italic text-center text-muted-foreground pt-2">
+                Esta proposta comercial detalha o escopo e os valores dos serviços, não substituindo um contrato formal. Caso necessário, um contrato de prestação de serviços será elaborado em etapa posterior.
+              </p>
+
               {/* Informações do Cliente */}
               <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">

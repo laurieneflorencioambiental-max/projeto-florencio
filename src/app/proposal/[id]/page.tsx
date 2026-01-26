@@ -13,6 +13,7 @@ import {
   Gem,
   HardHat,
   Calendar as CalendarIcon,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
@@ -101,6 +102,10 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             </p>
           </div>
         </header>
+
+        <p className="text-xs italic text-center text-muted-foreground pt-2">
+          Esta proposta comercial detalha o escopo e os valores dos serviços, não substituindo um contrato formal. Caso necessário, um contrato de prestação de serviços será elaborado em etapa posterior.
+        </p>
 
         <Alert className="my-6 print:hidden">
           <Leaf className="h-4 w-4" />
