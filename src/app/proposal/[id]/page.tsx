@@ -10,7 +10,7 @@ import {
   Leaf,
   Goal,
   Eye,
-  Gem,
+  Settings,
   HardHat,
   Calendar as CalendarIcon,
   AlertCircle,
@@ -55,7 +55,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
   const serviceAreas = [
     { label: 'Saúde e Segurança do Trabalho', icon: HardHat },
     { label: 'Meio Ambiente', icon: Leaf },
-    { label: 'eSocial SST', icon: Gem },
+    { label: 'eSocial SST', icon: Settings },
     { label: 'Auditorias e Inspeções', icon: Eye },
   ];
 
@@ -204,7 +204,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                 </p>
               </div>
               <div className="flex flex-col items-center">
-                <Gem className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                <Settings className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
                 <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>
                   Valores
                 </h4>

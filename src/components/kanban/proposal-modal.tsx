@@ -25,7 +25,7 @@ import {
   Copy,
   Goal,
   Eye,
-  Gem,
+  Settings,
   HardHat,
   Leaf,
   ExternalLink,
@@ -323,7 +323,7 @@ Grupo Florencio`;
   const serviceAreas = [
     { label: 'Saúde e Segurança do Trabalho', icon: HardHat },
     { label: 'Meio Ambiente', icon: Leaf },
-    { label: 'eSocial SST', icon: Gem },
+    { label: 'eSocial SST', icon: Settings },
     { label: 'Auditorias e Inspeções', icon: Eye },
   ];
 
@@ -537,7 +537,7 @@ Grupo Florencio`;
                       </p>
                     </div>
                     <div className="flex flex-col items-center">
-                      <Gem
+                      <Settings
                         className="h-10 w-10 mb-2"
                         style={{ color: '#1b7689' }}
                       />
@@ -879,7 +879,7 @@ Grupo Florencio`;
         </ScrollArea>
 
         <DialogFooter className="pt-4 flex-wrap justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground text-left mr-auto">
+          <p className="text-xs text-muted-foreground text-left mr-auto pt-2">
             {isGenerating
               ? 'Gerando link, aguarde...'
               : 'Clique em qualquer texto para editar antes de gerar o link.'}
