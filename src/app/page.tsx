@@ -54,14 +54,21 @@ import {
 } from 'date-fns';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 
-const getLeadDate = (date: any): Date => {
+const getLeadDate = (date: any): Date | null => {
+  if (!date) {
+    return null;
+  }
   if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  if (typeof date === 'string' || typeof date === 'number') {
-    return new Date(date);
+  if (date instanceof Date) {
+    return isNaN(date.getTime()) ? null : date;
   }
-  return date;
+  if (typeof date === 'string' || typeof date === 'number') {
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 };
 
 export default function DashboardPage() {
@@ -199,7 +206,13 @@ export default function DashboardPage() {
 
   const recentLeads = useMemo(() => {
     return (leads || [])
-      .sort((a, b) => getLeadDate(b.createdAt).getTime() - getLeadDate(a.createdAt).getTime())
+      .sort((a, b) => {
+        const dateA = getLeadDate(a.createdAt);
+        const dateB = getLeadDate(b.createdAt);
+        if (!dateB) return 1;
+        if (!dateA) return -1;
+        return dateB.getTime() - dateA.getTime();
+      })
       .slice(0, 5);
   }, [leads]);
 
@@ -365,7 +378,7 @@ export default function DashboardPage() {
                       <TableCell className="font-medium">{lead.company}</TableCell>
                       <TableCell>{lead.createdBy}</TableCell>
                       <TableCell className="text-right font-bold text-amber-600">
-                        {differenceInDays(new Date(), getLeadDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt))}
+                        {differenceInDays(new Date(), getLeadDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt)!)}
                       </TableCell>
                     </TableRow>
                   ))
