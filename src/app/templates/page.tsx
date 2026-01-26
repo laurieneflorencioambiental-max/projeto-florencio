@@ -43,6 +43,7 @@ export default function ManageTemplatesPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [examsPopoverOpen, setExamsPopoverOpen] = useState(false);
   const formCardRef = useRef<HTMLDivElement>(null);
 
   const templatesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
@@ -195,9 +196,9 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                    <Popover>
+                    <Popover open={examsPopoverOpen} onOpenChange={setExamsPopoverOpen}>
                         <PopoverTrigger asChild>
-                            <Button type="button" variant="outline"><Plus className="mr-2 h-4 w-4" /> Adicionar Exame do Catálogo</Button>
+                            <Button type="button" variant="outline" disabled={!servicesCatalog || servicesCatalog.length === 0}><Plus className="mr-2 h-4 w-4" /> Adicionar Exame do Catálogo</Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0">
                             <Command>
@@ -211,6 +212,8 @@ export default function ManageTemplatesPage() {
                                                 value={service.service}
                                                 onSelect={() => {
                                                     appendExam({ id: `exam-${Date.now()}`, service: service.service, description: service.description, value: service.value });
+                                                    setExamsPopoverOpen(false);
+                                                    toast({ title: 'Exame Adicionado!', description: `${service.service} foi adicionado à proposta.`});
                                                 }}
                                             >
                                                 {service.service}
