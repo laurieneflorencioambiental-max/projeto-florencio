@@ -18,6 +18,13 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const catalogFormSchema = serviceSchema.omit({ id: true });
 
@@ -89,6 +96,24 @@ export default function CatalogPage() {
       currency: 'BRL',
     }).format(value);
   };
+
+  const handleLoadFromTemplate = (templateId: string) => {
+    if (!pricingTemplates) return;
+    const selectedTemplate = pricingTemplates.find(t => t.id === templateId);
+    if (selectedTemplate) {
+      form.setValue('value', selectedTemplate.finalPrice, { shouldValidate: true, shouldDirty: true });
+      if (!form.getValues('service')) {
+        form.setValue('service', selectedTemplate.name, { shouldValidate: true, shouldDirty: true });
+      }
+      if (!form.getValues('description')) {
+        form.setValue('description', `Baseado em precificação para ${selectedTemplate.serviceType}`, { shouldValidate: true, shouldDirty: true });
+      }
+      toast({
+        title: 'Precificação Carregada',
+        description: `Valor de ${selectedTemplate.name} carregado no formulário.`
+      });
+    }
+  };
   
   if (isUserLoading || !user || areServicesLoading || areTemplatesLoading) {
     return (
@@ -108,6 +133,28 @@ export default function CatalogPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-6 border-b pb-6">
+            <Label>Carregar a partir de um modelo de precificação (Opcional)</Label>
+            <Select onValueChange={handleLoadFromTemplate} disabled={!pricingTemplates || pricingTemplates.length === 0}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Selecione um modelo para preencher o valor" />
+                </SelectTrigger>
+                <SelectContent>
+                    {pricingTemplates && pricingTemplates.length > 0 ? (
+                        pricingTemplates.map(template => (
+                            <SelectItem key={template.id} value={template.id}>
+                                {template.name} ({formatCurrency(template.finalPrice)})
+                            </SelectItem>
+                        ))
+                    ) : (
+                        <SelectItem value="none" disabled>Nenhum modelo de precificação salvo</SelectItem>
+                    )}
+                </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-2">
+                Selecionar um modelo preencherá automaticamente o campo de valor e os outros campos, se estiverem vazios.
+            </p>
+          </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSaveService)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

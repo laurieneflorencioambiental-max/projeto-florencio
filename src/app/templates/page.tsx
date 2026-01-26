@@ -19,6 +19,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, addDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
@@ -134,6 +141,35 @@ export default function ManageTemplatesPage() {
       )}
     />
   );
+
+  const formatCurrency = (value: number) => {
+    if (!value && value !== 0) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+  
+  const handleAddExamFromCatalog = (serviceId: string) => {
+    if (!servicesCatalog || !serviceId) return;
+    const service = servicesCatalog.find(s => s.id === serviceId);
+    if (service) {
+      const isAlreadyAdded = form.getValues('exams')?.some(exam => exam.id === service.id);
+      if (isAlreadyAdded) {
+        toast({
+          variant: 'destructive',
+          title: 'Serviço já adicionado',
+          description: 'Este serviço já faz parte da lista de exames avulsos deste modelo.'
+        });
+        return;
+      }
+      appendExam(service);
+      toast({
+        title: 'Serviço Adicionado',
+        description: `${service.service} foi adicionado à lista.`
+      });
+    }
+  };
   
   if (isUserLoading || !user || areTemplatesLoading || areServicesLoading) {
     return (
@@ -193,9 +229,30 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                    <Button type="button" variant="outline" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}>
-                        <Plus className="mr-2 h-4 w-4" /> Adicionar Serviço Avulso
-                    </Button>
+                  <div className="flex flex-wrap items-end gap-4 pt-4 border-t">
+                      <div className="flex-1 min-w-[250px]">
+                          <Label>Adicionar do Catálogo</Label>
+                          <Select onValueChange={handleAddExamFromCatalog} value="">
+                              <SelectTrigger>
+                                  <SelectValue placeholder="Selecione um serviço do catálogo..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  {servicesCatalog && servicesCatalog.length > 0 ? (
+                                      servicesCatalog.map(service => (
+                                          <SelectItem key={service.id} value={service.id}>
+                                              {service.service} ({formatCurrency(service.value)})
+                                          </SelectItem>
+                                      ))
+                                  ) : (
+                                      <SelectItem value="none" disabled>Nenhum serviço no catálogo</SelectItem>
+                                  )}
+                              </SelectContent>
+                          </Select>
+                      </div>
+                      <Button type="button" variant="outline" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}>
+                          <Plus className="mr-2 h-4 w-4" /> Adicionar Serviço Manualmente
+                      </Button>
+                  </div>
                 </CardContent>
               </Card>
 
