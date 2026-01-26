@@ -3,6 +3,7 @@
 
 # Triggering a redeploy to publish the first version to the live channel.
 # Forcing a new deployment to resolve the "Site Not Found" issue.
+# Forcing another deployment to ensure the custom domain is correctly linked.
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
