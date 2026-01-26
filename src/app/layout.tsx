@@ -7,6 +7,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/layout/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
+import MaintenancePage from '@/components/maintenance-page';
 
 export default function RootLayout({
   children,
@@ -45,6 +46,8 @@ export default function RootLayout({
     };
   }, []);
 
+  const isInMaintenance = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -67,14 +70,18 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-          {isLoginPage || isProposalPage ? (
-            children
-          ) : (
-            <AppLayout>{children}</AppLayout>
-          )}
-          <Toaster />
-        </FirebaseClientProvider>
+        {isInMaintenance ? (
+          <MaintenancePage />
+        ) : (
+          <FirebaseClientProvider>
+            {isLoginPage || isProposalPage ? (
+              children
+            ) : (
+              <AppLayout>{children}</AppLayout>
+            )}
+            <Toaster />
+          </FirebaseClientProvider>
+        )}
       </body>
     </html>
   );
