@@ -123,7 +123,7 @@ export default function CatalogPage() {
                       <FormControl>
                         <Input type="number" placeholder="50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                       </FormControl>
-                      <Popover open={pricingPopoverOpen} onOpenChange={setPricingPopoverOpen} modal={true}>
+                      <Popover open={pricingPopoverOpen} onOpenChange={setPricingPopoverOpen}>
                         <PopoverTrigger asChild>
                           <Button type="button" variant="outline" className="shrink-0" disabled={!pricingTemplates || pricingTemplates.length === 0}>
                             <Calculator className="mr-2 h-4 w-4" /> Carregar
@@ -144,6 +144,7 @@ export default function CatalogPage() {
                                       setPricingPopoverOpen(false);
                                       toast({ title: 'Valor Carregado!', description: `Valor de ${template.name} inserido.`})
                                     }}
+                                    onPointerDown={(e) => e.preventDefault()}
                                   >
                                     <div className="flex justify-between w-full items-center">
                                       <span className="truncate">{template.name}</span>

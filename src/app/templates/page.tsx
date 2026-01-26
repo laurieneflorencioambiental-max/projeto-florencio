@@ -196,7 +196,7 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                    <Popover open={examsPopoverOpen} onOpenChange={setExamsPopoverOpen} modal={true}>
+                    <Popover open={examsPopoverOpen} onOpenChange={setExamsPopoverOpen}>
                         <PopoverTrigger asChild>
                             <Button type="button" variant="outline" disabled={!servicesCatalog || servicesCatalog.length === 0}><Plus className="mr-2 h-4 w-4" /> Adicionar Exame do Catálogo</Button>
                         </PopoverTrigger>
@@ -215,6 +215,7 @@ export default function ManageTemplatesPage() {
                                                     setExamsPopoverOpen(false);
                                                     toast({ title: 'Exame Adicionado!', description: `${service.service} foi adicionado à proposta.`});
                                                 }}
+                                                onPointerDown={(e) => e.preventDefault()}
                                             >
                                                 {service.service}
                                             </CommandItem>
