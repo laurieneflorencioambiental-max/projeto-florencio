@@ -1,16 +1,5 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
-
-# Triggering a redeploy to publish the first version to the live channel.
-# Forcing a new deployment to resolve the "Site Not Found" issue.
-# Forcing another deployment to ensure the custom domain is correctly linked.
-# Forcing yet another deployment to address persistent domain issues and catalog loading bug.
-# Forcing a new deployment to resolve custom domain DNS propagation issues.
-# Final attempt to force redeploy and fix domain association.
-# This comment is a final, direct attempt to trigger a full redeployment to resolve the custom domain issue.
-# Another attempt to force redeployment after user confirmation of connected domain.
-# Final redeploy attempt after removing the problematic feature to ensure stability.
-# This comment is to trigger a fresh build and redeployment to resolve the custom domain linking issue.
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
