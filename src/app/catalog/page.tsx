@@ -6,7 +6,7 @@ import { serviceSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Loader2, Calculator } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -18,8 +18,6 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const catalogFormSchema = serviceSchema.omit({ id: true });
 
@@ -29,7 +27,6 @@ export default function CatalogPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [pricingPopoverOpen, setPricingPopoverOpen] = useState(false);
 
   const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
   const { data: services, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
@@ -119,45 +116,9 @@ export default function CatalogPage() {
                 <FormField control={form.control} name="value" render={({ field }) => (
                   <FormItem>
                     <Label>Valor Padrão (R$)</Label>
-                    <div className="flex items-center gap-2">
-                      <FormControl>
-                        <Input type="number" placeholder="50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                      </FormControl>
-                      <Popover open={pricingPopoverOpen} onOpenChange={setPricingPopoverOpen}>
-                        <PopoverTrigger asChild>
-                          <Button type="button" variant="outline" className="shrink-0" disabled={!pricingTemplates || pricingTemplates.length === 0}>
-                            <Calculator className="mr-2 h-4 w-4" /> Carregar
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0">
-                          <Command>
-                            <CommandInput placeholder="Buscar precificação..." />
-                            <CommandList>
-                              <CommandEmpty>Nenhum modelo de precificação encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                {(pricingTemplates || []).map((template) => (
-                                  <CommandItem
-                                    key={template.id}
-                                    value={template.name}
-                                    onSelect={() => {
-                                      form.setValue('value', template.finalPrice, { shouldValidate: true });
-                                      setPricingPopoverOpen(false);
-                                      toast({ title: 'Valor Carregado!', description: `Valor de ${template.name} inserido.`})
-                                    }}
-                                    onPointerDown={(e) => e.preventDefault()}
-                                  >
-                                    <div className="flex justify-between w-full items-center">
-                                      <span className="truncate">{template.name}</span>
-                                      <span className="text-xs text-muted-foreground ml-2">{formatCurrency(template.finalPrice)}</span>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                    <FormControl>
+                      <Input type="number" placeholder="50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

@@ -19,8 +19,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, addDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
@@ -43,7 +41,6 @@ export default function ManageTemplatesPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
-  const [examsPopoverOpen, setExamsPopoverOpen] = useState(false);
   const formCardRef = useRef<HTMLDivElement>(null);
 
   const templatesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
@@ -196,37 +193,8 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                    <Popover open={examsPopoverOpen} onOpenChange={setExamsPopoverOpen}>
-                        <PopoverTrigger asChild>
-                            <Button type="button" variant="outline" disabled={!servicesCatalog || servicesCatalog.length === 0}><Plus className="mr-2 h-4 w-4" /> Adicionar Exame do Catálogo</Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0">
-                            <Command>
-                                <CommandInput placeholder="Buscar serviço..." />
-                                <CommandList>
-                                    <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
-                                    <CommandGroup>
-                                        {(servicesCatalog || []).map((service) => (
-                                            <CommandItem
-                                                key={service.id}
-                                                value={service.service}
-                                                onSelect={() => {
-                                                    appendExam({ id: `exam-${Date.now()}`, service: service.service, description: service.description, value: service.value });
-                                                    setExamsPopoverOpen(false);
-                                                    toast({ title: 'Exame Adicionado!', description: `${service.service} foi adicionado à proposta.`});
-                                                }}
-                                                onPointerDown={(e) => e.preventDefault()}
-                                            >
-                                                {service.service}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                    <Button type="button" variant="secondary" className="ml-2" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}>
-                        <Plus className="mr-2 h-4 w-4" /> Adicionar Manualmente
+                    <Button type="button" variant="outline" onClick={() => appendExam({ id: `exam-${Date.now()}`, service: '', description: '', value: 0 })}>
+                        <Plus className="mr-2 h-4 w-4" /> Adicionar Serviço Avulso
                     </Button>
                 </CardContent>
               </Card>
