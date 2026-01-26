@@ -29,6 +29,7 @@ import {
   HardHat,
   Leaf,
   ExternalLink,
+  Gem,
 } from 'lucide-react';
 import {
   Select,
@@ -537,7 +538,7 @@ Grupo Florencio`;
                       </p>
                     </div>
                     <div className="flex flex-col items-center">
-                      <Settings
+                      <Gem
                         className="h-10 w-10 mb-2"
                         style={{ color: '#1b7689' }}
                       />

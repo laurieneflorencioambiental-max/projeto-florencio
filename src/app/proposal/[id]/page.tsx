@@ -14,6 +14,7 @@ import {
   HardHat,
   Calendar as CalendarIcon,
   AlertCircle,
+  Gem,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
@@ -204,7 +205,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                 </p>
               </div>
               <div className="flex flex-col items-center">
-                <Settings className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                <Gem className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
                 <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>
                   Valores
                 </h4>
