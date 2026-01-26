@@ -30,8 +30,7 @@ export default function CatalogPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [popoverOpen, setPopoverOpen] = useState(false);
-
+  
   const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
   const { data: services, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
 
@@ -98,7 +97,6 @@ export default function CatalogPage() {
     form.setValue('service', template.name);
     form.setValue('description', `Baseado no modelo de precificação: ${template.serviceType}`);
     form.setValue('value', template.finalPrice);
-    setPopoverOpen(false);
     toast({
         title: 'Dados Carregados!',
         description: `Informações do modelo "${template.name}" foram preenchidas.`,
@@ -132,7 +130,7 @@ export default function CatalogPage() {
               </div>
 
               <div className="flex justify-end items-center flex-wrap gap-2 pt-4">
-                 <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                 <Popover>
                     <PopoverTrigger asChild>
                         <Button
                             type="button"
