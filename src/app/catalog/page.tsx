@@ -149,6 +149,7 @@ export default function CatalogPage() {
                                                   description: `Informações do modelo "${template.name}" foram preenchidas.`,
                                               });
                                           }}
+                                          onMouseDown={(e) => e.preventDefault()}
                                       >
                                           {template.name}
                                       </CommandItem>
