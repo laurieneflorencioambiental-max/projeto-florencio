@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -154,6 +153,7 @@ export default function CatalogPage() {
                                             key={template.id}
                                             value={template.name}
                                             onSelect={() => handleLoadFromTemplate(template)}
+                                            onMouseDown={(e) => e.preventDefault()}
                                         >
                                             {template.name}
                                         </CommandItem>
