@@ -28,6 +28,7 @@ import {
   Gem,
   HardHat,
   Leaf,
+  ExternalLink,
 } from 'lucide-react';
 import {
   Select,
@@ -247,7 +248,9 @@ export default function ProposalModal({
     }
   };
 
-  const handleShare = async (platform: 'whatsapp' | 'email' | 'copy') => {
+  const handleShare = async (
+    platform: 'whatsapp' | 'email' | 'copy' | 'open'
+  ) => {
     const proposalLink = await createAndShareProposalLink();
     if (!proposalLink) return;
 
@@ -257,6 +260,11 @@ export default function ProposalModal({
         title: 'Sucesso',
         description: 'Link copiado para a área de transferência!',
       });
+      return;
+    }
+
+    if (platform === 'open') {
+      window.open(proposalLink, '_blank');
       return;
     }
 
@@ -878,15 +886,22 @@ Grupo Florencio`;
           </p>
           <div className="flex gap-2 items-center">
             <Button
-              variant="outline"
-              onClick={() => handleShare('copy')}
+              onClick={() => handleShare('open')}
               disabled={isGenerating}
             >
               {isGenerating ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Copy className="mr-2 h-4 w-4" />
+                <ExternalLink className="mr-2 h-4 w-4" />
               )}
+              Gerar e Abrir
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleShare('copy')}
+              disabled={isGenerating}
+            >
+              <Copy className="mr-2 h-4 w-4" />
               Copiar Link
             </Button>
             <Button
@@ -894,19 +909,11 @@ Grupo Florencio`;
               onClick={() => handleShare('email')}
               disabled={isGenerating}
             >
-              {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Mail className="mr-2 h-4 w-4" />
-              )}
+              <Mail className="mr-2 h-4 w-4" />
               Email
             </Button>
             <Button onClick={() => handleShare('whatsapp')} disabled={isGenerating}>
-              {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
+              <Send className="mr-2 h-4 w-4" />
               WhatsApp
             </Button>
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
