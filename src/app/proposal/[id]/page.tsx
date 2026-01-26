@@ -163,6 +163,15 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               Grupo Florêncio
             </footer>
           </blockquote>
+          <div className="mt-8 mb-8 p-4 border border-green-200 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-start gap-4">
+            <Leaf className="h-8 w-8 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h4 className="font-bold text-green-700 dark:text-green-300">Parceria ESG e Sustentabilidade</h4>
+              <p className="text-sm leading-relaxed mt-1 text-green-800 dark:text-green-400">
+                O Grupo Florencio é um forte aliado das práticas de ESG (Ambiental, Social e Governança). Priorizamos a sustentabilidade em todos os nossos processos. Por isso, incentivamos o uso de propostas digitais e assinaturas eletrônicas, como a do GOV.BR, para reduzir o consumo de papel e minimizar nosso impacto ambiental. Juntos, podemos construir um futuro mais verde e responsável.
+              </p>
+            </div>
+          </div>
           <div className="my-8">
             <div className="grid md:grid-cols-3 gap-8 text-center">
               <div className="flex flex-col items-center">
