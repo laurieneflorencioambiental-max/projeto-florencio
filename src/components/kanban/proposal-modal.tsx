@@ -878,7 +878,7 @@ Grupo Florencio`;
           </div>
         </ScrollArea>
 
-        <DialogFooter className="pt-4 flex-wrap justify-between items-center">
+        <DialogFooter className="pt-4 flex-wrap justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground text-left mr-auto">
             {isGenerating
               ? 'Gerando link, aguarde...'
