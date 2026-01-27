@@ -53,6 +53,7 @@ import {
   format,
 } from 'date-fns';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
+import SalesLeaderboard from '@/components/dashboard/sales-leaderboard';
 
 const getLeadDate = (date: any): Date | null => {
   if (!date) {
@@ -319,6 +320,8 @@ export default function DashboardPage() {
             </div>
         </CardContent>
       </Card>
+
+      <SalesLeaderboard />
       
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
