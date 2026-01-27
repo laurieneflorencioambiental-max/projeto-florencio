@@ -210,25 +210,25 @@ const tutorialSections = [
       {
         question: 'Qual a diferença entre um login de Gestor e um de Vendedor?',
         answer:
-          'Não há um botão "criar gestor". A lógica é simples: (1) Qualquer usuário com login criado no Firebase pode ver todos os dados, funcionando como um gestor. (2) Um "Vendedor" é um usuário que, além de ter o login, também foi adicionado à lista de "Vendedores" dentro do app, o que o permite criar orçamentos em seu nome.',
+          'Um usuário com perfil de "Gestor" (admin) tem acesso a todas as áreas estratégicas do sistema, como Marketing, Análise de Desempenho e Configurações. Um "Vendedor", por padrão, tem uma visão focada em suas atividades: Dashboard, Funil de Vendas, Modelos, Catálogo e Agenda. Eles não podem ver as seções de gestão.',
       },
       {
         question:
           'Como a segurança impede que um vendedor altere o orçamento de outro?',
         answer:
-          'A "blindagem" acontece no servidor do Firebase. As regras de segurança garantem que, embora todos os usuários autenticados possam LER todos os orçamentos (para permitir a visão do gestor), um usuário só pode EDITAR ou APAGAR um orçamento se o seu ID de usuário for o mesmo que o do criador do orçamento. É impossível burlar essa regra pelo aplicativo.',
+          'A "blindagem" acontece no servidor do Firebase. As regras de segurança garantem que um usuário com perfil de "Vendedor" só pode ler e editar os orçamentos que ele mesmo criou. É impossível para um vendedor acessar os dados de outro através do aplicativo. Gestores, por outro lado, têm permissão para ver todos os orçamentos.',
       },
       {
         question:
-          'Passo a passo: Como crio um login de GESTOR (apenas para visualização)?',
+          'Passo a passo: Como crio um novo login de VENDEDOR?',
         answer:
-          '1. Vá ao Console do Firebase > Authentication > Users e clique em "Add user".\n2. Crie o login com email e senha (ex: gestor.comercial@grupoflorencio.com.br).\n3. Pronto! Essa pessoa já pode acessar o sistema e terá a visão completa de todos os orçamentos, análises e dashboards.',
+          '1. Vá ao Console do Firebase > Authentication > Users e clique em "Add user".\n2. Crie o login com email e senha.\n3. Vá para o Firestore Database, encontre a coleção "users" e adicione um novo documento. O ID do documento DEVE SER o UID do usuário que você acabou de criar na aba Authentication.\n4. Dentro deste documento, crie os campos: "email" (com o email do usuário), e "isAdmin" (com o valor booleano "false").\n5. Adicione o nome do vendedor na lista de vendedores (Funil > ícone de engrenagem) para que ele possa criar orçamentos em seu nome.',
       },
       {
         question:
-          'Passo a passo: Como crio um login de VENDEDOR (que pode criar e gerenciar orçamentos)?',
+          'Passo a passo: Como promovo um Vendedor a GESTOR?',
         answer:
-          '1. Crie o login com email e senha no Console do Firebase, como faria para um gestor.\n2. No seu aplicativo, vá para a página "Funil de Vendas", clique no ícone de engrenagem (⚙️) ao lado do seletor de vendedores e adicione o nome desse novo vendedor à lista.\n3. Pronto! Agora, além de ver tudo, ele poderá criar e editar seus próprios orçamentos.',
+          '1. No Console do Firebase, vá para o Firestore Database.\n2. Encontre a coleção "users" e abra o documento correspondente ao UID do usuário que você quer promover.\n3. Altere o valor do campo "isAdmin" de "false" para "true".\n4. Na próxima vez que o usuário acessar o sistema, ele já terá a visão completa de gestor.',
       },
     ],
   },

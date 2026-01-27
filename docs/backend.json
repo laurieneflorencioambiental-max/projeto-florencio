@@ -50,6 +50,18 @@
       },
       "required": ["id", "name", "company", "status", "createdAt", "createdBy", "createdByUid"]
     },
+    "UserProfile": {
+        "title": "User Profile",
+        "description": "Stores user-specific information, including their role.",
+        "type": "object",
+        "properties": {
+            "uid": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "displayName": { "type": "string" },
+            "isAdmin": { "type": "boolean", "default": false }
+        },
+        "required": ["uid", "email", "isAdmin"]
+    },
     "Seller": {
       "title": "Seller",
       "description": "Represents a salesperson in the system.",
@@ -160,6 +172,14 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+            "entityName": "UserProfile",
+            "schema": { "$ref": "#/backend/entities/UserProfile" },
+            "description": "Stores user profile information, including roles."
+        }
+      },
       {
         "path": "/budgets/{budgetId}",
         "definition": {

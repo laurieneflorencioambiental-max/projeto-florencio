@@ -43,7 +43,7 @@ import ContactSourceChart from '@/components/charts/contact-source-chart';
 import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -63,6 +63,7 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 type Seller = { id: string; name: string };
+type UserProfile = { isAdmin: boolean };
 
 export default function BudgetsPage() {
   const { user, isUserLoading } = useUser();
@@ -89,11 +90,20 @@ export default function BudgetsPage() {
   // Goal state
   const [monthlyGoal, setMonthlyGoal] = useState<number>(10);
 
+  // Fetch user profile to check for admin role
+  const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+  const isAdmin = userProfile?.isAdmin === true;
+
   // Fetch leads from Firestore
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'budgets');
-  }, [firestore, user]);
+    if (isAdmin) {
+      return collection(firestore, 'budgets');
+    }
+    // For non-admins, fetch only their leads
+    return query(collection(firestore, 'budgets'), where('createdByUid', '==', user.uid));
+  }, [firestore, user, isAdmin]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
   // Fetch sellers from Firestore
@@ -398,10 +408,12 @@ export default function BudgetsPage() {
                 ))}
                 </SelectContent>
             </Select>
-             <Button variant="ghost" size="icon" onClick={() => setIsManageSellersModalOpen(true)}>
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">Gerenciar Vendedores</span>
-            </Button>
+             {isAdmin && (
+                <Button variant="ghost" size="icon" onClick={() => setIsManageSellersModalOpen(true)}>
+                    <Settings className="h-4 w-4" />
+                    <span className="sr-only">Gerenciar Vendedores</span>
+                </Button>
+             )}
         </div>
         <div className='flex items-center gap-2'>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!currentSeller}>

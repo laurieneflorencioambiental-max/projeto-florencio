@@ -27,27 +27,41 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isManager() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    /**
+     * @description Secures the 'users' collection.
+     * Users can read their own profile, but only managers can write to any profile (e.g. to change roles).
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isManager());
+      allow list: if isManager();
+      allow write: if isManager();
+    }
+
     /**
      * @description Secures the central 'budgets' collection.
-     * This allows any authenticated user (like a manager) to view all budgets,
-     * but restricts creation and modification to the budget's owner.
-     * Deletion is allowed for any authenticated user to support admin cleanup tasks.
+     * Managers can read all budgets. Sellers can only read their own.
+     * Creation and modification are restricted to the budget's owner.
+     * Deletion is allowed for owners or managers.
      * @path /budgets/{budgetId}
      */
     match /budgets/{budgetId} {
-      // Allow any authenticated user to read all budget documents.
-      // This enables the central manager view.
-      allow get, list: if isSignedIn();
+      // Managers can see all budgets.
+      allow list: if isManager();
+      // Sellers can read their own budgets, managers can read any budget.
+      allow get: if (isSignedIn() && resource.data.createdByUid == request.auth.uid) || isManager();
 
       // Users can only create budgets where they are the owner.
       allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
       
       // Users can only update their own budgets.
-      // The `get()` call ensures the owner of the existing document is checked.
       allow update: if isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid;
       
-      // Allow any authenticated user to delete budgets (for cleanup functionality).
-      allow delete: if isSignedIn();
+      // Owners or managers can delete budgets.
+      allow delete: if (isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid) || isManager();
     }
     
     /**
@@ -67,44 +81,48 @@ service cloud.firestore {
 
     /**
      * @description Secures the 'sellers' collection.
-     * This is considered global data for the app. Any authenticated user can read and write.
+     * This is considered global data for the app. Any authenticated user can read. Only managers can write.
      */
     match /sellers/{sellerId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isManager();
     }
     
     /**
      * @description Secures the 'proposal-templates' collection.
-     * Global data. Any authenticated user can read and write.
+     * Global data. Any authenticated user can read. Only managers can write.
      */
     match /proposal-templates/{templateId} {
-       allow read, write: if isSignedIn();
+       allow read: if isSignedIn();
+       allow write: if isManager();
     }
 
     /**
      * @description Secures the 'services' collection.
-     * Global data. Any authenticated user can read and write to the service catalog.
+     * Global data. Any authenticated user can read. Only managers can write.
      */
     match /services/{serviceId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isManager();
     }
 
     /**
      * @description Secures the 'pricing-templates' collection.
-     * Global data. Any authenticated user can read and write.
+     * Global data. Any authenticated user can read. Only managers can write.
      */
     match /pricing-templates/{templateId} {
-       allow read, write: if isSignedIn();
+       allow read: if isSignedIn();
+       allow write: if isManager();
     }
 
     /**
      * @description Secures the 'app-settings' collection.
      * Any user (even unauthenticated) can read the global settings for logos and branding on the login page.
-     * However, only authenticated users can write/change these settings.
+     * However, only managers can write/change these settings.
      */
     match /app-settings/{settingsId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isManager();
     }
   }
 }
