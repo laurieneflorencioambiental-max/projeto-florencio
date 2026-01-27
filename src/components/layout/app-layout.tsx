@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
+  SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
 import {
   Briefcase,
@@ -31,18 +32,14 @@ import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import type { AppSettings } from '@/lib/types';
+import type { AppSettings, UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
-
-type UserProfile = {
-  isAdmin: boolean;
-};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const settingsRef = useMemoFirebase(
@@ -55,9 +52,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     () => (firestore && user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const isAdmin = userProfile?.isAdmin === true;
+  const isLoadingPermissions = isUserLoading || isProfileLoading;
 
   const getPageTitle = () => {
     if (pathname === '/') return 'Dashboard';
@@ -149,7 +147,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span>Catálogo de Serviços</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {isAdmin && (
+            {isLoadingPermissions ? (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuSkeleton showIcon />
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuSkeleton showIcon />
+                </SidebarMenuItem>
+              </>
+            ) : isAdmin && (
               <>
                 <SidebarMenuItem>
                   <SidebarMenuButton
