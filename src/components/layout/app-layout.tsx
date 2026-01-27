@@ -203,18 +203,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span>Tutorial</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-             {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => router.push('/settings')}
-                    isActive={pathname === '/settings'}
-                    tooltip="Configurações"
-                  >
-                    <Settings />
-                    <span>Configurações</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-             )}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => router.push('/settings')}
+                isActive={pathname === '/settings'}
+                tooltip="Configurações"
+              >
+                <Settings />
+                <span>Configurações</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
