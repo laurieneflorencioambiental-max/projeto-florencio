@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import type { Lead, AppSettings, Status } from '@/lib/types';
+import type { Lead, AppSettings, Status, UserProfile } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -44,7 +44,7 @@ import {
   FirestorePermissionError,
 } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, setDoc, query, where } from 'firebase/firestore';
 import {
   isWithinInterval,
   startOfMonth,
@@ -77,13 +77,25 @@ export default function DashboardPage() {
   const router = useRouter();
   const firestore = useFirestore();
 
+  const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const isAdmin = userProfile?.isAdmin === true;
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentSeller, setCurrentSeller] = useState<string>('');
   const [monthlyGoal, setMonthlyGoal] = useState<number>(10);
 
   const leadsQuery = useMemoFirebase(
-    () => (user && firestore ? collection(firestore, 'budgets') : null),
-    [firestore, user]
+    () => {
+        if (!user || !firestore || isProfileLoading) return null;
+
+        if (isAdmin) {
+            return collection(firestore, 'budgets');
+        } else {
+            return query(collection(firestore, 'budgets'), where('createdByUid', '==', user.uid));
+        }
+    },
+    [firestore, user, isAdmin, isProfileLoading]
   );
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
@@ -233,7 +245,7 @@ export default function DashboardPage() {
   const goalMet = approvedThisMonthCount >= monthlyGoal;
   const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
   
-  const isLoading = isUserLoading || areLeadsLoading || areSellersLoading;
+  const isLoading = isUserLoading || areLeadsLoading || areSellersLoading || isProfileLoading;
 
   if (isLoading) {
     return (
@@ -321,7 +333,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <SalesLeaderboard />
+      {isAdmin && <SalesLeaderboard leads={leads} sellers={sellers} isLoading={isLoading} />}
       
       <div className="grid md:grid-cols-2 gap-6">
         <Card>

@@ -105,11 +105,19 @@ export const leadSchema = z.object({
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
 });
 
+export const userProfileSchema = z.object({
+  uid: z.string(),
+  email: z.string().email(),
+  displayName: z.string().optional(),
+  isAdmin: z.boolean().default(false),
+});
+
 
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
+export type UserProfile = z.infer<typeof userProfileSchema>;
 export type { DocumentReference };
 
 export type ProposalTemplate = {

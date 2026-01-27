@@ -43,16 +43,14 @@ service cloud.firestore {
 
     /**
      * @description Secures the central 'budgets' collection.
-     * Managers can read all budgets. Sellers can only read their own.
-     * Creation and modification are restricted to the budget's owner.
-     * Deletion is allowed for owners or managers.
+     * Reading is allowed if the user is a manager OR if they are the creator of the document.
+     * This rule works for both single document 'get' and collection 'list' queries.
+     * For 'list', the client query MUST include `where('createdByUid', '==', request.auth.uid)` for non-managers,
+     * otherwise the query will be rejected because it would try to access documents not owned by the user.
      * @path /budgets/{budgetId}
      */
     match /budgets/{budgetId} {
-      // Managers can see all budgets.
-      allow list: if isManager();
-      // Sellers can read their own budgets, managers can read any budget.
-      allow get: if (isSignedIn() && resource.data.createdByUid == request.auth.uid) || isManager();
+      allow read: if isManager() || (resource.data.createdByUid == request.auth.uid);
 
       // Users can only create budgets where they are the owner.
       allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;

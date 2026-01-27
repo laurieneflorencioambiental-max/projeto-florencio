@@ -20,8 +20,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Loader2 } from 'lucide-react';
 import type { Lead } from '@/lib/types';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 type Seller = { id: string; name: string };
@@ -43,14 +41,7 @@ const getUserInitials = (name: string) => {
 }
 
 
-export default function SalesLeaderboard() {
-  const firestore = useFirestore();
-
-  const leadsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'budgets') : null), [firestore]);
-  const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
-
-  const sellersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'sellers') : null), [firestore]);
-  const { data: sellers, isLoading: areSellersLoading } = useCollection<Seller>(sellersQuery);
+export default function SalesLeaderboard({ leads, sellers, isLoading }: { leads: Lead[] | null, sellers: Seller[] | null, isLoading: boolean }) {
 
   const leaderboardData = useMemo(() => {
     if (!sellers || !leads) return [];
@@ -79,8 +70,6 @@ export default function SalesLeaderboard() {
     return performance.sort((a, b) => b.revenue - a.revenue);
 
   }, [sellers, leads]);
-  
-  const isLoading = areLeadsLoading || areSellersLoading;
 
   return (
     <Card className="col-span-1 md:col-span-2">
