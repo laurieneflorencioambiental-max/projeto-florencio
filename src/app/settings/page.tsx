@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -52,7 +52,6 @@ import {
   ImageType,
 } from '@/firebase/storage';
 import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { useCollection } from '@/firebase/firestore/use-collection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
 
@@ -408,8 +407,8 @@ export default function SettingsPage() {
       // Seed Templates
       const templatesCollectionRef = collection(firestore, 'proposal-templates');
       seedTemplates.forEach(template => {
-        const docRef = doc(templatesCollectionRef);
-        batch.set(docRef, { ...template, id: newDocRef.id });
+        const newDocRef = doc(templatesCollectionRef);
+        batch.set(newDocRef, { ...template, id: newDocRef.id });
       });
 
       // Seed Leads
@@ -1070,3 +1069,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
