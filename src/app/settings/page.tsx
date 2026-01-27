@@ -29,6 +29,9 @@ import {
   AlertTriangle,
   Clock,
   Bot,
+  Users,
+  ShieldCheck,
+  Shield,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -42,13 +45,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import type { AppSettings, DocumentReference } from '@/lib/types';
+import type { AppSettings, DocumentReference, UserProfile } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
   deleteImageByUrl,
   ImageType,
 } from '@/firebase/storage';
-import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
 
@@ -80,6 +84,18 @@ export default function SettingsPage() {
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
     [firestore]
   );
+  
+  const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const isAdmin = userProfile?.isAdmin === true;
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdmin) return null;
+    return collection(firestore, 'users');
+  }, [firestore, isAdmin]);
+
+  const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
+
 
   useEffect(() => {
     if (settingsRef) {
@@ -393,7 +409,7 @@ export default function SettingsPage() {
       const templatesCollectionRef = collection(firestore, 'proposal-templates');
       seedTemplates.forEach(template => {
         const docRef = doc(templatesCollectionRef);
-        batch.set(docRef, { ...template, id: docRef.id });
+        batch.set(docRef, { ...template, id: newDocRef.id });
       });
 
       // Seed Leads
@@ -422,6 +438,34 @@ export default function SettingsPage() {
     }
   };
 
+   const handleRoleChange = async (targetUser: UserProfile, newIsAdmin: boolean) => {
+    if (!firestore || !user) return;
+    if (targetUser.uid === user.uid) {
+      toast({
+        variant: 'destructive',
+        title: 'Ação não permitida',
+        description: 'Você não pode alterar sua própria permissão.',
+      });
+      return;
+    }
+
+    const userDocRef = doc(firestore, 'users', targetUser.uid);
+    try {
+      await updateDoc(userDocRef, { isAdmin: newIsAdmin });
+      toast({
+        title: 'Permissão alterada!',
+        description: `${targetUser.email} agora é ${newIsAdmin ? 'um Gestor' : 'um Vendedor'}.`,
+      });
+    } catch (error) {
+      console.error('Failed to update role:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao alterar permissão',
+        description: 'Verifique as regras do Firestore e tente novamente.',
+      });
+    }
+  };
+
 
   const getCleanupDescription = () => {
     switch (cleanupPeriod) {
@@ -439,7 +483,7 @@ export default function SettingsPage() {
   };
 
 
-  if (isUserLoading || !user || areSettingsLoading) {
+  if (isUserLoading || !user || areSettingsLoading || isProfileLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -485,6 +529,40 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+       {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Gerenciamento de Usuários</CardTitle>
+            <CardDescription>Promova usuários a gestores ou rebaixe-os para vendedores.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {areUsersLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            ) : (
+              <div className="space-y-2">
+                {(allUsers || []).map((u) => (
+                  <div key={u.id} className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                       <p className="font-medium">{u.email}</p>
+                       <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                        {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
+                        {u.isAdmin ? 'Gestor' : 'Vendedor'}
+                       </p>
+                    </div>
+                    <Switch
+                      checked={u.isAdmin}
+                      onCheckedChange={(newIsAdmin) => handleRoleChange(u, newIsAdmin)}
+                      disabled={u.uid === user.uid}
+                      aria-label={`Tornar ${u.email} ${u.isAdmin ? 'vendedor' : 'gestor'}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
