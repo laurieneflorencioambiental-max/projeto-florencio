@@ -230,6 +230,11 @@ const tutorialSections = [
         answer:
           '1. No Console do Firebase, vá para o Firestore Database.\n2. Encontre a coleção "users" e abra o documento correspondente ao UID do usuário que você quer promover.\n3. Altere o valor do campo "isAdmin" de "false" para "true".\n4. Na próxima vez que o usuário acessar o sistema, ele já terá a visão completa de gestor.',
       },
+      {
+        question: 'Passo a passo: Como eu troco o gestor do sistema?',
+        answer:
+          '1. No Console do Firebase, vá para o Firestore Database.\n2. Encontre a coleção "users" e localize o documento do gestor atual. Altere o valor do campo "isAdmin" de "true" para "false".\n3. Agora, localize o documento do usuário que você deseja promover a novo gestor.\n4. Altere o valor do campo "isAdmin" dele de "false" para "true".\n5. É isso! Na próxima vez que ambos os usuários acessarem, suas permissões estarão atualizadas. Você pode, inclusive, ter mais de um gestor, se necessário.',
+      },
     ],
   },
 ];
