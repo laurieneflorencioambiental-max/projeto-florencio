@@ -381,8 +381,8 @@ export default function SettingsPage() {
   };
   
   const handleSeedData = async () => {
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Banco de dados não conectado.' });
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado ou banco de dados não conectado.' });
       return;
     }
     setIsSeeding(true);
@@ -413,7 +413,7 @@ export default function SettingsPage() {
 
       // Seed Leads
       const leadsCollectionRef = collection(firestore, 'budgets');
-      const leadsToSeed = getSeedLeads(seedSellers);
+      const leadsToSeed = getSeedLeads(seedSellers, user.uid);
       leadsToSeed.forEach(lead => {
         const docRef = doc(leadsCollectionRef);
         batch.set(docRef, { ...lead, id: docRef.id, createdAt: serverTimestamp() });
@@ -1069,5 +1069,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

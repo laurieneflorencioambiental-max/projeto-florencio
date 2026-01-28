@@ -38,7 +38,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
 ];
 
 
-export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
+export const getSeedLeads = (sellers: { id: string, name: string }[], uid: string) => {
     const leads: Omit<Lead, 'id' | 'createdAt'>[] = [
         {
             name: 'Roberto Andrade',
@@ -53,7 +53,7 @@ export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
             whatsapp: '21988776655',
             status: 'Novos',
             createdBy: sellers[0]?.name || 'Ana Silva',
-            createdByUid: 'demo-user-uid',
+            createdByUid: uid,
             rejectionReason: null,
             proposalGeneratedCount: 0,
             whatsappSentCount: 0,
@@ -77,7 +77,7 @@ export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
             whatsapp: '21999887766',
             status: 'Pendente/Em negociação',
             createdBy: sellers[1]?.name || 'Carlos Martins',
-            createdByUid: 'demo-user-uid',
+            createdByUid: uid,
             rejectionReason: null,
             proposalGeneratedCount: 1,
             whatsappSentCount: 1,
@@ -101,7 +101,7 @@ export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
             whatsapp: '21977665544',
             status: 'Aprovado',
             createdBy: sellers[0]?.name || 'Ana Silva',
-            createdByUid: 'demo-user-uid',
+            createdByUid: uid,
             rejectionReason: null,
             proposalGeneratedCount: 2,
             whatsappSentCount: 2,
@@ -128,7 +128,7 @@ export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
             whatsapp: '21987654321',
             status: 'Rejeitado',
             createdBy: sellers[1]?.name || 'Carlos Martins',
-            createdByUid: 'demo-user-uid',
+            createdByUid: uid,
             rejectionReason: 'Preço elevado',
             proposalGeneratedCount: 1,
             whatsappSentCount: 1,
@@ -152,7 +152,7 @@ export const getSeedLeads = (sellers: { id: string, name: string }[]) => {
             whatsapp: '21998761234',
             status: 'Desistência',
             createdBy: sellers[2]?.name || 'Juliana Costa',
-            createdByUid: 'demo-user-uid',
+            createdByUid: uid,
             rejectionReason: 'Cliente sem urgência/prioridade',
             proposalGeneratedCount: 1,
             whatsappSentCount: 0,
