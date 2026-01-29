@@ -63,7 +63,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const isAdmin = userProfile?.isAdmin === true;
-  const permissions = userProfile?.permissions;
   const isLoadingPermissions = isUserLoading || isProfileLoading;
 
   useEffect(() => {
@@ -177,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             ) : (
               <>
-                {(isAdmin || (permissions?.canViewDashboard ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewDashboard ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
                       <LayoutDashboard />
@@ -185,7 +184,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewBudgets ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewBudgets ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
                       <KanbanSquare />
@@ -193,7 +192,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewTemplates ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewTemplates ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
                       <FileText />
@@ -201,7 +200,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewCatalog ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewCatalog ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
                       <BookMarked />
@@ -209,7 +208,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewMarketing ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewMarketing ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
                       <TrendingUp />
@@ -217,7 +216,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewAnalytics ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewAnalytics ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
                       <BarChartHorizontal />
@@ -225,7 +224,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewAgenda ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewAgenda ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
                       <Calendar />
@@ -233,7 +232,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {(isAdmin || (permissions?.canViewPricing ?? false)) && (
+                {(isAdmin || (userProfile?.permissions?.canViewPricing ?? false)) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
                       <Calculator />
