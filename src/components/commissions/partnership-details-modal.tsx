@@ -23,7 +23,7 @@ import { Printer, FileText, Link as LinkIcon, Loader2, Send } from 'lucide-react
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 
 type PartnershipDetailsModalProps = {
@@ -44,19 +44,22 @@ export default function PartnershipDetailsModal({
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if (!value) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
   const generateLink = async (): Promise<string | null> => {
     if (!firestore) return null;
     try {
+      const newDocRef = doc(collection(firestore, 'partnerships'));
       const partnershipData = {
+        id: newDocRef.id,
         partnerName,
         templates,
         createdAt: serverTimestamp(),
       };
-      const docRef = await addDoc(collection(firestore, 'partnerships'), partnershipData);
-      return `${window.location.origin}/partnership/${docRef.id}`;
+      await setDoc(newDocRef, partnershipData);
+      return `${window.location.origin}/partnership/${newDocRef.id}`;
     } catch (error) {
       console.error('Error generating partnership link:', error);
       toast({ variant: 'destructive', title: 'Erro ao gerar link' });
