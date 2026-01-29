@@ -8,7 +8,6 @@ interface AuditEventData {
 }
 
 export const logAuditEvent = functions
-    .region("southamerica-east1")
     .https.onCall(async (data: AuditEventData, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
