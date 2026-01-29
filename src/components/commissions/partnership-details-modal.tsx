@@ -173,6 +173,13 @@ export default function PartnershipDetailsModal({
                     })}
                     </TableBody>
                 </Table>
+                
+                <div style={{ marginTop: '2rem', padding: '1rem', border: '1px dashed #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+                    <h2 style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Observação Importante</h2>
+                    <p style={{ fontSize: '0.8rem', color: '#555', lineHeight: '1.5' }}>
+                        A comissão do parceiro é calculada sobre o <strong>"Seu Valor (Base)"</strong>. O "Preço Final Cliente" já inclui o valor do imposto, que é um repasse governamental e não compõe a base de cálculo da comissão.
+                    </p>
+                </div>
             </div>
         </ScrollArea>
         <DialogFooter className="pt-6">

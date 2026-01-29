@@ -101,6 +101,14 @@ function PartnershipPageContent({ partnershipData, settings }: { partnershipData
                       </TableBody>
                   </Table>
                 </div>
+
+                <div className="mt-8 p-4 border-dashed border rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                    <h4 className="font-bold">Observação Importante</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        A comissão do parceiro é calculada sobre o <strong>"Seu Valor (Base)"</strong>. O "Preço Final Cliente" já inclui o valor do imposto, que é um repasse governamental e não compõe a base de cálculo da comissão.
+                    </p>
+                </div>
+                
                  <footer className="text-center pt-8 border-t mt-auto">
                     <p className="font-bold" style={{ color: '#1b7689' }}>
                         Grupo Florencio
