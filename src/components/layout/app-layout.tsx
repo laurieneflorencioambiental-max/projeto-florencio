@@ -34,6 +34,8 @@ import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/fireb
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import type { AppSettings, UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -156,7 +158,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <SidebarMenuSkeleton showIcon />
                 </SidebarMenuItem>
               </>
-            ) : isAdmin && (
+            ) : (
+              isAdmin && (
               <>
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -179,6 +182,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </>
+              )
             )}
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -233,6 +237,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {user?.displayName || user?.email}
               </p>
+              <div className="h-5 mt-0.5">
+                {!isLoadingPermissions && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-xs px-1.5 py-0 border-transparent',
+                      isAdmin
+                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                        : 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
+                    )}
+                  >
+                    {isAdmin ? 'Gestor' : 'Vendedor'}
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           <SidebarMenu>
