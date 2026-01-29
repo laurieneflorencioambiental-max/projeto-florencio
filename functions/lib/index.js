@@ -10,10 +10,7 @@ exports.logAuditEvent = functions
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "A função só pode ser chamada por um usuário autenticado.");
     }
-    const { action } = data;
-    if (action !== "login" && action !== "logout") {
-        throw new functions.https.HttpsError("invalid-argument", "A ação deve ser 'login' ou 'logout'.");
-    }
+    const { action, details } = data;
     // A captura de IP só é confiável em uma Cloud Function
     const ipAddress = context.rawRequest.ip;
     const uid = context.auth.uid;
@@ -25,6 +22,7 @@ exports.logAuditEvent = functions
         action: action,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
         ipAddress: ipAddress || null,
+        details: details || null,
     };
     try {
         const logRef = await admin.firestore().collection("audit-logs").add(logEntry);

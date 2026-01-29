@@ -138,6 +138,14 @@ service cloud.firestore {
     }
     
     /**
+     * @description Secures commission templates.
+     * Only managers can read or write commission templates.
+     */
+    match /commission-templates/{templateId} {
+      allow read, write: if isManager();
+    }
+    
+    /**
      * @description Secures the audit trail.
      * Only managers can read the logs. Users can only create log entries for themselves.
      * Logs are immutable.

@@ -30,6 +30,7 @@ import {
   Calculator,
   User as UserIcon,
   Shield,
+  Users,
 } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -74,6 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/analytics') return 'Análise de Desempenho';
     if (pathname === '/agenda') return 'Agenda';
     if (pathname === '/pricing') return 'Precificação de Serviços';
+    if (pathname === '/commissions') return 'Cálculo de Comissões';
     if (pathname === '/tutorial') return 'Tutorial do Sistema';
     if (pathname === '/settings') return 'Configurações';
     if (pathname === '/audit') return 'Auditoria do Sistema';
@@ -204,6 +206,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       <span>Precificação</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                )}
+                 {isAdmin && ( 
+                    <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
+                        <Users />
+                        <span>Comissões</span>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
                 )}
               </>
             )}

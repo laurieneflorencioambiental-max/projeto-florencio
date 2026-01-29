@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -158,6 +159,30 @@ const allTutorialSections: TutorialSection[] = [
         question: 'Para que serve "Salvar Modelo"?',
         answer:
           'Ao clicar em "Salvar Modelo", você armazena toda a estrutura de custos e o preço final. Esse modelo salvo fica disponível na página de Catálogo, permitindo que você adicione rapidamente um serviço ao catálogo com uma precificação já validada e calculada.',
+      },
+    ],
+  },
+   {
+    icon: Users,
+    title: 'Cálculo de Comissões',
+    permissionKey: 'isAdmin',
+    description:
+      'Calcule o preço final para o cliente ao trabalhar com parceiros comissionados. Salve modelos de comissão para agilizar futuras negociações.',
+    content: [
+      {
+        question: 'Como a calculadora funciona?',
+        answer:
+          'Insira o valor base do seu serviço (seu preço), a porcentagem de comissão do parceiro e a porcentagem de imposto que incide sobre a venda. A calculadora mostrará o valor final que o cliente do parceiro deve pagar, garantindo que sua margem e a comissão do parceiro estejam cobertas.',
+      },
+      {
+        question: 'Qual a lógica do cálculo?',
+        answer:
+          'A lógica é: 1. A comissão é calculada sobre o seu valor base. 2. O preço para o parceiro é o seu valor base + a comissão. 3. O imposto é calculado sobre esse novo subtotal (base + comissão). 4. O preço final para o cliente é o subtotal + o imposto.',
+      },
+      {
+        question: 'Para que serve "Salvar Modelo"?',
+        answer:
+          'Se você tem parceiros com quem trabalha frequentemente, pode salvar uma estrutura de comissão como um modelo. Isso preencherá a calculadora com os valores salvos, economizando seu tempo.',
       },
     ],
   },

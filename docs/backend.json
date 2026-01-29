@@ -8,7 +8,7 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "userEmail": { "type": "string" },
-        "action": { "type": "string", "enum": ["login", "logout", "Criação de Orçamento", "Edição de Orçamento", "Exclusão de Orçamento", "Mudança de Status", "Criação de Precificação", "Exclusão de Precificação", "Criação de Serviço", "Edição de Serviço", "Exclusão de Serviço", "Criação de Modelo", "Edição de Modelo", "Exclusão de Modelo", "Criação de ROI", "Exclusão de ROI", "Criação de Ação de Marketing", "Edição de Ação de Marketing", "Exclusão de Ação de Marketing", "Criação de Ferramenta Digital", "Edição de Ferramenta Digital", "Exclusão de Ferramenta Digital"] },
+        "action": { "type": "string", "enum": ["login", "logout", "Criação de Orçamento", "Edição de Orçamento", "Exclusão de Orçamento", "Mudança de Status", "Criação de Precificação", "Exclusão de Precificação", "Criação de Serviço", "Edição de Serviço", "Exclusão de Serviço", "Criação de Modelo", "Edição de Modelo", "Exclusão de Modelo", "Criação de ROI", "Exclusão de ROI", "Criação de Ação de Marketing", "Edição de Ação de Marketing", "Exclusão de Ação de Marketing", "Criação de Ferramenta Digital", "Edição de Ferramenta Digital", "Exclusão de Ferramenta Digital", "Criação de Modelo de Comissão", "Exclusão de Modelo de Comissão"] },
         "timestamp": { "type": "object" },
         "ipAddress": { "type": "string", "format": "ipv4" },
         "details": { "type": "string", "description": "Contextual details of the action performed." }
@@ -223,6 +223,23 @@
         "createdAt": { "type": "object" }
       },
       "required": ["id", "name", "value", "periodicity", "dueDate", "createdAt"]
+    },
+    "CommissionTemplate": {
+      "title": "Commission Template",
+      "description": "A reusable template for calculating partner commissions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "Name for this commission setup, e.g., 'Contabilidade Modelo'." },
+        "partnerName": { "type": "string", "description": "Name of the partner or partner type." },
+        "serviceName": { "type": "string", "description": "The name of the service being commissioned." },
+        "baseServiceValue": { "type": "number" },
+        "commissionPercentage": { "type": "number" },
+        "taxPercentage": { "type": "number" },
+        "finalClientPrice": { "type": "number" },
+        "partnerCommissionValue": { "type": "number" }
+      },
+      "required": ["id", "name", "baseServiceValue", "commissionPercentage", "taxPercentage", "finalClientPrice", "partnerCommissionValue"]
     }
   },
   "auth": {
@@ -321,6 +338,14 @@
           "entityName": "AuditLog",
           "schema": { "$ref": "#/backend/entities/AuditLog" },
           "description": "Stores a log of all user audit events."
+        }
+      },
+      {
+        "path": "/commission-templates/{templateId}",
+        "definition": {
+          "entityName": "CommissionTemplate",
+          "schema": { "$ref": "#/backend/entities/CommissionTemplate" },
+          "description": "Stores global commission calculation templates for partners."
         }
       }
     ]

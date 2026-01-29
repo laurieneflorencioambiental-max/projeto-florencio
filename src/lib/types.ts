@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -273,3 +274,18 @@ export const digitalToolSchema = z.object({
   createdAt: z.any(),
 });
 export type DigitalTool = z.infer<typeof digitalToolSchema>;
+
+// Commissions Page Types
+export const commissionTemplateSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    partnerName: z.string().optional(),
+    serviceName: z.string().optional(),
+    baseServiceValue: z.number(),
+    commissionPercentage: z.number(),
+    taxPercentage: z.number(),
+    finalClientPrice: z.number(),
+    partnerCommissionValue: z.number(),
+});
+
+export type CommissionTemplate = z.infer<typeof commissionTemplateSchema>;
