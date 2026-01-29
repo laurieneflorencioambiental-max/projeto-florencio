@@ -153,7 +153,8 @@ export default function PartnershipDetailsModal({
         <ScrollArea className="flex-1 -mx-6 px-6">
             <div id="partnership-details-print-area">
                 <h1 style={{fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem'}}>Parceria Comercial: {partnerName}</h1>
-                <p style={{marginBottom: '1.5rem', color: '#555'}}>Este documento detalha os valores e comissões para os serviços prestados em parceria.</p>
+                <p style={{marginBottom: '0.5rem', color: '#555'}}>Este documento detalha os valores e comissões para os serviços prestados em parceria.</p>
+                 <p style={{marginBottom: '1.5rem', color: '#888', fontStyle: 'italic', fontSize: '0.8rem'}}>Atenção: Os valores apresentados podem sofrer alterações de acordo com as taxas e percentuais vigentes à época da prestação do serviço. Consulte sempre as condições atualizadas.</p>
 
                 <Table>
                     <TableHeader>

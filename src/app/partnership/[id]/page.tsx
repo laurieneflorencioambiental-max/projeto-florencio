@@ -59,6 +59,9 @@ function PartnershipPageContent({ partnershipData, settings }: { partnershipData
                     <h3 className="text-lg font-semibold mb-2 border-b pb-2">Parceria Comercial com:</h3>
                     <p className="font-bold text-2xl" style={{ color: '#1b7689' }}>{partnerName}</p>
                     <p className="mt-2">Este documento detalha os valores e comissões para os serviços prestados em parceria.</p>
+                    <p className="text-xs italic text-muted-foreground mt-2">
+                        Atenção: Os valores apresentados podem sofrer alterações de acordo com as taxas e percentuais vigentes à época da prestação do serviço. Consulte sempre as condições atualizadas.
+                    </p>
                 </section>
 
                 <div className="flex-grow">
