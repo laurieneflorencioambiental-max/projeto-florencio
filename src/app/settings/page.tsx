@@ -36,6 +36,12 @@ import {
   HelpCircle,
   TrendingUp,
   BarChartHorizontal,
+  LayoutDashboard,
+  KanbanSquare,
+  FileText,
+  BookMarked,
+  Calculator,
+  Calendar,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -67,6 +73,20 @@ const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
 const MAX_LOGIN_BG_SIZE_KB = 2000;
 const MAX_PROPOSAL_COVER_SIZE_KB = 2000;
 const MAX_PROPOSAL_CLOSING_SIZE_KB = 2000;
+
+type PermissionKey = keyof NonNullable<UserProfile['permissions']>;
+
+const permissionsConfig: { id: PermissionKey, label: string, icon: React.ElementType }[] = [
+    { id: 'canViewDashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'canViewBudgets', label: 'Funil de Vendas', icon: KanbanSquare },
+    { id: 'canViewTemplates', label: 'Modelos de Proposta', icon: FileText },
+    { id: 'canViewCatalog', label: 'Catálogo de Serviços', icon: BookMarked },
+    { id: 'canViewPricing', label: 'Precificação de Serviços', icon: Calculator },
+    { id: 'canViewAgenda', label: 'Agenda', icon: Calendar },
+    { id: 'canViewMarketing', label: 'Gestão de Marketing', icon: TrendingUp },
+    { id: 'canViewAnalytics', label: 'Análise de Desempenho', icon: BarChartHorizontal },
+];
+
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
@@ -473,7 +493,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handlePermissionChange = async (targetUserId: string, permission: 'canViewMarketing' | 'canViewAnalytics', value: boolean) => {
+  const handlePermissionChange = async (targetUserId: string, permission: PermissionKey, value: boolean) => {
     if (!firestore || !user) return;
     const userDocRef = doc(firestore, 'users', targetUserId);
     try {
@@ -596,16 +616,20 @@ export default function SettingsPage() {
                     </div>
                     {!u.isAdmin && (
                         <div className="border-t bg-muted/30 p-4">
-                            <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso</h4>
-                            <div className="space-y-3">
-                                <div className="flex items-center space-x-3">
-                                    <Checkbox id={`perm-marketing-${u.uid}`} checked={u.permissions?.canViewMarketing ?? false} onCheckedChange={(checked) => handlePermissionChange(u.uid, 'canViewMarketing', !!checked)} />
-                                    <Label htmlFor={`perm-marketing-${u.uid}`} className="text-sm font-normal flex items-center gap-2"><TrendingUp className="h-4 w-4"/> Acesso à página de Marketing</Label>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Checkbox id={`perm-analytics-${u.uid}`} checked={u.permissions?.canViewAnalytics ?? false} onCheckedChange={(checked) => handlePermissionChange(u.uid, 'canViewAnalytics', !!checked)} />
-                                    <Label htmlFor={`perm-analytics-${u.uid}`} className="text-sm font-normal flex items-center gap-2"><BarChartHorizontal className="h-4 w-4"/> Acesso à página de Análise</Label>
-                                </div>
+                            <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso do Vendedor</h4>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {permissionsConfig.map(perm => (
+                                    <div key={perm.id} className="flex items-center space-x-3">
+                                        <Checkbox 
+                                            id={`perm-${perm.id}-${u.uid}`} 
+                                            checked={u.permissions?.[perm.id] ?? false} 
+                                            onCheckedChange={(checked) => handlePermissionChange(u.uid, perm.id, !!checked)} 
+                                        />
+                                        <Label htmlFor={`perm-${perm.id}-${u.uid}`} className="text-sm font-normal flex items-center gap-2">
+                                            <perm.icon className="h-4 w-4"/> {perm.label}
+                                        </Label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

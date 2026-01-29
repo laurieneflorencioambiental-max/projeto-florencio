@@ -113,6 +113,12 @@ export const userProfileSchema = z.object({
   isAdmin: z.boolean().default(false),
   permissions: z
     .object({
+      canViewDashboard: z.boolean().optional(),
+      canViewBudgets: z.boolean().optional(),
+      canViewTemplates: z.boolean().optional(),
+      canViewCatalog: z.boolean().optional(),
+      canViewPricing: z.boolean().optional(),
+      canViewAgenda: z.boolean().optional(),
       canViewMarketing: z.boolean().optional(),
       canViewAnalytics: z.boolean().optional(),
     })
