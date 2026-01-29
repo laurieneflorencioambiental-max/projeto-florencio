@@ -8,7 +8,7 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "userEmail": { "type": "string" },
-        "action": { "type": "string", "enum": ["login", "logout", "Criação de Orçamento", "Edição de Orçamento", "Exclusão de Orçamento", "Mudança de Status"] },
+        "action": { "type": "string", "enum": ["login", "logout", "Criação de Orçamento", "Edição de Orçamento", "Exclusão de Orçamento", "Mudança de Status", "Criação de Precificação", "Exclusão de Precificação", "Criação de Serviço", "Edição de Serviço", "Exclusão de Serviço", "Criação de Modelo", "Edição de Modelo", "Exclusão de Modelo", "Criação de ROI", "Exclusão de ROI", "Criação de Ação de Marketing", "Edição de Ação de Marketing", "Exclusão de Ação de Marketing", "Criação de Ferramenta Digital", "Edição de Ferramenta Digital", "Exclusão de Ferramenta Digital"] },
         "timestamp": { "type": "object" },
         "ipAddress": { "type": "string", "format": "ipv4" },
         "details": { "type": "string", "description": "Contextual details of the action performed." }

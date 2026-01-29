@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { logClientEvent } from '@/lib/audit-client';
 
 const catalogFormSchema = serviceSchema.omit({ id: true });
 
@@ -34,6 +35,7 @@ export default function CatalogPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const auth = useAuth();
 
   const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
   const { data: services, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
@@ -64,11 +66,13 @@ export default function CatalogPage() {
       const serviceRef = doc(firestore, 'services', editingServiceId);
       const serviceWithId: Service = { id: editingServiceId, ...data };
       await setDoc(serviceRef, serviceWithId, { merge: true });
+      logClientEvent('Edição de Serviço', auth, `Serviço: ${data.service}`);
       toast({ title: 'Sucesso', description: 'Serviço atualizado no catálogo.' });
     } else {
       const newDocRef = doc(servicesCollectionRef!);
       const serviceWithId: Service = { id: newDocRef.id, ...data };
       await setDoc(newDocRef, serviceWithId);
+      logClientEvent('Criação de Serviço', auth, `Serviço: ${data.service}`);
       toast({ title: 'Sucesso', description: 'Novo serviço adicionado ao catálogo.' });
     }
     resetForm();
@@ -82,7 +86,11 @@ export default function CatalogPage() {
 
   const handleDeleteService = async (id: string) => {
     if (!firestore) return;
+    const serviceToDelete = services?.find(s => s.id === id);
     await deleteDoc(doc(firestore, 'services', id));
+    if (serviceToDelete) {
+        logClientEvent('Exclusão de Serviço', auth, `Serviço: ${serviceToDelete.service}`);
+    }
     if (id === editingServiceId) {
       resetForm();
     }

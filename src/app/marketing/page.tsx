@@ -89,6 +89,7 @@ import {
   useFirestore,
   useCollection,
   useMemoFirebase,
+  useAuth,
 } from '@/firebase';
 import {
   collection,
@@ -99,6 +100,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { logClientEvent } from '@/lib/audit-client';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -118,6 +120,7 @@ export default function MarketingPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const auth = useAuth();
 
   // ROI State
   const [newInvestment, setNewInvestment] = useState('');
@@ -312,6 +315,7 @@ export default function MarketingPage() {
     };
 
     await setDoc(newDocRef, { ...newEntry, id: newDocRef.id });
+    logClientEvent('Criação de ROI', auth, `Fonte: ${newSource}, Investimento: ${investmentValue}`);
 
     // Reset form
     setNewInvestment('');
@@ -326,7 +330,11 @@ export default function MarketingPage() {
 
   const handleDeleteEntry = async (id: string) => {
     if (!firestore) return;
+    const entryToDelete = entries?.find(e => e.id === id);
     await deleteDoc(doc(firestore, 'marketing-roi-entries', id));
+    if(entryToDelete) {
+        logClientEvent('Exclusão de ROI', auth, `Fonte: ${entryToDelete.source}, Investimento: ${entryToDelete.investment}`);
+    }
   };
 
   const totals = useMemo(() => {
@@ -399,6 +407,7 @@ export default function MarketingPage() {
         status: newActionStatus,
       };
       await setDoc(actionRef, updatedAction, { merge: true });
+      logClientEvent('Edição de Ação de Marketing', auth, `Ação: ${newActionName}`);
       toast({
         title: 'Ação Atualizada!',
         description: `A campanha "${newActionName}" foi atualizada.`,
@@ -415,6 +424,7 @@ export default function MarketingPage() {
         createdAt: serverTimestamp(),
       };
       await setDoc(newDocRef, { ...newAction, id: newDocRef.id });
+      logClientEvent('Criação de Ação de Marketing', auth, `Ação: ${newActionName}`);
       toast({
         title: 'Ação Adicionada!',
         description: `A campanha "${newActionName}" foi adicionada ao seu plano.`,
@@ -426,7 +436,11 @@ export default function MarketingPage() {
 
   const handleDeleteAction = async (id: string) => {
     if (!firestore) return;
+    const actionToDelete = actions?.find(a => a.id === id);
     await deleteDoc(doc(firestore, 'marketing-actions', id));
+    if(actionToDelete) {
+        logClientEvent('Exclusão de Ação de Marketing', auth, `Ação: ${actionToDelete.name}`);
+    }
     toast({
       title: 'Ação Removida',
       description: `A ação foi removida do seu plano.`,
@@ -564,6 +578,7 @@ export default function MarketingPage() {
         observation: newToolObservation,
       };
       await setDoc(toolRef, updatedTool, { merge: true });
+      logClientEvent('Edição de Ferramenta Digital', auth, `Ferramenta: ${newToolName}`);
       toast({
         title: 'Ferramenta Atualizada!',
         description: `A assinatura de "${newToolName}" foi atualizada.`,
@@ -579,6 +594,7 @@ export default function MarketingPage() {
         createdAt: serverTimestamp(),
       };
       await setDoc(newDocRef, { ...newTool, id: newDocRef.id });
+      logClientEvent('Criação de Ferramenta Digital', auth, `Ferramenta: ${newToolName}`);
       toast({
         title: 'Ferramenta Adicionada!',
         description: `"${newToolName}" foi adicionada à sua lista de investimentos.`,
@@ -607,7 +623,11 @@ export default function MarketingPage() {
 
   const handleDeleteTool = async (id: string) => {
     if (!firestore) return;
+    const toolToDelete = tools?.find(t => t.id === id);
     await deleteDoc(doc(firestore, 'marketing-tools', id));
+    if(toolToDelete) {
+        logClientEvent('Exclusão de Ferramenta Digital', auth, `Ferramenta: ${toolToDelete.name}`);
+    }
     toast({
       title: 'Ferramenta Removida',
       description: 'A ferramenta foi removida da sua lista de investimentos.',

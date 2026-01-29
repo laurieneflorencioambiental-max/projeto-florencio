@@ -16,7 +16,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, addDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import {
@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { logClientEvent } from '@/lib/audit-client';
 
 const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
@@ -49,6 +50,7 @@ export default function ManageTemplatesPage() {
   const { toast } = useToast();
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const formCardRef = useRef<HTMLDivElement>(null);
+  const auth = useAuth();
 
   const templatesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
   const { data: templates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesCollectionRef);
@@ -84,11 +86,13 @@ export default function ManageTemplatesPage() {
     if (editingTemplateId) {
       const templateRef = doc(firestore, 'proposal-templates', editingTemplateId);
       await setDoc(templateRef, { ...data, plans: plansWithIds, exams: examsWithIds }, { merge: true });
+      logClientEvent('Edição de Modelo', auth, `Modelo: ${data.name}`);
       toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
       const newDocRef = doc(templatesCollectionRef!);
       const newTemplateWithId = { ...data, id: newDocRef.id, plans: plansWithIds, exams: examsWithIds };
       await setDoc(newDocRef, newTemplateWithId);
+      logClientEvent('Criação de Modelo', auth, `Modelo: ${data.name}`);
       toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
     }
     resetForm();
@@ -108,7 +112,11 @@ export default function ManageTemplatesPage() {
 
   const handleDeleteTemplate = async (id: string) => {
     if (!firestore) return;
+    const templateToDelete = templates?.find(t => t.id === id);
     await deleteDoc(doc(firestore, 'proposal-templates', id));
+    if (templateToDelete) {
+        logClientEvent('Exclusão de Modelo', auth, `Modelo: ${templateToDelete.name}`);
+    }
     if (id === editingTemplateId) {
       resetForm();
     }

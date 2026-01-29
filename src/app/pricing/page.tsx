@@ -28,11 +28,12 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import type { CostFactors, PricingTemplate, ServiceType } from '@/lib/types';
 import { serviceTypes } from '@/lib/types';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { logClientEvent } from '@/lib/audit-client';
 
 const initialCosts: CostFactors = {
   fornecedor: 0,
@@ -50,6 +51,7 @@ export default function PricingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
 
   const [name, setName] = useState('');
   const [serviceType, setServiceType] = useState<ServiceType>('Serviços Diversos');
@@ -129,6 +131,7 @@ export default function PricingPage() {
     };
 
     await setDoc(newDocRef, newTemplate);
+    logClientEvent('Criação de Precificação', auth, `Modelo: ${name}`);
     toast({ title: 'Precificação salva!', description: `"${name}" foi adicionado aos seus modelos.` });
     resetForm();
   };
@@ -145,7 +148,11 @@ export default function PricingPage() {
 
   const deleteTemplate = async (id: string) => {
     if (!firestore) return;
+    const templateToDelete = savedTemplates?.find(t => t.id === id);
     await deleteDoc(doc(firestore, 'pricing-templates', id));
+    if (templateToDelete) {
+      logClientEvent('Exclusão de Precificação', auth, `Modelo: ${templateToDelete.name}`);
+    }
     toast({ title: 'Modelo removido.' });
   }
 
