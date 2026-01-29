@@ -205,6 +205,7 @@ export default function AuditPage() {
               <TableRow>
                 <TableHead>Usuário</TableHead>
                 <TableHead>Ação</TableHead>
+                <TableHead>Endereço IP</TableHead>
                 <TableHead className="text-right">Data e Hora</TableHead>
               </TableRow>
             </TableHeader>
@@ -224,6 +225,9 @@ export default function AuditPage() {
                         {log.action === 'login' ? 'Login' : 'Logout'}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-muted-foreground text-xs font-mono">
+                      {log.ipAddress || 'N/A'}
+                    </TableCell>
                     <TableCell className="text-right">
                       {getLogDate(log.timestamp)
                         ? format(
@@ -237,7 +241,7 @@ export default function AuditPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     Nenhum registro de auditoria encontrado para os filtros
                     selecionados.
                   </TableCell>

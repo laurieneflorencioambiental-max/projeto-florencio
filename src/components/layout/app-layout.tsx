@@ -83,7 +83,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     if (user && firestore) {
-      await logAuditEvent(firestore, user, 'logout');
+      // The IP address is passed as null because it cannot be reliably obtained from the client-side.
+      await logAuditEvent(firestore, user, 'logout', null);
     }
     await auth.signOut();
     router.push('/login');

@@ -7,7 +7,8 @@ import type { AuditLog } from "./types";
 export async function logAuditEvent(
     firestore: Firestore,
     user: User,
-    action: 'login' | 'logout'
+    action: 'login' | 'logout',
+    ipAddress: string | null = null
 ) {
     if (!firestore || !user) return;
 
@@ -18,6 +19,9 @@ export async function logAuditEvent(
             userEmail: user.email || 'N/A',
             action: action,
             timestamp: serverTimestamp(),
+            // The IP address can only be reliably captured in a server-side environment (e.g., Cloud Functions).
+            // When calling this from the client, it will be null.
+            ipAddress: ipAddress,
         };
         // Use setDoc to include the ID in the document data
         await setDoc(auditLogRef, { ...newLogEntry, id: auditLogRef.id });

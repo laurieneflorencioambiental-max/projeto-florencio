@@ -82,7 +82,9 @@ export default function LoginPage() {
       
       // Log the audit event
       if (userCredential.user && firestore) {
-        await logAuditEvent(firestore, userCredential.user, 'login');
+        // The IP address is passed as null because it cannot be reliably obtained from the client-side.
+        // A server-side implementation (e.g., Cloud Function) would be needed to capture the real IP.
+        await logAuditEvent(firestore, userCredential.user, 'login', null);
       }
 
       toast({

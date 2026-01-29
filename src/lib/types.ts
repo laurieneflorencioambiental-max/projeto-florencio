@@ -82,6 +82,7 @@ export const auditLogSchema = z.object({
   userEmail: z.string(),
   action: z.enum(['login', 'logout']),
   timestamp: z.any(),
+  ipAddress: z.string().optional().nullable(),
 });
 export type AuditLog = z.infer<typeof auditLogSchema>;
 

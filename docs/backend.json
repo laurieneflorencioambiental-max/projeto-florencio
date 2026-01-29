@@ -9,7 +9,8 @@
         "userId": { "type": "string" },
         "userEmail": { "type": "string" },
         "action": { "type": "string", "enum": ["login", "logout"] },
-        "timestamp": { "type": "object" }
+        "timestamp": { "type": "object" },
+        "ipAddress": { "type": "string", "format": "ipv4" }
       },
       "required": ["id", "userId", "userEmail", "action", "timestamp"]
     },
