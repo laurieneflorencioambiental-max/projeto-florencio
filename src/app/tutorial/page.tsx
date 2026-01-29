@@ -26,6 +26,7 @@ import {
   Lightbulb,
   HelpCircle,
   Users,
+  Calculator,
 } from 'lucide-react';
 
 const tutorialSections = [
@@ -43,12 +44,12 @@ const tutorialSections = [
       {
         question: 'Como funciona a meta de aprovados?',
         answer:
-          'Você pode definir uma meta mensal de quantos negócios deseja fechar. A barra de progresso e o contador te ajudam a acompanhar o quão perto você está de atingir seu objetivo. A meta é salva localmente no seu navegador.',
+          'Você pode definir uma meta mensal de quantos negócios deseja fechar na página de Configurações. A barra de progresso no dashboard te ajuda a acompanhar o quão perto você está de atingir seu objetivo.',
       },
       {
         question: 'O que são os "Leads Precisando de Atenção"?',
         answer:
-          'Esta seção é um alerta automático. Ela mostra os orçamentos que estão na fase de "Pendente/Em negociação" e não recebem nenhuma atualização há mais de 7 dias (ou o período que você definir nas Configurações). É um lembrete para você fazer o follow-up e não deixar o negócio esfriar.',
+          'Esta seção é um alerta automático. Ela mostra os orçamentos que estão na fase de "Pendente/Em negociação" e não recebem nenhuma atualização há um número customizável de dias (definido nas Configurações). É um lembrete para você fazer o follow-up e não deixar o negócio esfriar.',
       },
     ],
   },
@@ -99,7 +100,7 @@ const tutorialSections = [
        {
         question: 'Como eu uso os serviços do catálogo nos modelos?',
         answer:
-          'Na seção "Investimentos - Exames/Serviços Avulsos", clique em "Adicionar Exame do Catálogo". Uma busca aparecerá, permitindo que você selecione um serviço previamente cadastrado. O nome, descrição e valor serão preenchidos automaticamente, garantindo consistência.',
+          'Na seção "Investimentos - Exames/Serviços Avulsos", clique em "Adicionar do Catálogo". Uma busca aparecerá, permitindo que você selecione um serviço previamente cadastrado. O nome, descrição e valor serão preenchidos automaticamente, garantindo consistência.',
       },
     ],
   },
@@ -113,6 +114,28 @@ const tutorialSections = [
         question: 'Qual a vantagem de usar o catálogo?',
         answer:
           'Consistência e agilidade. Ao adicionar um serviço do catálogo em um modelo de proposta, você garante que o preço e a descrição estão sempre corretos. Se um preço mudar, você só precisa atualizá-lo uma vez no catálogo.',
+      },
+       {
+        question: 'Posso usar uma Precificação Salva para preencher um item do catálogo?',
+        answer:
+          'Sim. Ao adicionar ou editar um serviço, você verá um campo para "Carregar a partir de um modelo de precificação". Selecionar um modelo preencherá automaticamente o valor e outros campos, agilizando o cadastro.',
+      },
+    ],
+  },
+  {
+    icon: Calculator,
+    title: 'Precificação de Serviços',
+    description:
+      'Calcule o preço de venda de um serviço com base em todos os seus custos e margens. Salve os resultados como modelos para usar no seu Catálogo de Serviços.',
+    content: [
+      {
+        question: 'Como funciona a calculadora?',
+        answer:
+          'Preencha os campos de "Fatores de Custo" (como fornecedor, honorários, etc.) e os "Ajustes Financeiros" (taxas, impostos e sua margem de lucro desejada). A calculadora mostrará o "Resultado da Precificação" em tempo real, culminando no Preço Final de Venda.',
+      },
+      {
+        question: 'Para que serve "Salvar Modelo"?',
+        answer: 'Ao clicar em "Salvar Modelo", você armazena toda a estrutura de custos e o preço final. Esse modelo salvo fica disponível na página de Catálogo, permitindo que você adicione rapidamente um serviço ao catálogo com uma precificação já validada e calculada.',
       },
     ],
   },
@@ -197,7 +220,7 @@ const tutorialSections = [
        {
         question: 'O que é a "Zona de Perigo"?',
         answer:
-          'É uma área para ações que não podem ser desfeitas. Atualmente, ela contém a ferramenta para limpar dados antigos do sistema, como orçamentos com mais de 30, 90 ou 365 dias. Use com cuidado!',
+          'É uma área para ações que não podem ser desfeitas. Atualmente, ela contém a ferramenta para limpar dados antigos do sistema (ex: orçamentos, propostas) ou até mesmo zerar completamente o banco de dados. Use com muito cuidado!',
       },
     ],
   },
@@ -222,13 +245,13 @@ const tutorialSections = [
         question:
           'Passo a passo: Como crio um novo login de VENDEDOR?',
         answer:
-          '1. Vá ao Console do Firebase > Authentication > Users e clique em "Add user".\n2. Crie o login com email e senha.\n3. Vá para o Firestore Database, encontre a coleção "users" e adicione um novo documento. O ID do documento DEVE SER o UID do usuário que você acabou de criar na aba Authentication.\n4. Dentro deste documento, crie os campos: "email" (com o email do usuário), e "isAdmin" (com o valor booleano "false").\n5. Adicione o nome do vendedor na lista de vendedores (Funil > ícone de engrenagem) para que ele possa criar orçamentos em seu nome.',
+          `1. **Crie o Login:** No painel do Firebase, vá para **Authentication** (no menu "Build"). Clique em "Add user" e crie o login com o email e senha para o seu vendedor.\n2. **Copie o User UID:** Após criar, você verá o novo usuário na lista. Copie o valor da coluna **User UID**. Ele é um identificador único, como \`yHWjH41BoNfjuCjRi4uCbYd7hlv1\`.\n3. **Vá para o Banco de Dados:** No menu "Build", clique em **Firestore Database**.\n4. **Acesse a Coleção 'users':** Você verá uma lista de coleções à esquerda. Clique em **\`users\`**.\n5. **Crie o Perfil:** Clique no botão **"Adicionar documento"**.\n    - No campo **ID do documento**, cole o \`User UID\` que você copiou no passo 2. **Isso é crucial!**\n    - Adicione o primeiro campo: \`isAdmin\`, tipo \`boolean\`, valor \`false\`.\n    - Clique em \`+ Adicionar campo\`.\n    - Adicione o segundo campo: \`email\`, tipo \`string\`, valor \`o e-mail do vendedor\`.\n6. **Salve o Documento:** Clique em "Salvar".\n7. **Adicione à Lista de Vendedores:** No seu aplicativo, vá para a página **Funil de Vendas**, clique no ícone de engrenagem (⚙️) ao lado do seletor de vendedor e adicione o nome dele na lista. Isso permitirá que orçamentos sejam criados em seu nome.`,
       },
       {
         question:
           'Passo a passo: Como promovo um Vendedor a GESTOR?',
         answer:
-          '1. No Console do Firebase, vá para o Firestore Database.\n2. Encontre a coleção "users" e abra o documento correspondente ao UID do usuário que você quer promover.\n3. Altere o valor do campo "isAdmin" de "false" para "true".\n4. Na próxima vez que o usuário acessar o sistema, ele já terá a visão completa de gestor.',
+          `1. **Vá para o Banco de Dados:** No painel do Firebase, vá para **Firestore Database**.\n2. **Encontre o Usuário:** Clique na coleção \`users\`. Na lista de documentos, clique no documento cujo ID é o \`User UID\` do vendedor que você quer promover.\n3. **Altere a Permissão:** Você verá os campos \`isAdmin\` e \`email\`. Clique no ícone de lápis para editar o campo \`isAdmin\` e mude seu valor de \`false\` para \`true\`.\n4. **Salve:** Clique em "Atualizar". Na próxima vez que o usuário recarregar a página, ele já terá acesso de gestor.`,
       },
       {
         question: 'Passo a passo: Como eu troco o gestor do sistema?',
