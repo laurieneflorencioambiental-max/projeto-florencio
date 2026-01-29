@@ -17,6 +17,7 @@ export default function RootLayout({
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const isProposalPage = pathname.startsWith('/proposal/');
+  const isPartnershipPage = pathname.startsWith('/partnership/');
 
   useEffect(() => {
     const applyTheme = () => {
@@ -74,7 +75,7 @@ export default function RootLayout({
           <MaintenancePage />
         ) : (
           <FirebaseClientProvider>
-            {isLoginPage || isProposalPage ? (
+            {isLoginPage || isProposalPage || isPartnershipPage ? (
               children
             ) : (
               <AppLayout>{children}</AppLayout>
