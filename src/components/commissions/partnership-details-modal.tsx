@@ -18,10 +18,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from '@/components/ui/table';
-import { Printer, FileText } from 'lucide-react';
-import { useMemo } from 'react';
+import { Printer, FileText, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
 
 type PartnershipDetailsModalProps = {
   isOpen: boolean;
@@ -36,8 +39,48 @@ export default function PartnershipDetailsModal({
   partnerName,
   templates,
 }: PartnershipDetailsModalProps) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const handleGenerateLink = async (openInNewTab: boolean = false) => {
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Erro de Conexão' });
+      return;
+    }
+    setIsGeneratingLink(true);
+    try {
+      const partnershipData = {
+        partnerName,
+        templates,
+        createdAt: serverTimestamp(),
+      };
+      const docRef = await addDoc(collection(firestore, 'partnerships'), partnershipData);
+      const link = `${window.location.origin}/partnership/${docRef.id}`;
+      
+      if (openInNewTab) {
+        window.open(link, '_blank');
+        toast({
+          title: 'Link gerado com sucesso!',
+          description: 'A página de detalhes da parceria foi aberta em uma nova aba.',
+        });
+      } else {
+        await navigator.clipboard.writeText(link);
+        toast({
+          title: 'Link copiado!',
+          description: 'O link para compartilhar foi copiado para a área de transferência.',
+        });
+      }
+    } catch (error) {
+      console.error('Error generating partnership link:', error);
+      toast({ variant: 'destructive', title: 'Erro ao gerar link' });
+    } finally {
+      setIsGeneratingLink(false);
+    }
   };
 
   const handlePrint = () => {
@@ -75,13 +118,6 @@ export default function PartnershipDetailsModal({
         }, 250);
     }
   };
-
-  const totals = useMemo(() => {
-    const totalBaseValue = templates.reduce((sum, t) => sum + t.baseServiceValue, 0);
-    const totalCommissionValue = templates.reduce((sum, t) => sum + t.partnerCommissionValue, 0);
-    const totalFinalPrice = templates.reduce((sum, t) => sum + t.finalClientPrice, 0);
-    return { totalBaseValue, totalCommissionValue, totalFinalPrice };
-  }, [templates]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -136,21 +172,16 @@ export default function PartnershipDetailsModal({
                         );
                     })}
                     </TableBody>
-                    <TableFooter>
-                        <TableRow>
-                            <TableCell className="font-bold">Totais</TableCell>
-                            <TableCell className="text-right font-bold">{formatCurrency(totals.totalBaseValue)}</TableCell>
-                            <TableCell className="text-right font-bold">{formatCurrency(totals.totalCommissionValue)}</TableCell>
-                            <TableCell colSpan={1}></TableCell>
-                            <TableCell className="text-right font-extrabold text-lg text-primary">{formatCurrency(totals.totalFinalPrice)}</TableCell>
-                        </TableRow>
-                    </TableFooter>
                 </Table>
             </div>
         </ScrollArea>
         <DialogFooter className="pt-6">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir / Salvar PDF</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button onClick={() => handleGenerateLink(true)} disabled={isGeneratingLink}>
+            {isGeneratingLink ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+            Gerar e Abrir Link
+          </Button>
+          <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir / Salvar PDF</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

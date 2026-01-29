@@ -78,6 +78,15 @@ service cloud.firestore {
     }
 
     /**
+     * @description Secures partnership documents.
+     * Public read for sharing, but only authenticated users can create/manage.
+     */
+    match /partnerships/{partnershipId} {
+      allow get: if true;
+      allow list, create, update, delete: if isSignedIn();
+    }
+
+    /**
      * @description Secures the 'sellers' collection.
      * This is considered global data for the app. Any authenticated user can read. Only managers can write.
      */

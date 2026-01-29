@@ -289,3 +289,11 @@ export const commissionTemplateSchema = z.object({
 });
 
 export type CommissionTemplate = z.infer<typeof commissionTemplateSchema>;
+
+export const partnershipDocumentSchema = z.object({
+  id: z.string(),
+  partnerName: z.string(),
+  templates: z.array(commissionTemplateSchema),
+  createdAt: z.any(),
+});
+export type PartnershipDocument = z.infer<typeof partnershipDocumentSchema>;

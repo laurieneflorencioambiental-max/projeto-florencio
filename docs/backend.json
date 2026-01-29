@@ -240,6 +240,21 @@
         "partnerCommissionValue": { "type": "number" }
       },
       "required": ["id", "name", "baseServiceValue", "commissionPercentage", "taxPercentage", "finalClientPrice", "partnerCommissionValue"]
+    },
+    "PartnershipDocument": {
+      "title": "Partnership Document",
+      "description": "Represents the details of a commercial partnership for sharing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "partnerName": { "type": "string" },
+        "templates": {
+          "type": "array",
+          "items": { "$ref": "#/backend/entities/CommissionTemplate" }
+        },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "partnerName", "templates", "createdAt"]
     }
   },
   "auth": {
@@ -346,6 +361,14 @@
           "entityName": "CommissionTemplate",
           "schema": { "$ref": "#/backend/entities/CommissionTemplate" },
           "description": "Stores global commission calculation templates for partners."
+        }
+      },
+      {
+        "path": "/partnerships/{partnershipId}",
+        "definition": {
+          "entityName": "PartnershipDocument",
+          "schema": { "$ref": "#/backend/entities/PartnershipDocument" },
+          "description": "Stores generated partnership detail documents for sharing."
         }
       }
     ]
