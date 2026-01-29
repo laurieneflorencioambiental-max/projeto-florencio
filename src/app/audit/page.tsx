@@ -39,12 +39,14 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  startOfYear,
+  endOfYear,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
-type FilterPeriod = 'all' | 'today' | 'week' | 'month';
+type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
 export default function AuditPage() {
   const { user, isUserLoading } = useUser();
@@ -100,6 +102,9 @@ export default function AuditPage() {
           break;
         case 'month':
           interval = { start: startOfMonth(now), end: endOfMonth(now) };
+          break;
+        case 'year':
+          interval = { start: startOfYear(now), end: endOfYear(now) };
           break;
         default:
           interval = { start: new Date(0), end: now }; // Should not happen
@@ -188,6 +193,7 @@ export default function AuditPage() {
                   <SelectItem value="today">Hoje</SelectItem>
                   <SelectItem value="week">Esta Semana</SelectItem>
                   <SelectItem value="month">Este Mês</SelectItem>
+                  <SelectItem value="year">Este Ano</SelectItem>
                 </SelectContent>
               </Select>
             </div>
