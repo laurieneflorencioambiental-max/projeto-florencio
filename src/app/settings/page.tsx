@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -547,7 +539,7 @@ export default function SettingsPage() {
     setIsSavingUser(true);
     const userDocRef = doc(firestore, 'users', editingUserId);
   
-    const dataToUpdate: Partial<UserProfile> = {
+    const dataToUpdate: { [key: string]: any } = {
       isAdmin: editedUser.isAdmin,
     };
   
@@ -578,7 +570,7 @@ export default function SettingsPage() {
         variant: 'destructive',
         title: 'Erro ao Salvar',
         description:
-          'Não foi possível salvar as alterações. Verifique as regras de segurança do Firestore.',
+          'Não foi possível salvar as alterações. Verifique as permissões de segurança e a conexão.',
       });
     } finally {
       setIsSavingUser(false);
