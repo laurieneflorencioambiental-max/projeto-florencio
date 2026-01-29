@@ -5,6 +5,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 exports.logAuditEvent = functions
+    .region("us-central1") // Definindo a região explicitamente
     .https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "A função só pode ser chamada por um usuário autenticado.");
@@ -13,6 +14,7 @@ exports.logAuditEvent = functions
     if (action !== "login" && action !== "logout") {
         throw new functions.https.HttpsError("invalid-argument", "A ação deve ser 'login' ou 'logout'.");
     }
+    // A captura de IP só é confiável em uma Cloud Function
     const ipAddress = context.rawRequest.ip;
     const uid = context.auth.uid;
     const userRecord = await admin.auth().getUser(uid);
