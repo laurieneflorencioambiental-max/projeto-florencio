@@ -6,6 +6,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -504,7 +505,6 @@ export default function SettingsPage() {
 
  const handleStartEditing = (userToEdit: UserProfile) => {
     setEditingUserId(userToEdit.uid);
-    // Deep copy to avoid mutating the original state from useCollection
     setEditedUser(JSON.parse(JSON.stringify(userToEdit)));
   };
 
@@ -515,29 +515,31 @@ export default function SettingsPage() {
 
   const handlePermissionChange = (permission: PermissionKey, value: boolean) => {
     if (!editedUser) return;
-    setEditedUser(prev => ({
-      ...prev,
-      permissions: {
-        ...(prev?.permissions || {}),
-        [permission]: value,
+    setEditedUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        permissions: {
+          ...(prev.permissions || {}),
+          [permission]: value,
+        }
       }
-    }));
+    });
   };
   
   const handleRoleChange = (isAdmin: boolean) => {
     if (!editedUser) return;
-    setEditedUser(prev => ({ ...prev, isAdmin }));
+    setEditedUser(prev => prev ? ({ ...prev, isAdmin }) : null);
   };
   
   const handleSaveUser = async () => {
     if (!firestore || !editedUser || !editingUserId) return;
   
-    // Block self-permission change
-    if (editingUserId === user?.uid && editedUser.isAdmin !== isAdmin) {
+    if (editingUserId === user?.uid) {
       toast({
         variant: 'destructive',
         title: 'Ação não permitida',
-        description: 'Você não pode alterar sua própria permissão de Gestor.',
+        description: 'Você não pode alterar suas próprias permissões aqui.',
       });
       return;
     }
@@ -549,7 +551,6 @@ export default function SettingsPage() {
       isAdmin: editedUser.isAdmin,
     };
   
-    // Only add the permissions object if the user is NOT an admin
     if (!editedUser.isAdmin) {
       dataToUpdate.permissions = editedUser.permissions || {};
     }
