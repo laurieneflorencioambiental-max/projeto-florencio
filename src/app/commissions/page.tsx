@@ -21,11 +21,14 @@ import {
   FileText,
   ShieldAlert,
   Pencil,
+  FileDown,
+  Link as LinkIcon,
+  Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import type { CommissionTemplate, UserProfile } from '@/lib/types';
+import type { CommissionTemplate, UserProfile, Service } from '@/lib/types';
 import { collection, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { logClientEvent } from '@/lib/audit-client';
 import {
@@ -45,6 +48,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import PartnershipDetailsModal from '@/components/commissions/partnership-details-modal';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 
 export default function CommissionsPage() {
   const { user, isUserLoading } = useUser();
@@ -77,6 +88,9 @@ export default function CommissionsPage() {
 
   const templatesRef = useMemoFirebase(() => firestore && isAdmin ? collection(firestore, 'commission-templates') : null, [firestore, isAdmin]);
   const { data: savedTemplates, isLoading: areTemplatesLoading } = useCollection<CommissionTemplate>(templatesRef);
+
+  const servicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const { data: servicesCatalog, isLoading: areServicesLoading } = useCollection<Service>(servicesRef);
 
   const calculation = useMemo(() => {
     const commissionValue = baseServiceValue * (commissionPercentage / 100);
@@ -148,6 +162,24 @@ export default function CommissionsPage() {
     setCommissionPercentage(template.commissionPercentage);
     setTaxPercentage(template.taxPercentage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleLoadFromCatalog = (serviceId: string) => {
+    if (!servicesCatalog) return;
+    const selectedService = servicesCatalog.find(s => s.id === serviceId);
+    if (selectedService) {
+      setBaseServiceValue(selectedService.value);
+      if (!serviceName) {
+        setServiceName(selectedService.service);
+      }
+      if (!templateName) {
+        setTemplateName(selectedService.service);
+      }
+      toast({
+        title: 'Valor Carregado',
+        description: `Valor de "${selectedService.service}" preenchido.`
+      });
+    }
   };
 
   const deleteTemplate = async (id: string) => {
@@ -252,7 +284,7 @@ export default function CommissionsPage() {
     }
   };
 
-  const isLoading = isUserLoading || isProfileLoading || areTemplatesLoading;
+  const isLoading = isUserLoading || isProfileLoading || areTemplatesLoading || areServicesLoading;
 
   if (isLoading) {
     return (
@@ -305,6 +337,28 @@ export default function CommissionsPage() {
                     <Label htmlFor="service-name">Nome do Serviço (Opcional)</Label>
                     <Input id="service-name" placeholder="Ex: ASO Clínico" value={serviceName} onChange={e => setServiceName(e.target.value)} />
                 </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Carregar Valor do Catálogo (Opcional)</Label>
+              <Select onValueChange={handleLoadFromCatalog}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um serviço do catálogo para preencher o valor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {servicesCatalog && servicesCatalog.length > 0 ? (
+                    servicesCatalog.map(service => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.service} ({formatCurrency(service.value)})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      Nenhum serviço no catálogo
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <Card className="bg-muted/30">
