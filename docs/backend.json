@@ -232,6 +232,7 @@
         "id": { "type": "string" },
         "name": { "type": "string", "description": "Name for this commission setup, e.g., 'Contabilidade Modelo'." },
         "partnerName": { "type": "string", "description": "Name of the partner or partner type." },
+        "partnerWhatsapp": { "type": "string", "description": "WhatsApp number of the partner." },
         "serviceName": { "type": "string", "description": "The name of the service being commissioned." },
         "baseServiceValue": { "type": "number" },
         "commissionPercentage": { "type": "number" },

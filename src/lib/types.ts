@@ -280,6 +280,7 @@ export const commissionTemplateSchema = z.object({
     id: z.string(),
     name: z.string(),
     partnerName: z.string().optional(),
+    partnerWhatsapp: z.string().optional(),
     serviceName: z.string().optional(),
     baseServiceValue: z.number(),
     commissionPercentage: z.number(),

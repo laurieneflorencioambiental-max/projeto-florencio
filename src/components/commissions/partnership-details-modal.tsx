@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, FileText, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { Printer, FileText, Link as LinkIcon, Loader2, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
@@ -47,12 +47,8 @@ export default function PartnershipDetailsModal({
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  const handleGenerateLink = async (openInNewTab: boolean = false) => {
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Erro de Conexão' });
-      return;
-    }
-    setIsGeneratingLink(true);
+  const generateLink = async (): Promise<string | null> => {
+    if (!firestore) return null;
     try {
       const partnershipData = {
         partnerName,
@@ -60,26 +56,46 @@ export default function PartnershipDetailsModal({
         createdAt: serverTimestamp(),
       };
       const docRef = await addDoc(collection(firestore, 'partnerships'), partnershipData);
-      const link = `${window.location.origin}/partnership/${docRef.id}`;
-      
-      if (openInNewTab) {
-        window.open(link, '_blank');
-        toast({
-          title: 'Link gerado com sucesso!',
-          description: 'A página de detalhes da parceria foi aberta em uma nova aba.',
-        });
-      } else {
-        await navigator.clipboard.writeText(link);
-        toast({
-          title: 'Link copiado!',
-          description: 'O link para compartilhar foi copiado para a área de transferência.',
-        });
-      }
+      return `${window.location.origin}/partnership/${docRef.id}`;
     } catch (error) {
       console.error('Error generating partnership link:', error);
       toast({ variant: 'destructive', title: 'Erro ao gerar link' });
-    } finally {
-      setIsGeneratingLink(false);
+      return null;
+    }
+  };
+
+  const handleOpenLink = async () => {
+    setIsGeneratingLink(true);
+    const link = await generateLink();
+    setIsGeneratingLink(false);
+    if (link) {
+        window.open(link, '_blank');
+        toast({
+            title: 'Link gerado com sucesso!',
+            description: 'A página foi aberta em uma nova aba.',
+        });
+    }
+  };
+
+  const handleSendWhatsapp = async () => {
+    const partnerWhatsapp = templates.length > 0 ? templates[0].partnerWhatsapp?.replace(/\D/g, '') : null;
+    if (!partnerWhatsapp) {
+      toast({
+        variant: 'destructive',
+        title: 'WhatsApp não encontrado',
+        description: 'Cadastre o número de WhatsApp do parceiro para usar esta função.',
+      });
+      return;
+    }
+
+    setIsGeneratingLink(true);
+    const link = await generateLink();
+    setIsGeneratingLink(false);
+
+    if (link) {
+      const text = `Olá, ${partnerName}!\n\nSegue o detalhamento da nossa parceria comercial, com os valores e comissões para os serviços que podemos oferecer juntos.\n\nClique no link para ver os detalhes: ${link}\n\nQualquer dúvida, estou à disposição!\n\nAtenciosamente,\nGrupo Florencio`;
+      const url = `https://wa.me/${partnerWhatsapp}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
     }
   };
 
@@ -184,9 +200,13 @@ export default function PartnershipDetailsModal({
         </ScrollArea>
         <DialogFooter className="pt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-          <Button onClick={() => handleGenerateLink(true)} disabled={isGeneratingLink}>
+          <Button onClick={handleOpenLink} disabled={isGeneratingLink}>
             {isGeneratingLink ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
             Gerar e Abrir Link
+          </Button>
+           <Button onClick={handleSendWhatsapp} disabled={isGeneratingLink}>
+            {isGeneratingLink ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            Enviar WhatsApp
           </Button>
           <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir / Salvar PDF</Button>
         </DialogFooter>

@@ -53,6 +53,7 @@ export default function CommissionsPage() {
 
   const [serviceName, setServiceName] = useState('');
   const [partnerName, setPartnerName] = useState('');
+  const [partnerWhatsapp, setPartnerWhatsapp] = useState('');
   const [baseServiceValue, setBaseServiceValue] = useState(0);
   const [commissionPercentage, setCommissionPercentage] = useState(0);
   const [taxPercentage, setTaxPercentage] = useState(0);
@@ -92,6 +93,7 @@ export default function CommissionsPage() {
   const resetForm = () => {
     setServiceName('');
     setPartnerName('');
+    setPartnerWhatsapp('');
     setBaseServiceValue(0);
     setCommissionPercentage(0);
     setTaxPercentage(0);
@@ -113,6 +115,7 @@ export default function CommissionsPage() {
     const newTemplate: Omit<CommissionTemplate, 'id'> = {
         name: templateName,
         partnerName: partnerName,
+        partnerWhatsapp: partnerWhatsapp,
         serviceName: serviceName,
         baseServiceValue: baseServiceValue,
         commissionPercentage: commissionPercentage,
@@ -130,6 +133,7 @@ export default function CommissionsPage() {
   const loadTemplate = (template: CommissionTemplate) => {
     setTemplateName(template.name);
     setPartnerName(template.partnerName || '');
+    setPartnerWhatsapp(template.partnerWhatsapp || '');
     setServiceName(template.serviceName || '');
     setBaseServiceValue(template.baseServiceValue);
     setCommissionPercentage(template.commissionPercentage);
@@ -174,6 +178,12 @@ export default function CommissionsPage() {
     setTaxPercentage(0);
     setTemplateName('');
     setPartnerName(partner);
+
+    const existingTemplatesForPartner = groupedTemplates[partner];
+    if (existingTemplatesForPartner && existingTemplatesForPartner.length > 0) {
+        setPartnerWhatsapp(existingTemplatesForPartner[0].partnerWhatsapp || '');
+    }
+
     calculatorCardRef.current?.scrollIntoView({ behavior: 'smooth' });
     toast({
       title: `Adicionando serviço para ${partner}`,
@@ -227,10 +237,14 @@ export default function CommissionsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="partner-name">Nome do Parceiro (Opcional)</Label>
                     <Input id="partner-name" placeholder="Ex: Contabilidade XYZ" value={partnerName} onChange={e => setPartnerName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="partner-whatsapp">WhatsApp do Parceiro</Label>
+                    <Input id="partner-whatsapp" placeholder="Ex: 5521999998888" value={partnerWhatsapp} onChange={e => setPartnerWhatsapp(e.target.value)} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="service-name">Nome do Serviço (Opcional)</Label>
@@ -348,7 +362,7 @@ export default function CommissionsPage() {
             </div>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Imposto ({taxPercentage}%)</span>
-                <span className="font-medium text-red-600">{formatCurrency(calculation.taxValue)}</span>
+                <span className="font-medium text-red-600">{formatCurrency(calculation.taxesValue)}</span>
             </div>
             <div className="flex justify-between items-center border-t pt-4 mt-4">
               <div>
