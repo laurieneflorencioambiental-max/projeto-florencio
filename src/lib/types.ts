@@ -34,6 +34,7 @@ export const contactSources = [
   'Indicação',
   'BNI',
   'Marketing Offline',
+  'Outro',
 ] as const;
 export type ContactSource = (typeof contactSources)[number];
 
@@ -205,3 +206,44 @@ export const pricingTemplateSchema = z.object({
 });
 
 export type PricingTemplate = z.infer<typeof pricingTemplateSchema>;
+
+
+// Marketing Page Types
+export const roiEntrySchema = z.object({
+  id: z.string(),
+  source: z.string(),
+  investment: z.number(),
+  revenue: z.number(),
+  roi: z.number(),
+  createdAt: z.any(),
+});
+export type RoiEntry = z.infer<typeof roiEntrySchema>;
+
+export const campaignStatuses = ['Futura', 'Rodando', 'Pausada', 'Concluída'] as const;
+export type CampaignStatus = (typeof campaignStatuses)[number];
+
+export const marketingActionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  goal: z.string(),
+  deadline: z.any(),
+  status: z.enum(campaignStatuses),
+  source: z.string().optional(),
+  percentageGoal: z.number().optional(),
+  createdAt: z.any(),
+});
+export type MarketingAction = z.infer<typeof marketingActionSchema>;
+
+export const toolPeriodicityOptions = ['Mensal', 'Anual', 'Único'] as const;
+export type ToolPeriodicity = (typeof toolPeriodicityOptions)[number];
+
+export const digitalToolSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  value: z.number(),
+  periodicity: z.enum(toolPeriodicityOptions),
+  dueDate: z.any(),
+  observation: z.string().optional(),
+  createdAt: z.any(),
+});
+export type DigitalTool = z.infer<typeof digitalToolSchema>;

@@ -162,6 +162,51 @@
         "finalPrice": { "type": "number" }
       },
       "required": ["id", "name", "serviceType", "costs", "finalPrice"]
+    },
+    "RoiEntry": {
+      "title": "ROI Entry",
+      "description": "Represents a single ROI calculation for a marketing campaign.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string" },
+        "investment": { "type": "number" },
+        "revenue": { "type": "number" },
+        "roi": { "type": "number" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "source", "investment", "revenue", "roi", "createdAt"]
+    },
+    "MarketingAction": {
+      "title": "Marketing Action",
+      "description": "Represents a planned marketing action or campaign.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "goal": { "type": "string" },
+        "deadline": { "type": "object" },
+        "status": { "type": "string", "enum": ["Futura", "Rodando", "Pausada", "Concluída"] },
+        "source": { "type": "string" },
+        "percentageGoal": { "type": "number" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "name", "goal", "deadline", "status", "createdAt"]
+    },
+    "DigitalTool": {
+      "title": "Digital Tool",
+      "description": "Represents a subscription or investment in a digital tool for marketing.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "value": { "type": "number" },
+        "periodicity": { "type": "string", "enum": ["Mensal", "Anual", "Único"] },
+        "dueDate": { "type": "object" },
+        "observation": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "name", "value", "periodicity", "dueDate", "createdAt"]
     }
   },
   "auth": {
@@ -228,6 +273,30 @@
           "entityName": "PricingTemplate",
           "schema": { "$ref": "#/backend/entities/PricingTemplate" },
           "description": "Stores global pricing templates available to all users."
+        }
+      },
+      {
+        "path": "/marketing-roi-entries/{entryId}",
+        "definition": {
+          "entityName": "RoiEntry",
+          "schema": { "$ref": "#/backend/entities/RoiEntry" },
+          "description": "Stores global ROI calculation entries for marketing."
+        }
+      },
+      {
+        "path": "/marketing-actions/{actionId}",
+        "definition": {
+          "entityName": "MarketingAction",
+          "schema": { "$ref": "#/backend/entities/MarketingAction" },
+          "description": "Stores global marketing actions and campaigns."
+        }
+      },
+      {
+        "path": "/marketing-tools/{toolId}",
+        "definition": {
+          "entityName": "DigitalTool",
+          "schema": { "$ref": "#/backend/entities/DigitalTool" },
+          "description": "Stores global digital tool investments for marketing."
         }
       }
     ]

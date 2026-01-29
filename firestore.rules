@@ -122,5 +122,19 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isManager();
     }
+
+    /**
+     * @description Secures global marketing data.
+     * Only managers can read or write marketing information.
+     */
+    match /marketing-roi-entries/{entryId} {
+      allow read, write: if isManager();
+    }
+    match /marketing-actions/{actionId} {
+      allow read, write: if isManager();
+    }
+    match /marketing-tools/{toolId} {
+      allow read, write: if isManager();
+    }
   }
 }

@@ -27,7 +27,7 @@ import {
   AlertCircle,
   Bot,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -35,7 +35,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { contactSources } from '@/lib/types';
+import {
+  contactSources,
+  campaignStatuses,
+  toolPeriodicityOptions,
+} from '@/lib/types';
+import type {
+  RoiEntry,
+  MarketingAction,
+  CampaignStatus,
+  DigitalTool,
+  ToolPeriodicity,
+} from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -73,39 +84,21 @@ import {
   suggestCampaignGoalAction,
   analyzeCampaignPerformanceAction,
 } from '@/app/actions';
-
-interface RoiEntry {
-  id: number;
-  source: string;
-  investment: number;
-  revenue: number;
-  roi: number;
-}
-
-const campaignStatuses = ['Futura', 'Rodando', 'Pausada', 'Concluída'] as const;
-type CampaignStatus = (typeof campaignStatuses)[number];
-
-interface MarketingAction {
-  id: number;
-  name: string;
-  goal: string;
-  deadline: Date;
-  status: CampaignStatus;
-  source?: string;
-  percentageGoal?: number;
-}
-
-const toolPeriodicityOptions = ['Mensal', 'Anual', 'Único'] as const;
-type ToolPeriodicity = (typeof toolPeriodicityOptions)[number];
-
-interface DigitalTool {
-  id: number;
-  name: string;
-  value: number;
-  periodicity: ToolPeriodicity;
-  dueDate: Date;
-  observation?: string;
-}
+import {
+  useUser,
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+} from '@/firebase';
+import {
+  collection,
+  doc,
+  addDoc,
+  deleteDoc,
+  setDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -114,17 +107,24 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   label: ptBR.localize?.month(i, { width: 'wide' }),
 }));
 
+const getDate = (date: any): Date | null => {
+    if (!date) return null;
+    if (date.toDate) return date.toDate();
+    return new Date(date);
+}
+
 export default function MarketingPage() {
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const router = useRouter();
 
   // ROI State
-  const [entries, setEntries] = useState<RoiEntry[]>([]);
   const [newInvestment, setNewInvestment] = useState('');
   const [newRevenue, setNewRevenue] = useState('');
   const [newSource, setNewSource] = useState('');
 
   // Action Plan State
-  const [actions, setActions] = useState<MarketingAction[]>([]);
   const [newActionName, setNewActionName] = useState('');
   const [newActionGoal, setNewActionGoal] = useState('');
   const [newActionDeadline, setNewActionDeadline] = useState<Date | undefined>();
@@ -132,15 +132,14 @@ export default function MarketingPage() {
   const [newActionPercentageGoal, setNewActionPercentageGoal] = useState('');
   const [newActionStatus, setNewActionStatus] =
     useState<CampaignStatus>('Futura');
-  const [editingActionId, setEditingActionId] = useState<number | null>(null);
+  const [editingActionId, setEditingActionId] = useState<string | null>(null);
   const [isSuggestingGoal, setIsSuggestingGoal] = useState(false);
   const [goalSuggestion, setGoalSuggestion] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
   // Digital Tools State
-  const [tools, setTools] = useState<DigitalTool[]>([]);
-  const [editingToolId, setEditingToolId] = useState<number | null>(null);
+  const [editingToolId, setEditingToolId] = useState<string | null>(null);
   const [newToolName, setNewToolName] = useState('');
   const [newToolValue, setNewToolValue] = useState('');
   const [newToolPeriodicity, setNewToolPeriodicity] =
@@ -157,13 +156,41 @@ export default function MarketingPage() {
     new Date().getFullYear()
   );
 
-  const filteredActions = useMemo(() => {
-    if (filter === 'all') {
-      return actions;
+  // Firestore Collections
+  const roiEntriesRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'marketing-roi-entries') : null),
+    [firestore]
+  );
+  const { data: entries, isLoading: areEntriesLoading } =
+    useCollection<RoiEntry>(roiEntriesRef);
+
+  const actionsRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'marketing-actions') : null),
+    [firestore]
+  );
+  const { data: actions, isLoading: areActionsLoading } =
+    useCollection<MarketingAction>(actionsRef);
+
+  const toolsRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'marketing-tools') : null),
+    [firestore]
+  );
+  const { data: tools, isLoading: areToolsLoading } =
+    useCollection<DigitalTool>(toolsRef);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace('/login');
     }
+  }, [user, isUserLoading, router]);
+
+  const filteredActions = useMemo(() => {
+    const data = actions || [];
+    if (filter === 'all') return data;
     const now = new Date();
-    return actions.filter(action => {
-      const actionDate = action.deadline;
+    return data.filter(action => {
+      const actionDate = getDate(action.deadline);
+      if (!actionDate) return false;
       switch (filter) {
         case 'today':
           return isWithinInterval(actionDate, {
@@ -189,12 +216,12 @@ export default function MarketingPage() {
   }, [actions, filter, selectedMonth, selectedYear]);
 
   const filteredEntries = useMemo(() => {
-    if (filter === 'all') {
-      return entries;
-    }
+    const data = entries || [];
+    if (filter === 'all') return data;
     const now = new Date();
-    return entries.filter(entry => {
-      const entryDate = new Date(entry.id);
+    return data.filter(entry => {
+      const entryDate = getDate(entry.createdAt);
+      if (!entryDate) return false;
       switch (filter) {
         case 'today':
           return isWithinInterval(entryDate, {
@@ -220,12 +247,12 @@ export default function MarketingPage() {
   }, [entries, filter, selectedMonth, selectedYear]);
 
   const filteredTools = useMemo(() => {
-    if (filter === 'all') {
-      return tools;
-    }
+    const data = tools || [];
+    if (filter === 'all') return data;
     const now = new Date();
-    return tools.filter(tool => {
-      const toolDate = tool.dueDate;
+    return data.filter(tool => {
+      const toolDate = getDate(tool.dueDate);
+      if (!toolDate) return false;
       switch (filter) {
         case 'today':
           return isWithinInterval(toolDate, {
@@ -251,8 +278,9 @@ export default function MarketingPage() {
   }, [tools, filter, selectedMonth, selectedYear]);
 
   // ROI Handlers
-  const handleAddEntry = (e: React.FormEvent) => {
+  const handleAddEntry = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!roiEntriesRef) return;
     const investmentValue = parseFloat(newInvestment);
     const revenueValue = parseFloat(newRevenue);
 
@@ -274,15 +302,16 @@ export default function MarketingPage() {
     const calculatedRoi =
       ((revenueValue - investmentValue) / investmentValue) * 100;
 
-    const newEntry: RoiEntry = {
-      id: Date.now(),
+    const newDocRef = doc(roiEntriesRef);
+    const newEntry: Omit<RoiEntry, 'id'> = {
       source: newSource,
       investment: investmentValue,
       revenue: revenueValue,
       roi: calculatedRoi,
+      createdAt: serverTimestamp(),
     };
 
-    setEntries([...entries, newEntry]);
+    await setDoc(newDocRef, { ...newEntry, id: newDocRef.id });
 
     // Reset form
     setNewInvestment('');
@@ -295,16 +324,17 @@ export default function MarketingPage() {
     });
   };
 
-  const handleDeleteEntry = (id: number) => {
-    setEntries(entries.filter(entry => entry.id !== id));
+  const handleDeleteEntry = async (id: string) => {
+    if (!firestore) return;
+    await deleteDoc(doc(firestore, 'marketing-roi-entries', id));
   };
 
   const totals = useMemo(() => {
-    const totalInvestment = filteredEntries.reduce(
+    const totalInvestment = (filteredEntries || []).reduce(
       (acc, entry) => acc + entry.investment,
       0
     );
-    const totalRevenue = filteredEntries.reduce(
+    const totalRevenue = (filteredEntries || []).reduce(
       (acc, entry) => acc + entry.revenue,
       0
     );
@@ -322,7 +352,7 @@ export default function MarketingPage() {
     setEditingActionId(action.id);
     setNewActionName(action.name);
     setNewActionGoal(action.goal);
-    setNewActionDeadline(action.deadline);
+    setNewActionDeadline(getDate(action.deadline) || undefined);
     setNewActionSource(action.source || '');
     setNewActionPercentageGoal(
       action.percentageGoal ? String(action.percentageGoal) : ''
@@ -342,8 +372,9 @@ export default function MarketingPage() {
     setGoalSuggestion(null);
   };
 
-  const handleActionFormSubmit = (e: React.FormEvent) => {
+  const handleActionFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!actionsRef) return;
     if (!newActionName || !newActionGoal || !newActionDeadline) {
       toast({
         variant: 'destructive',
@@ -358,36 +389,32 @@ export default function MarketingPage() {
       : undefined;
 
     if (editingActionId) {
-      setActions(
-        actions.map(action =>
-          action.id === editingActionId
-            ? {
-                ...action,
-                name: newActionName,
-                goal: newActionGoal,
-                deadline: newActionDeadline,
-                source: newActionSource,
-                percentageGoal: percentageGoalValue,
-                status: newActionStatus,
-              }
-            : action
-        )
-      );
+      const actionRef = doc(actionsRef, editingActionId);
+      const updatedAction = {
+        name: newActionName,
+        goal: newActionGoal,
+        deadline: newActionDeadline,
+        source: newActionSource,
+        percentageGoal: percentageGoalValue,
+        status: newActionStatus,
+      };
+      await setDoc(actionRef, updatedAction, { merge: true });
       toast({
         title: 'Ação Atualizada!',
         description: `A campanha "${newActionName}" foi atualizada.`,
       });
     } else {
-      const newAction: MarketingAction = {
-        id: Date.now(),
+      const newDocRef = doc(actionsRef);
+      const newAction: Omit<MarketingAction, 'id'> = {
         name: newActionName,
         goal: newActionGoal,
         deadline: newActionDeadline,
         status: newActionStatus,
         source: newActionSource,
         percentageGoal: percentageGoalValue,
+        createdAt: serverTimestamp(),
       };
-      setActions([...actions, newAction]);
+      await setDoc(newDocRef, { ...newAction, id: newDocRef.id });
       toast({
         title: 'Ação Adicionada!',
         description: `A campanha "${newActionName}" foi adicionada ao seu plano.`,
@@ -397,8 +424,9 @@ export default function MarketingPage() {
     handleCancelEditing();
   };
 
-  const handleDeleteAction = (id: number) => {
-    setActions(actions.filter(action => action.id !== id));
+  const handleDeleteAction = async (id: string) => {
+    if (!firestore) return;
+    await deleteDoc(doc(firestore, 'marketing-actions', id));
     toast({
       title: 'Ação Removida',
       description: `A ação foi removida do seu plano.`,
@@ -425,7 +453,7 @@ export default function MarketingPage() {
       const result = await suggestCampaignGoalAction(
         newActionSource,
         investmentValue,
-        entries
+        entries || []
       );
       if (result.suggestedPercentage > 0) {
         setNewActionPercentageGoal(String(result.suggestedPercentage));
@@ -454,7 +482,7 @@ export default function MarketingPage() {
     setAnalysisResult(null);
 
     try {
-      const result = await analyzeCampaignPerformanceAction(entries);
+      const result = await analyzeCampaignPerformanceAction(entries || []);
       setAnalysisResult(result.analysis);
     } catch (error) {
       console.error(error);
@@ -476,11 +504,16 @@ export default function MarketingPage() {
       Futura: 3,
       Concluída: 4,
     };
-    return [...filteredActions].sort((a, b) => {
+    return [...(filteredActions || [])].sort((a, b) => {
       if (statusOrder[a.status] !== statusOrder[b.status]) {
         return statusOrder[a.status] - statusOrder[b.status];
       }
-      return a.deadline.getTime() - b.deadline.getTime();
+      const dateA = getDate(a.deadline);
+      const dateB = getDate(b.deadline);
+      if (dateA && dateB) {
+        return dateA.getTime() - dateB.getTime();
+      }
+      return 0;
     });
   }, [filteredActions]);
 
@@ -507,8 +540,9 @@ export default function MarketingPage() {
   };
 
   // Tool Handlers
-  const handleToolFormSubmit = (e: React.FormEvent) => {
+  const handleToolFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!toolsRef) return;
     const value = parseFloat(newToolValue);
     if (!newToolName || !newToolDueDate || isNaN(value) || value <= 0) {
       toast({
@@ -521,34 +555,30 @@ export default function MarketingPage() {
     }
 
     if (editingToolId) {
-      setTools(
-        tools.map(tool =>
-          tool.id === editingToolId
-            ? {
-                ...tool,
-                name: newToolName,
-                value,
-                periodicity: newToolPeriodicity,
-                dueDate: newToolDueDate,
-                observation: newToolObservation,
-              }
-            : tool
-        )
-      );
-      toast({
-        title: 'Ferramenta Atualizada!',
-        description: `A assinatura de "${newToolName}" foi atualizada.`,
-      });
-    } else {
-      const newTool: DigitalTool = {
-        id: Date.now(),
+      const toolRef = doc(toolsRef, editingToolId);
+      const updatedTool = {
         name: newToolName,
         value,
         periodicity: newToolPeriodicity,
         dueDate: newToolDueDate,
         observation: newToolObservation,
       };
-      setTools([...tools, newTool]);
+      await setDoc(toolRef, updatedTool, { merge: true });
+      toast({
+        title: 'Ferramenta Atualizada!',
+        description: `A assinatura de "${newToolName}" foi atualizada.`,
+      });
+    } else {
+      const newDocRef = doc(toolsRef);
+      const newTool: Omit<DigitalTool, 'id'> = {
+        name: newToolName,
+        value,
+        periodicity: newToolPeriodicity,
+        dueDate: newToolDueDate,
+        observation: newToolObservation,
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(newDocRef, { ...newTool, id: newDocRef.id });
       toast({
         title: 'Ferramenta Adicionada!',
         description: `"${newToolName}" foi adicionada à sua lista de investimentos.`,
@@ -562,7 +592,7 @@ export default function MarketingPage() {
     setNewToolName(tool.name);
     setNewToolValue(String(tool.value));
     setNewToolPeriodicity(tool.periodicity);
-    setNewToolDueDate(tool.dueDate);
+    setNewToolDueDate(getDate(tool.dueDate) || undefined);
     setNewToolObservation(tool.observation || '');
   };
 
@@ -575,13 +605,24 @@ export default function MarketingPage() {
     setNewToolObservation('');
   };
 
-  const handleDeleteTool = (id: number) => {
-    setTools(tools.filter(tool => tool.id !== id));
+  const handleDeleteTool = async (id: string) => {
+    if (!firestore) return;
+    await deleteDoc(doc(firestore, 'marketing-tools', id));
     toast({
       title: 'Ferramenta Removida',
       description: 'A ferramenta foi removida da sua lista de investimentos.',
     });
   };
+
+  const isLoading = areEntriesLoading || areActionsLoading || areToolsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -698,7 +739,6 @@ export default function MarketingPage() {
                         {source}
                       </SelectItem>
                     ))}
-                    <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -814,13 +854,15 @@ export default function MarketingPage() {
           </form>
 
           <h3 className="text-lg font-medium mb-4">Ações Planejadas</h3>
-          {sortedActions.length > 0 ? (
+          {(sortedActions || []).length > 0 ? (
             <div className="space-y-3">
               {sortedActions.map(action => {
+                const deadline = getDate(action.deadline);
                 const isExpired =
+                  deadline &&
                   action.status !== 'Concluída' &&
-                  isPast(action.deadline) &&
-                  !isToday(action.deadline);
+                  isPast(deadline) &&
+                  !isToday(deadline);
                 return (
                   <div
                     key={action.id}
@@ -877,22 +919,24 @@ export default function MarketingPage() {
                           </div>
                         )}
                       </div>
-                      <div
-                        className={cn(
-                          'flex items-center gap-2 text-xs mt-2',
-                          action.status === 'Concluída'
-                            ? 'text-muted-foreground'
-                            : isExpired
-                            ? 'font-bold text-destructive'
-                            : 'text-primary font-medium'
-                        )}
-                      >
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {isExpired ? 'Prazo Expirado' : 'Prazo'}:{' '}
-                          {format(action.deadline, 'dd/MM/yyyy')}
-                        </span>
-                      </div>
+                       {deadline && (
+                        <div
+                            className={cn(
+                            'flex items-center gap-2 text-xs mt-2',
+                            action.status === 'Concluída'
+                                ? 'text-muted-foreground'
+                                : isExpired
+                                ? 'font-bold text-destructive'
+                                : 'text-primary font-medium'
+                            )}
+                        >
+                            <Clock className="h-3 w-3" />
+                            <span>
+                            {isExpired ? 'Prazo Expirado' : 'Prazo'}:{' '}
+                            {format(deadline, 'dd/MM/yyyy')}
+                            </span>
+                        </div>
+                       )}
                     </div>
                     <div className="flex items-center">
                       <Button
@@ -1061,7 +1105,7 @@ export default function MarketingPage() {
           </form>
 
           <h3 className="text-lg font-medium mb-4">Ferramentas Adicionadas</h3>
-          {filteredTools.length > 0 ? (
+          {(filteredTools || []).length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1076,8 +1120,9 @@ export default function MarketingPage() {
               </TableHeader>
               <TableBody>
                 {filteredTools.map(tool => {
+                  const dueDate = getDate(tool.dueDate);
                   const isToolOverdue =
-                    isPast(tool.dueDate) && !isToday(tool.dueDate);
+                    dueDate && isPast(dueDate) && !isToday(dueDate);
 
                   return (
                     <TableRow
@@ -1100,13 +1145,15 @@ export default function MarketingPage() {
                             : 'text-green-600 font-semibold'
                         )}
                       >
-                        <div className="flex items-center gap-1.5">
-                          {isToolOverdue && <AlertCircle className="h-4 w-4" />}
-                          <span>
-                            {isToolOverdue ? 'Vencido em ' : 'Vence em '}
-                            {format(tool.dueDate, 'dd/MM/yyyy')}
-                          </span>
-                        </div>
+                         {dueDate && (
+                             <div className="flex items-center gap-1.5">
+                                {isToolOverdue && <AlertCircle className="h-4 w-4" />}
+                                <span>
+                                    {isToolOverdue ? 'Vencido em ' : 'Vence em '}
+                                    {format(dueDate, 'dd/MM/yyyy')}
+                                </span>
+                            </div>
+                         )}
                       </TableCell>
                       <TableCell className="text-right">
                         {tool.value.toLocaleString('pt-BR', {
@@ -1174,7 +1221,6 @@ export default function MarketingPage() {
                         {source}
                       </SelectItem>
                     ))}
-                    <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1211,7 +1257,7 @@ export default function MarketingPage() {
 
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-4">Resultados de ROI</h3>
-            {filteredEntries.length > 0 ? (
+            {(filteredEntries || []).length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1317,7 +1363,7 @@ export default function MarketingPage() {
           <div className="flex flex-col items-center justify-center gap-4">
             <Button
               onClick={handleAnalyzePerformance}
-              disabled={isAnalyzing || entries.length === 0}
+              disabled={isAnalyzing || (entries || []).length === 0}
             >
               {isAnalyzing ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1326,7 +1372,7 @@ export default function MarketingPage() {
               )}
               {isAnalyzing ? 'Analisando...' : 'Gerar Análise Estratégica'}
             </Button>
-            {entries.length === 0 && (
+            {(entries || []).length === 0 && (
               <p className="text-sm text-muted-foreground">
                 Adicione pelo menos um cálculo de ROI para habilitar a análise.
               </p>
