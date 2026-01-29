@@ -5,6 +5,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -546,8 +547,12 @@ export default function SettingsPage() {
   
     const dataToUpdate: Partial<UserProfile> = {
       isAdmin: editedUser.isAdmin,
-      permissions: editedUser.isAdmin ? {} : editedUser.permissions || {},
     };
+  
+    // Only add the permissions object if the user is NOT an admin
+    if (!editedUser.isAdmin) {
+      dataToUpdate.permissions = editedUser.permissions || {};
+    }
   
     try {
       await updateDoc(userDocRef, dataToUpdate);
@@ -688,7 +693,7 @@ export default function SettingsPage() {
                                             </div>
                                         </div>
                                          {!isEditingThisUser && (
-                                            <Button variant="ghost" size="icon" onClick={() => handleStartEditing(u)} disabled={u.uid === user?.uid}>
+                                            <Button variant="ghost" size="icon" onClick={() => handleStartEditing(u)} disabled={u.isAdmin}>
                                                 <Pencil className="h-4 w-4" />
                                             </Button>
                                         )}
