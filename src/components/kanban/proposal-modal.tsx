@@ -30,6 +30,7 @@ import {
   Leaf,
   ExternalLink,
   Gem,
+  FileDown,
 } from 'lucide-react';
 import {
   Select,
@@ -43,6 +44,8 @@ import { cn } from '@/lib/utils';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -70,6 +73,7 @@ export default function ProposalModal({
   const proposalRef = useRef<HTMLDivElement>(null);
   const [fullProposalNumber, setFullProposalNumber] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -320,6 +324,52 @@ Grupo Florencio`;
     }
     window.open(url, '_blank');
   };
+  
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('proposal-container'); // Capture the whole container with covers
+    if (!element) {
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.' });
+        return;
+    }
+    
+    setIsGeneratingPdf(true);
+
+    try {
+        const canvas = await html2canvas(element, { 
+            scale: 2, // Higher scale for better quality
+            useCORS: true, // Important for external images
+            logging: false,
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        
+        const pdf = new jsPDF('p', 'mm', 'a4', true); // 'true' for compression
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
+        
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pageHeight;
+        }
+
+        pdf.save(`Proposta-${lead.company.replace(/\s+/g, '-')}-${fullProposalNumber}.pdf`);
+
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Houve um problema ao processar as imagens da proposta.' });
+    } finally {
+        setIsGeneratingPdf(false);
+    }
+  };
+
 
   const serviceAreas = [
     { label: 'Saúde e Segurança do Trabalho', icon: HardHat },
@@ -885,7 +935,15 @@ Grupo Florencio`;
               ? 'Gerando link, aguarde...'
               : 'Clique em qualquer texto para editar antes de gerar o link.'}
           </p>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap justify-end">
+            <Button
+              variant="outline"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf || isGenerating}
+            >
+              {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+              Salvar como PDF
+            </Button>
             <Button
               onClick={() => handleShare('open')}
               disabled={isGenerating}

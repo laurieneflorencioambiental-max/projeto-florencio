@@ -19,12 +19,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, FileText, Link as LinkIcon, Loader2, Send } from 'lucide-react';
+import { FileText, Link as LinkIcon, Loader2, Send, FileDown } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type PartnershipDetailsModalProps = {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export default function PartnershipDetailsModal({
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const formatCurrency = (value: number) => {
     if (!value) return 'R$ 0,00';
@@ -102,39 +104,39 @@ export default function PartnershipDetailsModal({
     }
   };
 
-  const handlePrint = () => {
-    const printContent = document.getElementById('partnership-details-print-area');
-    const windowUrl = 'about:blank';
-    const uniqueName = new Date().getTime();
-    const windowName = 'Print' + uniqueName;
-    const printWindow = window.open(windowUrl, windowName, 'left=50,top=50,width=800,height=600');
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('partnership-details-print-area');
+    if (!element) {
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o conteúdo para conversão.' });
+        return;
+    }
+    
+    setIsGeneratingPdf(true);
 
-    if (printWindow && printContent) {
-        const pageTitle = `Detalhes da Parceria - ${partnerName}`;
-        printWindow.document.write(`<html><head><title>${pageTitle}</title>`);
-        // Basic styling for printing
-        printWindow.document.write(`
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                table { width: 100%; border-collapse: collapse; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
-                h1, h2 { color: #333; }
-                .no-print { display: none; }
-                @media print {
-                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                }
-            </style>
-        `);
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printContent.innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 250);
+    try {
+        const canvas = await html2canvas(element, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        
+        const imgX = (pdfWidth - imgWidth * ratio) / 2;
+        const imgY = 0;
+        
+        pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+        pdf.save(`Parceria-${partnerName.replace(/\s+/g, '-')}.pdf`);
+
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Houve um problema durante a criação do arquivo.' });
+    } finally {
+        setIsGeneratingPdf(false);
     }
   };
 
@@ -212,7 +214,10 @@ export default function PartnershipDetailsModal({
             {isGeneratingLink ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Enviar WhatsApp
           </Button>
-          <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir / Salvar PDF</Button>
+          <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+            {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+            Salvar como PDF
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
