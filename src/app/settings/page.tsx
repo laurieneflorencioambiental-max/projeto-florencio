@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -641,11 +642,11 @@ export default function SettingsPage() {
                   <div key={u.uid} className="rounded-lg border">
                     <div className="flex items-center justify-between p-4">
                         <div className="space-y-0.5 flex-1">
-                          {editingUser?.uid === u.uid ? (
+                          {editingUser && editingUser.uid === u.uid ? (
                             <div className="flex items-center gap-2">
                               <Input
                                 value={editingUser.name}
-                                onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                                onChange={(e) => editingUser && setEditingUser({ ...editingUser, name: e.target.value })}
                                 placeholder="Nome de Exibição"
                                 className="h-9"
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') handleCancelEditName(); }}
