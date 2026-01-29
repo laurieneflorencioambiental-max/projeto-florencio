@@ -32,12 +32,12 @@ import {
   Shield,
   Users,
 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import type { AppSettings, UserProfile } from '@/lib/types';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
@@ -66,6 +66,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const permissions = userProfile?.permissions;
   const isLoadingPermissions = isUserLoading || isProfileLoading;
 
+  useEffect(() => {
+    if (!user || !firestore) {
+      return;
+    }
+
+    const userStatusRef = doc(firestore, 'users', user.uid);
+
+    const setPresence = (status: 'online' | 'offline') => {
+      setDoc(userStatusRef, {
+        presenceStatus: status,
+        lastSeen: serverTimestamp()
+      }, { merge: true }).catch(err => {
+        console.warn(`Could not set presence to ${status}:`, err.message);
+      });
+    };
+
+    setPresence('online');
+    
+    const intervalId = setInterval(() => {
+      setPresence('online');
+    }, 60 * 1000); // every 60 seconds
+
+    const handleBeforeUnload = () => {
+      setPresence('offline');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      setPresence('offline');
+    };
+  }, [user, firestore]);
+
   const getPageTitle = () => {
     if (pathname === '/') return 'Dashboard';
     if (pathname === '/budgets') return 'Funil de Vendas';
@@ -86,7 +121,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     logClientEvent('logout', auth);
     
-    // Give the async function call a moment to be sent before signing out
     setTimeout(async () => {
       await auth.signOut();
       router.push('/login');

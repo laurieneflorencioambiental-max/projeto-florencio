@@ -73,7 +73,9 @@
             "uid": { "type": "string" },
             "email": { "type": "string", "format": "email" },
             "displayName": { "type": "string" },
-            "isAdmin": { "type": "boolean", "default": false }
+            "isAdmin": { "type": "boolean", "default": false },
+            "presenceStatus": { "type": "string", "enum": ["online", "offline"], "default": "offline" },
+            "lastSeen": { "type": "object", "description": "Timestamp of the last seen time." }
         },
         "required": ["uid", "email", "isAdmin"]
     },

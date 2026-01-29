@@ -137,6 +137,8 @@ export const userProfileSchema = z.object({
       canViewAnalytics: z.boolean().optional(),
     })
     .optional(),
+  presenceStatus: z.enum(['online', 'offline']).optional(),
+  lastSeen: z.any().optional(),
 });
 
 

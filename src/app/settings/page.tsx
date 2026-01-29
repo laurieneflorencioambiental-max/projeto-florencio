@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -70,6 +71,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
@@ -125,6 +127,23 @@ export default function SettingsPage() {
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 
   const isLoadingPermissions = isUserLoading || isProfileLoading;
+
+  const getDateFromFirestoreTimestamp = (timestamp: any): Date | null => {
+    if (!timestamp) return null;
+    if (timestamp.toDate) return timestamp.toDate();
+    if (timestamp instanceof Date) return timestamp;
+    return null;
+  };
+
+  const isUserConsideredOnline = (u: UserProfile) => {
+      if (!u.lastSeen || u.presenceStatus !== 'online') {
+          return false;
+      }
+      const lastSeenDate = getDateFromFirestoreTimestamp(u.lastSeen);
+      if (!lastSeenDate) return false;
+      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+      return lastSeenDate > threeMinutesAgo;
+  };
 
 
   useEffect(() => {
@@ -604,48 +623,56 @@ export default function SettingsPage() {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             ) : (
               <div className="space-y-4">
-                {(allUsers || []).map((u) => (
-                  <div key={u.id} className="rounded-lg border">
-                    <div className="flex items-center justify-between p-4">
-                        <div className="space-y-0.5 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{u.displayName || u.email}</p>
-                              {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
-                            </div>
-
-                          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                            {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
-                            {u.isAdmin ? 'Gestor' : 'Vendedor'}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={u.isAdmin}
-                          onCheckedChange={(newIsAdmin) => handleRoleChange(u, newIsAdmin)}
-                          disabled={u.uid === user.uid}
-                          aria-label={`Tornar ${u.email} ${u.isAdmin ? 'vendedor' : 'gestor'}`}
-                        />
-                    </div>
-                    {!u.isAdmin && (
-                        <div className="border-t bg-muted/30 p-4">
-                            <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso do Vendedor</h4>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {permissionsConfig.map(perm => (
-                                    <div key={perm.id} className="flex items-center space-x-3">
-                                        <Checkbox 
-                                            id={`perm-${perm.id}-${u.uid}`} 
-                                            checked={u.permissions?.[perm.id] ?? false} 
-                                            onCheckedChange={(checked) => handlePermissionChange(u.uid, perm.id, !!checked)} 
-                                        />
-                                        <Label htmlFor={`perm-${perm.id}-${u.uid}`} className="text-sm font-normal flex items-center gap-2">
-                                            <perm.icon className="h-4 w-4"/> {perm.label}
-                                        </Label>
+                {(allUsers || []).map((u) => {
+                    const isOnline = isUserConsideredOnline(u);
+                    return (
+                        <div key={u.id} className="rounded-lg border">
+                            <div className="flex items-center justify-between p-4">
+                                <div className="space-y-1 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-medium">{u.displayName || u.email}</p>
+                                        {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
                                     </div>
-                                ))}
+                                    <div className="flex items-center gap-4">
+                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                                            {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
+                                            {u.isAdmin ? 'Gestor' : 'Vendedor'}
+                                        </p>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className={cn("h-2 w-2 rounded-full", isOnline ? 'bg-green-500' : 'bg-gray-400')} />
+                                            <span className="text-xs text-muted-foreground">{isOnline ? 'Online' : 'Offline'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Switch
+                                checked={u.isAdmin}
+                                onCheckedChange={(newIsAdmin) => handleRoleChange(u, newIsAdmin)}
+                                disabled={u.uid === user.uid}
+                                aria-label={`Tornar ${u.email} ${u.isAdmin ? 'vendedor' : 'gestor'}`}
+                                />
                             </div>
+                            {!u.isAdmin && (
+                                <div className="border-t bg-muted/30 p-4">
+                                    <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso do Vendedor</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {permissionsConfig.map(perm => (
+                                            <div key={perm.id} className="flex items-center space-x-3">
+                                                <Checkbox 
+                                                    id={`perm-${perm.id}-${u.uid}`} 
+                                                    checked={u.permissions?.[perm.id] ?? false} 
+                                                    onCheckedChange={(checked) => handlePermissionChange(u.uid, perm.id, !!checked)} 
+                                                />
+                                                <Label htmlFor={`perm-${perm.id}-${u.uid}`} className="text-sm font-normal flex items-center gap-2">
+                                                    <perm.icon className="h-4 w-4"/> {perm.label}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
-                  </div>
-                ))}
+                    );
+                })}
               </div>
             )}
           </CardContent>
