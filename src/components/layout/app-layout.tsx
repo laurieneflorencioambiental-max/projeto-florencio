@@ -82,11 +82,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogout = async () => {
-    if (user) {
-      logClientEvent('logout', auth);
-    }
-    await auth.signOut();
-    router.push('/login');
+    logClientEvent('logout', auth);
+    
+    // Give the async function call a moment to be sent before signing out
+    setTimeout(async () => {
+      await auth.signOut();
+      router.push('/login');
+    }, 500);
   };
 
   const getUserInitials = (displayName?: string | null, email?: string | null) => {

@@ -8,6 +8,7 @@ interface AuditEventData {
 }
 
 export const logAuditEvent = functions
+    .region("us-central1") // Definindo a região explicitamente
     .https.onCall(async (data: AuditEventData, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -24,6 +25,7 @@ export const logAuditEvent = functions
             );
         }
 
+        // A captura de IP só é confiável em uma Cloud Function
         const ipAddress = context.rawRequest.ip;
         
         const uid = context.auth.uid;

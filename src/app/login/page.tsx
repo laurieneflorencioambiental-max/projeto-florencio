@@ -79,10 +79,8 @@ export default function LoginPage() {
     try {
       const userCredential: UserCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       
-      // Log the audit event via the client
-      if (userCredential.user) {
-        logClientEvent('login', auth);
-      }
+      // Log the audit event via the Cloud Function
+      logClientEvent('login', auth);
 
       toast({
         title: 'Login bem-sucedido!',
