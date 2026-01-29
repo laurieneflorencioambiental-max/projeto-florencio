@@ -28,6 +28,21 @@ import { useRouter } from 'next/navigation';
 import type { CommissionTemplate, UserProfile } from '@/lib/types';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { logClientEvent } from '@/lib/audit-client';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 export default function CommissionsPage() {
   const { user, isUserLoading } = useUser();
@@ -127,6 +142,26 @@ export default function CommissionsPage() {
     toast({ title: 'Modelo removido.' });
   }
 
+  const groupedTemplates = useMemo(() => {
+    if (!savedTemplates) return {};
+    return savedTemplates.reduce(
+      (acc, template) => {
+        const partner = template.partnerName || 'Parceiros Diversos';
+        if (!acc[partner]) {
+          acc[partner] = [];
+        }
+        acc[partner].push(template);
+        return acc;
+      },
+      {} as Record<string, CommissionTemplate[]>
+    );
+  }, [savedTemplates]);
+
+  const partnerNames = useMemo(
+    () => Object.keys(groupedTemplates).sort(),
+    [groupedTemplates]
+  );
+
   const isLoading = isUserLoading || isProfileLoading || areTemplatesLoading;
 
   if (isLoading) {
@@ -208,27 +243,49 @@ export default function CommissionsPage() {
         </Card>
 
         <Card>
-            <CardHeader><CardTitle>Modelos de Comissão Salvos</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Parceiros e Serviços Cadastrados</CardTitle></CardHeader>
             <CardContent>
-                {(savedTemplates || []).length === 0 ? (
+                {partnerNames.length === 0 ? (
                     <p className="text-center text-muted-foreground p-4">Nenhum modelo salvo.</p>
                 ) : (
-                    <div className="space-y-2">
-                        {(savedTemplates || []).map(template => (
-                             <div key={template.id} className="flex items-center justify-between p-3 border rounded-lg bg-background">
-                                <div>
-                                    <p className="font-semibold">{template.name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {template.serviceName} - {template.partnerName} - {formatCurrency(template.finalClientPrice)}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Button size="sm" variant="outline" onClick={() => loadTemplate(template)}>Carregar</Button>
-                                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteTemplate(template.id)}><Trash2 className="h-4 w-4"/></Button>
-                                </div>
-                             </div>
+                    <Accordion type="single" collapsible className="w-full">
+                        {partnerNames.map(name => (
+                            <AccordionItem value={name} key={name}>
+                                <AccordionTrigger>
+                                    <div className="flex justify-between items-center w-full pr-4">
+                                        <span className="font-semibold text-lg">{name}</span>
+                                        <Badge variant="secondary">{groupedTemplates[name].length} serviço(s)</Badge>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Serviço / Modelo</TableHead>
+                                                <TableHead>Valor Final Cliente</TableHead>
+                                                <TableHead className="text-right">Ações</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {groupedTemplates[name].map(template => (
+                                                <TableRow key={template.id}>
+                                                    <TableCell>
+                                                        <p className="font-medium">{template.serviceName || 'Serviço não especificado'}</p>
+                                                        <p className="text-xs text-muted-foreground">{template.name}</p>
+                                                    </TableCell>
+                                                    <TableCell>{formatCurrency(template.finalClientPrice)}</TableCell>
+                                                    <TableCell className="text-right space-x-2">
+                                                        <Button size="sm" variant="outline" onClick={() => loadTemplate(template)}>Carregar</Button>
+                                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteTemplate(template.id)}><Trash2 className="h-4 w-4"/></Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </AccordionContent>
+                            </AccordionItem>
                         ))}
-                    </div>
+                    </Accordion>
                 )}
             </CardContent>
         </Card>
