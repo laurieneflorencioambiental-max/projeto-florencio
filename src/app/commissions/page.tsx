@@ -51,12 +51,6 @@ export default function CommissionsPage() {
   const templatesRef = useMemoFirebase(() => firestore && isAdmin ? collection(firestore, 'commission-templates') : null, [firestore, isAdmin]);
   const { data: savedTemplates, isLoading: areTemplatesLoading } = useCollection<CommissionTemplate>(templatesRef);
 
-  useEffect(() => {
-    if (!isUserLoading && !isProfileLoading && !isAdmin) {
-      router.replace('/');
-    }
-  }, [user, isUserLoading, router, isAdmin, isProfileLoading]);
-
   const calculation = useMemo(() => {
     const commissionValue = baseServiceValue * (commissionPercentage / 100);
     const subtotal = baseServiceValue + commissionValue;
