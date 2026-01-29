@@ -21,7 +21,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Loader2,
@@ -83,7 +82,6 @@ export default function DashboardPage() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentSeller, setCurrentSeller] = useState<string>('');
-  const [monthlyGoal, setMonthlyGoal] = useState<number>(10);
 
   const leadsQuery = useMemoFirebase(
     () => {
@@ -123,24 +121,11 @@ export default function DashboardPage() {
         } else if (sellers && sellers.length > 0) {
             setCurrentSeller(sellers[0].name);
         }
-
-        const savedGoal = localStorage.getItem('monthlyGoal');
-        if (savedGoal) {
-            setMonthlyGoal(Number(savedGoal));
-        }
         } catch (error) {
             console.error("Failed to access localStorage:", error);
         }
     }
   }, [user, sellers]);
-  
-  useEffect(() => {
-    try {
-        localStorage.setItem('monthlyGoal', monthlyGoal.toString());
-    } catch (error) {
-        console.error("Failed to save goal to localStorage:", error);
-    }
-  }, [monthlyGoal]);
 
   const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory'>) => {
       if (!user || !firestore) return;
@@ -242,6 +227,7 @@ export default function DashboardPage() {
     });
   }, [leads, settings]);
 
+  const monthlyGoal = settings?.monthlyGoal || 10;
   const goalMet = approvedThisMonthCount >= monthlyGoal;
   const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
   
@@ -317,18 +303,11 @@ export default function DashboardPage() {
             </div>
               <div className="flex flex-col justify-between p-4 border rounded-lg space-y-2">
                 <div className="flex justify-between items-center">
-                    <Label htmlFor="monthly-goal-input">Meta de Aprovados</Label>
+                    <Label>Meta de Aprovados</Label>
                     <Target className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <Input
-                    id="monthly-goal-input"
-                    type="number"
-                    value={monthlyGoal}
-                    onChange={e => setMonthlyGoal(Number(e.target.value) >= 0 ? Number(e.target.value) : 0)}
-                    className="h-9"
-                    min="0"
-                />
-                  <Progress value={progressPercentage} className="h-2" />
+                <div className='text-2xl font-bold'>{monthlyGoal}</div>
+                <Progress value={progressPercentage} className="h-2" />
             </div>
         </CardContent>
       </Card>

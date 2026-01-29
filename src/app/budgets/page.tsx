@@ -87,9 +87,6 @@ export default function BudgetsPage() {
   // Seller Management State
   const [currentSeller, setCurrentSeller] = useState<string>('');
 
-  // Goal state
-  const [monthlyGoal, setMonthlyGoal] = useState<number>(10);
-
   // Fetch user profile to check for admin role
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
@@ -131,7 +128,7 @@ export default function BudgetsPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Load current seller preference and goal from localStorage
+  // Load current seller preference from localStorage
   useEffect(() => {
     if (user) {
         try {
@@ -142,26 +139,12 @@ export default function BudgetsPage() {
         } else if (sellers && sellers.length > 0) {
             setCurrentSeller(sellers[0].name);
         }
-
-        const savedGoal = localStorage.getItem('monthlyGoal');
-        if (savedGoal) {
-            setMonthlyGoal(Number(savedGoal));
-        }
         } catch (error) {
             console.error("Failed to access localStorage on initial load:", error);
         }
     }
   }, [user, sellers]);
   
-  // Persist monthlyGoal to localStorage
-  useEffect(() => {
-    try {
-        localStorage.setItem('monthlyGoal', monthlyGoal.toString());
-    } catch (error) {
-        console.error("Failed to save goal to localStorage:", error);
-    }
-  }, [monthlyGoal]);
-
   // Set initial seller when sellers load
   useEffect(() => {
     if(!currentSeller && sellers && sellers.length > 0) {
@@ -327,6 +310,7 @@ export default function BudgetsPage() {
     return { conversionRate, averageTicket };
   }, [leads]);
 
+  const monthlyGoal = settings?.monthlyGoal ?? 10;
   const goalMet = approvedThisMonthCount >= monthlyGoal;
   const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
 

@@ -32,6 +32,7 @@ import {
   Users,
   ShieldCheck,
   Shield,
+  Target,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -585,6 +586,22 @@ export default function SettingsPage() {
             </div>
             <p className="text-xs text-muted-foreground pt-1">
               Um alerta visual aparecerá nos cards da coluna "Pendente" que não forem atualizados por este período.
+            </p>
+          </div>
+          <div className="space-y-2 max-w-sm pt-4 mt-4 border-t">
+            <Label htmlFor="monthly-goal">Meta mensal de orçamentos aprovados</Label>
+            <div className='flex items-center gap-2'>
+              <Target className='h-5 w-5 text-muted-foreground'/>
+              <Input
+                id="monthly-goal"
+                type="number"
+                value={appSettings.monthlyGoal ?? 10}
+                onChange={e => handleSettingChange('monthlyGoal', Number(e.target.value))}
+                min="0"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pt-1">
+              Esta meta é usada no Dashboard para acompanhar o progresso de vendas.
             </p>
           </div>
         </CardContent>

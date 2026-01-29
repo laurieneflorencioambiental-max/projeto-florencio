@@ -132,7 +132,8 @@
         "proposalLogoUrl": { "type": "string", "format": "uri" },
         "loginBackgroundUrl": { "type": "string", "format": "uri" },
         "proposalCoverUrl": { "type": "string", "format": "uri" },
-        "proposalClosingUrl": { "type": "string", "format": "uri" }
+        "proposalClosingUrl": { "type": "string", "format": "uri" },
+        "monthlyGoal": { "type": "number", "description": "The monthly goal for approved leads." }
       }
     },
     "PricingTemplate": {
