@@ -3,6 +3,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -111,6 +112,11 @@ export default function SettingsPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
   const [isSeeding, setIsSeeding] = useState(false);
+  
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editedUser, setEditedUser] = useState<Partial<UserProfile> | null>(null);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+
 
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
@@ -494,52 +500,71 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRoleChange = async (targetUser: UserProfile, newIsAdmin: boolean) => {
-    if (!firestore || !user) return;
-    if (targetUser.uid === user.uid) {
-      toast({
-        variant: 'destructive',
-        title: 'Ação não permitida',
-        description: 'Você não pode alterar sua própria permissão.',
-      });
-      return;
-    }
-
-    const userDocRef = doc(firestore, 'users', targetUser.uid);
-    try {
-      await updateDoc(userDocRef, { isAdmin: newIsAdmin });
-      toast({
-        title: 'Permissão alterada!',
-        description: `${targetUser.email} agora é ${newIsAdmin ? 'um Gestor' : 'um Vendedor'}.`,
-      });
-    } catch (error) {
-      console.error('Failed to update role:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao alterar permissão',
-        description: 'Não foi possível salvar a alteração. Verifique as regras do Firestore.',
-      });
-    }
+ const handleStartEditing = (userToEdit: UserProfile) => {
+    setEditingUserId(userToEdit.uid);
+    // Deep copy to avoid mutating the original state from useCollection
+    setEditedUser(JSON.parse(JSON.stringify(userToEdit)));
   };
 
-  const handlePermissionChange = async (targetUserId: string, permission: PermissionKey, value: boolean) => {
-    if (!firestore || !user) return;
+  const handleCancelEditing = () => {
+    setEditingUserId(null);
+    setEditedUser(null);
+  };
 
-    const userDocRef = doc(firestore, 'users', targetUserId);
-    try {
-        await updateDoc(userDocRef, {
-            [`permissions.${permission}`]: value
-        });
-        toast({
-            title: 'Permissão alterada!',
-        });
-    } catch (error) {
-        console.error('Failed to update permission:', error);
+  const handlePermissionChange = (permission: PermissionKey, value: boolean) => {
+    if (!editedUser) return;
+    setEditedUser(prev => ({
+      ...prev,
+      permissions: {
+        ...(prev?.permissions || {}),
+        [permission]: value,
+      }
+    }));
+  };
+  
+  const handleRoleChange = (isAdmin: boolean) => {
+    if (!editedUser) return;
+    setEditedUser(prev => ({ ...prev, isAdmin }));
+  };
+  
+  const handleSaveUser = async () => {
+    if (!firestore || !editedUser || !editingUserId) return;
+    
+    if (editingUserId === user?.uid && editedUser.isAdmin !== isAdmin) {
         toast({
             variant: 'destructive',
-            title: 'Erro ao alterar permissão',
-            description: 'Não foi possível salvar a alteração. Verifique as regras do Firestore.',
+            title: 'Ação não permitida',
+            description: 'Você não pode alterar sua própria permissão de Gestor.',
         });
+        if(editedUser.isAdmin !== undefined) {
+          handleRoleChange(isAdmin); // Revert optimistic change
+        }
+        return;
+    }
+
+    setIsSavingUser(true);
+    const userDocRef = doc(firestore, 'users', editingUserId);
+
+    try {
+        const dataToUpdate: Partial<UserProfile> = {
+            isAdmin: editedUser.isAdmin,
+            permissions: editedUser.permissions || {},
+        };
+        await updateDoc(userDocRef, dataToUpdate);
+        toast({
+            title: 'Usuário atualizado!',
+            description: `As permissões para ${editedUser.email} foram salvas.`,
+        });
+        handleCancelEditing();
+    } catch (error) {
+        console.error('Failed to update user:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao salvar',
+            description: 'Não foi possível salvar as alterações. Verifique o console.',
+        });
+    } finally {
+        setIsSavingUser(false);
     }
   };
 
@@ -618,68 +643,93 @@ export default function SettingsPage() {
         </Card>
       ) : isAdmin && (
         <Card>
-          <CardHeader>
-            <CardTitle>Gerenciamento de Usuários</CardTitle>
-            <CardDescription>Defina nomes de exibição, promova usuários a gestores ou defina permissões granulares para vendedores.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {areUsersLoading ? (
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            ) : (
-              <div className="space-y-4">
-                {(allUsersData || []).map((u) => {
-                    const isOnline = isUserConsideredOnline(u);
-                    return (
-                        <div key={u.uid} className="rounded-lg border">
-                            <div className="flex items-center justify-between p-4">
-                                <div className="space-y-1 flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-medium">{u.displayName || u.email}</p>
-                                        {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                                            {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
-                                            {u.isAdmin ? 'Gestor' : 'Vendedor'}
-                                        </p>
-                                        <div className="flex items-center gap-1.5">
-                                            <div className={cn("h-2 w-2 rounded-full", isOnline ? 'bg-green-500' : 'bg-gray-400')} />
-                                            <span className="text-xs text-muted-foreground">{isOnline ? 'Online' : 'Offline'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Switch
-                                checked={u.isAdmin}
-                                onCheckedChange={(newIsAdmin) => handleRoleChange(u, newIsAdmin)}
-                                disabled={u.uid === user.uid}
-                                aria-label={`Tornar ${u.email} ${u.isAdmin ? 'vendedor' : 'gestor'}`}
-                                />
-                            </div>
-                            {!u.isAdmin && (
-                                <div className="border-t bg-muted/30 p-4">
-                                    <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso do Vendedor</h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {permissionsConfig.map(perm => (
-                                            <div key={perm.id} className="flex items-center space-x-3">
-                                                <Checkbox 
-                                                    id={`perm-${perm.id}-${u.uid}`} 
-                                                    checked={u.permissions?.[perm.id] ?? false} 
-                                                    onCheckedChange={(checked) => handlePermissionChange(u.uid, perm.id, !!checked)} 
-                                                />
-                                                <Label htmlFor={`perm-${perm.id}-${u.uid}`} className="text-sm font-normal flex items-center gap-2">
-                                                    <perm.icon className="h-4 w-4"/> {perm.label}
-                                                </Label>
+            <CardHeader>
+                <CardTitle>Gerenciamento de Usuários</CardTitle>
+                <CardDescription>Defina nomes de exibição, promova usuários a gestores ou defina permissões granulares para vendedores.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {areUsersLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                ) : (
+                    <div className="space-y-4">
+                        {(allUsersData || []).map((u) => {
+                            const isOnline = isUserConsideredOnline(u);
+                            const isEditingThisUser = editingUserId === u.uid;
+                            const currentUserForView = isEditingThisUser ? editedUser : u;
+
+                            return (
+                                <div key={u.uid} className="rounded-lg border">
+                                    <div className="flex items-center justify-between p-4">
+                                        <div className="space-y-1 flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium">{u.displayName || u.email}</p>
+                                                {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
                                             </div>
-                                        ))}
+                                            <div className="flex items-center gap-4">
+                                                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                                                    {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
+                                                    {u.isAdmin ? 'Gestor' : 'Vendedor'}
+                                                </p>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className={cn("h-2 w-2 rounded-full", isOnline ? 'bg-green-500' : 'bg-gray-400')} />
+                                                    <span className="text-xs text-muted-foreground">{isOnline ? 'Online' : 'Offline'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                         {!isEditingThisUser && (
+                                            <Button variant="ghost" size="icon" onClick={() => handleStartEditing(u)} disabled={u.uid === user?.uid}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </div>
+                                    {(isEditingThisUser && currentUserForView) && (
+                                      <div className="border-t bg-muted/30 p-4 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor={`admin-switch-${u.uid}`} className="font-medium flex items-center gap-2">
+                                                    <ShieldCheck className="h-4 w-4" />
+                                                    Permissão de Gestor
+                                                </Label>
+                                                <Switch
+                                                    id={`admin-switch-${u.uid}`}
+                                                    checked={currentUserForView.isAdmin}
+                                                    onCheckedChange={handleRoleChange}
+                                                    disabled={u.uid === user?.uid}
+                                                />
+                                            </div>
+                                            {!currentUserForView.isAdmin && (
+                                                <div className="pt-4 border-t">
+                                                    <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso do Vendedor</h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        {permissionsConfig.map(perm => (
+                                                            <div key={perm.id} className="flex items-center space-x-3">
+                                                                <Checkbox 
+                                                                    id={`perm-${perm.id}-${u.uid}`}
+                                                                    checked={currentUserForView.permissions?.[perm.id] ?? false}
+                                                                    onCheckedChange={(checked) => handlePermissionChange(perm.id, !!checked)}
+                                                                />
+                                                                <Label htmlFor={`perm-${perm.id}-${u.uid}`} className="text-sm font-normal flex items-center gap-2">
+                                                                    <perm.icon className="h-4 w-4"/> {perm.label}
+                                                                </Label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-end gap-2 pt-4">
+                                                <Button variant="ghost" onClick={handleCancelEditing}> <X className="mr-2 h-4 w-4" /> Cancelar</Button>
+                                                <Button onClick={handleSaveUser} disabled={isSavingUser}>
+                                                    {isSavingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                                                    Salvar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    );
-                })}
-              </div>
-            )}
-          </CardContent>
+                            );
+                        })}
+                    </div>
+                )}
+            </CardContent>
            <CardFooter className="flex items-start gap-2 border-t pt-4">
               <HelpCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground"/>
               <div className="text-xs text-muted-foreground space-y-1">
