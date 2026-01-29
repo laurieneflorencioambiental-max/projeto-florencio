@@ -605,7 +605,7 @@ export default function SettingsPage() {
             ) : (
               <div className="space-y-4">
                 {(allUsers || []).map((u) => (
-                  <div key={u.uid} className="rounded-lg border">
+                  <div key={u.id} className="rounded-lg border">
                     <div className="flex items-center justify-between p-4">
                         <div className="space-y-0.5 flex-1">
                             <div className="flex items-center gap-2">
