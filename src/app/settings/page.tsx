@@ -107,7 +107,8 @@ export default function SettingsPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
   const [isSeeding, setIsSeeding] = useState(false);
-  const [editingUser, setEditingUser] = useState<{ uid: string; name: string } | null>(null);
+  const [editingUid, setEditingUid] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
 
 
   const settingsRef = useMemoFirebase(
@@ -534,24 +535,25 @@ export default function SettingsPage() {
   };
 
   const handleStartEditName = (userToEdit: UserProfile) => {
-    setEditingUser({ uid: userToEdit.uid, name: userToEdit.displayName || '' });
+    setEditingUid(userToEdit.uid);
+    setEditingName(userToEdit.displayName || '');
   };
 
   const handleCancelEditName = () => {
-    setEditingUser(null);
+    setEditingUid(null);
+    setEditingName('');
   };
 
   const handleSaveName = async () => {
-    if (!firestore || !editingUser) return;
+    if (!firestore || !editingUid) return;
 
-    const userDocRef = doc(firestore, 'users', editingUser.uid);
+    const userDocRef = doc(firestore, 'users', editingUid);
     try {
-      await updateDoc(userDocRef, { displayName: editingUser.name });
+      await updateDoc(userDocRef, { displayName: editingName });
       toast({
         title: 'Nome atualizado!',
         description: `O nome de exibição foi salvo.`,
       });
-      setEditingUser(null);
     } catch (error) {
       console.error('Failed to update name:', error);
       toast({
@@ -559,6 +561,8 @@ export default function SettingsPage() {
         title: 'Erro ao salvar nome',
         description: 'Verifique as regras do Firestore e tente novamente.',
       });
+    } finally {
+      handleCancelEditName();
     }
   };
 
@@ -635,11 +639,11 @@ export default function SettingsPage() {
                   <div key={u.uid} className="rounded-lg border">
                     <div className="flex items-center justify-between p-4">
                         <div className="space-y-0.5 flex-1">
-                          {editingUser && editingUser.uid === u.uid ? (
+                          {editingUid === u.uid ? (
                             <div className="flex items-center gap-2">
                               <Input
-                                value={editingUser.name}
-                                onChange={(e) => editingUser && setEditingUser({ ...editingUser, name: e.target.value })}
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
                                 placeholder="Nome de Exibição"
                                 className="h-9"
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') handleCancelEditName(); }}
