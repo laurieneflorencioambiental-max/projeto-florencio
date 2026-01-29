@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -19,7 +18,7 @@ import {
   Trash2,
   Save,
   Loader2,
-  AlertTriangle,
+  FileText,
   ShieldAlert,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +42,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import PartnershipDetailsModal from '@/components/commissions/partnership-details-modal';
 
 export default function CommissionsPage() {
   const { user, isUserLoading } = useUser();
@@ -60,6 +60,9 @@ export default function CommissionsPage() {
   const [templateName, setTemplateName] = useState('');
   
   const calculatorCardRef = useRef<HTMLDivElement>(null);
+
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedPartnerForDetails, setSelectedPartnerForDetails] = useState<{name: string, templates: CommissionTemplate[]}>({name: '', templates: []});
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -178,6 +181,11 @@ export default function CommissionsPage() {
     });
   };
 
+  const handleOpenDetails = (partnerName: string) => {
+    const templates = groupedTemplates[partnerName] || [];
+    setSelectedPartnerForDetails({ name: partnerName, templates });
+    setDetailsModalOpen(true);
+  };
 
   const isLoading = isUserLoading || isProfileLoading || areTemplatesLoading;
 
@@ -205,6 +213,7 @@ export default function CommissionsPage() {
   }
 
   return (
+    <>
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
         <Card ref={calculatorCardRef}>
@@ -299,7 +308,11 @@ export default function CommissionsPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                    <div className="mt-4 flex justify-end">
+                                    <div className="mt-4 flex justify-end gap-2">
+                                      <Button variant="secondary" size="sm" onClick={() => handleOpenDetails(name)}>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Detalhes da Parceria
+                                      </Button>
                                       <Button variant="outline" size="sm" onClick={() => handleAddNewServiceForPartner(name)}>
                                         <PlusCircle className="mr-2 h-4 w-4" />
                                         Adicionar Novo Serviço
@@ -363,5 +376,12 @@ export default function CommissionsPage() {
         </Card>
       </div>
     </div>
+    <PartnershipDetailsModal 
+      isOpen={detailsModalOpen}
+      onOpenChange={setDetailsModalOpen}
+      partnerName={selectedPartnerForDetails.name}
+      templates={selectedPartnerForDetails.templates}
+    />
+    </>
   );
 }
