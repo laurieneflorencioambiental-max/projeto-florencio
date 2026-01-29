@@ -1,6 +1,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -124,7 +125,12 @@ export default function SettingsPage() {
     return collection(firestore, 'users');
   }, [firestore, isAdmin]);
 
-  const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
+  const { data: allUsersData, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
+  const [usersState, setUsersState] = useState<UserProfile[] | null>(null);
+
+  useEffect(() => {
+    setUsersState(allUsersData);
+  }, [allUsersData]);
 
   const isLoadingPermissions = isUserLoading || isProfileLoading;
 
@@ -492,7 +498,7 @@ export default function SettingsPage() {
     }
   };
 
-   const handleRoleChange = async (targetUser: UserProfile, newIsAdmin: boolean) => {
+  const handleRoleChange = async (targetUser: UserProfile, newIsAdmin: boolean) => {
     if (!firestore || !user) return;
     if (targetUser.uid === user.uid) {
       toast({
@@ -502,6 +508,14 @@ export default function SettingsPage() {
       });
       return;
     }
+
+    // Optimistic UI Update
+    setUsersState(currentUsers => {
+        if (!currentUsers) return null;
+        return currentUsers.map(u => 
+            u.uid === targetUser.uid ? { ...u, isAdmin: newIsAdmin } : u
+        );
+    });
 
     const userDocRef = doc(firestore, 'users', targetUser.uid);
     try {
@@ -515,13 +529,33 @@ export default function SettingsPage() {
       toast({
         variant: 'destructive',
         title: 'Erro ao alterar permissão',
-        description: 'Verifique as regras do Firestore e tente novamente.',
+        description: 'A alteração foi desfeita. Verifique as regras do Firestore.',
       });
+      // Revert on error
+      setUsersState(allUsersData);
     }
   };
 
   const handlePermissionChange = async (targetUserId: string, permission: PermissionKey, value: boolean) => {
     if (!firestore || !user) return;
+    
+    // Optimistic UI Update
+    setUsersState(currentUsers => {
+        if (!currentUsers) return null;
+        return currentUsers.map(u => {
+            if (u.uid === targetUserId) {
+                return {
+                    ...u,
+                    permissions: {
+                        ...(u.permissions || {}),
+                        [permission]: value,
+                    }
+                };
+            }
+            return u;
+        });
+    });
+
     const userDocRef = doc(firestore, 'users', targetUserId);
     try {
         await updateDoc(userDocRef, {
@@ -535,10 +569,13 @@ export default function SettingsPage() {
         toast({
             variant: 'destructive',
             title: 'Erro ao alterar permissão',
-            description: 'Verifique as regras do Firestore e tente novamente.',
+            description: 'A alteração foi desfeita. Verifique as regras do Firestore.',
         });
+        // Revert on error
+        setUsersState(allUsersData);
     }
   };
+
 
   const getCleanupDescription = () => {
     switch (cleanupPeriod) {
@@ -623,10 +660,10 @@ export default function SettingsPage() {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             ) : (
               <div className="space-y-4">
-                {(allUsers || []).map((u) => {
+                {(usersState || []).map((u) => {
                     const isOnline = isUserConsideredOnline(u);
                     return (
-                        <div key={u.id} className="rounded-lg border">
+                        <div key={u.uid} className="rounded-lg border">
                             <div className="flex items-center justify-between p-4">
                                 <div className="space-y-1 flex-1">
                                     <div className="flex items-center gap-2">
