@@ -533,8 +533,8 @@ export default function SettingsPage() {
     }
   };
 
-  const handleStartEditName = (user: UserProfile) => {
-    setEditingUser({ uid: user.uid, name: user.displayName || '' });
+  const handleStartEditName = (userToEdit: UserProfile) => {
+    setEditingUser({ uid: userToEdit.uid, name: userToEdit.displayName || '' });
   };
 
   const handleCancelEditName = () => {
@@ -652,7 +652,7 @@ export default function SettingsPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-medium">{u.displayName || u.email}</p>
                               {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
-                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditName(u)}>
+                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditName(u)} disabled={u.uid === user?.uid}>
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </div>
