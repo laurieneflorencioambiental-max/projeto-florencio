@@ -5,7 +5,6 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 exports.logAuditEvent = functions
-    .region("southamerica-east1")
     .https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "A função só pode ser chamada por um usuário autenticado.");

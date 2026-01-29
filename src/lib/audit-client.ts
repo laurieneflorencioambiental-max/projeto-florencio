@@ -1,25 +1,44 @@
 'use client';
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  serverTimestamp,
+  type Auth,
+} from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
-// This function calls our backend Cloud Function.
-// It will fail silently until the function is deployed.
-export const logClientEvent = (action: 'login' | 'logout') => {
+export const logClientEvent = (action: 'login' | 'logout', auth: Auth) => {
+  const user = auth.currentUser;
+  if (!user) {
+    // Cannot log event if user is not authenticated
+    return;
+  }
+
   try {
-    const { firebaseApp } = initializeFirebase();
-    // It's important to specify the same region you deploy your function to.
-    const functions = getFunctions(firebaseApp, 'southamerica-east1'); 
-    const logEvent = httpsCallable(functions, 'logAuditEvent');
-    
-    // We don't await this. It's a "fire and forget" call.
-    // The user experience should not be blocked by audit logging.
-    logEvent({ action: action }).catch(error => {
-      // Log internal errors from the function call if they happen
-      console.error("Cloud Function call for audit failed:", error);
-    });
+    const { firestore } = initializeFirebase();
+    const logsCollection = collection(firestore, 'audit-logs');
+
+    const logEntry = {
+      userId: user.uid,
+      userEmail: user.email || 'N/A',
+      action: action,
+      timestamp: serverTimestamp(),
+      ipAddress: null, // IP address cannot be reliably retrieved from the client
+    };
+
+    // "Fire and forget" write to Firestore
+    addDoc(logsCollection, logEntry)
+      .then(logRef => {
+        // Add the document ID to the document itself for easier querying
+        updateDoc(logRef, { id: logRef.id });
+      })
+      .catch(error => {
+        console.error('Client-side audit log failed:', error);
+      });
   } catch (error) {
-    // Fail silently on the client if Functions SDK fails to initialize.
-    console.error("Failed to initialize Firebase Functions for audit logging:", error);
+    console.error('Failed to initialize Firebase for audit logging:', error);
   }
 };

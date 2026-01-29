@@ -83,7 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     if (user) {
-      logClientEvent('logout');
+      logClientEvent('logout', auth);
     }
     await auth.signOut();
     router.push('/login');
