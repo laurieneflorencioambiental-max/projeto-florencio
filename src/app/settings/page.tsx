@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   Shield,
   Target,
+  HelpCircle,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -574,6 +575,17 @@ export default function SettingsPage() {
               </div>
             )}
           </CardContent>
+           <CardFooter className="flex items-start gap-2 border-t pt-4">
+              <HelpCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground"/>
+              <div className="text-xs text-muted-foreground space-y-1">
+                  <p>
+                      <strong>Não está vendo um usuário?</strong> Além de criar o login na aba 'Authentication', é necessário criar seu perfil na coleção 'users' do banco de dados (Firestore) para que ele apareça nesta lista.
+                  </p>
+                  <p>
+                      Consulte a página de <strong>Tutorial</strong> para o passo a passo detalhado.
+                  </p>
+              </div>
+          </CardFooter>
         </Card>
       )}
 
