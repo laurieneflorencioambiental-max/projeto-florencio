@@ -111,6 +111,12 @@ export const userProfileSchema = z.object({
   email: z.string().email(),
   displayName: z.string().optional(),
   isAdmin: z.boolean().default(false),
+  permissions: z
+    .object({
+      canViewMarketing: z.boolean().optional(),
+      canViewAnalytics: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 

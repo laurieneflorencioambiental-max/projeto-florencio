@@ -57,6 +57,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const isAdmin = userProfile?.isAdmin === true;
+  const permissions = userProfile?.permissions;
   const isLoadingPermissions = isUserLoading || isProfileLoading;
 
   const getPageTitle = () => {
@@ -159,30 +160,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
               </>
             ) : (
-              isAdmin && (
               <>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => router.push('/marketing')}
-                    isActive={pathname === '/marketing'}
-                    tooltip="Marketing"
-                  >
-                    <TrendingUp />
-                    <span>Marketing</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => router.push('/analytics')}
-                    isActive={pathname === '/analytics'}
-                    tooltip="Análise"
-                  >
-                    <BarChartHorizontal />
-                    <span>Análise</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {(isAdmin || permissions?.canViewMarketing) && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => router.push('/marketing')}
+                      isActive={pathname === '/marketing'}
+                      tooltip="Marketing"
+                    >
+                      <TrendingUp />
+                      <span>Marketing</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {(isAdmin || permissions?.canViewAnalytics) && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => router.push('/analytics')}
+                      isActive={pathname === '/analytics'}
+                      tooltip="Análise"
+                    >
+                      <BarChartHorizontal />
+                      <span>Análise</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </>
-              )
             )}
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -214,16 +217,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span>Tutorial</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => router.push('/settings')}
-                isActive={pathname === '/settings'}
-                tooltip="Configurações"
-              >
-                <Settings />
-                <span>Configurações</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+             {isLoadingPermissions ? (
+              <SidebarMenuItem>
+                  <SidebarMenuSkeleton showIcon />
+              </SidebarMenuItem>
+             ) : (
+                (isAdmin) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.push('/settings')}
+                    isActive={pathname === '/settings'}
+                    tooltip="Configurações"
+                  >
+                    <Settings />
+                    <span>Configurações</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+             )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>

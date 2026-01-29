@@ -34,6 +34,8 @@ import {
   Shield,
   Target,
   HelpCircle,
+  TrendingUp,
+  BarChartHorizontal,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -57,6 +59,7 @@ import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
@@ -470,6 +473,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePermissionChange = async (targetUserId: string, permission: 'canViewMarketing' | 'canViewAnalytics', value: boolean) => {
+    if (!firestore || !user) return;
+    const userDocRef = doc(firestore, 'users', targetUserId);
+    try {
+        await updateDoc(userDocRef, {
+            [`permissions.${permission}`]: value
+        });
+        toast({
+            title: 'Permissão alterada!',
+        });
+    } catch (error) {
+        console.error('Failed to update permission:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao alterar permissão',
+            description: 'Verifique as regras do Firestore e tente novamente.',
+        });
+    }
+  };
 
   const getCleanupDescription = () => {
     switch (cleanupPeriod) {
@@ -548,28 +570,45 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Gerenciamento de Usuários</CardTitle>
-            <CardDescription>Promova usuários a gestores ou rebaixe-os para vendedores.</CardDescription>
+            <CardDescription>Promova usuários a gestores ou defina permissões granulares para vendedores.</CardDescription>
           </CardHeader>
           <CardContent>
             {areUsersLoading ? (
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {(allUsers || []).map((u) => (
-                  <div key={u.id} className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                       <p className="font-medium">{u.email}</p>
-                       <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                        {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
-                        {u.isAdmin ? 'Gestor' : 'Vendedor'}
-                       </p>
+                  <div key={u.uid} className="rounded-lg border">
+                    <div className="flex items-center justify-between p-4">
+                        <div className="space-y-0.5">
+                          <p className="font-medium">{u.email}</p>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                            {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
+                            {u.isAdmin ? 'Gestor' : 'Vendedor'}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={u.isAdmin}
+                          onCheckedChange={(newIsAdmin) => handleRoleChange(u, newIsAdmin)}
+                          disabled={u.uid === user.uid}
+                          aria-label={`Tornar ${u.email} ${u.isAdmin ? 'vendedor' : 'gestor'}`}
+                        />
                     </div>
-                    <Switch
-                      checked={u.isAdmin}
-                      onCheckedChange={(newIsAdmin) => handleRoleChange(u, newIsAdmin)}
-                      disabled={u.uid === user.uid}
-                      aria-label={`Tornar ${u.email} ${u.isAdmin ? 'vendedor' : 'gestor'}`}
-                    />
+                    {!u.isAdmin && (
+                        <div className="border-t bg-muted/30 p-4">
+                            <h4 className="mb-3 text-sm font-medium text-muted-foreground">Permissões de Acesso</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-3">
+                                    <Checkbox id={`perm-marketing-${u.uid}`} checked={u.permissions?.canViewMarketing ?? false} onCheckedChange={(checked) => handlePermissionChange(u.uid, 'canViewMarketing', !!checked)} />
+                                    <Label htmlFor={`perm-marketing-${u.uid}`} className="text-sm font-normal flex items-center gap-2"><TrendingUp className="h-4 w-4"/> Acesso à página de Marketing</Label>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Checkbox id={`perm-analytics-${u.uid}`} checked={u.permissions?.canViewAnalytics ?? false} onCheckedChange={(checked) => handlePermissionChange(u.uid, 'canViewAnalytics', !!checked)} />
+                                    <Label htmlFor={`perm-analytics-${u.uid}`} className="text-sm font-normal flex items-center gap-2"><BarChartHorizontal className="h-4 w-4"/> Acesso à página de Análise</Label>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                   </div>
                 ))}
               </div>
