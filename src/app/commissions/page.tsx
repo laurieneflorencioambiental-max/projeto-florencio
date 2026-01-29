@@ -87,6 +87,9 @@ export default function CommissionsPage() {
   }, [baseServiceValue, commissionPercentage, taxPercentage]);
 
   const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) {
+        return (0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
   
@@ -362,7 +365,7 @@ export default function CommissionsPage() {
             </div>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Imposto ({taxPercentage}%)</span>
-                <span className="font-medium text-red-600">{formatCurrency(calculation.taxesValue)}</span>
+                <span className="font-medium text-red-600">{formatCurrency(calculation.taxValue)}</span>
             </div>
             <div className="flex justify-between items-center border-t pt-4 mt-4">
               <div>
