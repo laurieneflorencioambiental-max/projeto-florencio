@@ -4,6 +4,7 @@
 
 
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -529,42 +530,52 @@ export default function SettingsPage() {
   
   const handleSaveUser = async () => {
     if (!firestore || !editedUser || !editingUserId) return;
-    
+  
+    // Block self-permission change
     if (editingUserId === user?.uid && editedUser.isAdmin !== isAdmin) {
-        toast({
-            variant: 'destructive',
-            title: 'Ação não permitida',
-            description: 'Você não pode alterar sua própria permissão de Gestor.',
-        });
-        if(editedUser.isAdmin !== undefined) {
-          handleRoleChange(isAdmin); // Revert optimistic change
-        }
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Ação não permitida',
+        description: 'Você não pode alterar sua própria permissão de Gestor.',
+      });
+      return;
     }
-
+  
     setIsSavingUser(true);
     const userDocRef = doc(firestore, 'users', editingUserId);
-
+  
+    const dataToUpdate: Partial<UserProfile> = {
+      isAdmin: editedUser.isAdmin,
+      permissions: editedUser.isAdmin ? {} : editedUser.permissions || {},
+    };
+  
     try {
-        const dataToUpdate: Partial<UserProfile> = {
-            isAdmin: editedUser.isAdmin,
-            permissions: editedUser.permissions || {},
-        };
-        await updateDoc(userDocRef, dataToUpdate);
-        toast({
-            title: 'Usuário atualizado!',
-            description: `As permissões para ${editedUser.email} foram salvas.`,
-        });
-        handleCancelEditing();
+      await updateDoc(userDocRef, dataToUpdate);
+  
+      toast({
+        title: 'Usuário atualizado!',
+        description: `As permissões para ${editedUser.email} foram salvas com sucesso.`,
+      });
+  
+      handleCancelEditing();
     } catch (error) {
-        console.error('Failed to update user:', error);
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao salvar',
-            description: 'Não foi possível salvar as alterações. Verifique o console.',
-        });
+      console.error('Failed to update user:', error);
+  
+      const permissionError = new FirestorePermissionError({
+        path: userDocRef.path,
+        operation: 'update',
+        requestResourceData: dataToUpdate,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+  
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao Salvar',
+        description:
+          'Não foi possível salvar as alterações. Verifique as regras de segurança do Firestore.',
+      });
     } finally {
-        setIsSavingUser(false);
+      setIsSavingUser(false);
     }
   };
 
