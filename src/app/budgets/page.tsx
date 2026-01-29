@@ -96,7 +96,7 @@ export default function BudgetsPage() {
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
   // Fetch all users to populate seller dropdown
-  const allUsersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
+  const allUsersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(allUsersQuery);
   
   // Fetch proposal templates from Firestore
@@ -119,7 +119,7 @@ export default function BudgetsPage() {
 
   // Set the selected seller, defaulting to the logged-in user
   useEffect(() => {
-    if (isUserLoading || !user || !userProfile || !allUsers) return;
+    if (isUserLoading || !user || !userProfile) return;
 
     const self = { uid: user.uid, name: userProfile.displayName || user.email! };
 
@@ -127,6 +127,8 @@ export default function BudgetsPage() {
       setSelectedSeller(self);
       return;
     }
+    
+    if (!allUsers) return;
 
     try {
         const savedSellerId = localStorage.getItem('selectedSellerId');

@@ -98,8 +98,8 @@ export default function DashboardPage() {
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
   const usersQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'users') : null),
-    [firestore]
+    () => (isAdmin && firestore ? collection(firestore, 'users') : null),
+    [isAdmin, firestore]
   );
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 

@@ -20,9 +20,10 @@ import {
   useFirestore,
   useCollection,
   useMemoFirebase,
+  useDoc,
 } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { collection, doc } from 'firebase/firestore';
+import { Loader2, ShieldAlert } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -41,6 +42,8 @@ import {
   endOfYear,
   isWithinInterval,
 } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
@@ -52,9 +55,14 @@ const chartConfig = {
 };
 
 export default function AnalyticsPage() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const [filter, setFilter] = useState<FilterPeriod>('all');
+
+  const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const isAdmin = userProfile?.isAdmin === true;
 
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -63,9 +71,9 @@ export default function AnalyticsPage() {
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore, isAdmin]);
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 
   const filteredLeads = useMemo(() => {
@@ -125,14 +133,32 @@ export default function AnalyticsPage() {
       };
     }).sort((a,b) => b.totalLeads - a.totalLeads);
   }, [allUsers, filteredLeads]);
+  
+  const isLoading = areLeadsLoading || areUsersLoading || isProfileLoading || isUserLoading;
 
-  if (areLeadsLoading || areUsersLoading) {
+  if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
+
+  if (!isUserLoading && !isProfileLoading && !isAdmin) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] w-full flex-col items-center justify-center gap-4 text-center">
+        <ShieldAlert className="h-16 w-16 text-destructive" />
+        <h1 className="text-2xl font-bold">Acesso Negado</h1>
+        <p className="text-muted-foreground">
+          Apenas gestores podem visualizar a página de Análise de Desempenho.
+        </p>
+        <Button onClick={() => router.push('/')}>
+          Voltar para o Dashboard
+        </Button>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex flex-col gap-8">
