@@ -20,12 +20,13 @@ import {
   Loader2,
   FileText,
   ShieldAlert,
+  Pencil,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import type { CommissionTemplate, UserProfile } from '@/lib/types';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { logClientEvent } from '@/lib/audit-client';
 import {
   Accordion,
@@ -43,6 +44,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import PartnershipDetailsModal from '@/components/commissions/partnership-details-modal';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function CommissionsPage() {
   const { user, isUserLoading } = useUser();
@@ -64,6 +66,10 @@ export default function CommissionsPage() {
 
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedPartnerForDetails, setSelectedPartnerForDetails] = useState<{name: string, templates: CommissionTemplate[]}>({name: '', templates: []});
+
+  const [isEditPartnerModalOpen, setIsEditPartnerModalOpen] = useState(false);
+  const [isUpdatingPartner, setIsUpdatingPartner] = useState(false);
+  const [currentEditingPartner, setCurrentEditingPartner] = useState<{ oldName: string; name: string; whatsapp: string } | null>(null);
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -103,7 +109,7 @@ export default function CommissionsPage() {
     setTemplateName('');
   }
 
-  const handleSaveTemplate = async () => {
+  const handleSaveNewTemplate = async () => {
     if (!firestore) return;
     if (!templateName.trim()) {
         toast({
@@ -129,7 +135,7 @@ export default function CommissionsPage() {
 
     await setDoc(newDocRef, { ...newTemplate, id: newDocRef.id });
     logClientEvent('Criação de Modelo de Comissão', auth, `Modelo: ${templateName}`);
-    toast({ title: 'Modelo de Comissão salvo!', description: `"${templateName}" foi adicionado aos seus modelos.` });
+    toast({ title: 'Novo Modelo de Comissão salvo!', description: `"${templateName}" foi adicionado.` });
     resetForm();
   };
   
@@ -198,6 +204,52 @@ export default function CommissionsPage() {
     const templates = groupedTemplates[partnerName] || [];
     setSelectedPartnerForDetails({ name: partnerName, templates });
     setDetailsModalOpen(true);
+  };
+
+  const handleOpenEditPartner = (partnerName: string) => {
+    const templates = groupedTemplates[partnerName] || [];
+    const whatsapp = templates.length > 0 ? templates[0].partnerWhatsapp || '' : '';
+    setCurrentEditingPartner({ oldName: partnerName, name: partnerName, whatsapp });
+    setIsEditPartnerModalOpen(true);
+  };
+
+  const handleUpdatePartner = async () => {
+    if (!firestore || !currentEditingPartner) return;
+    
+    const { oldName, name: newName, whatsapp: newWhatsapp } = currentEditingPartner;
+
+    if (!newName.trim()) {
+        toast({ variant: 'destructive', title: 'Nome do parceiro é obrigatório.' });
+        return;
+    }
+
+    setIsUpdatingPartner(true);
+    
+    const templatesToUpdate = savedTemplates?.filter(t => t.partnerName === oldName);
+    
+    if (!templatesToUpdate || templatesToUpdate.length === 0) {
+        setIsUpdatingPartner(false);
+        setIsEditPartnerModalOpen(false);
+        toast({ title: 'Nenhum serviço encontrado para este parceiro.' });
+        return;
+    }
+    
+    const batch = writeBatch(firestore);
+    templatesToUpdate.forEach(template => {
+        const docRef = doc(firestore, 'commission-templates', template.id);
+        batch.update(docRef, { partnerName: newName, partnerWhatsapp: newWhatsapp });
+    });
+    
+    try {
+        await batch.commit();
+        toast({ title: 'Parceiro atualizado com sucesso!' });
+        setIsEditPartnerModalOpen(false);
+    } catch (error) {
+        console.error("Failed to update partner info:", error);
+        toast({ variant: 'destructive', title: 'Erro ao atualizar parceiro.' });
+    } finally {
+        setIsUpdatingPartner(false);
+    }
   };
 
   const isLoading = isUserLoading || isProfileLoading || areTemplatesLoading;
@@ -280,7 +332,7 @@ export default function CommissionsPage() {
             </div>
             <div className="flex gap-2 self-end">
                 <Button variant="outline" onClick={resetForm}>Limpar</Button>
-                <Button onClick={handleSaveTemplate}><Save className="mr-2 h-4 w-4" />Salvar Modelo</Button>
+                <Button onClick={handleSaveNewTemplate}><Save className="mr-2 h-4 w-4" />Salvar como Novo Modelo</Button>
             </div>
           </CardFooter>
         </Card>
@@ -325,7 +377,11 @@ export default function CommissionsPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                    <div className="mt-4 flex justify-end gap-2">
+                                    <div className="mt-4 flex justify-end gap-2 flex-wrap">
+                                      <Button variant="outline" size="sm" onClick={() => handleOpenEditPartner(name)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Editar Parceiro
+                                      </Button>
                                       <Button variant="secondary" size="sm" onClick={() => handleOpenDetails(name)}>
                                         <FileText className="mr-2 h-4 w-4" />
                                         Detalhes da Parceria
@@ -399,6 +455,31 @@ export default function CommissionsPage() {
       partnerName={selectedPartnerForDetails.name}
       templates={selectedPartnerForDetails.templates}
     />
+     <Dialog open={isEditPartnerModalOpen} onOpenChange={setIsEditPartnerModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Editar Parceiro</DialogTitle>
+                <DialogDescription>Altere o nome e o WhatsApp deste parceiro. As alterações serão aplicadas a todos os serviços associados.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="edit-partner-name">Nome do Parceiro</Label>
+                    <Input id="edit-partner-name" value={currentEditingPartner?.name || ''} onChange={(e) => setCurrentEditingPartner(p => p ? {...p, name: e.target.value} : null)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-partner-whatsapp">WhatsApp do Parceiro</Label>
+                    <Input id="edit-partner-whatsapp" value={currentEditingPartner?.whatsapp || ''} onChange={(e) => setCurrentEditingPartner(p => p ? {...p, whatsapp: e.target.value} : null)} />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditPartnerModalOpen(false)}>Cancelar</Button>
+                <Button onClick={handleUpdatePartner} disabled={isUpdatingPartner}>
+                    {isUpdatingPartner ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                    Salvar Alterações
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }
