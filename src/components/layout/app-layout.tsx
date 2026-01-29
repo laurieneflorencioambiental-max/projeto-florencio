@@ -238,7 +238,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {user?.displayName || user?.email}
               </p>
               <div className="h-5 mt-0.5">
-                {!isLoadingPermissions && (
+                {isLoadingPermissions ? (
+                  <div className='w-16 h-4 bg-sidebar-accent/50 animate-pulse rounded-sm' />
+                ) : (
                   <Badge
                     variant="outline"
                     className={cn(

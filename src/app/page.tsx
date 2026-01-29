@@ -53,6 +53,7 @@ import {
 } from 'date-fns';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import SalesLeaderboard from '@/components/dashboard/sales-leaderboard';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getLeadDate = (date: any): Date | null => {
   if (!date) {
@@ -312,7 +313,26 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {isAdmin && <SalesLeaderboard leads={leads} sellers={sellers} isLoading={isLoading} />}
+      {isProfileLoading ? (
+        <Card className="col-span-1 md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-yellow-500" />
+              Ranking de Vendas do Mês
+            </CardTitle>
+            <CardDescription>
+              Vendedores com melhor desempenho em receita no mês atual.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+             <div className="flex h-40 w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+      ) : isAdmin && (
+         <SalesLeaderboard leads={leads} sellers={sellers} isLoading={isLoading} />
+      )}
       
       <div className="grid md:grid-cols-2 gap-6">
         <Card>

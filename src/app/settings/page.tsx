@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
   Card,
@@ -55,6 +55,7 @@ import {
 import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
@@ -95,6 +96,8 @@ export default function SettingsPage() {
   }, [firestore, isAdmin]);
 
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
+
+  const isLoadingPermissions = isUserLoading || isProfileLoading;
 
 
   useEffect(() => {
@@ -483,7 +486,7 @@ export default function SettingsPage() {
   };
 
 
-  if (isUserLoading || !user || areSettingsLoading || isProfileLoading) {
+  if (isUserLoading || !user || areSettingsLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -530,7 +533,17 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-       {isAdmin && (
+      {isLoadingPermissions ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Gerenciamento de Usuários</CardTitle>
+            <CardDescription>Carregando permissões...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
+      ) : isAdmin && (
         <Card>
           <CardHeader>
             <CardTitle>Gerenciamento de Usuários</CardTitle>
