@@ -173,7 +173,12 @@ export default function KanbanCard({
     }
     return (
       <div className="flex items-center gap-2">
-        {icon}
+        <Tooltip>
+          <TooltipTrigger>{icon}</TooltipTrigger>
+          <TooltipContent>
+            <p>Origem do Contato</p>
+          </TooltipContent>
+        </Tooltip>
         <span className="text-sm text-muted-foreground">{text}</span>
       </div>
     );
@@ -284,198 +289,263 @@ export default function KanbanCard({
 
   return (
     <>
-      <Card
-        draggable
-        onDragStart={handleDragStart}
-        className="cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-shadow bg-card w-full flex flex-col"
-      >
-        <CardHeader className="pb-4">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
-              <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                <div>
-                  {lead.name}
-                  {lead.role && (
-                    <span className="text-xs text-muted-foreground/80">
-                      , {lead.role}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {createdAtDate
-                      ? format(createdAtDate, "dd/MM/yyyy 'às' HH:mm")
-                      : 'Salvando...'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setIsEditModalOpen(true)}
-              >
-                <Pencil className="h-4 w-4" />
-                <span className="sr-only">Editar</span>
-              </Button>
-              <AlertDialog
-                open={isDeleteDialogOpen}
-                onOpenChange={setIsDeleteDialogOpen}
-              >
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Excluir</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. Isso excluirá
-                      permanentemente o orçamento da empresa "{lead.company}".
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>
-                      Excluir
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 pb-4 text-sm overflow-x-auto flex-1">
-          <div className="pr-4 whitespace-normal">
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono text-xs">{lead.cnpj}</span>
-            </div>
-            <div className="flex items-start gap-2 mt-4">
-              <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-              <p className="flex-1">{lead.proposalSummary}</p>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <DollarSign className="h-4 w-4 text-primary" />
-              <p className="text-base font-bold text-primary">
-                {formatCurrency(lead.value)}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 mt-4">
-              <p className="font-medium text-sm">Formas de Pagamento:</p>
-              <div className="flex flex-wrap gap-2">
-                {lead.paymentMethods.map(pm => (
-                  <Badge
-                    variant="secondary"
-                    key={pm.method}
-                    className="flex gap-2 items-center"
-                  >
-                    {getPaymentMethodIcon(pm.method)}
-                    <span>
-                      {pm.method
-                        .replace(' (Link)', '')
-                        .replace(' (Maquininha)', '')}
-                    </span>
-                    {pm.method.includes('Crédito') && pm.cardFee && (
-                      <span className="text-xs opacity-75">
-                        ({pm.cardFee}% taxa)
+      <TooltipProvider>
+        <Card
+          draggable
+          onDragStart={handleDragStart}
+          className="cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-shadow bg-card w-full flex flex-col"
+        >
+          <CardHeader className="pb-4">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
+                <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                  <div>
+                    {lead.name}
+                    {lead.role && (
+                      <span className="text-xs text-muted-foreground/80">
+                        , {lead.role}
                       </span>
                     )}
-                  </Badge>
-                ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>
+                      {createdAtDate
+                        ? format(createdAtDate, "dd/MM/yyyy 'às' HH:mm")
+                        : 'Salvando...'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Editar</span>
+                </Button>
+                <AlertDialog
+                  open={isDeleteDialogOpen}
+                  onOpenChange={setIsDeleteDialogOpen}
+                >
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá
+                        permanentemente o orçamento da empresa "{lead.company}".
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
-            {isStale && (
-              <div className="flex items-start gap-2 mt-4 p-2.5 bg-amber-500/10 rounded-md border border-dashed border-amber-500/30">
-                <Clock className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700">
-                  <span className="font-semibold">Atenção:</span> Lead
-                  inativo há mais de {staleDays} dias.
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 pb-4 text-sm overflow-x-auto flex-1">
+            <div className="pr-4 whitespace-normal">
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>CNPJ da Empresa</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-mono text-xs">{lead.cnpj}</span>
+              </div>
+              <div className="flex items-start gap-2 mt-4">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Resumo da Proposta</p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="flex-1">{lead.proposalSummary}</p>
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <DollarSign className="h-4 w-4 text-primary" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Valor do Orçamento</p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="text-base font-bold text-primary">
+                  {formatCurrency(lead.value)}
                 </p>
               </div>
-            )}
-            {(lead.status === 'Rejeitado' ||
-              lead.status === 'Desistência') &&
-              lead.rejectionReason && (
-                <div className="flex items-start gap-2 mt-4 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
-                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-destructive">
-                    <span className="font-semibold">Motivo:</span>{' '}
-                    {lead.rejectionReason}
+              <div className="flex flex-col gap-2 mt-4">
+                <p className="font-medium text-sm">Formas de Pagamento:</p>
+                <div className="flex flex-wrap gap-2">
+                  {lead.paymentMethods.map(pm => (
+                    <Tooltip key={pm.method}>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className="flex gap-2 items-center"
+                        >
+                          {getPaymentMethodIcon(pm.method)}
+                          <span>
+                            {pm.method
+                              .replace(' (Link)', '')
+                              .replace(' (Maquininha)', '')}
+                          </span>
+                          {pm.method.includes('Crédito') && pm.cardFee && (
+                            <span className="text-xs opacity-75">
+                              ({pm.cardFee}% taxa)
+                            </span>
+                          )}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Forma de Pagamento</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
+              {isStale && (
+                <div className="flex items-start gap-2 mt-4 p-2.5 bg-amber-500/10 rounded-md border border-dashed border-amber-500/30">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Clock className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Este lead não recebe uma atualização há muito tempo.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <p className="text-xs text-amber-700">
+                    <span className="font-semibold">Atenção:</span> Lead
+                    inativo há mais de {staleDays} dias.
                   </p>
                 </div>
               )}
-            <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="text-sm text-muted-foreground hover:underline"
-                >
-                  {lead.email}
-                </a>
+              {(lead.status === 'Rejeitado' ||
+                lead.status === 'Desistência') &&
+                lead.rejectionReason && (
+                  <div className="flex items-start gap-2 mt-4 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Motivo da perda do lead.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <p className="text-xs text-destructive">
+                      <span className="font-semibold">Motivo:</span>{' '}
+                      {lead.rejectionReason}
+                    </p>
+                  </div>
+                )}
+              <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>E-mail do contato</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="text-sm text-muted-foreground hover:underline"
+                  >
+                    {lead.email}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>WhatsApp do contato</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <a
+                    href={`https://wa.me/${lead.whatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:underline"
+                  >
+                    {lead.whatsapp}
+                  </a>
+                </div>
+                {getContactSourceInfo()}
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={`https://wa.me/${lead.whatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground hover:underline"
+              <div className="mt-4 border-t pt-4">
+                <Label
+                  htmlFor={`obs-${lead.id}`}
+                  className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
                 >
-                  {lead.whatsapp}
-                </a>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <StickyNote className="h-3 w-3" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        Notas internas sobre a negociação. Não são visíveis para o
+                        cliente.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                  Observações Internas
+                </Label>
+                {renderObservationContent()}
               </div>
-              {getContactSourceInfo()}
             </div>
-            <div className="mt-4 border-t pt-4">
-              <Label
-                htmlFor={`obs-${lead.id}`}
-                className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
-              >
-                <StickyNote className="h-3 w-3" />
-                Observações Internas
-              </Label>
-              {renderObservationContent()}
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-2 items-start">
-          <div className="w-full flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => setIsProposalModalOpen(true)}
-            >
-              <FileSignature className="mr-2 h-4 w-4" />
-              Gerar Proposta
-            </Button>
-            {lead.status === 'Rejeitado' && (
+          </CardContent>
+          <CardFooter className="flex flex-col gap-2 items-start">
+            <div className="w-full flex flex-col gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => setIsFollowUpModalOpen(true)}
-                disabled={!lead.rejectionReason}
+                onClick={() => setIsProposalModalOpen(true)}
               >
-                <MessageSquarePlus className="mr-2 h-4 w-4" />
-                Gerar Follow-up com IA
+                <FileSignature className="mr-2 h-4 w-4" />
+                Gerar Proposta
               </Button>
-            )}
-          </div>
-          <div className="w-full pt-2 mt-2 border-t">
-            <TooltipProvider>
+              {lead.status === 'Rejeitado' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setIsFollowUpModalOpen(true)}
+                  disabled={!lead.rejectionReason}
+                >
+                  <MessageSquarePlus className="mr-2 h-4 w-4" />
+                  Gerar Follow-up com IA
+                </Button>
+              )}
+            </div>
+            <div className="w-full pt-2 mt-2 border-t">
               <div className="flex justify-around items-center text-xs text-muted-foreground">
                 <Tooltip>
                   <TooltipTrigger className="flex items-center gap-1">
@@ -493,12 +563,22 @@ export default function KanbanCard({
                       <History className="h-3 w-3" /> v{lead.proposalVersion}
                     </button>
                   </TooltipTrigger>
-                   <TooltipContent>
-                    {lead.versionHistory && lead.versionHistory.length > 0 ? (
-                      `Última edição por ${lead.versionHistory[lead.versionHistory.length - 1].editedBy} em ${format(getLeadDate(lead.versionHistory[lead.versionHistory.length - 1].editedAt)!, "dd/MM/yy")}`
-                    ) : (
-                      lead.proposalVersion > 0 ? 'Histórico de edição não disponível' : 'Proposta nunca editada'
-                    )}
+                  <TooltipContent>
+                    {lead.versionHistory && lead.versionHistory.length > 0
+                      ? `Última edição por ${
+                          lead.versionHistory[lead.versionHistory.length - 1]
+                            .editedBy
+                        } em ${format(
+                          getLeadDate(
+                            lead.versionHistory[
+                              lead.versionHistory.length - 1
+                            ].editedAt
+                          )!,
+                          'dd/MM/yy'
+                        )}`
+                      : lead.proposalVersion > 0
+                      ? 'Histórico de edição não disponível'
+                      : 'Proposta nunca editada'}
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -540,10 +620,10 @@ export default function KanbanCard({
                   </Tooltip>
                 )}
               </div>
-            </TooltipProvider>
-          </div>
-        </CardFooter>
-      </Card>
+            </div>
+          </CardFooter>
+        </Card>
+      </TooltipProvider>
       {lead.status === 'Rejeitado' && (
         <FollowUpModal
           lead={lead}
