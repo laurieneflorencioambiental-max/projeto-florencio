@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Card,
   CardHeader,
@@ -58,6 +58,8 @@ export default function CommissionsPage() {
   const [taxPercentage, setTaxPercentage] = useState(0);
 
   const [templateName, setTemplateName] = useState('');
+  
+  const calculatorCardRef = useRef<HTMLDivElement>(null);
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -161,6 +163,21 @@ export default function CommissionsPage() {
     () => Object.keys(groupedTemplates).sort(),
     [groupedTemplates]
   );
+  
+  const handleAddNewServiceForPartner = (partner: string) => {
+    setServiceName('');
+    setBaseServiceValue(0);
+    setCommissionPercentage(0);
+    setTaxPercentage(0);
+    setTemplateName('');
+    setPartnerName(partner);
+    calculatorCardRef.current?.scrollIntoView({ behavior: 'smooth' });
+    toast({
+      title: `Adicionando serviço para ${partner}`,
+      description: 'Preencha os detalhes do novo serviço na calculadora acima e salve.',
+    });
+  };
+
 
   const isLoading = isUserLoading || isProfileLoading || areTemplatesLoading;
 
@@ -190,7 +207,7 @@ export default function CommissionsPage() {
   return (
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
-        <Card>
+        <Card ref={calculatorCardRef}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-6 w-6" />
@@ -282,6 +299,12 @@ export default function CommissionsPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
+                                    <div className="mt-4 flex justify-end">
+                                      <Button variant="outline" size="sm" onClick={() => handleAddNewServiceForPartner(name)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Adicionar Novo Serviço
+                                      </Button>
+                                    </div>
                                 </AccordionContent>
                             </AccordionItem>
                         ))}
