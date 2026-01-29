@@ -543,14 +543,7 @@ export default function SettingsPage() {
 
   const handleSaveName = async () => {
     if (!firestore || !editingUser) return;
-    if (editingUser.uid === user?.uid) {
-      toast({
-        variant: 'destructive',
-        title: 'Ação não permitida',
-        description: 'Você não pode editar seu próprio nome aqui.',
-      });
-      return;
-    }
+
     const userDocRef = doc(firestore, 'users', editingUser.uid);
     try {
       await updateDoc(userDocRef, { displayName: editingUser.name });
@@ -659,7 +652,7 @@ export default function SettingsPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-medium">{u.displayName || u.email}</p>
                               {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditName(u)} disabled={u.uid === user.uid}>
+                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditName(u)}>
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </div>
