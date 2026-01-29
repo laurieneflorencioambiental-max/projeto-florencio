@@ -68,8 +68,8 @@ export default function BudgetsPage() {
 
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [visibleStatuses, setVisibleStatuses] = useState<Status[]>([
     'Novos',
     'Pendente/Em negociação',
@@ -80,6 +80,12 @@ export default function BudgetsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   const [selectedSeller, setSelectedSeller] = useState<{uid: string, name: string} | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    setSelectedMonth(now.getMonth());
+    setSelectedYear(now.getFullYear());
+  }, []);
 
   // Fetch user profile to check for admin role
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
@@ -274,48 +280,9 @@ export default function BudgetsPage() {
     }
   };
 
-  const approvedThisMonthCount = useMemo(() => {
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-    return (leads || []).filter(lead => {
-        if (lead.status !== 'Aprovado' || !lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
-            return false;
-        }
-        const leadDate = lead.createdAt.toDate();
-        return isWithinInterval(leadDate, { start, end });
-    }).length;
-  }, [leads]);
-  
-  const { conversionRate, averageTicket } = useMemo(() => {
-    const finishedLeads = (leads || []).filter(lead =>
-      ['Aprovado', 'Desistência', 'Rejeitado'].includes(lead.status)
-    );
-
-    const approvedLeads = finishedLeads.filter(
-      lead => lead.status === 'Aprovado'
-    );
-
-    const conversionRate =
-      finishedLeads.length > 0
-        ? (approvedLeads.length / finishedLeads.length) * 100
-        : 0;
-
-    const averageTicket =
-      approvedLeads.length > 0
-        ? approvedLeads.reduce((acc, lead) => acc + (lead.value || 0), 0) /
-          approvedLeads.length
-        : 0;
-
-    return { conversionRate, averageTicket };
-  }, [leads]);
-
-  const monthlyGoal = settings?.monthlyGoal ?? 10;
-  const goalMet = approvedThisMonthCount >= monthlyGoal;
-  const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
-
 
   const filteredLeads = useMemo(() => {
+    if (selectedMonth === null || selectedYear === null) return [];
     const leadsData = leads || [];
     const now = new Date();
     
@@ -341,7 +308,7 @@ export default function BudgetsPage() {
               end: endOfWeek(now),
             });
           case 'month':
-             return getMonth(leadDate) === selectedMonth && getYear(leadDate) === getYear(now);
+             return getMonth(leadDate) === selectedMonth && getYear(leadDate) === selectedYear;
           case 'year':
             return getYear(leadDate) === selectedYear;
           default:
@@ -432,7 +399,7 @@ export default function BudgetsPage() {
             </Select>
             </div>
 
-            {filter === 'month' && (
+            {filter === 'month' && selectedMonth !== null && (
             <div className="flex items-center gap-2">
                 <label htmlFor="month-filter" className="text-sm font-medium">
                 Mês:
@@ -455,7 +422,7 @@ export default function BudgetsPage() {
             </div>
             )}
 
-            {filter === 'year' && (
+            {filter === 'year' && selectedYear !== null && (
             <div className="flex items-center gap-2">
                 <label htmlFor="year-filter" className="text-sm font-medium">
                 Ano:

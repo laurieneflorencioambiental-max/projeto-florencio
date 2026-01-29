@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardHeader,
@@ -58,6 +58,11 @@ interface Meeting {
 export default function AgendaPage() {
   const { toast } = useToast();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // State for the form
   const [newMeetingTitle, setNewMeetingTitle] = useState('');
@@ -290,15 +295,12 @@ export default function AgendaPage() {
               sortedDateKeys.map(dateKey => (
                 <div key={dateKey}>
                   <h3 className="text-lg font-semibold mb-4 border-b pb-2">
-                    {format(new Date(dateKey), 'PPP', { locale: ptBR })}
+                    {isClient ? format(new Date(dateKey), 'PPP', { locale: ptBR }) : '...'}
                   </h3>
                   <div className="space-y-4">
                     {groupedMeetings[dateKey].map(meeting => {
                       const isCompleted = meeting.status === 'realizada';
-                      const isOverdue =
-                        isPast(meeting.date) &&
-                        !isToday(meeting.date) &&
-                        !isCompleted;
+                      const isOverdue = isClient && isPast(meeting.date) && !isToday(meeting.date) && !isCompleted;
 
                       return (
                         <div
@@ -306,7 +308,7 @@ export default function AgendaPage() {
                           className={cn(
                             'p-3 border rounded-lg transition-all',
                             isCompleted && 'bg-muted/40 opacity-70',
-                            isOverdue && 'border-destructive/50 bg-destructive/10'
+                            isClient && isOverdue && 'border-destructive/50 bg-destructive/10'
                           )}
                         >
                           <div className="flex justify-between items-start gap-4">
@@ -378,14 +380,14 @@ export default function AgendaPage() {
                               <span>{meeting.time}</span>
                             </div>
                           
-                            {isOverdue && (
+                            {isClient && isOverdue && (
                               <div className="flex items-center gap-1.5 text-xs text-destructive font-bold mt-2">
                                 <AlertCircle className="h-4 w-4" />
                                 <span>Esta reunião está vencida.</span>
                               </div>
                             )}
 
-                            {isCompleted && (
+                            {isClient && isCompleted && (
                                <div className="flex items-center gap-1.5 text-xs text-green-600 font-bold mt-2">
                                 <CheckCircle2 className="h-4 w-4" />
                                 <span>Reunião realizada.</span>

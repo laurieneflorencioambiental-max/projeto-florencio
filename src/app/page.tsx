@@ -83,6 +83,12 @@ export default function DashboardPage() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  const [approvedThisMonthCount, setApprovedThisMonthCount] = useState(0);
+  const [staleLeads, setStaleLeads] = useState<Lead[]>([]);
+  const [goalMet, setGoalMet] = useState(false);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+
+
   const leadsQuery = useMemoFirebase(
     () => {
         if (!user || !firestore || isProfileLoading) return null;
@@ -154,20 +160,40 @@ export default function DashboardPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
   };
+  
+  useEffect(() => {
+    if (!leads || !settings) return;
 
-  const approvedThisMonthCount = useMemo(() => {
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
-    return (leads || []).filter(lead => {
+    const approvedCount = (leads || []).filter(lead => {
         if (lead.status !== 'Aprovado' || !lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
             return false;
         }
         const leadDate = lead.createdAt.toDate();
         return isWithinInterval(leadDate, { start, end });
     }).length;
-  }, [leads]);
-  
+    setApprovedThisMonthCount(approvedCount);
+
+    const staleDays = settings?.staleLeadDays || 7;
+    const stale = (leads || []).filter(lead => {
+      if (lead.status !== 'Pendente/Em negociação') return false;
+      const history = lead.versionHistory || [];
+      const lastActivityDate = history.length > 0
+          ? getLeadDate(history[history.length - 1].editedAt)
+          : getLeadDate(lead.createdAt);
+      if (!lastActivityDate) return false;
+      return differenceInDays(new Date(), lastActivityDate) > staleDays;
+    });
+    setStaleLeads(stale);
+
+    const monthlyGoal = settings?.monthlyGoal || 10;
+    setGoalMet(approvedCount >= monthlyGoal);
+    setProgressPercentage(monthlyGoal > 0 ? (approvedCount / monthlyGoal) * 100 : 0);
+
+  }, [leads, settings]);
+
   const { conversionRate, averageTicket } = useMemo(() => {
     const finishedLeads = (leads || []).filter(lead =>
       ['Aprovado', 'Desistência', 'Rejeitado'].includes(lead.status)
@@ -199,22 +225,7 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [leads]);
 
-  const staleLeads = useMemo(() => {
-    const staleDays = settings?.staleLeadDays || 7;
-    return (leads || []).filter(lead => {
-      if (lead.status !== 'Pendente/Em negociação') return false;
-      const history = lead.versionHistory || [];
-      const lastActivityDate = history.length > 0
-          ? getLeadDate(history[history.length - 1].editedAt)
-          : getLeadDate(lead.createdAt);
-      if (!lastActivityDate) return false;
-      return differenceInDays(new Date(), lastActivityDate) > staleDays;
-    });
-  }, [leads, settings]);
-
   const monthlyGoal = settings?.monthlyGoal || 10;
-  const goalMet = approvedThisMonthCount >= monthlyGoal;
-  const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
   
   const isLoading = isUserLoading || areLeadsLoading || areUsersLoading || isProfileLoading;
 

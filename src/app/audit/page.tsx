@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import {
@@ -55,6 +55,11 @@ export default function AuditPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('all');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const userProfileRef = useMemoFirebase(
     () => (firestore && user ? doc(firestore, 'users', user.uid) : null),
@@ -85,7 +90,7 @@ export default function AuditPage() {
   };
 
   const filteredLogs = useMemo(() => {
-    if (!auditLogs) return [];
+    if (!auditLogs || !isClient) return [];
 
     let timeFiltered = auditLogs;
 
@@ -128,7 +133,7 @@ export default function AuditPage() {
       log.action.toLowerCase().includes(lowercasedSearchTerm) ||
       (log.details && log.details.toLowerCase().includes(lowercasedSearchTerm))
     );
-  }, [auditLogs, searchTerm, filterPeriod]);
+  }, [auditLogs, searchTerm, filterPeriod, isClient]);
   
   const getActionBadge = (action: string) => {
     let variant: "default" | "secondary" | "destructive" = "secondary";

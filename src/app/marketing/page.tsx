@@ -152,12 +152,14 @@ export default function MarketingPage() {
 
   // Filter state
   const [filter, setFilter] = useState<FilterPeriod>('all');
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth()
-  );
-  const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
-  );
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    setSelectedMonth(now.getMonth());
+    setSelectedYear(now.getFullYear());
+  }, []);
 
   // Firestore Collections
   const roiEntriesRef = useMemoFirebase(
@@ -188,6 +190,7 @@ export default function MarketingPage() {
   }, [user, isUserLoading, router]);
 
   const filteredActions = useMemo(() => {
+    if (selectedMonth === null || selectedYear === null) return [];
     const data = actions || [];
     if (filter === 'all') return data;
     const now = new Date();
@@ -219,6 +222,7 @@ export default function MarketingPage() {
   }, [actions, filter, selectedMonth, selectedYear]);
 
   const filteredEntries = useMemo(() => {
+    if (selectedMonth === null || selectedYear === null) return [];
     const data = entries || [];
     if (filter === 'all') return data;
     const now = new Date();
@@ -250,6 +254,7 @@ export default function MarketingPage() {
   }, [entries, filter, selectedMonth, selectedYear]);
 
   const filteredTools = useMemo(() => {
+    if (selectedMonth === null || selectedYear === null) return [];
     const data = tools || [];
     if (filter === 'all') return data;
     const now = new Date();
@@ -668,7 +673,7 @@ export default function MarketingPage() {
           </Select>
         </div>
 
-        {filter === 'month' && (
+        {filter === 'month' && selectedMonth !== null && (
           <div className="flex items-center gap-2">
             <label htmlFor="month-filter" className="text-sm font-medium">
               Mês:
@@ -691,7 +696,7 @@ export default function MarketingPage() {
           </div>
         )}
 
-        {(filter === 'month' || filter === 'year') && (
+        {(filter === 'month' || filter === 'year') && selectedYear !== null && (
           <div className="flex items-center gap-2">
             <label htmlFor="year-filter" className="text-sm font-medium">
               Ano:

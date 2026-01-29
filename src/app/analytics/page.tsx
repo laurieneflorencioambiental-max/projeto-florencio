@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import {
   Card,
@@ -59,6 +59,11 @@ export default function AnalyticsPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const [filter, setFilter] = useState<FilterPeriod>('all');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -77,7 +82,7 @@ export default function AnalyticsPage() {
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 
   const filteredLeads = useMemo(() => {
-    if (!leads) return [];
+    if (!leads || !isClient) return [];
     if (filter === 'all') {
       return leads;
     }
@@ -103,7 +108,7 @@ export default function AnalyticsPage() {
       const leadDate = lead.createdAt?.toDate ? lead.createdAt.toDate() : null;
       return leadDate ? isWithinInterval(leadDate, interval) : false;
     });
-  }, [leads, filter]);
+  }, [leads, filter, isClient]);
 
   const performanceData = useMemo(() => {
     if (!allUsers || !filteredLeads) return [];
