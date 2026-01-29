@@ -42,6 +42,9 @@ import {
   BookMarked,
   Calculator,
   Calendar,
+  Pencil,
+  Save,
+  X,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -103,6 +106,7 @@ export default function SettingsPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
   const [isSeeding, setIsSeeding] = useState(false);
+  const [editingUser, setEditingUser] = useState<{ uid: string; name: string } | null>(null);
 
 
   const settingsRef = useMemoFirebase(
@@ -528,6 +532,42 @@ export default function SettingsPage() {
     }
   };
 
+  const handleStartEditName = (user: UserProfile) => {
+    setEditingUser({ uid: user.uid, name: user.displayName || '' });
+  };
+
+  const handleCancelEditName = () => {
+    setEditingUser(null);
+  };
+
+  const handleSaveName = async () => {
+    if (!firestore || !editingUser) return;
+    if (editingUser.uid === user?.uid) {
+      toast({
+        variant: 'destructive',
+        title: 'Ação não permitida',
+        description: 'Você não pode editar seu próprio nome aqui.',
+      });
+      return;
+    }
+    const userDocRef = doc(firestore, 'users', editingUser.uid);
+    try {
+      await updateDoc(userDocRef, { displayName: editingUser.name });
+      toast({
+        title: 'Nome atualizado!',
+        description: `O nome de exibição foi salvo.`,
+      });
+      setEditingUser(null);
+    } catch (error) {
+      console.error('Failed to update name:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar nome',
+        description: 'Verifique as regras do Firestore e tente novamente.',
+      });
+    }
+  };
+
 
   if (isUserLoading || !user || areSettingsLoading) {
     return (
@@ -590,7 +630,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Gerenciamento de Usuários</CardTitle>
-            <CardDescription>Promova usuários a gestores ou defina permissões granulares para vendedores.</CardDescription>
+            <CardDescription>Defina nomes de exibição, promova usuários a gestores ou defina permissões granulares para vendedores.</CardDescription>
           </CardHeader>
           <CardContent>
             {areUsersLoading ? (
@@ -600,8 +640,30 @@ export default function SettingsPage() {
                 {(allUsers || []).map((u) => (
                   <div key={u.uid} className="rounded-lg border">
                     <div className="flex items-center justify-between p-4">
-                        <div className="space-y-0.5">
-                          <p className="font-medium">{u.email}</p>
+                        <div className="space-y-0.5 flex-1">
+                          {editingUser?.uid === u.uid ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={editingUser.name}
+                                onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                                placeholder="Nome de Exibição"
+                                className="h-9"
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') handleCancelEditName(); }}
+                                autoFocus
+                              />
+                              <Button size="icon" className="h-9 w-9" onClick={handleSaveName}><Save className="h-4 w-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleCancelEditName}><X className="h-4 w-4" /></Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{u.displayName || u.email}</p>
+                              {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditName(u)} disabled={u.uid === user.uid}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+
                           <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                             {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
                             {u.isAdmin ? 'Gestor' : 'Vendedor'}

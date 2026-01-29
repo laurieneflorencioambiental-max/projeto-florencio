@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -79,9 +80,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  const getUserInitials = (email: string | null | undefined) => {
-    if (!email) return '...';
-    return email.substring(0, 2).toUpperCase();
+  const getUserInitials = (displayName?: string | null, email?: string | null) => {
+    if (displayName) {
+      const parts = displayName.split(' ').filter(p => p);
+      if (parts.length > 1) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return displayName.substring(0, 2).toUpperCase();
+    }
+    if (email) {
+      return email.substring(0, 2).toUpperCase();
+    }
+    return '...';
   };
 
   return (
@@ -213,11 +223,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 p-2">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user?.photoURL || undefined} />
-              <AvatarFallback>{getUserInitials(user?.email)}</AvatarFallback>
+              <AvatarFallback>{getUserInitials(userProfile?.displayName, user?.email)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden">
               <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user?.displayName || user?.email}
+                {userProfile?.displayName || user?.email}
               </p>
               <div className="h-5 mt-0.5">
                 {isLoadingPermissions ? (
