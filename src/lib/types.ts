@@ -110,6 +110,7 @@ export const userProfileSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
   displayName: z.string().optional(),
+  photoURL: z.string().url().optional().nullable(),
   isAdmin: z.boolean().default(false),
   permissions: z
     .object({

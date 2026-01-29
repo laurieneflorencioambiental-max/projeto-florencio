@@ -28,6 +28,7 @@ import {
   BookMarked,
   HelpCircle,
   Calculator,
+  User as UserIcon,
 } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -37,6 +38,7 @@ import type { AppSettings, UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -72,6 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/pricing') return 'Precificação de Serviços';
     if (pathname === '/tutorial') return 'Tutorial do Sistema';
     if (pathname === '/settings') return 'Configurações';
+    if (pathname === '/profile') return 'Meu Perfil';
     return 'Comercial Florencio';
   };
 
@@ -220,42 +223,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           <SidebarSeparator />
-          <div className="flex items-center gap-3 p-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.photoURL || undefined} />
-              <AvatarFallback>{getUserInitials(userProfile?.displayName, user?.email)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col overflow-hidden">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {userProfile?.displayName || user?.email}
-              </p>
-              <div className="h-5 mt-0.5">
-                {isLoadingPermissions ? (
-                  <div className='w-16 h-4 bg-sidebar-accent/50 animate-pulse rounded-sm' />
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'text-xs px-1.5 py-0 border-transparent',
-                      isAdmin
-                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                        : 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
-                    )}
-                  >
-                    {isAdmin ? 'Gestor' : 'Vendedor'}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} tooltip="Sair">
-                <LogOut />
-                <span>Sair</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer transition-colors">
+                    <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile?.photoURL || user?.photoURL || undefined} />
+                    <AvatarFallback>{getUserInitials(userProfile?.displayName, user?.email)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col overflow-hidden">
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">
+                        {userProfile?.displayName || user?.email}
+                    </p>
+                    <div className="h-5 mt-0.5">
+                        {isLoadingPermissions ? (
+                        <div className='w-16 h-4 bg-sidebar-accent/50 animate-pulse rounded-sm' />
+                        ) : (
+                        <Badge
+                            variant="outline"
+                            className={cn(
+                            'text-xs px-1.5 py-0 border-transparent',
+                            isAdmin
+                                ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                                : 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
+                            )}
+                        >
+                            {isAdmin ? 'Gestor' : 'Vendedor'}
+                        </Badge>
+                        )}
+                    </div>
+                    </div>
+                </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className="w-56 bg-sidebar border-sidebar-border text-sidebar-foreground">
+                <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Meu Perfil</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-sidebar-border" />
+                 <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>

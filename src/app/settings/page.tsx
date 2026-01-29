@@ -107,9 +107,6 @@ export default function SettingsPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
   const [isSeeding, setIsSeeding] = useState(false);
-  const [editingUid, setEditingUid] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState<string>('');
-
 
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
@@ -244,6 +241,10 @@ export default function SettingsPage() {
         maxSize: MAX_PROPOSAL_CLOSING_SIZE_KB,
         name: 'Página de Encerramento',
       },
+      profilePicture: {
+        maxSize: 500,
+        name: "Foto de Perfil"
+      }
     };
     const config = configMap[imageType];
 
@@ -300,6 +301,7 @@ export default function SettingsPage() {
       loginBackgroundUrl: { name: 'Imagem de fundo' },
       proposalCoverUrl: { name: 'Capa da proposta' },
       proposalClosingUrl: { name: 'Página de encerramento' },
+      profilePicture: { name: 'Foto de Perfil' }
     };
     const config = configMap[imageType];
 
@@ -534,39 +536,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleStartEditName = (userToEdit: UserProfile) => {
-    setEditingUid(userToEdit.uid);
-    setEditingName(userToEdit.displayName || '');
-  };
-
-  const handleCancelEditName = () => {
-    setEditingUid(null);
-    setEditingName('');
-  };
-
-  const handleSaveName = async () => {
-    if (!firestore || !editingUid) return;
-
-    const userDocRef = doc(firestore, 'users', editingUid);
-    try {
-      await updateDoc(userDocRef, { displayName: editingName });
-      toast({
-        title: 'Nome atualizado!',
-        description: `O nome de exibição foi salvo.`,
-      });
-    } catch (error) {
-      console.error('Failed to update name:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao salvar nome',
-        description: 'Verifique as regras do Firestore e tente novamente.',
-      });
-    } finally {
-      handleCancelEditName();
-    }
-  };
-
-
   if (isUserLoading || !user || areSettingsLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
@@ -639,28 +608,10 @@ export default function SettingsPage() {
                   <div key={u.uid} className="rounded-lg border">
                     <div className="flex items-center justify-between p-4">
                         <div className="space-y-0.5 flex-1">
-                          {editingUid === u.uid ? (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                placeholder="Nome de Exibição"
-                                className="h-9"
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') handleCancelEditName(); }}
-                                autoFocus
-                              />
-                              <Button size="icon" className="h-9 w-9" onClick={handleSaveName}><Save className="h-4 w-4" /></Button>
-                              <Button size="icon" variant="ghost" className="h-9 w-9" onClick={handleCancelEditName}><X className="h-4 w-4" /></Button>
-                            </div>
-                          ) : (
                             <div className="flex items-center gap-2">
                               <p className="font-medium">{u.displayName || u.email}</p>
                               {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
-                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleStartEditName(u)} disabled={u.uid === user?.uid}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
                             </div>
-                          )}
 
                           <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                             {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}

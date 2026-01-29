@@ -17,7 +17,8 @@ export type ImageType =
   | 'sidebarLogoUrl'
   | 'loginBackgroundUrl'
   | 'proposalCoverUrl'
-  | 'proposalClosingUrl';
+  | 'proposalClosingUrl'
+  | 'profilePicture';
 
 export const uploadImageAndGetUrl = async (file: File, imageType: ImageType): Promise<string> => {
     if (!storage) throw new Error("Firebase Storage is not initialized.");
