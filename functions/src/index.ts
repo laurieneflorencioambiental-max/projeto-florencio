@@ -4,7 +4,8 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 
 interface AuditEventData {
-    action: "login" | "logout";
+    action: string;
+    details?: string;
 }
 
 export const logAuditEvent = functions
@@ -17,14 +18,8 @@ export const logAuditEvent = functions
             );
         }
 
-        const { action } = data;
-        if (action !== "login" && action !== "logout") {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                "A ação deve ser 'login' ou 'logout'."
-            );
-        }
-
+        const { action, details } = data;
+        
         // A captura de IP só é confiável em uma Cloud Function
         const ipAddress = context.rawRequest.ip;
         
@@ -38,6 +33,7 @@ export const logAuditEvent = functions
             action: action,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
             ipAddress: ipAddress || null,
+            details: details || null,
         };
         
         try {

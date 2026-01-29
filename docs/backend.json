@@ -8,9 +8,10 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "userEmail": { "type": "string" },
-        "action": { "type": "string", "enum": ["login", "logout"] },
+        "action": { "type": "string", "enum": ["login", "logout", "Criação de Orçamento", "Edição de Orçamento", "Exclusão de Orçamento", "Mudança de Status"] },
         "timestamp": { "type": "object" },
-        "ipAddress": { "type": "string", "format": "ipv4" }
+        "ipAddress": { "type": "string", "format": "ipv4" },
+        "details": { "type": "string", "description": "Contextual details of the action performed." }
       },
       "required": ["id", "userId", "userEmail", "action", "timestamp"]
     },

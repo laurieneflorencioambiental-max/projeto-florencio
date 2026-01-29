@@ -124,9 +124,21 @@ export default function AuditPage() {
     const lowercasedSearchTerm = searchTerm.toLowerCase();
 
     return timeFiltered.filter(log =>
-      log.userEmail.toLowerCase().includes(lowercasedSearchTerm)
+      log.userEmail.toLowerCase().includes(lowercasedSearchTerm) ||
+      log.action.toLowerCase().includes(lowercasedSearchTerm) ||
+      (log.details && log.details.toLowerCase().includes(lowercasedSearchTerm))
     );
   }, [auditLogs, searchTerm, filterPeriod]);
+  
+  const getActionBadge = (action: string) => {
+    let variant: "default" | "secondary" | "destructive" = "secondary";
+    if (action.startsWith('Criação') || action === 'Login') {
+      variant = 'default';
+    } else if (action.startsWith('Exclusão')) {
+      variant = 'destructive';
+    }
+    return <Badge variant={variant}>{action}</Badge>;
+  }
 
   const isLoading = isUserLoading || isProfileLoading || areLogsLoading;
 
@@ -166,8 +178,8 @@ export default function AuditPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por email do usuário..."
-                className="w-full rounded-lg bg-background pl-9 md:w-[250px]"
+                placeholder="Buscar por email, ação ou detalhes..."
+                className="w-full rounded-lg bg-background pl-9 md:w-[300px]"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
@@ -205,6 +217,7 @@ export default function AuditPage() {
               <TableRow>
                 <TableHead>Usuário</TableHead>
                 <TableHead>Ação</TableHead>
+                <TableHead>Detalhes</TableHead>
                 <TableHead>Endereço IP</TableHead>
                 <TableHead className="text-right">Data e Hora</TableHead>
               </TableRow>
@@ -217,13 +230,10 @@ export default function AuditPage() {
                       {log.userEmail}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          log.action === 'login' ? 'default' : 'secondary'
-                        }
-                      >
-                        {log.action === 'login' ? 'Login' : 'Logout'}
-                      </Badge>
+                      {getActionBadge(log.action)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                        {log.details || 'N/A'}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs font-mono">
                       {log.ipAddress || 'N/A'}
@@ -241,7 +251,7 @@ export default function AuditPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     Nenhum registro de auditoria encontrado para os filtros
                     selecionados.
                   </TableCell>

@@ -5,7 +5,7 @@ import { initializeFirebase } from '@/firebase';
 import type { Auth } from 'firebase/auth';
 
 // This function will call the Cloud Function.
-export const logClientEvent = (action: 'login' | 'logout', auth: Auth) => {
+export const logClientEvent = (action: string, auth: Auth, details?: string) => {
   if (!auth.currentUser) {
     return;
   }
@@ -17,7 +17,7 @@ export const logClientEvent = (action: 'login' | 'logout', auth: Auth) => {
     const logAuditEvent = httpsCallable(functions, 'logAuditEvent');
     
     // "Fire and forget" call to the function
-    logAuditEvent({ action: action })
+    logAuditEvent({ action, details })
       .catch(error => {
         console.error(`Failed to log '${action}' event via Cloud Function:`, error);
       });

@@ -38,7 +38,7 @@ import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ContactSourceChart from '@/components/charts/contact-source-chart';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
 import {
@@ -50,6 +50,7 @@ import {
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
+import { logClientEvent } from '@/lib/audit-client';
 
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -61,6 +62,7 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 
 export default function BudgetsPage() {
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const firestore = useFirestore();
 
@@ -203,7 +205,9 @@ export default function BudgetsPage() {
         createdAt: serverTimestamp(),
     };
 
-      setDoc(newDocRef, newLeadData).catch(serverError => {
+      setDoc(newDocRef, newLeadData).then(() => {
+        logClientEvent('Criação de Orçamento', auth, `Empresa: ${newLeadData.company}`);
+      }).catch(serverError => {
           const { createdAt, ...serializableData } = newLeadData;
           const errorData = { ...serializableData, createdAt: new Date().toISOString() };
           const permissionError = new FirestorePermissionError({
@@ -224,7 +228,9 @@ export default function BudgetsPage() {
         createdAt: updatedLead.createdAt?.toDate ? updatedLead.createdAt.toDate().toISOString() : updatedLead.createdAt
       };
 
-      setDoc(leadRef, updatedLead, { merge: true }).catch(serverError => {
+      setDoc(leadRef, updatedLead, { merge: true }).then(() => {
+        logClientEvent('Edição de Orçamento', auth, `Empresa: ${updatedLead.company} (Versão: v${updatedLead.proposalVersion})`);
+      }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
             path: leadRef.path,
             operation: 'update',
@@ -236,8 +242,11 @@ export default function BudgetsPage() {
   
   const handleDeleteLead = (leadId: string) => {
       if (!user || !firestore) return;
+      const leadToDelete = leads?.find(l => l.id === leadId);
       const leadRef = doc(firestore, 'budgets', leadId);
-      deleteDoc(leadRef).catch(serverError => {
+      deleteDoc(leadRef).then(() => {
+        logClientEvent('Exclusão de Orçamento', auth, `Empresa: ${leadToDelete?.company || leadId}`);
+      }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
             path: leadRef.path,
             operation: 'delete',
@@ -252,7 +261,9 @@ export default function BudgetsPage() {
     if(lead) {
         const leadRef = doc(firestore, 'budgets', leadId);
         const updateData = { status: newStatus, previousStatus: lead.status };
-        updateDoc(leadRef, updateData).catch(serverError => {
+        updateDoc(leadRef, updateData).then(() => {
+          logClientEvent('Mudança de Status', auth, `'${lead.company}': ${lead.status} -> ${newStatus}`);
+        }).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: leadRef.path,
                 operation: 'update',
