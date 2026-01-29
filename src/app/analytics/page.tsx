@@ -14,7 +14,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import type { Lead } from '@/lib/types';
+import type { Lead, UserProfile } from '@/lib/types';
 import {
   useUser,
   useFirestore,
@@ -62,11 +62,11 @@ export default function AnalyticsPage() {
   }, [firestore, user]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
-  const sellersQuery = useMemoFirebase(() => {
+  const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'sellers');
+    return collection(firestore, 'users');
   }, [firestore]);
-  const { data: sellers, isLoading: areSellersLoading } = useCollection<{id: string, name: string}>(sellersQuery);
+  const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
@@ -98,11 +98,11 @@ export default function AnalyticsPage() {
   }, [leads, filter]);
 
   const performanceData = useMemo(() => {
-    if (!sellers || !filteredLeads) return [];
+    if (!allUsers || !filteredLeads) return [];
 
-    return sellers.map(seller => {
+    return allUsers.map(user => {
       const sellerLeads = filteredLeads.filter(
-        lead => lead.createdBy === seller.name
+        lead => lead.createdByUid === user.uid
       );
       const approvedLeads = sellerLeads.filter(
         lead => lead.status === 'Aprovado'
@@ -117,16 +117,16 @@ export default function AnalyticsPage() {
           : 0;
 
       return {
-        seller: seller.name,
+        seller: user.displayName || user.email!,
         totalLeads: sellerLeads.length,
         approvedLeads: approvedLeads.length,
         revenue: totalRevenue,
         conversionRate: parseFloat(conversionRate.toFixed(1)),
       };
     }).sort((a,b) => b.totalLeads - a.totalLeads);
-  }, [sellers, filteredLeads]);
+  }, [allUsers, filteredLeads]);
 
-  if (areLeadsLoading || areSellersLoading) {
+  if (areLeadsLoading || areUsersLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />

@@ -19,10 +19,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Loader2 } from 'lucide-react';
-import type { Lead } from '@/lib/types';
+import type { Lead, UserProfile } from '@/lib/types';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-
-type Seller = { id: string; name: string };
 
 const getLeadDate = (date: any): Date | null => {
   if (!date) return null;
@@ -41,10 +39,10 @@ const getUserInitials = (name: string) => {
 }
 
 
-export default function SalesLeaderboard({ leads, sellers, isLoading }: { leads: Lead[] | null, sellers: Seller[] | null, isLoading: boolean }) {
+export default function SalesLeaderboard({ leads, users, isLoading }: { leads: Lead[] | null, users: UserProfile[] | null, isLoading: boolean }) {
 
   const leaderboardData = useMemo(() => {
-    if (!sellers || !leads) return [];
+    if (!users || !leads) return [];
     
     const now = new Date();
     const start = startOfMonth(now);
@@ -55,13 +53,13 @@ export default function SalesLeaderboard({ leads, sellers, isLoading }: { leads:
       return leadDate && isWithinInterval(leadDate, { start, end });
     });
 
-    const performance = sellers.map(seller => {
-      const sellerLeads = monthlyLeads.filter(lead => lead.createdBy === seller.name);
+    const performance = users.map(user => {
+      const sellerLeads = monthlyLeads.filter(lead => lead.createdByUid === user.uid);
       const approvedLeads = sellerLeads.filter(lead => lead.status === 'Aprovado');
       const totalRevenue = approvedLeads.reduce((sum, lead) => sum + (lead.value || 0), 0);
 
       return {
-        sellerName: seller.name,
+        sellerName: user.displayName || user.email!,
         approvedCount: approvedLeads.length,
         revenue: totalRevenue,
       };
@@ -69,7 +67,7 @@ export default function SalesLeaderboard({ leads, sellers, isLoading }: { leads:
 
     return performance.sort((a, b) => b.revenue - a.revenue);
 
-  }, [sellers, leads]);
+  }, [users, leads]);
 
   return (
     <Card className="col-span-1 md:col-span-2">

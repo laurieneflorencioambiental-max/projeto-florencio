@@ -82,7 +82,6 @@ export default function DashboardPage() {
   const isAdmin = userProfile?.isAdmin === true;
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [currentSeller, setCurrentSeller] = useState<string>('');
 
   const leadsQuery = useMemoFirebase(
     () => {
@@ -98,11 +97,11 @@ export default function DashboardPage() {
   );
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
-  const sellersQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'sellers') : null),
+  const usersQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
-  const { data: sellers, isLoading: areSellersLoading } = useCollection<{id: string, name: string}>(sellersQuery);
+  const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
   const { data: settings } = useDoc<AppSettings>(settingsRef);
@@ -113,23 +112,8 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (user) {
-        try {
-        const savedCurrentSeller = localStorage.getItem('currentSeller');
-        if (savedCurrentSeller) {
-            setCurrentSeller(savedCurrentSeller);
-        } else if (sellers && sellers.length > 0) {
-            setCurrentSeller(sellers[0].name);
-        }
-        } catch (error) {
-            console.error("Failed to access localStorage:", error);
-        }
-    }
-  }, [user, sellers]);
-
   const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory'>) => {
-      if (!user || !firestore) return;
+      if (!user || !firestore || !userProfile) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
       const newLeadData = {
@@ -146,7 +130,7 @@ export default function DashboardPage() {
         rejectionReason: values.rejectionReason || null,
         id: newDocRef.id,
         status: 'Novos' as Status,
-        createdBy: currentSeller,
+        createdBy: userProfile.displayName || user.email!,
         createdByUid: user.uid,
         proposalGeneratedCount: 0,
         whatsappSentCount: 0,
@@ -232,7 +216,7 @@ export default function DashboardPage() {
   const goalMet = approvedThisMonthCount >= monthlyGoal;
   const progressPercentage = monthlyGoal > 0 ? (approvedThisMonthCount / monthlyGoal) * 100 : 0;
   
-  const isLoading = isUserLoading || areLeadsLoading || areSellersLoading || isProfileLoading;
+  const isLoading = isUserLoading || areLeadsLoading || areUsersLoading || isProfileLoading;
 
   if (isLoading) {
     return (
@@ -331,7 +315,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : isAdmin && (
-         <SalesLeaderboard leads={leads} sellers={sellers} isLoading={isLoading} />
+         <SalesLeaderboard leads={leads} users={allUsers} isLoading={isLoading} />
       )}
       
       <div className="grid md:grid-cols-2 gap-6">
@@ -413,7 +397,7 @@ export default function DashboardPage() {
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}
-        seller={currentSeller}
+        seller={userProfile?.displayName || user?.email || ''}
       />
     </div>
   );

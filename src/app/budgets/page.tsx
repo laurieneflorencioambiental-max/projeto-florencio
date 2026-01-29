@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile } from '@/lib/types';
 import { leadSchema, statuses } from '@/lib/types';
 import {
   Select,
@@ -20,8 +20,6 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
-  startOfYear,
-  endOfYear,
   getYear,
   getMonth,
 } from 'date-fns';
@@ -40,7 +38,6 @@ import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ContactSourceChart from '@/components/charts/contact-source-chart';
-import ManageSellersModal from '@/components/kanban/manage-sellers-modal';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
@@ -62,9 +59,6 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   label: ptBR.localize?.month(i, { width: 'wide' }),
 }));
 
-type Seller = { id: string; name: string };
-type UserProfile = { isAdmin: boolean };
-
 export default function BudgetsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -82,10 +76,8 @@ export default function BudgetsPage() {
     'Rejeitado',
   ]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isManageSellersModalOpen, setIsManageSellersModalOpen] = useState(false);
   
-  // Seller Management State
-  const [currentSeller, setCurrentSeller] = useState<string>('');
+  const [selectedSeller, setSelectedSeller] = useState<{uid: string, name: string} | null>(null);
 
   // Fetch user profile to check for admin role
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
@@ -103,12 +95,9 @@ export default function BudgetsPage() {
   }, [firestore, user, isAdmin]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
-  // Fetch sellers from Firestore
-  const sellersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'sellers');
-  }, [firestore]);
-  const { data: sellers, isLoading: areSellersLoading } = useCollection<Seller>(sellersQuery);
+  // Fetch all users to populate seller dropdown
+  const allUsersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
+  const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(allUsersQuery);
   
   // Fetch proposal templates from Firestore
   const templatesQuery = useMemoFirebase(() => {
@@ -128,51 +117,50 @@ export default function BudgetsPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Load current seller preference from localStorage
+  // Set the selected seller, defaulting to the logged-in user
   useEffect(() => {
-    if (user) {
-        try {
-        const savedCurrentSeller = localStorage.getItem('currentSeller');
+    if (isUserLoading || !user || !userProfile || !allUsers) return;
 
-        if (savedCurrentSeller) {
-            setCurrentSeller(savedCurrentSeller);
-        } else if (sellers && sellers.length > 0) {
-            setCurrentSeller(sellers[0].name);
-        }
-        } catch (error) {
-            console.error("Failed to access localStorage on initial load:", error);
-        }
-    }
-  }, [user, sellers]);
-  
-  // Set initial seller when sellers load
-  useEffect(() => {
-    if(!currentSeller && sellers && sellers.length > 0) {
-        const savedCurrentSeller = localStorage.getItem('currentSeller');
-        const sellerNames = sellers.map(s => s.name);
-        if (savedCurrentSeller && sellerNames.includes(savedCurrentSeller)) {
-            setCurrentSeller(savedCurrentSeller);
-        } else {
-            setCurrentSeller(sellers[0].name);
-        }
-    }
-  }, [sellers, currentSeller])
+    const self = { uid: user.uid, name: userProfile.displayName || user.email! };
 
-  // Persist currentSeller to localStorage
-  useEffect(() => {
+    if (!isAdmin) {
+      setSelectedSeller(self);
+      return;
+    }
+
     try {
-      if (currentSeller) {
-        localStorage.setItem('currentSeller', currentSeller);
+        const savedSellerId = localStorage.getItem('selectedSellerId');
+        const savedSeller = allUsers.find(u => u.uid === savedSellerId);
+
+        if (savedSeller) {
+            setSelectedSeller({ uid: savedSeller.uid, name: savedSeller.displayName || savedSeller.email! });
+        } else {
+            setSelectedSeller(self); // Default to self if nothing is saved or saved user doesn't exist
+        }
+    } catch (error) {
+        console.error("Failed to access localStorage:", error);
+        setSelectedSeller(self);
+    }
+  }, [user, userProfile, allUsers, isAdmin, isUserLoading]);
+  
+  // Persist selectedSeller to localStorage for admins
+  useEffect(() => {
+    if (!isAdmin) return;
+    try {
+      if (selectedSeller) {
+        localStorage.setItem('selectedSellerId', selectedSeller.uid);
       }
     } catch (error) {
-      console.error("Failed to save current seller to localStorage:", error);
+      console.error("Failed to save selected seller to localStorage:", error);
     }
-  }, [currentSeller]);
+  }, [selectedSeller, isAdmin]);
 
-  const handleSellerChange = (seller: string) => {
-    setCurrentSeller(seller);
+  const handleSellerChange = (sellerId: string) => {
+    const seller = allUsers?.find(u => u.uid === sellerId);
+    if (seller) {
+      setSelectedSeller({ uid: seller.uid, name: seller.displayName || seller.email! });
+    }
   };
-
 
   const handleStatusChange = (status: Status) => {
     setVisibleStatuses(prev =>
@@ -183,7 +171,7 @@ export default function BudgetsPage() {
   };
   
   const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory'>) => {
-      if (!user || !firestore) return;
+      if (!user || !firestore || !selectedSeller) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
        const newLeadData = {
@@ -200,8 +188,8 @@ export default function BudgetsPage() {
         rejectionReason: values.rejectionReason || null,
         id: newDocRef.id,
         status: 'Novos' as Status,
-        createdBy: currentSeller,
-        createdByUid: user.uid,
+        createdBy: selectedSeller.name,
+        createdByUid: selectedSeller.uid,
         proposalGeneratedCount: 0,
         whatsappSentCount: 0,
         editCount: 0,
@@ -229,7 +217,6 @@ export default function BudgetsPage() {
       if (!user || !firestore) return;
       const leadRef = doc(firestore, 'budgets', updatedLead.id);
       
-      // Firestore timestamps are not directly JSON-serializable for error reporting.
       const serializableLead = {
         ...updatedLead,
         createdAt: updatedLead.createdAt?.toDate ? updatedLead.createdAt.toDate().toISOString() : updatedLead.createdAt
@@ -360,7 +347,7 @@ export default function BudgetsPage() {
 
   }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
 
-  if (isUserLoading || !user || areLeadsLoading || areSellersLoading || areTemplatesLoading || areSettingsLoading) {
+  if (isUserLoading || !user || areLeadsLoading || areUsersLoading || areTemplatesLoading || areSettingsLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -368,7 +355,7 @@ export default function BudgetsPage() {
     );
   }
   
-  const sellerNames = sellers ? sellers.map(s => s.name) : [];
+  const sellerOptions = allUsers?.map(u => ({ uid: u.uid, name: u.displayName || u.email! })) || [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -376,31 +363,25 @@ export default function BudgetsPage() {
         <div className='flex items-center gap-2'>
             <User className='h-5 w-5 text-primary' />
             <label htmlFor="seller-select" className="text-sm font-medium">
-                Vendedor(a):
+                Criar para:
             </label>
              <Select
-                value={currentSeller}
+                value={selectedSeller?.uid || ''}
                 onValueChange={handleSellerChange}
-                disabled={sellerNames.length === 0}
+                disabled={!isAdmin || sellerOptions.length === 0}
             >
                 <SelectTrigger className="w-[180px]" id="seller-select">
                 <SelectValue placeholder="Selecione um vendedor" />
                 </SelectTrigger>
                 <SelectContent>
-                {sellerNames.map(seller => (
-                    <SelectItem key={seller} value={seller}>{seller}</SelectItem>
+                {sellerOptions.map(seller => (
+                    <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
                 ))}
                 </SelectContent>
             </Select>
-             {isAdmin && (
-                <Button variant="ghost" size="icon" onClick={() => setIsManageSellersModalOpen(true)}>
-                    <Settings className="h-4 w-4" />
-                    <span className="sr-only">Gerenciar Vendedores</span>
-                </Button>
-             )}
         </div>
         <div className='flex items-center gap-2'>
-            <Button onClick={() => setIsAddModalOpen(true)} disabled={!currentSeller}>
+            <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Novo Orçamento
             </Button>
@@ -508,7 +489,7 @@ export default function BudgetsPage() {
         onLeadStatusChange={handleLeadStatusChange}
         proposalTemplates={proposalTemplates || []}
         settings={settings}
-        currentSeller={currentSeller}
+        currentSeller={selectedSeller?.name || ''}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
@@ -519,12 +500,7 @@ export default function BudgetsPage() {
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}
-        seller={currentSeller}
-      />
-      <ManageSellersModal
-        isOpen={isManageSellersModalOpen}
-        onOpenChange={setIsManageSellersModalOpen}
-        sellers={sellers || []}
+        seller={selectedSeller?.name || ''}
       />
     </div>
   );
