@@ -1,5 +1,18 @@
 {
   "entities": {
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Records user actions within the system, such as login and logout.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "action": { "type": "string", "enum": ["login", "logout"] },
+        "timestamp": { "type": "object" }
+      },
+      "required": ["id", "userId", "userEmail", "action", "timestamp"]
+    },
     "Budget": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Budget",
@@ -298,6 +311,14 @@
           "entityName": "DigitalTool",
           "schema": { "$ref": "#/backend/entities/DigitalTool" },
           "description": "Stores global digital tool investments for marketing."
+        }
+      },
+      {
+        "path": "/audit-logs/{logId}",
+        "definition": {
+          "entityName": "AuditLog",
+          "schema": { "$ref": "#/backend/entities/AuditLog" },
+          "description": "Stores a log of all user audit events."
         }
       }
     ]

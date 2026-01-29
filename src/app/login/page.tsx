@@ -18,13 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser, initializeFirebase } from '@/firebase';
+import { useAuth, useUser, initializeFirebase, useFirestore } from '@/firebase';
 import { Briefcase, Loader2, Eye, EyeOff } from 'lucide-react';
 import { FirebaseError } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, type UserCredential } from 'firebase/auth';
 import type { AppSettings } from '@/lib/types';
 import { doc, getDoc } from 'firebase/firestore';
+import { logAuditEvent } from '@/lib/audit';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Por favor, insira um email válido.'),
@@ -37,6 +38,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -76,7 +78,13 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential: UserCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      
+      // Log the audit event
+      if (userCredential.user && firestore) {
+        await logAuditEvent(firestore, userCredential.user, 'login');
+      }
+
       toast({
         title: 'Login bem-sucedido!',
         description: 'Você será redirecionado em breve.',

@@ -29,6 +29,7 @@ import {
   HelpCircle,
   Calculator,
   User as UserIcon,
+  Shield,
 } from 'lucide-react';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -39,6 +40,7 @@ import { doc } from 'firebase/firestore';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { logAuditEvent } from '@/lib/audit';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -74,11 +76,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname === '/pricing') return 'Precificação de Serviços';
     if (pathname === '/tutorial') return 'Tutorial do Sistema';
     if (pathname === '/settings') return 'Configurações';
+    if (pathname === '/audit') return 'Auditoria do Sistema';
     if (pathname === '/profile') return 'Meu Perfil';
     return 'Comercial Florencio';
   };
 
   const handleLogout = async () => {
+    if (user && firestore) {
+      await logAuditEvent(firestore, user, 'logout');
+    }
     await auth.signOut();
     router.push('/login');
   };
@@ -211,12 +217,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
             ) : (
               isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
-                    <Settings />
-                    <span>Configurações</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
+                      <Settings />
+                      <span>Configurações</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
+                      <Shield />
+                      <span>Auditoria</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )
             )}
           </SidebarMenu>

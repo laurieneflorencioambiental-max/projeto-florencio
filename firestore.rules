@@ -136,5 +136,16 @@ service cloud.firestore {
     match /marketing-tools/{toolId} {
       allow read, write: if isManager();
     }
+    
+    /**
+     * @description Secures the audit trail.
+     * Only managers can read the logs. Users can only create log entries for themselves.
+     * Logs are immutable.
+     */
+    match /audit-logs/{logId} {
+      allow read: if isManager();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
   }
 }

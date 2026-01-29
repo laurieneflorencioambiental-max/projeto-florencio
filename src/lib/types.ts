@@ -76,6 +76,16 @@ export const versionHistoryEntrySchema = z.object({
   editedAt: z.any(), // For Firestore Timestamps or Date objects
 });
 
+export const auditLogSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  userEmail: z.string(),
+  action: z.enum(['login', 'logout']),
+  timestamp: z.any(),
+});
+export type AuditLog = z.infer<typeof auditLogSchema>;
+
+
 export const leadSchema = z.object({
   id: z.string(),
   name: z.string().min(2, 'O nome é obrigatório.'),
