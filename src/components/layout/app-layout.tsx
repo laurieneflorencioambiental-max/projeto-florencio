@@ -40,7 +40,7 @@ import { doc } from 'firebase/firestore';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { logAuditEvent } from '@/lib/audit';
+import { logClientEvent } from '@/lib/audit-client';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -82,9 +82,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogout = async () => {
-    if (user && firestore) {
-      // The IP address is passed as null because it cannot be reliably obtained from the client-side.
-      await logAuditEvent(firestore, user, 'logout', null);
+    if (user) {
+      logClientEvent('logout');
     }
     await auth.signOut();
     router.push('/login');
