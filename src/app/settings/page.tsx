@@ -544,17 +544,19 @@ export default function SettingsPage() {
   
     setIsSavingUser(true);
     const userDocRef = doc(firestore, 'users', userToEdit.uid);
+    const batch = writeBatch(firestore);
   
     const dataToUpdate: { [key: string]: any } = {
       isAdmin: editedUserData.isAdmin,
+      permissions: editedUserData.isAdmin
+        ? {}
+        : editedUserData.permissions || {},
     };
   
-    if (!editedUserData.isAdmin) {
-      dataToUpdate.permissions = editedUserData.permissions || {};
-    }
+    batch.update(userDocRef, dataToUpdate);
   
     try {
-      await updateDoc(userDocRef, dataToUpdate);
+      await batch.commit();
   
       toast({
         title: 'Usuário atualizado!',
