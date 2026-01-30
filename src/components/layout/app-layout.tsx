@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -33,6 +32,7 @@ import {
   Users,
 } from 'lucide-react';
 import React, { useEffect } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -144,25 +144,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-3 p-2">
-            {settings?.sidebarLogoUrl ? (
-              <img
-                src={settings.sidebarLogoUrl}
-                alt="Logo da Empresa"
-                className="h-8 w-8 object-contain"
-              />
-            ) : (
-              <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
-            )}
-            <div className="flex flex-col">
-              <h2 className="text-base font-headline font-bold text-sidebar-foreground leading-tight">
-                Comercial
-              </h2>
-              <p className="text-sm text-sidebar-foreground/80 leading-tight">
-                Grupo Florencio
-              </p>
+          <Link href="/" className="block cursor-pointer">
+            <div className="flex items-center gap-3 p-2">
+              {settings?.sidebarLogoUrl ? (
+                <img
+                  src={settings.sidebarLogoUrl}
+                  alt="Logo da Empresa"
+                  className="h-8 w-8 object-contain"
+                />
+              ) : (
+                <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
+              )}
+              <div className="flex flex-col">
+                <h2 className="text-base font-headline font-bold text-sidebar-foreground leading-tight">
+                  Comercial
+                </h2>
+                <p className="text-sm text-sidebar-foreground/80 leading-tight">
+                  Grupo Florencio
+                </p>
+              </div>
             </div>
-          </div>
+          </Link>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
