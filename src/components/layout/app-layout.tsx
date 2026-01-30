@@ -143,9 +143,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader>
-          <Link href="/" className="block cursor-pointer">
-            <div className="flex items-center gap-3 p-2">
+        <SidebarHeader className="p-0">
+          <Link href="/" className="block cursor-pointer p-2">
+            <div className="flex items-center gap-3">
               {settings?.sidebarLogoUrl ? (
                 <img
                   src={settings.sidebarLogoUrl}
