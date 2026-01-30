@@ -201,13 +201,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>Agenda</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
-                    <HelpCircle />
-                    <span>Tutorial</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
+                
                  {/* --- Grupo de Atendimento --- */}
                  <SidebarSeparator />
                  <SidebarMenuItem>
@@ -225,11 +219,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>Templates de WhatsApp</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarSeparator />
+                
 
                 {/* --- Itens APENAS para Gestores (Admins) --- */}
                 {isAdmin && (
                   <>
+                    <SidebarSeparator />
                     <SidebarMenuItem>
                       <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">GESTÃO</p>
                     </SidebarMenuItem>
@@ -269,7 +264,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <span>Análise</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                     <SidebarMenuItem>
+                  </>
+                )}
+
+                 {/* --- Grupo de Sistema --- */}
+                 <SidebarSeparator />
+                 <SidebarMenuItem>
+                    <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">SISTEMA</p>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
+                    <HelpCircle />
+                    <span>Tutorial</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {isAdmin && (
+                  <>
+                    <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
                         <Settings />
                         <span>Configurações</span>
