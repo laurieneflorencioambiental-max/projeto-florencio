@@ -176,77 +176,66 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             ) : (
               <>
-                {(isAdmin || (userProfile?.permissions?.canViewDashboard ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
-                      <LayoutDashboard />
-                      <span>Dashboard</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewBudgets ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
-                      <KanbanSquare />
-                      <span>Funil de Vendas</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewTemplates ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
-                      <FileText />
-                      <span>Modelos de Proposta</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewCatalog ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
-                      <BookMarked />
-                      <span>Catálogo de Serviços</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewMarketing ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
-                      <TrendingUp />
-                      <span>Marketing</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewAnalytics ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
-                      <BarChartHorizontal />
-                      <span>Análise</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewAgenda ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
-                      <Calendar />
-                      <span>Agenda</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                {(isAdmin || (userProfile?.permissions?.canViewPricing ?? false)) && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
-                      <Calculator />
-                      <span>Precificação</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-                 {isAdmin && ( 
+                {/* Items for All Users */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
+                    <KanbanSquare />
+                    <span>Funil de Vendas</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
+                    <Calendar />
+                    <span>Agenda</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Items for Admins Only */}
+                {isAdmin && (
+                  <>
                     <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
-                        <Users />
-                        <span>Comissões</span>
-                    </SidebarMenuButton>
+                      <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
+                        <FileText />
+                        <span>Modelos de Proposta</span>
+                      </SidebarMenuButton>
                     </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
+                        <BookMarked />
+                        <span>Catálogo de Serviços</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
+                        <Calculator />
+                        <span>Precificação</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
+                          <Users />
+                          <span>Comissões</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
+                        <TrendingUp />
+                        <span>Marketing</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
+                        <BarChartHorizontal />
+                        <span>Análise</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
                 )}
               </>
             )}
@@ -258,25 +247,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span>Tutorial</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {isLoadingPermissions ? (
-              <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-            ) : (
-              isAdmin && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
-                      <Settings />
-                      <span>Configurações</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
-                      <Shield />
-                      <span>Auditoria</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
-              )
+            {isAdmin && (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
+                    <Settings />
+                    <span>Configurações</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
+                    <Shield />
+                    <span>Auditoria</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
             )}
           </SidebarMenu>
         </SidebarContent>

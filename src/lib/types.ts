@@ -125,18 +125,6 @@ export const userProfileSchema = z.object({
   displayName: z.string().optional(),
   photoURL: z.string().url().optional().nullable(),
   isAdmin: z.boolean().default(false),
-  permissions: z
-    .object({
-      canViewDashboard: z.boolean().optional(),
-      canViewBudgets: z.boolean().optional(),
-      canViewTemplates: z.boolean().optional(),
-      canViewCatalog: z.boolean().optional(),
-      canViewPricing: z.boolean().optional(),
-      canViewAgenda: z.boolean().optional(),
-      canViewMarketing: z.boolean().optional(),
-      canViewAnalytics: z.boolean().optional(),
-    })
-    .optional(),
   presenceStatus: z.enum(['online', 'offline']).optional(),
   lastSeen: z.any().optional(),
 });

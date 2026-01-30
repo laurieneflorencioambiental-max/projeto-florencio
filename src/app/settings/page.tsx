@@ -86,20 +86,6 @@ const MAX_LOGIN_BG_SIZE_KB = 2000;
 const MAX_PROPOSAL_COVER_SIZE_KB = 2000;
 const MAX_PROPOSAL_CLOSING_SIZE_KB = 2000;
 
-type PermissionKey = keyof NonNullable<UserProfile['permissions']>;
-
-const permissionsConfig: { id: PermissionKey, label: string, icon: React.ElementType }[] = [
-    { id: 'canViewDashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'canViewBudgets', label: 'Funil de Vendas', icon: KanbanSquare },
-    { id: 'canViewTemplates', label: 'Modelos de Proposta', icon: FileText },
-    { id: 'canViewCatalog', label: 'Catálogo de Serviços', icon: BookMarked },
-    { id: 'canViewPricing', label: 'Precificação de Serviços', icon: Calculator },
-    { id: 'canViewAgenda', label: 'Agenda', icon: Calendar },
-    { id: 'canViewMarketing', label: 'Gestão de Marketing', icon: TrendingUp },
-    { id: 'canViewAnalytics', label: 'Análise de Desempenho', icon: BarChartHorizontal },
-];
-
-
 export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -116,11 +102,6 @@ export default function SettingsPage() {
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
   const [isSeeding, setIsSeeding] = useState(false);
   
-  const [userToEdit, setUserToEdit] = useState<UserProfile | null>(null);
-  const [editedUserData, setEditedUserData] = useState<Partial<UserProfile> | null>(null);
-  const [isSavingUser, setIsSavingUser] = useState(false);
-
-
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
     [firestore]
@@ -130,39 +111,7 @@ export default function SettingsPage() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   const isAdmin = userProfile?.isAdmin === true;
 
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return collection(firestore, 'users');
-  }, [firestore, isAdmin]);
-
-  const { data: allUsersData, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
-
   const isLoadingPermissions = isUserLoading || isProfileLoading;
-
-  useEffect(() => {
-    if (userToEdit) {
-      setEditedUserData(JSON.parse(JSON.stringify(userToEdit)));
-    } else {
-      setEditedUserData(null);
-    }
-  }, [userToEdit]);
-
-  const getDateFromFirestoreTimestamp = (timestamp: any): Date | null => {
-    if (!timestamp) return null;
-    if (timestamp.toDate) return timestamp.toDate();
-    if (timestamp instanceof Date) return timestamp;
-    return null;
-  };
-
-  const isUserConsideredOnline = (u: UserProfile) => {
-      if (!u.lastSeen || u.presenceStatus !== 'online') {
-          return false;
-      }
-      const lastSeenDate = getDateFromFirestoreTimestamp(u.lastSeen);
-      if (!lastSeenDate) return false;
-      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
-      return lastSeenDate > threeMinutesAgo;
-  };
 
 
   useEffect(() => {
@@ -511,68 +460,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handlePermissionChange = (permission: PermissionKey, value: boolean) => {
-    if (!editedUserData) return;
-    setEditedUserData(prev => {
-        if (!prev) return null;
-        return {
-            ...prev,
-            permissions: {
-                ...(prev.permissions || {}),
-                [permission]: value,
-            },
-        };
-    });
-  };
-  
-  const handleRoleChange = (isAdmin: boolean) => {
-    if (!editedUserData) return;
-    setEditedUserData(prev => (prev ? { ...prev, isAdmin } : null));
-  };
-  
-  const handleSaveUser = async () => {
-    if (!firestore || !userToEdit || !editedUserData) return;
-  
-    if (userToEdit.uid === user?.uid) {
-      toast({
-        variant: 'destructive',
-        title: 'Ação não permitida',
-        description: 'Você não pode alterar suas próprias permissões.',
-      });
-      return;
-    }
-  
-    setIsSavingUser(true);
-    const userDocRef = doc(firestore, 'users', userToEdit.uid);
-  
-    const dataToUpdate: { [key: string]: any } = {
-      isAdmin: editedUserData.isAdmin,
-      permissions: editedUserData.isAdmin ? {} : editedUserData.permissions || {},
-    };
-  
-    try {
-      await updateDoc(userDocRef, dataToUpdate);
-  
-      toast({
-        title: 'Usuário atualizado!',
-        description: `As permissões para ${userToEdit.email} foram salvas.`,
-      });
-  
-      setUserToEdit(null);
-    } catch (error) {
-      console.error('Failed to update user:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar',
-        description:
-          'Não foi possível salvar as alterações. Verifique o console para mais detalhes do erro.',
-      });
-    } finally {
-      setIsSavingUser(false);
-    }
-  };
-
-
   const getCleanupDescription = () => {
     switch (cleanupPeriod) {
         case 'all':
@@ -634,73 +521,6 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-
-      {isLoadingPermissions ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gerenciamento de Usuários</CardTitle>
-            <CardDescription>Carregando permissões...</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-24 w-full" />
-          </CardContent>
-        </Card>
-      ) : isAdmin && (
-        <Card>
-            <CardHeader>
-                <CardTitle>Gerenciamento de Usuários</CardTitle>
-                <CardDescription>Defina nomes de exibição, promova usuários a gestores ou defina permissões granulares para vendedores.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {areUsersLoading ? (
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                ) : (
-                    <div className="space-y-4">
-                        {(allUsersData || []).map((u) => {
-                            const isOnline = isUserConsideredOnline(u);
-
-                            return (
-                                <div key={u.uid} className="rounded-lg border">
-                                    <div className="flex items-center justify-between p-4">
-                                        <div className="space-y-1 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-medium">{u.displayName || u.email}</p>
-                                                {u.displayName && <p className="text-sm text-muted-foreground">({u.email})</p>}
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                                                    {u.isAdmin ? <ShieldCheck className="h-4 w-4 text-primary" /> : <Shield className="h-4 w-4" />}
-                                                    {u.isAdmin ? 'Gestor' : 'Vendedor'}
-                                                </p>
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className={cn("h-2 w-2 rounded-full", isOnline ? 'bg-green-500' : 'bg-gray-400')} />
-                                                    <span className="text-xs text-muted-foreground">{isOnline ? 'Online' : 'Offline'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <Button variant="ghost" size="icon" onClick={() => setUserToEdit(u)} disabled={u.uid === user?.uid}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </CardContent>
-           <CardFooter className="flex items-start gap-2 border-t pt-4">
-              <HelpCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground"/>
-              <div className="text-xs text-muted-foreground space-y-1">
-                  <p>
-                      <strong>Não está vendo um usuário?</strong> Além de criar o login na aba 'Authentication', é necessário criar seu perfil na coleção 'users' do banco de dados (Firestore) para que ele apareça nesta lista.
-                  </p>
-                  <p>
-                      Consulte a página de <strong>Tutorial</strong> para o passo a passo detalhado.
-                  </p>
-              </div>
-          </CardFooter>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
@@ -1221,59 +1041,6 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-      
-      <Dialog open={!!userToEdit} onOpenChange={(isOpen) => !isOpen && setUserToEdit(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Editar Permissões para {userToEdit?.displayName || userToEdit?.email}</DialogTitle>
-                <DialogDescription>
-                    Selecione o nível de acesso para este usuário.
-                </DialogDescription>
-            </DialogHeader>
-            {editedUserData && (
-                <div className="py-4 space-y-6">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <Label htmlFor={`admin-switch-${userToEdit?.uid}`} className="font-medium flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4" />
-                            Permissão de Gestor
-                        </Label>
-                        <Switch
-                            id={`admin-switch-${userToEdit?.uid}`}
-                            checked={editedUserData.isAdmin}
-                            onCheckedChange={handleRoleChange}
-                        />
-                    </div>
-                    {!editedUserData.isAdmin && (
-                        <div className="pt-4 border-t">
-                            <h4 className="mb-4 text-sm font-medium text-muted-foreground">Permissões de Acesso do Vendedor</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {permissionsConfig.map(perm => (
-                                    <div key={perm.id} className="flex items-center space-x-3">
-                                        <Checkbox
-                                            id={`perm-${perm.id}-${userToEdit?.uid}`}
-                                            checked={editedUserData.permissions?.[perm.id] ?? false}
-                                            onCheckedChange={(checked) => handlePermissionChange(perm.id, !!checked)}
-                                        />
-                                        <Label htmlFor={`perm-${perm.id}-${userToEdit?.uid}`} className="text-sm font-normal flex items-center gap-2">
-                                            <perm.icon className="h-4 w-4"/> {perm.label}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => setUserToEdit(null)}>Cancelar</Button>
-                <Button onClick={handleSaveUser} disabled={isSavingUser}>
-                    {isSavingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Alterações
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
     </div>
   );
 }
