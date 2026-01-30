@@ -56,25 +56,6 @@ service cloud.firestore {
     }
 
     /**
-     * @description Secures WhatsApp conversations.
-     * This rule is simplified to prevent permission errors on list queries,
-     * which is a known limitation when rules need to fetch data from other documents (like checking the user's role).
-     * This fixes the error but means only users directly assigned to a conversation can see it.
-     * The admin view of unassigned queues is temporarily disabled at the rule-level to ensure stability.
-     */
-    match /conversations/{conversationId} {
-      allow read: if isSignedIn() && resource.data.assignedToUid == request.auth.uid;
-      allow write: if false; // All writes must be done via backend (Cloud Functions)
-
-      // Messages subcollection
-      match /messages/{messageId} {
-          // This rule is safe because it only reads the parent document for a single message read.
-          allow read: if get(/databases/$(database)/documents/conversations/$(conversationId)).data.assignedToUid == request.auth.uid;
-          allow write: if false; // All writes must be done via backend (Cloud Functions)
-      }
-    }
-    
-    /**
      * @description Secures the 'proposals' collection.
      * Public read for sharing, but can only be created by authenticated users.
      */

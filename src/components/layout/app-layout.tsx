@@ -188,12 +188,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/inbox')} isActive={pathname.startsWith('/inbox')} tooltip="Caixa de Entrada">
-                    <MessageSquare />
-                    <span>Caixa de Entrada</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
                   <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
                     <KanbanSquare />
                     <span>Funil de Vendas</span>

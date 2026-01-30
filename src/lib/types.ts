@@ -117,7 +117,6 @@ export const leadSchema = z.object({
   proposalVersion: z.number().default(0),
   observations: z.string().optional().nullable(),
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
-  conversationId: z.string().optional().nullable(),
 });
 
 export const userProfileSchema = z.object({
@@ -128,7 +127,6 @@ export const userProfileSchema = z.object({
   isAdmin: z.boolean().default(false),
   presenceStatus: z.enum(['online', 'offline']).optional(),
   lastSeen: z.any().optional(),
-  queues: z.array(z.string()).optional(),
 });
 
 
@@ -290,37 +288,3 @@ export const partnershipDocumentSchema = z.object({
   createdAt: z.any(),
 });
 export type PartnershipDocument = z.infer<typeof partnershipDocumentSchema>;
-
-
-// WhatsApp Integration Types
-export const conversationStatusSchema = z.enum(['open', 'pending', 'resolved']);
-export type ConversationStatus = z.infer<typeof conversationStatusSchema>;
-
-export const queueTypeSchema = z.enum(['ASO', 'ORCAMENTO', 'DOCUMENTOS', 'FINANCEIRO', 'UNASSIGNED']);
-export type QueueType = z.infer<typeof queueTypeSchema>;
-
-export const conversationSchema = z.object({
-    id: z.string(),
-    contactName: z.string(),
-    contactPhoneNumber: z.string(),
-    lastMessage: z.string().optional(),
-    lastMessageAt: z.any(),
-    status: conversationStatusSchema,
-    queue: queueTypeSchema,
-    assignedToUid: z.string().nullable(),
-    unreadCount: z.number().default(0),
-    budgetId: z.string().nullable(),
-});
-export type Conversation = z.infer<typeof conversationSchema>;
-
-export const messageSchema = z.object({
-    id: z.string(),
-    wamid: z.string(),
-    direction: z.enum(['in', 'out']),
-    type: z.enum(['text', 'interactive', 'template', 'image', 'document']),
-    text: z.string(),
-    status: z.enum(['sent', 'delivered', 'read', 'failed', 'received']),
-    timestamp: z.any(),
-    senderUid: z.string().nullable(),
-});
-export type Message = z.infer<typeof messageSchema>;

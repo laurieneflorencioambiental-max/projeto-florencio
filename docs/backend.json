@@ -61,44 +61,9 @@
         "observations": {
             "type": "string",
             "description": "Internal notes for sellers about the negotiation status."
-        },
-        "conversationId": { "type": "string", "description": "Link to the document in the 'conversations' collection." }
+        }
       },
       "required": ["id", "name", "company", "status", "createdAt", "createdBy", "createdByUid"]
-    },
-    "Conversation": {
-      "title": "Conversation",
-      "description": "Represents a WhatsApp conversation thread with a contact.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "description": "Standardized ID, e.g., wpp_5521999998888" },
-        "contactName": { "type": "string" },
-        "contactPhoneNumber": { "type": "string" },
-        "lastMessage": { "type": "string", "description": "Snippet of the last message for inbox view." },
-        "lastMessageAt": { "type": "object", "description": "Timestamp of the last message." },
-        "status": { "type": "string", "enum": ["open", "pending", "resolved"], "default": "open" },
-        "queue": { "type": "string", "enum": ["ASO", "ORCAMENTO", "DOCUMENTOS", "FINANCEIRO", "UNASSIGNED"], "default": "UNASSIGNED" },
-        "assignedToUid": { "type": "string", "description": "UID of the user assigned to this conversation." },
-        "unreadCount": { "type": "number", "default": 0 },
-        "budgetId": { "type": "string", "description": "ID of the linked document in the 'budgets' collection." }
-      },
-      "required": ["id", "contactPhoneNumber", "lastMessageAt", "status", "queue"]
-    },
-    "Message": {
-      "title": "Message",
-      "description": "Represents a single message within a conversation.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "wamid": { "type": "string", "description": "The message ID from the WhatsApp API." },
-        "direction": { "type": "string", "enum": ["in", "out"] },
-        "type": { "type": "string", "enum": ["text", "interactive", "template", "image", "document"] },
-        "text": { "type": "string", "description": "Content of the message." },
-        "status": { "type": "string", "enum": ["sent", "delivered", "read", "failed", "received"] },
-        "timestamp": { "type": "object" },
-        "senderUid": { "type": "string", "description": "UID of the CRM user who sent an outgoing message." }
-      },
-      "required": ["id", "direction", "type", "timestamp", "status"]
     },
     "UserProfile": {
         "title": "User Profile",
@@ -110,8 +75,7 @@
             "displayName": { "type": "string" },
             "isAdmin": { "type": "boolean", "default": false },
             "presenceStatus": { "type": "string", "enum": ["online", "offline"], "default": "offline" },
-            "lastSeen": { "type": "object", "description": "Timestamp of the last seen time." },
-            "queues": { "type": "array", "items": { "type": "string" }, "description": "List of queues/sectors this user belongs to." }
+            "lastSeen": { "type": "object", "description": "Timestamp of the last seen time." }
         },
         "required": ["uid", "email", "isAdmin"]
     },
@@ -320,22 +284,6 @@
             "$ref": "#/backend/entities/Budget"
           },
           "description": "Stores all budget documents in a central collection. Ownership is enforced by security rules based on the 'createdByUid' field."
-        }
-      },
-      {
-        "path": "/conversations/{conversationId}",
-        "definition": {
-          "entityName": "Conversation",
-          "schema": { "$ref": "#/backend/entities/Conversation" },
-          "description": "Central collection for all WhatsApp conversation threads."
-        }
-      },
-      {
-        "path": "/conversations/{conversationId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": { "$ref": "#/backend/entities/Message" },
-          "description": "Subcollection storing all messages for a specific conversation."
         }
       },
       {
