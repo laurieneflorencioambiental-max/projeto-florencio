@@ -61,28 +61,18 @@ service cloud.firestore {
      * Writes are blocked from the client; they must come from Cloud Functions.
      */
     match /conversations/{conversationId} {
-      // The 'get' rule is the source of truth for single-document reads and for validating 'list' queries.
-      // It's optimized to reduce 'get' calls within the rule evaluation.
-      allow get: if isSignedIn() &&
-                    (
-                      // Check 1: Is the user a manager?
-                      (
-                        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
-                      )
-                      ||
-                      // Check 2: Is the conversation assigned to the user?
-                      resource.data.assignedToUid == request.auth.uid
-                      ||
-                      // Check 3: Is the conversation unassigned AND in one of the user's queues?
-                      (
-                          resource.data.assignedToUid == null &&
-                          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-                          'queues' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-                          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues is list &&
-                          resource.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues
-                      )
-                    );
+      // This rule is for the conversation document itself. It uses `resource.data` to be efficient for list queries.
+      allow get: if isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true) ||
+        resource.data.assignedToUid == request.auth.uid ||
+        (
+            resource.data.assignedToUid == null &&
+            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            'queues' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues is list &&
+            resource.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues
+        )
+      );
 
       // 'list' allows the client to *attempt* a query.
       // Firestore then verifies that EVERY document returned by the query passes the 'get' rule above.
@@ -97,6 +87,8 @@ service cloud.firestore {
       }
     }
 
+    // This function is ONLY for subcollections like 'messages'.
+    // It is safe to use `get` here because it's reading a single parent document, not validating a list.
     function canReadParentConversation(conversationId) {
       let conversationDoc = get(/databases/$(database)/documents/conversations/$(conversationId));
       let userProfileDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
