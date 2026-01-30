@@ -47,7 +47,6 @@ export default function OnlineUsersCard() {
   }, [allUsers]);
 
   return (
-    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -62,6 +61,7 @@ export default function OnlineUsersCard() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
           ) : onlineUsers.length > 0 ? (
+              <TooltipProvider>
                 <div className="space-y-4">
                   {onlineUsers.map(user => (
                       <div key={user.uid} className="flex items-center justify-between">
@@ -89,6 +89,7 @@ export default function OnlineUsersCard() {
                       </div>
                   ))}
                 </div>
+              </TooltipProvider>
           ) : (
               <div className="flex h-40 w-full items-center justify-center text-center">
                   <p className="text-muted-foreground">Nenhum usuário online no momento.</p>
@@ -96,6 +97,5 @@ export default function OnlineUsersCard() {
           )}
         </CardContent>
       </Card>
-    </TooltipProvider>
   );
 }
