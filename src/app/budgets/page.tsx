@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import KanbanBoard from '@/components/kanban/kanban-board';
 import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile } from '@/lib/types';
 import { leadSchema, statuses } from '@/lib/types';
@@ -33,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase, DollarSign, PieChart } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase, DollarSign, PieChart, LayoutDashboard } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
@@ -361,6 +362,12 @@ export default function BudgetsPage() {
             </Select>
         </div>
         <div className='flex items-center gap-2'>
+            <Button asChild variant="outline">
+              <Link href="/">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+              </Link>
+            </Button>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Novo Orçamento
