@@ -60,13 +60,19 @@ service cloud.firestore {
      */
     match /conversations/{conversationId} {
         // 'get' is for single document reads. It's the source of truth for access.
-        allow get: if isSignedIn() &&
-            (isManager() ||
+        // This rule is now self-contained and avoids the recursive call.
+        allow get: if isSignedIn() && (
+            isManager() ||
             resource.data.assignedToUid == request.auth.uid ||
-            (resource.data.assignedToUid == null && resource.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues)
-            );
+            (
+                resource.data.assignedToUid == null &&
+                'queues' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues is list &&
+                resource.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues
+            )
+        );
 
-        // 'list' is for queries. It allows the client to *attempt* a query.
+        // 'list' allows the client to *attempt* a query.
         // Firestore then verifies that EVERY document returned by the query
         // passes the 'get' rule above. This is why client-side queries MUST be specific.
         allow list: if isSignedIn();
@@ -75,7 +81,7 @@ service cloud.firestore {
 
         // Messages subcollection
         match /messages/{messageId} {
-            // Simplified rule: if you can read the parent conversation, you can read its messages.
+            // The canReadParentConversation function is correctly used here.
             allow read: if canReadParentConversation(conversationId);
             allow write: if false; // All writes must be done via backend (Cloud Functions)
         }
@@ -86,9 +92,15 @@ service cloud.firestore {
       let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
 
       return isSignedIn() &&
-             (userProfile.isAdmin == true ||
-              conversation.assignedToUid == request.auth.uid ||
-              (conversation.assignedToUid == null && conversation.queue in userProfile.queues));
+             (
+                userProfile.isAdmin == true ||
+                conversation.assignedToUid == request.auth.uid ||
+                (
+                    conversation.assignedToUid == null &&
+                    'queues' in userProfile && userProfile.queues is list &&
+                    conversation.queue in userProfile.queues
+                )
+             );
     }
     
     /**
