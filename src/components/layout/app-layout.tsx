@@ -178,7 +178,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             ) : (
               <>
-                {/* Items for All Users */}
+                {/* --- Itens para TODOS os Usuários --- */}
                 <SidebarMenuItem>
                   <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
                     <LayoutDashboard />
@@ -197,8 +197,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>Agenda</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
+                    <HelpCircle />
+                    <span>Tutorial</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-                {/* Items for Admins Only */}
+                {/* --- Itens APENAS para Gestores (Admins) --- */}
                 {isAdmin && (
                   <>
                     <SidebarMenuItem>
@@ -237,19 +243,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <span>Análise</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                  </>
-                )}
-
-                {/* Tutorial and Settings are handled separately */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
-                    <HelpCircle />
-                    <span>Tutorial</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                {isAdmin && (
-                  <>
-                    <SidebarMenuItem>
+                     <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
                         <Settings />
                         <span>Configurações</span>
