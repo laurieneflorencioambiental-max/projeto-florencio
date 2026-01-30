@@ -61,8 +61,8 @@ export default function OnlineUsersCard() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         ) : onlineUsers.length > 0 ? (
-            <div className="space-y-4">
-                <TooltipProvider>
+            <TooltipProvider>
+              <div className="space-y-4">
                 {onlineUsers.map(user => (
                     <div key={user.uid} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -88,8 +88,8 @@ export default function OnlineUsersCard() {
                         </Tooltip>
                     </div>
                 ))}
-                </TooltipProvider>
-            </div>
+              </div>
+            </TooltipProvider>
         ) : (
             <div className="flex h-40 w-full items-center justify-center text-center">
                 <p className="text-muted-foreground">Nenhum usuário online no momento.</p>
