@@ -57,6 +57,7 @@ export default function InboxPage() {
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const isAdmin = userProfile?.isAdmin === true;
 
   const myConversationsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -69,14 +70,13 @@ export default function InboxPage() {
   const { data: myConversations, isLoading: myConversationsLoading } = useCollection<Conversation>(myConversationsQuery);
   
   const unassignedQuery = useMemoFirebase(() => {
-    if (!firestore || !userProfile || !userProfile.queues || userProfile.queues.length === 0) return null;
+    if (!firestore || !isAdmin) return null; // Only run for admins
     return query(
         collection(firestore, "conversations"),
-        where('queue', 'in', userProfile.queues),
         where('assignedToUid', '==', null),
         orderBy('lastMessageAt', 'desc')
     );
-  }, [firestore, userProfile]);
+  }, [firestore, isAdmin]);
   const { data: unassignedConversations, isLoading: unassignedLoading } = useCollection<Conversation>(unassignedQuery);
 
   const isLoading = isUserLoading || isProfileLoading || myConversationsLoading || unassignedLoading;
@@ -95,7 +95,7 @@ export default function InboxPage() {
        <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4 border-b">
          <TabsList>
            <TabsTrigger value="mine">Minhas Conversas</TabsTrigger>
-           {userProfile?.queues && userProfile.queues.length > 0 && (
+           {isAdmin && (
              <TabsTrigger value="unassigned">Fila de Atendimento</TabsTrigger>
            )}
          </TabsList>
@@ -108,7 +108,7 @@ export default function InboxPage() {
                     <div className="p-8 text-center text-muted-foreground">Nenhuma conversa atribuída a você.</div>
                 )
             )}
-            {activeTab === 'unassigned' && (
+            {activeTab === 'unassigned' && isAdmin && (
                  unassignedConversations && unassignedConversations.length > 0 ? (
                     unassignedConversations.map(conv => <ConversationItem key={conv.id} conv={conv} pathname=""/>)
                 ) : (

@@ -57,27 +57,14 @@ service cloud.firestore {
 
     /**
      * @description Secures WhatsApp conversations.
-     * Users can read conversations assigned to them, or unassigned conversations in their queues. Managers can read all.
-     * Writes are blocked from the client; they must come from Cloud Functions.
+     * 'list' is permissive, but Firestore security rules ensure that any documents
+     * returned by a list query must also pass the 'get' rule.
+     * Our 'get' rule ensures users can only read conversations assigned to them,
+     * or if they are a manager.
      */
     match /conversations/{conversationId} {
-      // This rule is for the conversation document itself. It uses `resource.data` to be efficient for list queries.
-      allow get: if isSignedIn() && (
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true) ||
-        resource.data.assignedToUid == request.auth.uid ||
-        (
-            resource.data.assignedToUid == null &&
-            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-            'queues' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues is list &&
-            resource.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues
-        )
-      );
-
-      // 'list' allows the client to *attempt* a query.
-      // Firestore then verifies that EVERY document returned by the query passes the 'get' rule above.
+      allow get: if isManager() || (isSignedIn() && resource.data.assignedToUid == request.auth.uid);
       allow list: if isSignedIn();
-          
       allow write: if false; // All writes must be done via backend (Cloud Functions)
 
       // Messages subcollection
@@ -87,30 +74,11 @@ service cloud.firestore {
       }
     }
 
-    // This function is ONLY for subcollections like 'messages'.
-    // It is safe to use `get` here because it's reading a single parent document, not validating a list.
+    // This function is for subcollections like 'messages'.
+    // It's safe to use 'get' here because it's validating a single parent read, not a list query.
     function canReadParentConversation(conversationId) {
-      let conversationDoc = get(/databases/$(database)/documents/conversations/$(conversationId));
-      let userProfileDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-
-      // Check for existence before accessing .data to prevent errors
-      if (!userProfileDoc.exists() || !conversationDoc.exists()) {
-          return false;
-      }
-      
-      let userProfile = userProfileDoc.data;
-      let conversation = conversationDoc.data;
-
-      return isSignedIn() &&
-             (
-                userProfile.isAdmin == true ||
-                conversation.assignedToUid == request.auth.uid ||
-                (
-                    conversation.assignedToUid == null &&
-                    'queues' in userProfile && userProfile.queues is list &&
-                    conversation.queue in userProfile.queues
-                )
-             );
+      let conversation = get(/databases/$(database)/documents/conversations/$(conversationId)).data;
+      return isManager() || (isSignedIn() && conversation.assignedToUid == request.auth.uid);
     }
     
     /**
