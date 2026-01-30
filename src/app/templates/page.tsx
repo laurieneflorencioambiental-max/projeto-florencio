@@ -52,10 +52,10 @@ export default function ManageTemplatesPage() {
   const formCardRef = useRef<HTMLDivElement>(null);
   const auth = useAuth();
 
-  const templatesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
+  const templatesCollectionRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'proposal-templates') : null, [firestore, user]);
   const { data: templates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesCollectionRef);
   
-  const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const servicesCollectionRef = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'services') : null, [firestore, user]);
   const { data: servicesCatalog, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
 
   const form = useForm<z.infer<typeof templateFormSchema>>({

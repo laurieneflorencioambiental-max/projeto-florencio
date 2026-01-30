@@ -34,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase, DollarSign, PieChart, LayoutDashboard } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase, DollarSign, PieChart, LayoutDashboard, ArrowRight } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
@@ -110,9 +110,9 @@ export default function BudgetsPage() {
   
   // Fetch proposal templates from Firestore
   const templatesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return collection(firestore, 'proposal-templates');
-  }, [firestore]);
+  }, [firestore, user]);
   const { data: proposalTemplates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesQuery);
 
   // Fetch global app settings from Firestore
@@ -340,8 +340,8 @@ export default function BudgetsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-       <div className='flex items-center justify-between gap-4 flex-wrap bg-card p-3 rounded-lg border'>
-          <div className='flex items-center gap-2 mr-auto'>
+      <div className="grid grid-cols-2 items-center gap-4 bg-card p-3 rounded-lg border">
+        <div className="flex justify-start items-center gap-2">
             {isAdmin && (
               <>
                 <User className='h-5 w-5 text-primary' />
@@ -364,8 +364,8 @@ export default function BudgetsPage() {
                 </Select>
               </>
             )}
-          </div>
-        <div className='flex items-center gap-2'>
+        </div>
+        <div className='flex items-center gap-2 justify-end'>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Novo Orçamento

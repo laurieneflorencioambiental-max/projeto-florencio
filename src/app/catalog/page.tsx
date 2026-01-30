@@ -37,10 +37,10 @@ export default function CatalogPage() {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const auth = useAuth();
 
-  const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const servicesCollectionRef = useMemoFirebase(() => firestore && user ? collection(firestore, 'services') : null, [firestore, user]);
   const { data: services, isLoading: areServicesLoading } = useCollection<Service>(servicesCollectionRef);
   
-  const pricingTemplatesRef = useMemoFirebase(() => firestore ? collection(firestore, 'pricing-templates') : null, [firestore]);
+  const pricingTemplatesRef = useMemoFirebase(() => firestore && user ? collection(firestore, 'pricing-templates') : null, [firestore, user]);
   const { data: pricingTemplates, isLoading: areTemplatesLoading } = useCollection<PricingTemplate>(pricingTemplatesRef);
 
   const form = useForm<z.infer<typeof catalogFormSchema>>({

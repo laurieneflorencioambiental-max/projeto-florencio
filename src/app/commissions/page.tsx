@@ -89,7 +89,7 @@ export default function CommissionsPage() {
   const templatesRef = useMemoFirebase(() => firestore && isAdmin ? collection(firestore, 'commission-templates') : null, [firestore, isAdmin]);
   const { data: savedTemplates, isLoading: areTemplatesLoading } = useCollection<CommissionTemplate>(templatesRef);
 
-  const servicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const servicesRef = useMemoFirebase(() => firestore && user ? collection(firestore, 'services') : null, [firestore, user]);
   const { data: servicesCatalog, isLoading: areServicesLoading } = useCollection<Service>(servicesRef);
 
   const calculation = useMemo(() => {
