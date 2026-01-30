@@ -544,7 +544,6 @@ export default function SettingsPage() {
   
     setIsSavingUser(true);
     const userDocRef = doc(firestore, 'users', userToEdit.uid);
-    const batch = writeBatch(firestore);
   
     const dataToUpdate: { [key: string]: any } = {
       isAdmin: editedUserData.isAdmin,
@@ -553,10 +552,14 @@ export default function SettingsPage() {
         : editedUserData.permissions || {},
     };
   
-    batch.update(userDocRef, dataToUpdate);
-  
     try {
-      await batch.commit();
+      const updatePromise = updateDoc(userDocRef, dataToUpdate);
+      
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('A operação de salvamento demorou muito. Verifique sua conexão e as regras de segurança do Firestore.')), 15000)
+      );
+
+      await Promise.race([updatePromise, timeoutPromise]);
   
       toast({
         title: 'Usuário atualizado!',
@@ -564,20 +567,23 @@ export default function SettingsPage() {
       });
   
       setUserToEdit(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update user:', error);
   
-      const permissionError = new FirestorePermissionError({
-        path: userDocRef.path,
-        operation: 'update',
-        requestResourceData: dataToUpdate,
-      });
-      errorEmitter.emit('permission-error', permissionError);
+      if (error.code) { // It's likely a Firebase error
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: dataToUpdate,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
   
       toast({
         variant: 'destructive',
         title: 'Erro ao Salvar',
         description:
+          error.message ||
           'Não foi possível salvar as alterações. Verifique as permissões de segurança e a conexão.',
       });
     } finally {
@@ -691,7 +697,7 @@ export default function SettingsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" onClick={() => setUserToEdit(u)} disabled={u.isAdmin}>
+                                        <Button variant="ghost" size="icon" onClick={() => setUserToEdit(u)} disabled={u.uid === user?.uid}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
                                     </div>
