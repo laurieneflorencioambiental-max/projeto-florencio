@@ -341,26 +341,28 @@ export default function BudgetsPage() {
   return (
     <div className="flex flex-col gap-4">
        <div className='flex items-center justify-between gap-4 flex-wrap bg-card p-3 rounded-lg border'>
-        <div className='flex items-center gap-2'>
-            <User className='h-5 w-5 text-primary' />
-            <label htmlFor="seller-select" className="text-sm font-medium">
-                Criar para:
-            </label>
-             <Select
-                value={selectedSeller?.uid || ''}
-                onValueChange={handleSellerChange}
-                disabled={!isAdmin || sellerOptions.length === 0}
-            >
-                <SelectTrigger className="w-[180px]" id="seller-select">
-                <SelectValue placeholder="Selecione um vendedor" />
-                </SelectTrigger>
-                <SelectContent>
-                {sellerOptions.map(seller => (
-                    <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
-        </div>
+        {isAdmin ? (
+          <div className='flex items-center gap-2'>
+              <User className='h-5 w-5 text-primary' />
+              <label htmlFor="seller-select" className="text-sm font-medium">
+                  Criar para:
+              </label>
+              <Select
+                  value={selectedSeller?.uid || ''}
+                  onValueChange={handleSellerChange}
+                  disabled={!isAdmin || sellerOptions.length === 0}
+              >
+                  <SelectTrigger className="w-[180px]" id="seller-select">
+                  <SelectValue placeholder="Selecione um vendedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                  {sellerOptions.map(seller => (
+                      <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
+                  ))}
+                  </SelectContent>
+              </Select>
+          </div>
+        ) : <div />}
         <div className='flex items-center gap-2'>
             <Button asChild variant="outline">
               <Link href="/">
@@ -429,7 +431,7 @@ export default function BudgetsPage() {
             </div>
             )}
 
-            {filter === 'year' && selectedYear !== null && (
+            {(filter === 'month' || filter === 'year') && selectedYear !== null && (
             <div className="flex items-center gap-2">
                 <label htmlFor="year-filter" className="text-sm font-medium">
                 Ano:
