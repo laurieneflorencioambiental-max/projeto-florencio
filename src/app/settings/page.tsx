@@ -537,7 +537,7 @@ export default function SettingsPage() {
       toast({
         variant: 'destructive',
         title: 'Ação não permitida',
-        description: 'Você não pode alterar suas próprias permissões aqui.',
+        description: 'Você não pode alterar suas próprias permissões.',
       });
       return;
     }
@@ -547,44 +547,25 @@ export default function SettingsPage() {
   
     const dataToUpdate: { [key: string]: any } = {
       isAdmin: editedUserData.isAdmin,
-      permissions: editedUserData.isAdmin
-        ? {}
-        : editedUserData.permissions || {},
+      permissions: editedUserData.isAdmin ? {} : editedUserData.permissions || {},
     };
   
     try {
-      const updatePromise = updateDoc(userDocRef, dataToUpdate);
-      
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('A operação de salvamento demorou muito. Verifique sua conexão e as regras de segurança do Firestore.')), 15000)
-      );
-
-      await Promise.race([updatePromise, timeoutPromise]);
+      await updateDoc(userDocRef, dataToUpdate);
   
       toast({
         title: 'Usuário atualizado!',
-        description: `As permissões para ${userToEdit.email} foram salvas com sucesso.`,
+        description: `As permissões para ${userToEdit.email} foram salvas.`,
       });
   
       setUserToEdit(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to update user:', error);
-  
-      if (error.code) { // It's likely a Firebase error
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'update',
-          requestResourceData: dataToUpdate,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      }
-  
       toast({
         variant: 'destructive',
         title: 'Erro ao Salvar',
         description:
-          error.message ||
-          'Não foi possível salvar as alterações. Verifique as permissões de segurança e a conexão.',
+          'Não foi possível salvar as alterações. Verifique o console para mais detalhes do erro.',
       });
     } finally {
       setIsSavingUser(false);
