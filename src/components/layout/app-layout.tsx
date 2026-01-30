@@ -197,7 +197,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>Agenda</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                 <SidebarMenuItem>
+                <SidebarMenuItem>
                   <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
                     <HelpCircle />
                     <span>Tutorial</span>
