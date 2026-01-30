@@ -341,29 +341,31 @@ export default function BudgetsPage() {
   return (
     <div className="flex flex-col gap-4">
        <div className='flex items-center justify-between gap-4 flex-wrap bg-card p-3 rounded-lg border'>
-        {isAdmin && (
           <div className='flex items-center gap-2 mr-auto'>
-              <User className='h-5 w-5 text-primary' />
-              <label htmlFor="seller-select" className="text-sm font-medium">
-                  Criar para:
-              </label>
-              <Select
-                  value={selectedSeller?.uid || ''}
-                  onValueChange={handleSellerChange}
-                  disabled={!isAdmin || sellerOptions.length === 0}
-              >
-                  <SelectTrigger className="w-[180px]" id="seller-select">
-                  <SelectValue placeholder="Selecione um vendedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                  {sellerOptions.map(seller => (
-                      <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
-                  ))}
-                  </SelectContent>
-              </Select>
+            {isAdmin && (
+              <>
+                <User className='h-5 w-5 text-primary' />
+                <label htmlFor="seller-select" className="text-sm font-medium">
+                    Criar para:
+                </label>
+                <Select
+                    value={selectedSeller?.uid || ''}
+                    onValueChange={handleSellerChange}
+                    disabled={!isAdmin || sellerOptions.length === 0}
+                >
+                    <SelectTrigger className="w-[180px]" id="seller-select">
+                    <SelectValue placeholder="Selecione um vendedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {sellerOptions.map(seller => (
+                        <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+              </>
+            )}
           </div>
-        )}
-        <div className='flex items-center gap-2 ml-auto'>
+        <div className='flex items-center gap-2'>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Novo Orçamento
