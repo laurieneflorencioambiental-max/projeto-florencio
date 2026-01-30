@@ -75,7 +75,12 @@
             "displayName": { "type": "string" },
             "isAdmin": { "type": "boolean", "default": false },
             "presenceStatus": { "type": "string", "enum": ["online", "offline"], "default": "offline" },
-            "lastSeen": { "type": "object", "description": "Timestamp of the last seen time." }
+            "lastSeen": { "type": "object", "description": "Timestamp of the last seen time." },
+            "queues": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of attendance queues the user has access to."
+            }
         },
         "required": ["uid", "email", "isAdmin"]
     },
@@ -272,6 +277,7 @@
         "assignedToUid": { "type": "string" },
         "assignedToName": { "type": "string" },
         "status": { "type": "string", "enum": ["open", "closed", "archived"] },
+        "queue": { "type": "string", "description": "The attendance queue/sector this conversation belongs to." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" },
         "within24hWindow": { "type": "boolean" },

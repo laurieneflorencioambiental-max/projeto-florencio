@@ -119,6 +119,17 @@ export const leadSchema = z.object({
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
 });
 
+export const attendanceQueues = [
+    'Orçamento/Comercial',
+    'Agendamento de ASO',
+    'Meio Ambiente',
+    'Financeiro',
+    'Área Técnica SST',
+    'Resultado de Exame',
+    'Geral'
+] as const;
+export type AttendanceQueue = (typeof attendanceQueues)[number];
+
 export const userProfileSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
@@ -127,6 +138,7 @@ export const userProfileSchema = z.object({
   isAdmin: z.boolean().default(false),
   presenceStatus: z.enum(['online', 'offline']).optional(),
   lastSeen: z.any().optional(),
+  queues: z.array(z.enum(attendanceQueues)).optional(),
 });
 
 
@@ -314,6 +326,7 @@ export const conversationSchema = z.object({
     assignedToUid: z.string().optional().nullable(),
     assignedToName: z.string().optional().nullable(),
     status: z.enum(['open', 'closed', 'archived']).default('open'),
+    queue: z.enum(attendanceQueues).optional().nullable(),
     createdAt: z.any(),
     updatedAt: z.any(),
     within24hWindow: z.boolean().default(true),
