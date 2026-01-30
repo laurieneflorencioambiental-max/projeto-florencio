@@ -239,30 +239,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuItem>
                   </>
                 )}
-              </>
-            )}
 
-            {/* Tutorial and Settings are handled separately */}
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
-                <HelpCircle />
-                <span>Tutorial</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {isAdmin && (
-              <>
+                {/* Tutorial and Settings are handled separately */}
                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
-                    <Settings />
-                    <span>Configurações</span>
+                  <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
+                    <HelpCircle />
+                    <span>Tutorial</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
-                    <Shield />
-                    <span>Auditoria</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {isAdmin && (
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
+                        <Settings />
+                        <span>Configurações</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
+                        <Shield />
+                        <span>Auditoria</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
+                )}
               </>
             )}
           </SidebarMenu>
