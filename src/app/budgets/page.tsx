@@ -340,9 +340,9 @@ export default function BudgetsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-       <div className='flex items-center justify-between gap-4 flex-wrap bg-card p-3 rounded-lg border'>
-        {isAdmin ? (
-          <div className='flex items-center gap-2'>
+       <div className='flex items-center justify-end gap-4 flex-wrap bg-card p-3 rounded-lg border'>
+        {isAdmin && (
+          <div className='flex items-center gap-2 mr-auto'>
               <User className='h-5 w-5 text-primary' />
               <label htmlFor="seller-select" className="text-sm font-medium">
                   Criar para:
@@ -362,7 +362,7 @@ export default function BudgetsPage() {
                   </SelectContent>
               </Select>
           </div>
-        ) : <div />}
+        )}
         <div className='flex items-center gap-2'>
             <Button asChild variant="outline">
               <Link href="/">
