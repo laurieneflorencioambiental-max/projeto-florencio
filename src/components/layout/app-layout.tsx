@@ -30,6 +30,7 @@ import {
   User as UserIcon,
   Shield,
   Users,
+  MessageSquare,
 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import Link from 'next/link';
@@ -103,6 +104,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     if (pathname === '/') return 'Dashboard';
     if (pathname === '/budgets') return 'Funil de Vendas';
+    if (pathname.startsWith('/inbox')) return 'Caixa de Entrada';
     if (pathname === '/templates') return 'Modelos de Proposta';
     if (pathname === '/catalog') return 'Catálogo de Serviços';
     if (pathname === '/marketing') return 'Gestão de Marketing';
@@ -183,6 +185,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
                     <LayoutDashboard />
                     <span>Dashboard</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => router.push('/inbox')} isActive={pathname.startsWith('/inbox')} tooltip="Caixa de Entrada">
+                    <MessageSquare />
+                    <span>Caixa de Entrada</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
