@@ -288,3 +288,34 @@ export const partnershipDocumentSchema = z.object({
   createdAt: z.any(),
 });
 export type PartnershipDocument = z.infer<typeof partnershipDocumentSchema>;
+
+
+// Inbox / WhatsApp Types
+export const messageSchema = z.object({
+    id: z.string(),
+    waMessageId: z.string(),
+    conversationId: z.string(),
+    from: z.string(),
+    body: z.string(),
+    type: z.string(),
+    timestamp: z.any(),
+    status: z.enum(['sent', 'delivered', 'read', 'failed']),
+    senderUid: z.string().optional().nullable(),
+});
+
+export type Message = z.infer<typeof messageSchema>;
+
+export const conversationSchema = z.object({
+    id: z.string(),
+    contactWaId: z.string(),
+    contactName: z.string(),
+    lastMessage: messageSchema.optional().nullable(),
+    unreadCount: z.number().default(0),
+    assignedToUid: z.string().optional().nullable(),
+    assignedToName: z.string().optional().nullable(),
+    status: z.enum(['open', 'closed', 'archived']).default('open'),
+    createdAt: z.any(),
+    updatedAt: z.any(),
+});
+
+export type Conversation = z.infer<typeof conversationSchema>;

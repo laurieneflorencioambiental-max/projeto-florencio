@@ -54,6 +54,20 @@ service cloud.firestore {
       allow update: if isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid;
       allow delete: if (isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid) || isManager();
     }
+    
+    /**
+     * @description Secures the 'conversations' and 'messages' collections for the WhatsApp inbox.
+     * Users can only access conversations they are a part of (assigned to them).
+     * Cloud Functions will have admin access to write messages from WhatsApp.
+     */
+    match /conversations/{conversationId} {
+      allow read, write: if isSignedIn() && (isManager() || resource.data.assignedToUid == request.auth.uid);
+      
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn() && (isManager() || get(/databases/$(database)/documents/conversations/$(conversationId)).data.assignedToUid == request.auth.uid);
+      }
+    }
+
 
     /**
      * @description Secures the 'proposals' collection.

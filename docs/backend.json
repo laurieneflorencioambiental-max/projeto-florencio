@@ -258,6 +258,39 @@
         "createdAt": { "type": "object" }
       },
       "required": ["id", "partnerName", "templates", "createdAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Represents a single conversation thread with a contact from WhatsApp.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "contactWaId": { "type": "string" },
+        "contactName": { "type": "string" },
+        "lastMessage": { "$ref": "#/backend/entities/Message" },
+        "unreadCount": { "type": "number" },
+        "assignedToUid": { "type": "string" },
+        "assignedToName": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "closed", "archived"] },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      }
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a single message within a conversation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "waMessageId": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "from": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "read", "failed"] },
+        "senderUid": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -285,6 +318,26 @@
           },
           "description": "Stores all budget documents in a central collection. Ownership is enforced by security rules based on the 'createdByUid' field."
         }
+      },
+      {
+        "path": "/conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": {
+            "$ref": "#/backend/entities/Conversation"
+          },
+          "description": "Stores all WhatsApp conversation threads. Each conversation can contain a subcollection of messages."
+        },
+        "subcollections": [
+          {
+            "path": "/messages/{messageId}",
+            "definition": {
+              "entityName": "Message",
+              "schema": { "$ref": "#/backend/entities/Message" },
+              "description": "Stores all messages for a specific conversation."
+            }
+          }
+        ]
       },
       {
         "path": "/sellers/{sellerId}",

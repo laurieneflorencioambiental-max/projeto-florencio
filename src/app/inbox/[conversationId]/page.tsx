@@ -9,25 +9,25 @@ export default function ConversationDisabledPage() {
   const router = useRouter();
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] w-full flex-col items-center justify-center gap-4 text-center">
-        <Card className="max-w-lg">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 text-center p-4">
+        <Card className="max-w-lg animate-fade-in-up">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 justify-center">
                     <MessageSquareOff className="h-8 w-8 text-muted-foreground" />
-                    Caixa de Entrada Desativada
+                    Visualização de Conversa
                 </CardTitle>
                 <CardDescription>
-                    Esta funcionalidade foi temporariamente removida.
+                    Esta área está quase pronta!
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <p className="text-muted-foreground">
-                    A visualização de conversas está desativada no momento. Estamos trabalhando em outras áreas do sistema.
+                    Assim que a integração com a API do WhatsApp for concluída, as conversas individuais aparecerão aqui, permitindo que você responda e interaja com seus clientes diretamente do CRM.
                 </p>
             </CardContent>
             <CardFooter>
-                 <Button onClick={() => router.push('/')}>
-                    Voltar para o Dashboard
+                 <Button onClick={() => router.push('/inbox')}>
+                    Voltar para a Caixa de Entrada
                 </Button>
             </CardFooter>
         </Card>
