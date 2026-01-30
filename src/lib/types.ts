@@ -316,6 +316,23 @@ export const conversationSchema = z.object({
     status: z.enum(['open', 'closed', 'archived']).default('open'),
     createdAt: z.any(),
     updatedAt: z.any(),
+    within24hWindow: z.boolean().default(true),
+    lastCustomerMessageAt: z.any().optional().nullable(),
+    paidConversationCount: z.number().default(0),
 });
 
 export type Conversation = z.infer<typeof conversationSchema>;
+
+export const whatsAppTemplateSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    category: z.string(),
+    bodyText: z.string(),
+    variables: z.array(z.string()),
+    status: z.enum(['APPROVED', 'PENDING', 'REJECTED']),
+    usageRules: z.string(),
+    isActive: z.boolean().default(false),
+    monthlyUsage: z.number().default(0),
+  });
+  
+export type WhatsAppTemplate = z.infer<typeof whatsAppTemplateSchema>;

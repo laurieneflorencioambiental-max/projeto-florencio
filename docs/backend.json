@@ -273,7 +273,10 @@
         "assignedToName": { "type": "string" },
         "status": { "type": "string", "enum": ["open", "closed", "archived"] },
         "createdAt": { "type": "object" },
-        "updatedAt": { "type": "object" }
+        "updatedAt": { "type": "object" },
+        "within24hWindow": { "type": "boolean" },
+        "lastCustomerMessageAt": { "type": "object" },
+        "paidConversationCount": { "type": "number" }
       }
     },
     "Message": {
@@ -291,6 +294,23 @@
         "status": { "type": "string", "enum": ["sent", "delivered", "read", "failed"] },
         "senderUid": { "type": "string" }
       }
+    },
+    "WhatsAppTemplate": {
+        "title": "WhatsApp Template",
+        "description": "Represents an official WhatsApp message template approved by Meta.",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string", "description": "The official name of the template from Meta (e.g., 'follow_up_orcamento')." },
+          "category": { "type": "string", "enum": ["UTILITY", "MARKETING", "SERVICE", "AUTHENTICATION"] },
+          "bodyText": { "type": "string", "description": "The full body of the message, including variables like {{1}}." },
+          "variables": { "type": "array", "items": { "type": "string" }, "description": "An ordered list describing what each variable represents." },
+          "status": { "type": "string", "enum": ["APPROVED", "PENDING", "REJECTED"], "description": "The approval status from Meta." },
+          "usageRules": { "type": "string", "description": "A business rule description of when this template should be used." },
+          "isActive": { "type": "boolean", "description": "Whether the template is active and can be used in the CRM." },
+          "monthlyUsage": { "type": "number", "description": "A counter for how many times this template has been sent in the current month." }
+        },
+        "required": ["id", "name", "category", "bodyText", "status", "isActive"]
     }
   },
   "auth": {
@@ -338,6 +358,14 @@
             }
           }
         ]
+      },
+      {
+        "path": "/whatsapp_templates/{templateId}",
+        "definition": {
+          "entityName": "WhatsAppTemplate",
+          "schema": { "$ref": "#/backend/entities/WhatsAppTemplate" },
+          "description": "Stores the official WhatsApp message templates approved by Meta."
+        }
       },
       {
         "path": "/sellers/{sellerId}",

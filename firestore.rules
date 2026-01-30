@@ -57,7 +57,7 @@ service cloud.firestore {
     
     /**
      * @description Secures the 'conversations' and 'messages' collections for the WhatsApp inbox.
-     * Users can only access conversations they are a part of (assigned to them).
+     * Users can only read conversations they are a part of (assigned to them).
      * Cloud Functions will have admin access to write messages from WhatsApp.
      */
     match /conversations/{conversationId} {
@@ -66,6 +66,15 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, write: if isSignedIn() && (isManager() || get(/databases/$(database)/documents/conversations/$(conversationId)).data.assignedToUid == request.auth.uid);
       }
+    }
+    
+    /**
+     * @description Secures WhatsApp templates.
+     * Readable by any authenticated user, but only managers can create, update, or delete them.
+     */
+    match /whatsapp_templates/{templateId} {
+      allow read: if isSignedIn();
+      allow write: if isManager();
     }
 
 

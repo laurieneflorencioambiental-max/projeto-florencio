@@ -160,3 +160,94 @@ export const sendWhatsAppMessage = functions
             throw new functions.https.HttpsError("internal", "Failed to send WhatsApp message.", error.response?.data);
         }
     });
+
+/**
+ * Callable function for sending a WhatsApp Template message from the CRM UI.
+ */
+export const sendWhatsAppTemplate = functions
+    .region("us-central1")
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated to send messages.");
+        }
+        
+        // TODO: Add logic to check if user is admin or has permission
+
+        const { to, templateName, conversationId, languageCode = 'pt_BR', components } = data;
+        const token = functions.config().whatsapp.token;
+        const phoneNumberId = functions.config().whatsapp.phone_number_id;
+
+        if (!to || !templateName || !conversationId) {
+            throw new functions.https.HttpsError("invalid-argument", "Missing required parameters: 'to', 'templateName', 'conversationId'.");
+        }
+        
+        // Construct the template message payload
+        const messagePayload = {
+            messaging_product: "whatsapp",
+            to: to,
+            type: "template",
+            template: {
+                name: templateName,
+                language: {
+                    code: languageCode
+                },
+                components: components || [] // e.g., [{ "type": "body", "parameters": [{ "type": "text", "text": "Mr. Smith" }] }]
+            }
+        };
+
+        try {
+            const response = await axios.post(
+                `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+                messagePayload,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            const messageData = response.data.messages[0];
+
+            // Save the sent message to Firestore
+            const messageRef = db.collection("conversations").doc(conversationId).collection("messages").doc();
+            await messageRef.set({
+                id: messageRef.id,
+                waMessageId: messageData.id,
+                conversationId: conversationId,
+                from: "me", // Indicates the message was sent from the CRM
+                body: `Template: ${templateName}`, // Placeholder text for template
+                type: "template",
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                status: 'sent',
+                senderUid: context.auth.uid,
+            });
+
+            // Update the conversation to reflect the paid conversation
+            await db.collection("conversations").doc(conversationId).update({
+                lastMessage: {
+                    body: `Template: ${templateName}`,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                },
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                paidConversationCount: admin.firestore.FieldValue.increment(1),
+            });
+            
+            // Update the template's monthly usage
+            // Note: This is a simplified approach. A more robust solution would use a transaction
+            // or a separate Cloud Function to handle aggregated monthly counts.
+            const templateQuery = await db.collection('whatsapp_templates').where('name', '==', templateName).limit(1).get();
+            if (!templateQuery.empty) {
+                const templateDoc = templateQuery.docs[0];
+                await templateDoc.ref.update({
+                    monthlyUsage: admin.firestore.FieldValue.increment(1)
+                });
+            }
+
+
+            return { success: true, messageId: messageData.id };
+        } catch (error: any) {
+            console.error("Error sending WhatsApp template:", error.response?.data || error.message);
+            throw new functions.https.HttpsError("internal", "Failed to send WhatsApp template.", error.response?.data);
+        }
+    });
