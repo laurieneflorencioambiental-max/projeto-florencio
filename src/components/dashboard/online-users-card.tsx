@@ -47,55 +47,55 @@ export default function OnlineUsersCard() {
   }, [allUsers]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-green-500" />
-            Usuários Online
-        </CardTitle>
-        <CardDescription>Quem está ativo no sistema agora.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {areUsersLoading ? (
-            <div className="flex h-40 w-full items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        ) : onlineUsers.length > 0 ? (
-            <TooltipProvider>
-              <div className="space-y-4">
-                {onlineUsers.map(user => (
-                    <div key={user.uid} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'}/>
-                                <AvatarFallback>{getUserInitials(user.displayName)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-sm font-medium leading-none">{user.displayName || user.email}</p>
-                                <p className="text-xs text-muted-foreground">
-                                    Visto por último:{' '}
-                                    {user.lastSeen ? formatDistanceToNow(user.lastSeen.toDate(), { addSuffix: true, locale: ptBR }) : 'agora'}
-                                </p>
-                            </div>
-                        </div>
-                        <Tooltip>
-                            <TooltipTrigger>
-                                 <Badge variant={user.isAdmin ? "default" : "secondary"}>{user.isAdmin ? 'Gestor' : 'Vendedor'}</Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{user.isAdmin ? 'Acesso de Gestão' : 'Acesso de Vendas'}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-                ))}
+    <TooltipProvider>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-green-500" />
+              Usuários Online
+          </CardTitle>
+          <CardDescription>Quem está ativo no sistema agora.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {areUsersLoading ? (
+              <div className="flex h-40 w-full items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            </TooltipProvider>
-        ) : (
-            <div className="flex h-40 w-full items-center justify-center text-center">
-                <p className="text-muted-foreground">Nenhum usuário online no momento.</p>
-            </div>
-        )}
-      </CardContent>
-    </Card>
+          ) : onlineUsers.length > 0 ? (
+                <div className="space-y-4">
+                  {onlineUsers.map(user => (
+                      <div key={user.uid} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'}/>
+                                  <AvatarFallback>{getUserInitials(user.displayName)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="text-sm font-medium leading-none">{user.displayName || user.email}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                      Visto por último:{' '}
+                                      {user.lastSeen ? formatDistanceToNow(user.lastSeen.toDate(), { addSuffix: true, locale: ptBR }) : 'agora'}
+                                  </p>
+                              </div>
+                          </div>
+                          <Tooltip>
+                              <TooltipTrigger>
+                                   <Badge variant={user.isAdmin ? "default" : "secondary"}>{user.isAdmin ? 'Gestor' : 'Vendedor'}</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                  <p>{user.isAdmin ? 'Acesso de Gestão' : 'Acesso de Vendas'}</p>
+                              </TooltipContent>
+                          </Tooltip>
+                      </div>
+                  ))}
+                </div>
+          ) : (
+              <div className="flex h-40 w-full items-center justify-center text-center">
+                  <p className="text-muted-foreground">Nenhum usuário online no momento.</p>
+              </div>
+          )}
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }
