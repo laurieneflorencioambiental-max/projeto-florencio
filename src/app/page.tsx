@@ -54,6 +54,8 @@ import {
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import SalesLeaderboard from '@/components/dashboard/sales-leaderboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import OnlineUsersCard from '@/components/dashboard/online-users-card';
 
 const getLeadDate = (date: any): Date | null => {
   if (!date) {
@@ -329,7 +331,7 @@ export default function DashboardPage() {
          <SalesLeaderboard leads={leads} users={allUsers} isLoading={isLoading} />
       )}
       
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className={cn("grid md:grid-cols-2 gap-6", isAdmin && "lg:grid-cols-3")}>
         <Card>
           <CardHeader>
             <CardTitle>Orçamentos Recentes</CardTitle>
@@ -402,6 +404,7 @@ export default function DashboardPage() {
             </Table>
           </CardContent>
         </Card>
+        {isAdmin && <OnlineUsersCard />}
       </div>
 
        <AddLeadModal
