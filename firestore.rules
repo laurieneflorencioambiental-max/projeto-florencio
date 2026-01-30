@@ -55,18 +55,28 @@ service cloud.firestore {
 
     /**
      * @description Secures WhatsApp conversations.
-     * Only managers or the assigned agent can read a conversation.
+     * Users can read conversations assigned to them, or unassigned conversations in their queues. Managers can read all.
      * Writes are blocked from the client; they must come from Cloud Functions.
      */
     match /conversations/{conversationId} {
-      allow read: if isSignedIn() && (isManager() || resource.data.assignedToUid == request.auth.uid);
-      allow write: if false; // All writes must be done via backend (Cloud Functions)
-      
-      // Messages subcollection
-      match /messages/{messageId} {
-        allow read: if isSignedIn() && (isManager() || get(/databases/$(database)/documents/conversations/$(conversationId)).data.assignedToUid == request.auth.uid);
+        allow read: if isSignedIn() &&
+            (isManager() ||
+            resource.data.assignedToUid == request.auth.uid ||
+            (resource.data.assignedToUid == null && resource.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues)
+            );
         allow write: if false; // All writes must be done via backend (Cloud Functions)
-      }
+
+        // Messages subcollection
+        match /messages/{messageId} {
+            allow read: if isSignedIn() &&
+                (
+                    let parentConversation = get(/databases/$(database)/documents/conversations/$(conversationId));
+                    isManager() ||
+                    parentConversation.data.assignedToUid == request.auth.uid ||
+                    (parentConversation.data.assignedToUid == null && parentConversation.data.queue in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.queues)
+                );
+            allow write: if false; // All writes must be done via backend (Cloud Functions)
+        }
     }
     
     /**
