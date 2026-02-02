@@ -23,9 +23,9 @@ export default function RootLayout({
     // Service Worker registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
+        .register('/sw.js', { scope: '/' }) // Explicitly defining scope
         .then(registration => {
-          console.log('Service Worker registrado com sucesso:', registration);
+          console.log('Service Worker registrado com sucesso com escopo:', registration.scope);
         })
         .catch(error => {
           console.error('Falha ao registrar o Service Worker:', error);
