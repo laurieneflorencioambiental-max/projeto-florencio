@@ -189,7 +189,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
+          <SidebarMenu key={isLoadingPermissions ? 'loading' : 'loaded'}>
             {isLoadingPermissions ? (
               <>
                 <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
