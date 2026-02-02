@@ -64,7 +64,7 @@ export default function OnlineUsersCard() {
               <TooltipProvider>
                 <div className="space-y-4">
                   {onlineUsers.map(user => (
-                      <div key={user.uid} className="flex items-center justify-between">
+                      <div key={user.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">
                                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'}/>
