@@ -1,22 +1,21 @@
 {
   "name": "Florencio Comercial",
-  "short_name": "Florencio Comercial",
+  "short_name": "Florencio",
   "description": "Gestão comercial para o Grupo Florencio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b7689",
+  "theme_color": "#1b7689",
   "icons": [
     {
-      "src": "https://picsum.photos/seed/florencio/192/192",
+      "src": "https://placehold.co/192x192/1b7689/FFFFFF.png?text=FC",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://picsum.photos/seed/florencio/512/512",
+      "src": "https://placehold.co/512x512/1b7689/FFFFFF.png?text=FC",
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "theme_color": "#1b7689",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "scope": "/",
-  "start_url": "/"
+  ]
 }
