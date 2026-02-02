@@ -66,6 +66,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isLoadingPermissions = isUserLoading || isProfileLoading;
 
   useEffect(() => {
+    // This effect creates a default Firestore user profile if one doesn't exist.
+    // This ensures that every authenticated user has a corresponding profile document,
+    // preventing errors in parts of the app that expect a profile to be present.
+    if (user && firestore && userProfile === null && !isProfileLoading) {
+      const newProfileRef = doc(firestore, 'users', user.uid);
+      const defaultProfile = {
+        uid: user.uid,
+        email: user.email!,
+        displayName: user.displayName || user.email!.split('@')[0],
+        isAdmin: false, // New users default to non-admin for security.
+        photoURL: user.photoURL || null,
+        presenceStatus: 'online',
+        lastSeen: serverTimestamp(),
+      };
+      
+      // Create the document in Firestore. This prevents errors in other parts of the app
+      // that assume a profile document exists, like the presence status updater.
+      setDoc(newProfileRef, defaultProfile);
+    }
+  }, [user, firestore, userProfile, isProfileLoading]);
+
+  useEffect(() => {
     if (!user || !firestore) {
       return;
     }
