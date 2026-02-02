@@ -43,6 +43,131 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { logClientEvent } from '@/lib/audit-client';
 
+
+// Menu para usuários não-administradores
+const UserMenu = ({ router, pathname }: { router: any; pathname: string }) => (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
+          <LayoutDashboard />
+          <span>Dashboard</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
+          <KanbanSquare />
+          <span>Funil de Vendas</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
+          <Calendar />
+          <span>Agenda</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      
+      <SidebarSeparator />
+      <SidebarMenuItem>
+          <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">SISTEMA</p>
+      </SidebarMenuItem>
+       <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
+          <HelpCircle />
+          <span>Tutorial</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+);
+
+// Menu completo para administradores (Gestores)
+const AdminMenu = ({ router, pathname }: { router: any; pathname: string }) => (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
+          <LayoutDashboard />
+          <span>Dashboard</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
+          <KanbanSquare />
+          <span>Funil de Vendas</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
+          <Calendar />
+          <span>Agenda</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      
+      <SidebarSeparator />
+      <SidebarMenuItem>
+        <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">GESTÃO</p>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
+          <FileText />
+          <span>Modelos de Proposta</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
+          <BookMarked />
+          <span>Catálogo de Serviços</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+        <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
+          <Calculator />
+          <span>Precificação</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
+            <Users />
+            <span>Comissões</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
+          <TrendingUp />
+          <span>Marketing</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
+          <BarChartHorizontal />
+          <span>Análise</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      <SidebarSeparator />
+      <SidebarMenuItem>
+          <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">SISTEMA</p>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
+          <HelpCircle />
+          <span>Tutorial</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
+          <Settings />
+          <span>Configurações</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
+          <Shield />
+          <span>Auditoria</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+);
+
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -62,30 +187,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const isAdmin = userProfile?.isAdmin === true;
   const isLoadingPermissions = isUserLoading || isProfileLoading;
-
-  useEffect(() => {
-    // This effect creates a default Firestore user profile if one doesn't exist.
-    // This ensures that every authenticated user has a corresponding profile document,
-    // preventing errors in parts of the app that expect a profile to be present.
-    if (user && firestore && userProfile === null && !isProfileLoading) {
-      const newProfileRef = doc(firestore, 'users', user.uid);
-      const defaultProfile = {
-        uid: user.uid,
-        email: user.email!,
-        displayName: user.displayName || user.email!.split('@')[0],
-        isAdmin: false, // New users default to non-admin for security.
-        photoURL: user.photoURL || null,
-        presenceStatus: 'online',
-        lastSeen: serverTimestamp(),
-      };
-      
-      // Create the document in Firestore. This prevents errors in other parts of the app
-      // that assume a profile document exists, like the presence status updater.
-      setDoc(newProfileRef, defaultProfile);
-    }
-  }, [user, firestore, userProfile, isProfileLoading]);
+  const isAdmin = !isLoadingPermissions && userProfile?.isAdmin === true;
 
   useEffect(() => {
     if (!user || !firestore) {
@@ -162,111 +265,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return '...';
   };
 
-  const skeletonMenu = (
-    <SidebarMenu>
-      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-    </SidebarMenu>
-  );
-
-  const regularMenu = (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
-          <LayoutDashboard />
-          <span>Dashboard</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
-          <KanbanSquare />
-          <span>Funil de Vendas</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      <SidebarMenuItem>
-        <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
-          <Calendar />
-          <span>Agenda</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      
-      {isAdmin && (
-        <>
-          <SidebarSeparator />
-          <SidebarMenuItem>
-            <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">GESTÃO</p>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
-              <FileText />
-              <span>Modelos de Proposta</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
-              <BookMarked />
-              <span>Catálogo de Serviços</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
-              <Calculator />
-              <span>Precificação</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
-                <Users />
-                <span>Comissões</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
-              <TrendingUp />
-              <span>Marketing</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
-              <BarChartHorizontal />
-              <span>Análise</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </>
-      )}
-
-       <SidebarSeparator />
-       <SidebarMenuItem>
-          <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">SISTEMA</p>
-      </SidebarMenuItem>
-       <SidebarMenuItem>
-        <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
-          <HelpCircle />
-          <span>Tutorial</span>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      {isAdmin && (
-        <>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
-              <Settings />
-              <span>Configurações</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
-              <Shield />
-              <span>Auditoria</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </>
-      )}
-    </SidebarMenu>
-  );
-
   return (
     <SidebarProvider>
       <Sidebar>
@@ -294,7 +292,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          {isLoadingPermissions ? skeletonMenu : regularMenu}
+          {isLoadingPermissions ? (
+             <SidebarMenu>
+                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+             </SidebarMenu>
+          ) : isAdmin ? (
+             <AdminMenu router={router} pathname={pathname} />
+          ) : (
+             <UserMenu router={router} pathname={pathname} />
+          )}
         </SidebarContent>
         <SidebarFooter>
           <SidebarSeparator />
