@@ -13,15 +13,15 @@ export async function GET() {
     theme_color: '#1b7689', // App's primary theme color
     icons: [
       {
-        src: 'https://picsum.photos/seed/florencio-crm/192/192',
+        src: 'https://placehold.co/192x192/1b7689/FFFFFF/PNG?text=F',
         sizes: '192x192',
-        type: 'image/jpeg',
+        type: 'image/png',
         purpose: 'any maskable',
       },
       {
-        src: 'https://picsum.photos/seed/florencio-crm/512/512',
+        src: 'https://placehold.co/512x512/1b7689/FFFFFF/PNG?text=F',
         sizes: '512x512',
-        type: 'image/jpeg',
+        type: 'image/png',
         purpose: 'any maskable',
       },
     ],
