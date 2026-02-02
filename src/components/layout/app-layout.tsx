@@ -162,6 +162,111 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return '...';
   };
 
+  const skeletonMenu = (
+    <SidebarMenu>
+      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+      <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+    </SidebarMenu>
+  );
+
+  const regularMenu = (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
+          <LayoutDashboard />
+          <span>Dashboard</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
+          <KanbanSquare />
+          <span>Funil de Vendas</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
+          <Calendar />
+          <span>Agenda</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      
+      {isAdmin && (
+        <>
+          <SidebarSeparator />
+          <SidebarMenuItem>
+            <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">GESTÃO</p>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
+              <FileText />
+              <span>Modelos de Proposta</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
+              <BookMarked />
+              <span>Catálogo de Serviços</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
+              <Calculator />
+              <span>Precificação</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
+                <Users />
+                <span>Comissões</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
+              <TrendingUp />
+              <span>Marketing</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
+              <BarChartHorizontal />
+              <span>Análise</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </>
+      )}
+
+       <SidebarSeparator />
+       <SidebarMenuItem>
+          <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">SISTEMA</p>
+      </SidebarMenuItem>
+       <SidebarMenuItem>
+        <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
+          <HelpCircle />
+          <span>Tutorial</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      {isAdmin && (
+        <>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
+              <Settings />
+              <span>Configurações</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
+              <Shield />
+              <span>Auditoria</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </>
+      )}
+    </SidebarMenu>
+  );
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -189,113 +294,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu key={isLoadingPermissions ? 'loading' : 'loaded'}>
-            {isLoadingPermissions ? (
-              <>
-                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
-              </>
-            ) : (
-              <>
-                {/* --- Itens para TODOS os Usuários --- */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/')} isActive={pathname === '/'} tooltip="Dashboard">
-                    <LayoutDashboard />
-                    <span>Dashboard</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/budgets')} isActive={pathname === '/budgets'} tooltip="Funil de Vendas">
-                    <KanbanSquare />
-                    <span>Funil de Vendas</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/agenda')} isActive={pathname === '/agenda'} tooltip="Agenda">
-                    <Calendar />
-                    <span>Agenda</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                {/* --- Itens APENAS para Gestores (Admins) --- */}
-                {isAdmin && (
-                  <>
-                    <SidebarSeparator />
-                    <SidebarMenuItem>
-                      <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">GESTÃO</p>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/templates')} isActive={pathname === '/templates'} tooltip="Modelos de Proposta">
-                        <FileText />
-                        <span>Modelos de Proposta</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/catalog')} isActive={pathname === '/catalog'} tooltip="Catálogo de Serviços">
-                        <BookMarked />
-                        <span>Catálogo de Serviços</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/pricing')} isActive={pathname === '/pricing'} tooltip="Precificação">
-                        <Calculator />
-                        <span>Precificação</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/commissions')} isActive={pathname === '/commissions'} tooltip="Comissões">
-                          <Users />
-                          <span>Comissões</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/marketing')} isActive={pathname === '/marketing'} tooltip="Marketing">
-                        <TrendingUp />
-                        <span>Marketing</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/analytics')} isActive={pathname === '/analytics'} tooltip="Análise">
-                        <BarChartHorizontal />
-                        <span>Análise</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </>
-                )}
-
-                 {/* --- Grupo de Sistema --- */}
-                 <SidebarSeparator />
-                 <SidebarMenuItem>
-                    <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">SISTEMA</p>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/tutorial')} isActive={pathname === '/tutorial'} tooltip="Tutorial do Sistema">
-                    <HelpCircle />
-                    <span>Tutorial</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                {isAdmin && (
-                  <>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/settings')} isActive={pathname === '/settings'} tooltip="Configurações">
-                        <Settings />
-                        <span>Configurações</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => router.push('/audit')} isActive={pathname === '/audit'} tooltip="Auditoria">
-                        <Shield />
-                        <span>Auditoria</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </>
-                )}
-              </>
-            )}
-          </SidebarMenu>
+          {isLoadingPermissions ? skeletonMenu : regularMenu}
         </SidebarContent>
         <SidebarFooter>
           <SidebarSeparator />
