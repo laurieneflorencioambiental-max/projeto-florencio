@@ -56,35 +56,6 @@ service cloud.firestore {
     }
     
     /**
-     * @description Secures the 'conversations' and 'messages' collections for the WhatsApp inbox.
-     * A user can list conversations assigned to them.
-     * A manager can list all conversations.
-     * A user can get/update a conversation if they are a manager or are assigned to it.
-     */
-    match /conversations/{conversationId} {
-      // Allow list if manager OR if the query is securely filtering by the user's own UID.
-      allow list: if isManager() || (request.query.where.find(c => c.fieldPath.string() == 'assignedToUid' && c.op == '==' && c.value == request.auth.uid) != null);
-      
-      // Allow get/write if manager or assigned user.
-      allow get, update, delete: if isManager() || resource.data.assignedToUid == request.auth.uid;
-      allow create: if isSignedIn();
-      
-      match /messages/{messageId} {
-        allow read, write: if isManager() || get(/databases/$(database)/documents/conversations/$(conversationId)).data.assignedToUid == request.auth.uid;
-      }
-    }
-    
-    /**
-     * @description Secures WhatsApp templates.
-     * Readable by any authenticated user, but only managers can create, update, or delete them.
-     */
-    match /whatsapp_templates/{templateId} {
-      allow read: if isSignedIn();
-      allow write: if isManager();
-    }
-
-
-    /**
      * @description Secures the 'proposals' collection.
      * Public read for sharing, but can only be created by authenticated users.
      */

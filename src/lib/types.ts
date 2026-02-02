@@ -119,17 +119,6 @@ export const leadSchema = z.object({
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
 });
 
-export const attendanceQueues = [
-    'Orçamento/Comercial',
-    'Agendamento de ASO',
-    'Meio Ambiente',
-    'Financeiro',
-    'Área Técnica SST',
-    'Resultado de Exame',
-    'Geral'
-] as const;
-export type AttendanceQueue = (typeof attendanceQueues)[number];
-
 export const userProfileSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
@@ -138,7 +127,6 @@ export const userProfileSchema = z.object({
   isAdmin: z.boolean().default(false),
   presenceStatus: z.enum(['online', 'offline']).optional(),
   lastSeen: z.any().optional(),
-  queues: z.array(z.enum(attendanceQueues)).optional(),
 });
 
 
@@ -300,52 +288,3 @@ export const partnershipDocumentSchema = z.object({
   createdAt: z.any(),
 });
 export type PartnershipDocument = z.infer<typeof partnershipDocumentSchema>;
-
-
-// Inbox / WhatsApp Types
-export const messageSchema = z.object({
-    id: z.string(),
-    waMessageId: z.string(),
-    conversationId: z.string(),
-    from: z.string(),
-    body: z.string(),
-    type: z.string(),
-    timestamp: z.any(),
-    status: z.enum(['sent', 'delivered', 'read', 'failed']),
-    senderUid: z.string().optional().nullable(),
-});
-
-export type Message = z.infer<typeof messageSchema>;
-
-export const conversationSchema = z.object({
-    id: z.string(),
-    contactWaId: z.string(),
-    contactName: z.string(),
-    lastMessage: messageSchema.optional().nullable(),
-    unreadCount: z.number().default(0),
-    assignedToUid: z.string().optional().nullable(),
-    assignedToName: z.string().optional().nullable(),
-    status: z.enum(['open', 'closed', 'archived']).default('open'),
-    queue: z.enum(attendanceQueues).optional().nullable(),
-    createdAt: z.any(),
-    updatedAt: z.any(),
-    within24hWindow: z.boolean().default(true),
-    lastCustomerMessageAt: z.any().optional().nullable(),
-    paidConversationCount: z.number().default(0),
-});
-
-export type Conversation = z.infer<typeof conversationSchema>;
-
-export const whatsAppTemplateSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    category: z.string(),
-    bodyText: z.string(),
-    variables: z.array(z.string()),
-    status: z.enum(['APPROVED', 'PENDING', 'REJECTED']),
-    usageRules: z.string(),
-    isActive: z.boolean().default(false),
-    monthlyUsage: z.number().default(0),
-  });
-  
-export type WhatsAppTemplate = z.infer<typeof whatsAppTemplateSchema>;

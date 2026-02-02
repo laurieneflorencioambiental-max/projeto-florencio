@@ -30,8 +30,6 @@ import {
   User as UserIcon,
   Shield,
   Users,
-  MessageSquare,
-  Paperclip,
 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import Link from 'next/link';
@@ -105,8 +103,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getPageTitle = () => {
     if (pathname === '/') return 'Dashboard';
     if (pathname === '/budgets') return 'Funil de Vendas';
-    if (pathname.startsWith('/inbox')) return 'Caixa de Entrada';
-    if (pathname.startsWith('/whatsapp-templates')) return 'Templates de WhatsApp';
     if (pathname === '/templates') return 'Modelos de Proposta';
     if (pathname === '/catalog') return 'Catálogo de Serviços';
     if (pathname === '/marketing') return 'Gestão de Marketing';
@@ -202,25 +198,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 
-                 {/* --- Grupo de Atendimento --- */}
-                 <SidebarSeparator />
-                 <SidebarMenuItem>
-                    <p className="px-3 text-xs font-semibold tracking-wider text-sidebar-foreground/60">ATENDIMENTO</p>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/inbox')} isActive={pathname.startsWith('/inbox')} tooltip="Caixa de Entrada">
-                    <MessageSquare />
-                    <span>Caixa de Entrada</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => router.push('/whatsapp-templates')} isActive={pathname.startsWith('/whatsapp-templates')} tooltip="Templates de WhatsApp">
-                    <Paperclip />
-                    <span>Templates de WhatsApp</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-
                 {/* --- Itens APENAS para Gestores (Admins) --- */}
                 {isAdmin && (
                   <>
