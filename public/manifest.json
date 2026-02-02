@@ -8,12 +8,12 @@
   "theme_color": "#1b7689",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192/1b7689/FFFFFF?text=FC",
+      "src": "https://storage.googleapis.com/ava-prod-us-public-images/7d945a5f3bb2e02a052c1a6b38c26f4f.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://via.placeholder.com/512/1b7689/FFFFFF?text=FC",
+      "src": "https://storage.googleapis.com/ava-prod-us-public-images/7d945a5f3bb2e02a052c1a6b38c26f4f.png",
       "sizes": "512x512",
       "type": "image/png"
     }
