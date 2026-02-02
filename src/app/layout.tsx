@@ -20,6 +20,20 @@ export default function RootLayout({
   const isPartnershipPage = pathname.startsWith('/partnership/');
 
   useEffect(() => {
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then(registration => {
+            console.log('Service Worker registrado com sucesso:', registration);
+          })
+          .catch(error => {
+            console.error('Falha ao registrar o Service Worker:', error);
+          });
+      });
+    }
+
     const applyTheme = () => {
       const theme = localStorage.getItem('theme');
       if (
@@ -57,6 +71,7 @@ export default function RootLayout({
           name="description"
           content="Gestão comercial para o Grupo Florencio"
         />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1b7689" />
         <link rel="manifest" href="/api/manifest.webmanifest" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
