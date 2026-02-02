@@ -32,6 +32,7 @@ import {
   Clock,
   ArrowRight,
   PlusCircle,
+  Users,
 } from 'lucide-react';
 import {
   useUser,
@@ -331,7 +332,7 @@ export default function DashboardPage() {
          <SalesLeaderboard leads={leads} users={allUsers} isLoading={isLoading} />
       )}
       
-      <div className={cn("grid md:grid-cols-2 gap-6", isAdmin && "lg:grid-cols-3")}>
+      <div className={cn("grid md:grid-cols-2 gap-6", isAdmin && !isProfileLoading && "lg:grid-cols-3")}>
         <Card>
           <CardHeader>
             <CardTitle>Orçamentos Recentes</CardTitle>
@@ -404,7 +405,25 @@ export default function DashboardPage() {
             </Table>
           </CardContent>
         </Card>
-        {isAdmin && <OnlineUsersCard />}
+        
+        {isProfileLoading ? (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-green-500" />
+                        Usuários Online
+                    </CardTitle>
+                    <CardDescription>Quem está ativo no sistema agora.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex h-40 w-full items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                </CardContent>
+            </Card>
+        ) : isAdmin && (
+            <OnlineUsersCard />
+        )}
       </div>
 
        <AddLeadModal
