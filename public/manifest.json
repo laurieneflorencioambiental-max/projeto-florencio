@@ -1,17 +1,21 @@
 {
-  "theme_color": "#1b7689",
-  "background_color": "#d6f2f6",
-  "display": "standalone",
-  "scope": "/",
-  "start_url": "/",
   "name": "Florencio Sales Manager",
   "short_name": "Florencio CRM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b7689",
+  "theme_color": "#1b7689",
   "description": "Gestão comercial para o Grupo Florencio",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "https://placehold.co/192x192/1b7689/FFFFFF/png?text=F",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/1b7689/FFFFFF/png?text=F",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
