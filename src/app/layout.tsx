@@ -65,7 +65,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <title>Florencio Sales Manager</title>
+        <title>Florencio Comercial</title>
         <meta
           name="description"
           content="Gestão comercial para o Grupo Florencio"
