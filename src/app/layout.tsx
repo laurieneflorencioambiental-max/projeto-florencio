@@ -58,6 +58,7 @@ export default function RootLayout({
           content="Gestão comercial para o Grupo Florencio"
         />
         <meta name="theme-color" content="#1b7689" />
+        <link rel="manifest" href="/api/manifest.webmanifest" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
