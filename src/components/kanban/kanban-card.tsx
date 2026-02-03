@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Lead, ProposalTemplate, AppSettings } from '@/lib/types';
 import {
   Card,
@@ -110,28 +110,41 @@ export default function KanbanCard({
   const [isEditingObservation, setIsEditingObservation] = useState(false);
   const [observationText, setObservationText] = useState(lead.observations || '');
 
+  // State for values calculated on client to prevent hydration errors
+  const [isStale, setIsStale] = useState(false);
+  const [createdAtDate, setCreatedAtDate] = useState<Date | null>(null);
+  
   useEffect(() => {
     setObservationText(lead.observations || '');
-    // If the observation is deleted from outside, exit editing mode
     if (!lead.observations) {
       setIsEditingObservation(false);
     }
   }, [lead.observations]);
   
-  const staleDays = appSettings?.staleLeadDays || 7;
-  const isStale = useMemo(() => {
-    if (lead.status !== 'Pendente/Em negociação') {
-        return false;
-    }
-    const history = lead.versionHistory || [];
-    const lastActivityDate = history.length > 0
-        ? getLeadDate(history[history.length - 1].editedAt)
-        : getLeadDate(lead.createdAt);
+  useEffect(() => {
+    // This effect runs only on the client, preventing hydration mismatches
+    // for date-dependent calculations like "isStale" and date formatting.
+    const staleDays = appSettings?.staleLeadDays || 7;
 
-    if (!lastActivityDate) return false;
+    if (lead.status !== 'Pendente/Em negociação') {
+      setIsStale(false);
+    } else {
+      const history = lead.versionHistory || [];
+      const lastActivityDate =
+        history.length > 0
+          ? getLeadDate(history[history.length - 1].editedAt)
+          : getLeadDate(lead.createdAt);
+
+      if (lastActivityDate) {
+        setIsStale(differenceInDays(new Date(), lastActivityDate) > staleDays);
+      } else {
+        setIsStale(false);
+      }
+    }
     
-    return differenceInDays(new Date(), lastActivityDate) > staleDays;
-  }, [lead, staleDays]);
+    setCreatedAtDate(getLeadDate(lead.createdAt));
+
+  }, [lead, appSettings]);
 
   const handleSaveObservation = () => {
     if (observationText.trim() !== (lead.observations || '').trim()) {
@@ -284,8 +297,6 @@ export default function KanbanCard({
       </div>
     );
   };
-
-  const createdAtDate = getLeadDate(lead.createdAt);
 
   return (
     <>
@@ -440,7 +451,7 @@ export default function KanbanCard({
                   </Tooltip>
                   <p className="text-xs text-amber-700">
                     <span className="font-semibold">Atenção:</span> Lead
-                    inativo há mais de {staleDays} dias.
+                    inativo há mais de {appSettings?.staleLeadDays || 7} dias.
                   </p>
                 </div>
               )}
