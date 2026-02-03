@@ -137,7 +137,7 @@ export default function AuditPage() {
   
   const getActionBadge = (action: string) => {
     let variant: "default" | "secondary" | "destructive" = "secondary";
-    if (action.startsWith('Criação') || action === 'Login') {
+    if (action.startsWith('Criação') || action === 'login') {
       variant = 'default';
     } else if (action.startsWith('Exclusão')) {
       variant = 'destructive';
@@ -244,13 +244,13 @@ export default function AuditPage() {
                       {log.ipAddress || 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {getLogDate(log.timestamp)
+                      {isClient && getLogDate(log.timestamp)
                         ? format(
                             getLogDate(log.timestamp)!,
                             "dd/MM/yyyy 'às' HH:mm:ss",
                             { locale: ptBR }
                           )
-                        : 'Data inválida'}
+                        : '...'}
                     </TableCell>
                   </TableRow>
                 ))

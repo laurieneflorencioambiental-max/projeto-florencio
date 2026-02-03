@@ -105,15 +105,16 @@ export default function KanbanCard({
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   // State for observations
   const [isEditingObservation, setIsEditingObservation] = useState(false);
   const [observationText, setObservationText] = useState(lead.observations || '');
-
-  // State for values calculated on client to prevent hydration errors
-  const [isStale, setIsStale] = useState(false);
-  const [createdAtDate, setCreatedAtDate] = useState<Date | null>(null);
   
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   useEffect(() => {
     setObservationText(lead.observations || '');
     if (!lead.observations) {
@@ -121,31 +122,6 @@ export default function KanbanCard({
     }
   }, [lead.observations]);
   
-  useEffect(() => {
-    // This effect runs only on the client, preventing hydration mismatches
-    // for date-dependent calculations like "isStale" and date formatting.
-    const staleDays = appSettings?.staleLeadDays || 7;
-
-    if (lead.status !== 'Pendente/Em negociação') {
-      setIsStale(false);
-    } else {
-      const history = lead.versionHistory || [];
-      const lastActivityDate =
-        history.length > 0
-          ? getLeadDate(history[history.length - 1].editedAt)
-          : getLeadDate(lead.createdAt);
-
-      if (lastActivityDate) {
-        setIsStale(differenceInDays(new Date(), lastActivityDate) > staleDays);
-      } else {
-        setIsStale(false);
-      }
-    }
-    
-    setCreatedAtDate(getLeadDate(lead.createdAt));
-
-  }, [lead, appSettings]);
-
   const handleSaveObservation = () => {
     if (observationText.trim() !== (lead.observations || '').trim()) {
       onUpdateLead({ ...lead, observations: observationText.trim() });
@@ -298,6 +274,55 @@ export default function KanbanCard({
     );
   };
 
+  const StaleLeadIndicator = () => {
+    if (!isClient) return null;
+
+    const staleDays = appSettings?.staleLeadDays || 7;
+    if (lead.status !== 'Pendente/Em negociação') return null;
+
+    const history = lead.versionHistory || [];
+    const lastActivityDate =
+      history.length > 0
+        ? getLeadDate(history[history.length - 1].editedAt)
+        : getLeadDate(lead.createdAt);
+
+    if (!lastActivityDate || differenceInDays(new Date(), lastActivityDate) <= staleDays) {
+      return null;
+    }
+
+    return (
+      <div className="flex items-start gap-2 mt-4 p-2.5 bg-amber-500/10 rounded-md border border-dashed border-amber-500/30">
+        <Tooltip>
+          <TooltipTrigger>
+            <Clock className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Este lead não recebe uma atualização há muito tempo.</p>
+          </TooltipContent>
+        </Tooltip>
+        <p className="text-xs text-amber-700">
+          <span className="font-semibold">Atenção:</span> Lead
+          inativo há mais de {staleDays} dias.
+        </p>
+      </div>
+    );
+  };
+  
+  const FormattedCreationDate = () => {
+    if (!isClient) return <span>...</span>;
+    const date = getLeadDate(lead.createdAt);
+    return <span>{date ? format(date, "dd/MM/yyyy 'às' HH:mm") : '...'}</span>;
+  };
+
+  const VersionHistoryTooltipContent = () => {
+    if (!isClient || !lead.versionHistory || lead.versionHistory.length === 0) {
+      return <p>{lead.proposalVersion > 0 ? 'Histórico de edição não disponível' : 'Proposta nunca editada'}</p>;
+    }
+    const lastEdit = lead.versionHistory[lead.versionHistory.length - 1];
+    const lastEditDate = getLeadDate(lastEdit.editedAt);
+    return <p>Última edição por {lastEdit.editedBy} em {lastEditDate ? format(lastEditDate, 'dd/MM/yy') : '...'}</p>;
+  }
+
   return (
     <>
       <TooltipProvider>
@@ -321,11 +346,7 @@ export default function KanbanCard({
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>
-                      {createdAtDate
-                        ? format(createdAtDate, "dd/MM/yyyy 'às' HH:mm")
-                        : 'Salvando...'}
-                    </span>
+                    <FormattedCreationDate />
                   </div>
                 </div>
               </div>
@@ -439,22 +460,7 @@ export default function KanbanCard({
                   ))}
                 </div>
               </div>
-              {isStale && (
-                <div className="flex items-start gap-2 mt-4 p-2.5 bg-amber-500/10 rounded-md border border-dashed border-amber-500/30">
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Clock className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Este lead não recebe uma atualização há muito tempo.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <p className="text-xs text-amber-700">
-                    <span className="font-semibold">Atenção:</span> Lead
-                    inativo há mais de {appSettings?.staleLeadDays || 7} dias.
-                  </p>
-                </div>
-              )}
+              <StaleLeadIndicator />
               {(lead.status === 'Rejeitado' ||
                 lead.status === 'Desistência') &&
                 lead.rejectionReason && (
@@ -575,21 +581,7 @@ export default function KanbanCard({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {lead.versionHistory && lead.versionHistory.length > 0
-                      ? `Última edição por ${
-                          lead.versionHistory[lead.versionHistory.length - 1]
-                            .editedBy
-                        } em ${format(
-                          getLeadDate(
-                            lead.versionHistory[
-                              lead.versionHistory.length - 1
-                            ].editedAt
-                          )!,
-                          'dd/MM/yy'
-                        )}`
-                      : lead.proposalVersion > 0
-                      ? 'Histórico de edição não disponível'
-                      : 'Proposta nunca editada'}
+                    <VersionHistoryTooltipContent />
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
