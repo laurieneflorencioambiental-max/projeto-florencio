@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -456,6 +457,20 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             ))}
           </ul>
         </section>
+
+        {proposalState.paymentTerms && (
+            <section className="my-8">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Condições de Pagamento Adicionais
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.paymentTerms.replace(/\n/g, '<br />'),
+                    }}
+                />
+            </section>
+        )}
 
         <div className="border-b my-8"></div>
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -85,6 +86,7 @@ export default function ProposalModal({
     deadline: 'A ser definido na proposta.',
     investment: 'A ser definido na proposta.',
     strategicVision: 'A ser definido na proposta.',
+    paymentTerms: '',
     plans: [],
     exams: [],
   });
@@ -111,6 +113,7 @@ export default function ProposalModal({
       deadline: 'A ser definido na proposta.',
       investment: defaultInvestmentText,
       strategicVision: 'A ser definido na proposta.',
+      paymentTerms: '',
       plans: [],
       exams: [],
     });
@@ -171,6 +174,7 @@ export default function ProposalModal({
         deadline: template.deadline,
         investment: templateInvestment,
         strategicVision: template.strategicVision,
+        paymentTerms: template.paymentTerms || '',
         plans: template.plans || [],
         exams: template.exams || [],
       });
@@ -842,6 +846,17 @@ Grupo Florencio`;
                   ))}
                 </ul>
               </section>
+
+              {proposalState.paymentTerms && (
+                 <section className="my-8">
+                    <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Condições de Pagamento Adicionais
+                    </h3>
+                    <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="paymentTerms" />
+                    </div>
+                </section>
+              )}
 
               <div className="border-b my-8"></div>
 

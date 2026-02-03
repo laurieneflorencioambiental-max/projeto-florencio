@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -37,6 +38,7 @@ const templateFormSchema = z.object({
   deadline: z.string(),
   investment: z.string(),
   strategicVision: z.string(),
+  paymentTerms: z.string().optional(),
   plans: z.array(planSchema),
   exams: z.array(serviceSchema).optional(),
 });
@@ -60,7 +62,7 @@ export default function ManageTemplatesPage() {
 
   const form = useForm<z.infer<typeof templateFormSchema>>({
     resolver: zodResolver(templateFormSchema),
-    defaultValues: { name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', plans: [], exams: [] },
+    defaultValues: { name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [] },
   });
 
   const { fields: planFields, append: appendPlan, remove: removePlan } = useFieldArray({ control: form.control, name: 'plans' });
@@ -73,7 +75,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', plans: [], exams: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [] });
     setEditingTemplateId(null);
   };
 
@@ -136,7 +138,7 @@ export default function ManageTemplatesPage() {
     toast({ title: 'Sucesso', description: `Modelo "${template.name}" duplicado.` });
   };
 
-  const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id' | 'name' | 'plans' | 'exams'>) => (
+  const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id' | 'name' | 'plans' | 'exams' | 'paymentTerms'>) => (
     <FormField
       control={form.control}
       name={fieldName}
@@ -204,6 +206,18 @@ export default function ManageTemplatesPage() {
               {renderFormField('Prazo para Realização dos Serviços', 'deadline')}
               {renderFormField('Investimento', 'investment')}
               {renderFormField('Nossa Visão Estratégica', 'strategicVision')}
+              
+              <FormField
+                control={form.control}
+                name="paymentTerms"
+                render={({ field }) => (
+                    <FormItem className="space-y-2">
+                        <Label htmlFor="template-paymentTerms">Condições de Pagamento Adicionais</Label>
+                        <Textarea id="template-paymentTerms" placeholder="Os valores descritos nesta proposta comercial consideram o dia 05 do mês..." {...field} rows={5} />
+                        <FormMessage />
+                    </FormItem>
+                )}
+                />
 
               <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Planos de Investimento</CardTitle></CardHeader>
                 <CardContent className="space-y-4 pt-6">
@@ -291,6 +305,9 @@ export default function ManageTemplatesPage() {
                     <div><h4 className='font-bold text-foreground'>Prazo</h4><p className="whitespace-pre-wrap">{template.deadline}</p></div>
                     <div><h4 className='font-bold text-foreground'>Investimento</h4><p className="whitespace-pre-wrap">{template.investment}</p></div>
                     <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>
+                    {template.paymentTerms && (
+                      <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><p className="whitespace-pre-wrap">{template.paymentTerms}</p></div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">

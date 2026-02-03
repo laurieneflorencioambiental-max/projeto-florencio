@@ -147,6 +147,7 @@ export type ProposalTemplate = {
   deadline: string;
   strategicVision: string;
   investment: string;
+  paymentTerms?: string;
   plans: Plan[];
   exams: Service[];
 };

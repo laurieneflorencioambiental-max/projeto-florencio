@@ -103,6 +103,7 @@
         "deadline": { "type": "string" },
         "strategicVision": { "type": "string" },
         "investment": { "type": "string" },
+        "paymentTerms": { "type": "string", "description": "Additional payment terms and conditions." },
         "plans": {
           "type": "array",
           "items": { "$ref": "#/backend/entities/Plan" }
@@ -379,5 +380,3 @@
     ]
   }
 }
-
-    
