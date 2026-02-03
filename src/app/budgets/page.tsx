@@ -197,6 +197,7 @@ export default function BudgetsPage() {
         email: values.email,
         whatsapp: values.whatsapp,
         rejectionReason: values.rejectionReason || null,
+        selectedTemplateId: values.selectedTemplateId || null,
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: selectedSeller.name,
@@ -486,6 +487,7 @@ export default function BudgetsPage() {
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}
         seller={selectedSeller?.name || ''}
+        proposalTemplates={proposalTemplates || []}
       />
     </div>
   );

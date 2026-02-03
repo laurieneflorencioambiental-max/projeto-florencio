@@ -78,6 +78,7 @@ export default function ProposalModal({
   const { toast } = useToast();
   const firestore = useFirestore();
 
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
     serviceScope: 'A ser definido na proposta.',
@@ -90,11 +91,21 @@ export default function ProposalModal({
     plans: [],
     exams: [],
   });
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
 
-  const resetState = () => {
-    // Set initial state from lead/defaults when modal opens
-    const defaultInvestmentText =
-      lead.value > 0
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId); // Keep track of the selected template ID
+
+    const template = proposalTemplates.find(t => t.id === templateId);
+    
+    // Reset to lead defaults if no template is selected
+    const investmentText = lead.value > 0
         ? `
 <div class="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
     <p class="text-lg">Valor Total do Orçamento:</p>
@@ -106,17 +117,22 @@ export default function ProposalModal({
         : 'Valores detalhados nos planos abaixo.';
 
     setProposalState({
-      proposalObject: lead.proposalSummary,
-      serviceScope: 'A ser definido na proposta.',
-      clientResponsibilities: 'A ser definido na proposta.',
-      contractorResponsibilities: 'A ser definido na proposta.',
-      deadline: 'A ser definido na proposta.',
-      investment: defaultInvestmentText,
-      strategicVision: 'A ser definido na proposta.',
-      paymentTerms: '',
-      plans: [],
-      exams: [],
+      proposalObject: template?.proposalObject || lead.proposalSummary,
+      serviceScope: template?.serviceScope || 'A ser definido na proposta.',
+      clientResponsibilities: template?.clientResponsibilities || 'A ser definido na proposta.',
+      contractorResponsibilities: template?.contractorResponsibilities || 'A ser definido na proposta.',
+      deadline: template?.deadline || 'A ser definido na proposta.',
+      investment: template?.investment || investmentText,
+      strategicVision: template?.strategicVision || 'A ser definido na proposta.',
+      paymentTerms: template?.paymentTerms || '',
+      plans: template?.plans || [],
+      exams: template?.exams || [],
     });
+  };
+
+  const resetState = () => {
+    // Apply default template from lead or clear selection
+    handleTemplateChange(lead.selectedTemplateId || '');
 
     let currentProposalNumber = lead.proposalNumber;
 
@@ -148,45 +164,7 @@ export default function ProposalModal({
     if (isOpen) {
       resetState();
     }
-  }, [isOpen, lead, allLeads]);
-
-  const handleTemplateChange = (templateId: string) => {
-    const template = proposalTemplates.find(t => t.id === templateId);
-    if (template) {
-      const templateInvestment =
-        template.investment ||
-        (lead.value > 0
-          ? `
-<div class="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-    <p class="text-lg">Valor Total do Orçamento:</p>
-    <p class="text-2xl font-bold text-primary">${formatCurrency(
-      lead.value
-    )}</p>
-</div>
-        `
-          : 'Valores detalhados nos planos abaixo.');
-
-      setProposalState({
-        proposalObject: template.proposalObject,
-        serviceScope: template.serviceScope,
-        clientResponsibilities: template.clientResponsibilities,
-        contractorResponsibilities: template.contractorResponsibilities,
-        deadline: template.deadline,
-        investment: templateInvestment,
-        strategicVision: template.strategicVision,
-        paymentTerms: template.paymentTerms || '',
-        plans: template.plans || [],
-        exams: template.exams || [],
-      });
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  }, [isOpen, lead, allLeads, proposalTemplates]);
 
   const createAndShareProposalLink = async (): Promise<string | null> => {
     setIsGenerating(true);
@@ -429,11 +407,16 @@ Grupo Florencio`;
           <Label htmlFor="proposal-template">
             Selecione um Modelo de Serviço
           </Label>
-          <Select onValueChange={handleTemplateChange} disabled={isGenerating}>
+          <Select
+            value={selectedTemplateId || ''}
+            onValueChange={handleTemplateChange}
+            disabled={isGenerating}
+          >
             <SelectTrigger id="proposal-template">
               <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
               {proposalTemplates.map(template => (
                 <SelectItem key={template.id} value={template.id}>
                   {template.name}

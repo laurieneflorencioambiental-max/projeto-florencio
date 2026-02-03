@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Lead, VersionHistoryEntry } from '@/lib/types';
+import type { Lead, VersionHistoryEntry, ProposalTemplate } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
@@ -42,6 +42,7 @@ type EditLeadModalProps = {
   onOpenChange: (isOpen: boolean) => void;
   onSave: (lead: Lead) => void;
   currentSeller: string;
+  proposalTemplates: ProposalTemplate[];
 };
 
 const getSanitizedDate = (date: any): Date | undefined => {
@@ -66,6 +67,7 @@ export default function EditLeadModal({
   onOpenChange,
   onSave,
   currentSeller,
+  proposalTemplates,
 }: EditLeadModalProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof leadSchema>>({
@@ -240,6 +242,33 @@ export default function EditLeadModal({
                       </FormControl>
                       <FormMessage />
                     </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="selectedTemplateId"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Modelo de Proposta Padrão</FormLabel>
+                      <Select
+                      onValueChange={value => field.onChange(value === '' ? null : value)}
+                      value={field.value || ''}
+                      >
+                      <FormControl>
+                          <SelectTrigger>
+                          <SelectValue placeholder="Nenhum (usará proposta padrão)" />
+                          </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
+                          {proposalTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                      </Select>
+                      <FormMessage />
+                  </FormItem>
                   )}
                 />
 

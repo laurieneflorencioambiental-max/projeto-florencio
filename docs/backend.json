@@ -47,6 +47,7 @@
         },
         "email": { "type": "string", "format": "email" },
         "whatsapp": { "type": "string" },
+        "selectedTemplateId": { "type": "string", "description": "The ID of the default proposal template selected for this lead." },
         "status": { "type": "string" },
         "rejectionReason": { "type": "string" },
         "createdAt": { "type": "object" },

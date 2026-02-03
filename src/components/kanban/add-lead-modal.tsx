@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Lead } from '@/lib/types';
+import type { Lead, ProposalTemplate } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
@@ -56,6 +56,7 @@ type AddLeadModalProps = {
   onOpenChange: (isOpen: boolean) => void;
   onSave: (lead: z.infer<typeof newLeadSchema>) => void;
   seller: string;
+  proposalTemplates: ProposalTemplate[];
 };
 
 export default function AddLeadModal({
@@ -63,6 +64,7 @@ export default function AddLeadModal({
   onOpenChange,
   onSave,
   seller,
+  proposalTemplates,
 }: AddLeadModalProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof newLeadSchema>>({
@@ -79,6 +81,7 @@ export default function AddLeadModal({
       paymentMethods: [{ method: 'Boleto' }],
       contactSource: { source: 'Google', indicatedBy: '' },
       rejectionReason: undefined,
+      selectedTemplateId: null,
     },
   });
 
@@ -216,6 +219,30 @@ export default function AddLeadModal({
                       </FormControl>
                       <FormMessage />
                     </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="selectedTemplateId"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Modelo de Proposta Padrão</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                      <FormControl>
+                          <SelectTrigger>
+                          <SelectValue placeholder="Nenhum (usará proposta padrão)" />
+                          </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
+                          {proposalTemplates.map(template => (
+                              <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                      </Select>
+                      <FormMessage />
+                  </FormItem>
                   )}
                 />
 

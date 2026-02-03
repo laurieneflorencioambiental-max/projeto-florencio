@@ -637,6 +637,7 @@ export default function KanbanCard({
         onOpenChange={setIsEditModalOpen}
         onSave={onUpdateLead}
         currentSeller={currentSeller}
+        proposalTemplates={proposalTemplates}
       />
       <ProposalModal
         lead={lead}

@@ -104,6 +104,7 @@ export const leadSchema = z.object({
   }),
   email: z.string().email('Email inválido.'),
   whatsapp: z.string().min(10, 'Número de WhatsApp inválido.'),
+  selectedTemplateId: z.string().optional().nullable(),
   status: z.enum(statuses),
   rejectionReason: z.enum(rejectionReasons).optional().nullable(),
   createdAt: z.any(),
