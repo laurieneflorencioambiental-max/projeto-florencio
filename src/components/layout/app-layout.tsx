@@ -30,8 +30,9 @@ import {
   User as UserIcon,
   Shield,
   Users,
+  Loader2,
 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -42,6 +43,7 @@ import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { logClientEvent } from '@/lib/audit-client';
+import { Skeleton } from '../ui/skeleton';
 
 
 // Menu para usuários não-administradores
@@ -175,6 +177,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
     [firestore]
@@ -264,6 +272,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
     return '...';
   };
+
+  if (!isClient) {
+    return (
+       <div className="flex min-h-svh w-full bg-background">
+        {/* Skeleton for Sidebar */}
+        <div className="hidden md:flex flex-col h-svh w-64 bg-sidebar text-sidebar-foreground p-2 gap-2 border-r border-sidebar-border">
+          <div className="p-2"> {/* Header skeleton */}
+            <Skeleton className="h-10 w-40 bg-sidebar-accent/50" />
+          </div>
+          <div className="flex-1 p-2 space-y-2"> {/* Content skeleton */}
+            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
+            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
+            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
+            <div className="my-2 h-px bg-sidebar-border" />
+            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
+            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
+          </div>
+          <div className="p-2"> {/* Footer skeleton */}
+            <Skeleton className="h-12 w-full bg-sidebar-accent/50" />
+          </div>
+        </div>
+        {/* Skeleton for Main Content */}
+        <div className="flex-1 flex flex-col">
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
+            <Skeleton className="h-6 w-48" />
+          </header>
+          <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
+             <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
