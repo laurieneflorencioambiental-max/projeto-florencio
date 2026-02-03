@@ -379,243 +379,238 @@ export default function KanbanCard({
               </div>
             </div>
           </CardHeader>
-          <div className="flex-1 min-h-0">
-            <ScrollArea className="w-full h-full">
-              <div className="px-6 pb-6 pt-0">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+          <CardContent className="flex-1 py-0 px-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>CNPJ da Empresa</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-mono text-xs">{lead.cnpj}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Resumo da Proposta</p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="flex-1 whitespace-normal">{lead.proposalSummary}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <DollarSign className="h-4 w-4 text-primary" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Valor do Orçamento</p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="text-base font-bold text-primary">
+                  {formatCurrency(lead.value)}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="font-medium text-sm">Formas de Pagamento:</p>
+                <div className="flex flex-wrap gap-2">
+                  {lead.paymentMethods.map(pm => (
+                    <Tooltip key={pm.method}>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className="flex gap-2 items-center"
+                        >
+                          {getPaymentMethodIcon(pm.method)}
+                          <span>
+                            {pm.method
+                              .replace(' (Link)', '')
+                              .replace(' (Maquininha)', '')}
+                          </span>
+                          {pm.method.includes('Crédito') && pm.cardFee && (
+                            <span className="text-xs opacity-75">
+                              ({pm.cardFee}% taxa)
+                            </span>
+                          )}
+                        </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>CNPJ da Empresa</p>
+                        <p>Forma de Pagamento</p>
                       </TooltipContent>
                     </Tooltip>
-                    <span className="font-mono text-xs">{lead.cnpj}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Resumo da Proposta</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <p className="flex-1 whitespace-normal">{lead.proposalSummary}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <DollarSign className="h-4 w-4 text-primary" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Valor do Orçamento</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <p className="text-base font-bold text-primary">
-                      {formatCurrency(lead.value)}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <p className="font-medium text-sm">Formas de Pagamento:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {lead.paymentMethods.map(pm => (
-                        <Tooltip key={pm.method}>
-                          <TooltipTrigger asChild>
-                            <Badge
-                              variant="secondary"
-                              className="flex gap-2 items-center"
-                            >
-                              {getPaymentMethodIcon(pm.method)}
-                              <span>
-                                {pm.method
-                                  .replace(' (Link)', '')
-                                  .replace(' (Maquininha)', '')}
-                              </span>
-                              {pm.method.includes('Crédito') && pm.cardFee && (
-                                <span className="text-xs opacity-75">
-                                  ({pm.cardFee}% taxa)
-                                </span>
-                              )}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Forma de Pagamento</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                    </div>
-                  </div>
-                  <StaleLeadIndicator />
-                  {(lead.status === 'Rejeitado' ||
-                    lead.status === 'Desistência') &&
-                    lead.rejectionReason && (
-                      <div className="flex items-start gap-2 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Motivo da perda do lead.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <p className="text-xs text-destructive whitespace-normal">
-                          <span className="font-semibold">Motivo:</span>{' '}
-                          {lead.rejectionReason}
-                        </p>
-                      </div>
-                    )}
-                  <div className="border-t border-border pt-4 flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>E-mail do contato</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <a
-                        href={`mailto:${lead.email}`}
-                        className="text-sm text-muted-foreground hover:underline"
-                      >
-                        {lead.email}
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>WhatsApp do contato</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <a
-                        href={`https://wa.me/${lead.whatsapp}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-muted-foreground hover:underline"
-                      >
-                        {lead.whatsapp}
-                      </a>
-                    </div>
-                    {getContactSourceInfo()}
-                  </div>
-                  <div className="border-t pt-4">
-                    <Label
-                      htmlFor={`obs-${lead.id}`}
-                      className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
-                    >
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <StickyNote className="h-3 w-3" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Notas internas sobre a negociação. Não são visíveis para o
-                            cliente.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                      Observações Internas
-                    </Label>
-                    {renderObservationContent()}
-                  </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 items-start p-6 pt-6">
-                  <div className="w-full flex flex-col gap-2">
-                  <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setIsProposalModalOpen(true)}
+              <StaleLeadIndicator />
+              {(lead.status === 'Rejeitado' ||
+                lead.status === 'Desistência') &&
+                lead.rejectionReason && (
+                  <div className="flex items-start gap-2 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Motivo da perda do lead.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <p className="text-xs text-destructive whitespace-normal">
+                      <span className="font-semibold">Motivo:</span>{' '}
+                      {lead.rejectionReason}
+                    </p>
+                  </div>
+                )}
+              <div className="border-t border-border pt-4 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>E-mail do contato</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="text-sm text-muted-foreground hover:underline"
                   >
-                      <FileSignature className="mr-2 h-4 w-4" />
-                      Gerar Proposta
-                  </Button>
-                  {lead.status === 'Rejeitado' && (
-                      <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setIsFollowUpModalOpen(true)}
-                      disabled={!lead.rejectionReason}
-                      >
-                      <MessageSquarePlus className="mr-2 h-4 w-4" />
-                      Gerar Follow-up com IA
-                      </Button>
-                  )}
-                  </div>
-                  <div className="w-full pt-2 mt-2 border-t">
-                  <div className="flex justify-between items-center text-xs text-muted-foreground whitespace-nowrap">
-                      <Tooltip>
-                      <TooltipTrigger className="flex items-center gap-1">
-                          <User className="h-3 w-3" /> {lead.createdBy.split(' ')[0]}
-                      </TooltipTrigger>
-                      <TooltipContent>Criado por: {lead.createdBy}</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                      <TooltipTrigger asChild>
-                          <button
-                          onClick={() => setIsHistoryModalOpen(true)}
-                          className="flex items-center gap-1"
-                          disabled={lead.proposalVersion === 0}
-                          >
-                          <History className="h-3 w-3" /> v{lead.proposalVersion}
-                          </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <VersionHistoryTooltipContent />
-                      </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                      <TooltipTrigger className="flex items-center gap-1">
-                          <Repeat className="h-3 w-3" /> {lead.editCount}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          Editado {lead.editCount}{' '}
-                          {lead.editCount === 1 ? 'vez' : 'vezes'}
-                      </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                      <TooltipTrigger className="flex items-center gap-1">
-                          <FileSignature className="h-3 w-3" />{' '}
-                          {lead.proposalGeneratedCount}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          Proposta gerada {lead.proposalGeneratedCount}{' '}
-                          {lead.proposalGeneratedCount === 1 ? 'vez' : 'vezes'}
-                      </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                      <TooltipTrigger className="flex items-center gap-1">
-                          <Send className="h-3 w-3" /> {lead.whatsappSentCount}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          Enviado por WhatsApp {lead.whatsappSentCount}{' '}
-                          {lead.whatsappSentCount === 1 ? 'vez' : 'vezes'}
-                      </TooltipContent>
-                      </Tooltip>
-                      {lead.previousStatus && (
-                      <Tooltip>
-                          <TooltipTrigger className="flex items-center gap-1">
-                          <ArrowRightLeft className="h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                          Status anterior: {lead.previousStatus}
-                          </TooltipContent>
-                      </Tooltip>
-                      )}
-                  </div>
-                  </div>
+                    {lead.email}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>WhatsApp do contato</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <a
+                    href={`https://wa.me/${lead.whatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:underline"
+                  >
+                    {lead.whatsapp}
+                  </a>
+                </div>
+                {getContactSourceInfo()}
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </div>
+              <div className="border-t pt-4">
+                <Label
+                  htmlFor={`obs-${lead.id}`}
+                  className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
+                >
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <StickyNote className="h-3 w-3" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        Notas internas sobre a negociação. Não são visíveis para o
+                        cliente.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                  Observações Internas
+                </Label>
+                {renderObservationContent()}
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-4 p-6 pt-4">
+            <div className="w-full flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setIsProposalModalOpen(true)}
+              >
+                <FileSignature className="mr-2 h-4 w-4" />
+                Gerar Proposta
+              </Button>
+              {lead.status === 'Rejeitado' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setIsFollowUpModalOpen(true)}
+                  disabled={!lead.rejectionReason}
+                >
+                  <MessageSquarePlus className="mr-2 h-4 w-4" />
+                  Gerar Follow-up com IA
+                </Button>
+              )}
+            </div>
+            <div className="w-full pt-4 mt-2 border-t">
+              <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
+                    <User className="h-3 w-3" /> {lead.createdBy.split(' ')[0]}
+                  </TooltipTrigger>
+                  <TooltipContent>Criado por: {lead.createdBy}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setIsHistoryModalOpen(true)}
+                      className="flex items-center gap-1"
+                      disabled={lead.proposalVersion === 0}
+                    >
+                      <History className="h-3 w-3" /> v{lead.proposalVersion}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <VersionHistoryTooltipContent />
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
+                    <Repeat className="h-3 w-3" /> {lead.editCount}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Editado {lead.editCount}{' '}
+                    {lead.editCount === 1 ? 'vez' : 'vezes'}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
+                    <FileSignature className="h-3 w-3" />{' '}
+                    {lead.proposalGeneratedCount}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Proposta gerada {lead.proposalGeneratedCount}{' '}
+                    {lead.proposalGeneratedCount === 1 ? 'vez' : 'vezes'}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
+                    <Send className="h-3 w-3" /> {lead.whatsappSentCount}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Enviado por WhatsApp {lead.whatsappSentCount}{' '}
+                    {lead.whatsappSentCount === 1 ? 'vez' : 'vezes'}
+                  </TooltipContent>
+                </Tooltip>
+                {lead.previousStatus && (
+                  <Tooltip>
+                    <TooltipTrigger className="flex items-center gap-1">
+                      <ArrowRightLeft className="h-3 w-3" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Status anterior: {lead.previousStatus}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+          </CardFooter>
         </Card>
       </TooltipProvider>
       {lead.status === 'Rejeitado' && (
