@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -30,7 +31,7 @@ import {
   User as UserIcon,
   Shield,
   Users,
-  Loader2,
+  LoaderCircle as Loader2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
