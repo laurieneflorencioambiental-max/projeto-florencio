@@ -63,6 +63,7 @@ import {
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import VersionHistoryModal from './version-history-modal';
+import { toDate } from '@/lib/utils';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -72,23 +73,6 @@ type KanbanCardProps = {
   proposalTemplates: ProposalTemplate[];
   appSettings?: Partial<AppSettings> | null;
   currentSeller: string;
-};
-
-const getLeadDate = (date: any): Date | null => {
-  if (!date) {
-    return null;
-  }
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  if (date instanceof Date) {
-    return isNaN(date.getTime()) ? null : date;
-  }
-  if (typeof date === 'string' || typeof date === 'number') {
-    const d = new Date(date);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  return null;
 };
 
 export default function KanbanCard({
@@ -283,8 +267,8 @@ export default function KanbanCard({
     const history = lead.versionHistory || [];
     const lastActivityDate =
       history.length > 0
-        ? getLeadDate(history[history.length - 1].editedAt)
-        : getLeadDate(lead.createdAt);
+        ? toDate(history[history.length - 1].editedAt)
+        : toDate(lead.createdAt);
 
     if (!lastActivityDate || differenceInDays(new Date(), lastActivityDate) <= staleDays) {
       return null;
@@ -310,7 +294,7 @@ export default function KanbanCard({
   
   const FormattedCreationDate = () => {
     if (!isClient) return <span>...</span>;
-    const date = getLeadDate(lead.createdAt);
+    const date = toDate(lead.createdAt);
     return <span>{date ? format(date, "dd/MM/yyyy 'às' HH:mm") : '...'}</span>;
   };
 
@@ -319,7 +303,7 @@ export default function KanbanCard({
       return <p>{lead.proposalVersion > 0 ? 'Histórico de edição não disponível' : 'Proposta nunca editada'}</p>;
     }
     const lastEdit = lead.versionHistory[lead.versionHistory.length - 1];
-    const lastEditDate = getLeadDate(lastEdit.editedAt);
+    const lastEditDate = toDate(lastEdit.editedAt);
     return <p>Última edição por {lastEdit.editedBy} em {lastEditDate ? format(lastEditDate, 'dd/MM/yy') : '...'}</p>;
   }
 

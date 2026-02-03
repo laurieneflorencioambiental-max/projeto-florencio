@@ -79,7 +79,7 @@ import {
   getMonth,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import {
   suggestCampaignGoalAction,
   analyzeCampaignPerformanceAction,
@@ -108,12 +108,6 @@ const months = Array.from({ length: 12 }, (_, i) => ({
   value: i,
   label: ptBR.localize?.month(i, { width: 'wide' }),
 }));
-
-const getDate = (date: any): Date | null => {
-    if (!date) return null;
-    if (date.toDate) return date.toDate();
-    return new Date(date);
-}
 
 export default function MarketingPage() {
   const { toast } = useToast();
@@ -202,7 +196,7 @@ export default function MarketingPage() {
     if (filter === 'all') return data;
     const now = new Date();
     return data.filter(action => {
-      const actionDate = getDate(action.deadline);
+      const actionDate = toDate(action.deadline);
       if (!actionDate) return false;
       switch (filter) {
         case 'today':
@@ -238,7 +232,7 @@ export default function MarketingPage() {
     if (filter === 'all') return data;
     const now = new Date();
     return data.filter(entry => {
-      const entryDate = getDate(entry.createdAt);
+      const entryDate = toDate(entry.createdAt);
       if (!entryDate) return false;
       switch (filter) {
         case 'today':
@@ -274,7 +268,7 @@ export default function MarketingPage() {
     if (filter === 'all') return data;
     const now = new Date();
     return data.filter(tool => {
-      const toolDate = getDate(tool.dueDate);
+      const toolDate = toDate(tool.dueDate);
       if (!toolDate) return false;
       switch (filter) {
         case 'today':
@@ -380,7 +374,7 @@ export default function MarketingPage() {
     setEditingActionId(action.id);
     setNewActionName(action.name);
     setNewActionGoal(action.goal);
-    setNewActionDeadline(getDate(action.deadline) || undefined);
+    setNewActionDeadline(toDate(action.deadline) || undefined);
     setNewActionSource(action.source || '');
     setNewActionPercentageGoal(
       action.percentageGoal ? String(action.percentageGoal) : ''
@@ -542,8 +536,8 @@ export default function MarketingPage() {
       if (statusOrder[a.status] !== statusOrder[b.status]) {
         return statusOrder[a.status] - statusOrder[b.status];
       }
-      const dateA = getDate(a.deadline);
-      const dateB = getDate(b.deadline);
+      const dateA = toDate(a.deadline);
+      const dateB = toDate(b.deadline);
       if (dateA && dateB) {
         return dateA.getTime() - dateB.getTime();
       }
@@ -628,7 +622,7 @@ export default function MarketingPage() {
     setNewToolName(tool.name);
     setNewToolValue(String(tool.value));
     setNewToolPeriodicity(tool.periodicity);
-    setNewToolDueDate(getDate(tool.dueDate) || undefined);
+    setNewToolDueDate(toDate(tool.dueDate) || undefined);
     setNewToolObservation(tool.observation || '');
   };
 
@@ -897,7 +891,7 @@ export default function MarketingPage() {
           {(sortedActions || []).length > 0 ? (
             <div className="space-y-3">
               {sortedActions.map(action => {
-                const deadline = getDate(action.deadline);
+                const deadline = toDate(action.deadline);
                 const isExpired =
                   isClient &&
                   deadline &&
@@ -1161,7 +1155,7 @@ export default function MarketingPage() {
               </TableHeader>
               <TableBody>
                 {filteredTools.map(tool => {
-                  const dueDate = getDate(tool.dueDate);
+                  const dueDate = toDate(tool.dueDate);
                   const isToolOverdue =
                     isClient && dueDate && isPast(dueDate) && !isToday(dueDate);
 

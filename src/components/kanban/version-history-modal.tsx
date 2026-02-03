@@ -20,22 +20,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import type { Lead, VersionHistoryEntry } from '@/lib/types';
 import { format } from 'date-fns';
+import { toDate } from '@/lib/utils';
 
 type VersionHistoryModalProps = {
   lead: Lead;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-};
-
-// This helper is needed because the date can be a Firestore Timestamp
-const getHistoryDate = (date: any): Date => {
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  if (typeof date === 'string' || typeof date === 'number') {
-    return new Date(date);
-  }
-  return date;
 };
 
 export default function VersionHistoryModal({
@@ -80,7 +70,7 @@ export default function VersionHistoryModal({
                       <TableCell>{entry.editedBy}</TableCell>
                       <TableCell>
                         {format(
-                          getHistoryDate(entry.editedAt),
+                          toDate(entry.editedAt)!,
                           "dd/MM/yyyy 'às' HH:mm"
                         )}
                       </TableCell>

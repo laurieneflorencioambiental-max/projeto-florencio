@@ -21,13 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Loader2 } from 'lucide-react';
 import type { Lead, UserProfile } from '@/lib/types';
 import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-
-const getLeadDate = (date: any): Date | null => {
-  if (!date) return null;
-  if (date.toDate) return date.toDate();
-  if (date instanceof Date) return date;
-  return new Date(date);
-};
+import { toDate } from '@/lib/utils';
 
 const getUserInitials = (name: string) => {
     if (!name) return 'S';
@@ -49,7 +43,7 @@ export default function SalesLeaderboard({ leads, users, isLoading }: { leads: L
     const end = endOfMonth(now);
 
     const monthlyLeads = leads.filter(lead => {
-      const leadDate = getLeadDate(lead.createdAt);
+      const leadDate = toDate(lead.createdAt);
       return leadDate && isWithinInterval(leadDate, { start, end });
     });
 

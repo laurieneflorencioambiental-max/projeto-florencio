@@ -35,6 +35,7 @@ import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { toDate } from '@/lib/utils';
 
 type EditLeadModalProps = {
   lead: Lead;
@@ -44,22 +45,6 @@ type EditLeadModalProps = {
   currentSeller: string;
   proposalTemplates: ProposalTemplate[];
 };
-
-const getSanitizedDate = (date: any): Date | undefined => {
-  if (!date) return undefined;
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  if (typeof date === 'string' || typeof date === 'number') {
-    const d = new Date(date);
-    return isNaN(d.getTime()) ? undefined : d;
-  }
-  if (date instanceof Date) {
-    return date;
-  }
-  return undefined;
-};
-
 
 export default function EditLeadModal({
   lead,
@@ -79,7 +64,7 @@ export default function EditLeadModal({
     if (lead) {
        const processedHistory = (lead.versionHistory || []).map(entry => ({
         ...entry,
-        editedAt: getSanitizedDate(entry.editedAt),
+        editedAt: toDate(entry.editedAt) || undefined,
       }));
 
       form.reset({
@@ -87,7 +72,7 @@ export default function EditLeadModal({
         role: lead.role || '',
         value: lead.value === null ? 0 : lead.value,
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
-        createdAt: getSanitizedDate(lead.createdAt), // Convert timestamp to Date for the form
+        createdAt: toDate(lead.createdAt), // Convert timestamp to Date for the form
         versionHistory: processedHistory,
       });
     }

@@ -55,25 +55,8 @@ import {
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import SalesLeaderboard from '@/components/dashboard/sales-leaderboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import OnlineUsersCard from '@/components/dashboard/online-users-card';
-
-const getLeadDate = (date: any): Date | null => {
-  if (!date) {
-    return null;
-  }
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  if (date instanceof Date) {
-    return isNaN(date.getTime()) ? null : date;
-  }
-  if (typeof date === 'string' || typeof date === 'number') {
-    const d = new Date(date);
-    return isNaN(d.getTime()) ? null : d;
-  }
-  return null;
-};
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -171,11 +154,11 @@ export default function DashboardPage() {
     const start = startOfMonth(now);
     const end = endOfMonth(now);
     const approvedCount = (leads || []).filter(lead => {
-        if (lead.status !== 'Aprovado' || !lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
+        if (lead.status !== 'Aprovado' || !lead.createdAt) {
             return false;
         }
-        const leadDate = lead.createdAt.toDate();
-        return isWithinInterval(leadDate, { start, end });
+        const leadDate = toDate(lead.createdAt);
+        return leadDate ? isWithinInterval(leadDate, { start, end }) : false;
     }).length;
     setApprovedThisMonthCount(approvedCount);
 
@@ -184,8 +167,8 @@ export default function DashboardPage() {
       if (lead.status !== 'Pendente/Em negociação') return false;
       const history = lead.versionHistory || [];
       const lastActivityDate = history.length > 0
-          ? getLeadDate(history[history.length - 1].editedAt)
-          : getLeadDate(lead.createdAt);
+          ? toDate(history[history.length - 1].editedAt)
+          : toDate(lead.createdAt);
       if (!lastActivityDate) return false;
       return differenceInDays(new Date(), lastActivityDate) > staleDays;
     });
@@ -219,8 +202,8 @@ export default function DashboardPage() {
   const recentLeads = useMemo(() => {
     return (leads || [])
       .sort((a, b) => {
-        const dateA = getLeadDate(a.createdAt);
-        const dateB = getLeadDate(b.createdAt);
+        const dateA = toDate(a.createdAt);
+        const dateB = toDate(b.createdAt);
         if (!dateB) return 1;
         if (!dateA) return -1;
         return dateB.getTime() - dateA.getTime();
@@ -390,7 +373,7 @@ export default function DashboardPage() {
                       <TableCell className="font-medium">{lead.company}</TableCell>
                       <TableCell>{lead.createdBy}</TableCell>
                       <TableCell className="text-right font-bold text-amber-600">
-                        {differenceInDays(new Date(), getLeadDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt)!)}
+                        {differenceInDays(new Date(), toDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt)!)}
                       </TableCell>
                     </TableRow>
                   ))
