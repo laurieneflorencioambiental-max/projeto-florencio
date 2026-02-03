@@ -32,6 +32,7 @@ import {
   ExternalLink,
   Gem,
   FileDown,
+  Save,
 } from 'lucide-react';
 import {
   Select,
@@ -130,9 +131,22 @@ export default function ProposalModal({
     });
   };
 
+  const handleSetDefaultTemplate = () => {
+    const newTemplateId = selectedTemplateId || null;
+    if (newTemplateId !== lead.selectedTemplateId) {
+      onUpdateLead({ ...lead, selectedTemplateId: newTemplateId });
+      toast({
+        title: 'Modelo Padrão Salvo!',
+        description:
+          'Este modelo será carregado automaticamente para este lead no futuro.',
+      });
+    }
+  };
+
   const resetState = () => {
-    // Apply default template from lead or clear selection
-    handleTemplateChange(lead.selectedTemplateId || '');
+    const defaultTemplateId = lead.selectedTemplateId || '';
+    setSelectedTemplateId(defaultTemplateId);
+    handleTemplateChange(defaultTemplateId);
 
     let currentProposalNumber = lead.proposalNumber;
 
@@ -403,27 +417,43 @@ Grupo Florencio`;
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mb-4">
+        <div className="mb-4 space-y-2">
           <Label htmlFor="proposal-template">
             Selecione um Modelo de Serviço
           </Label>
-          <Select
-            value={selectedTemplateId || ''}
-            onValueChange={handleTemplateChange}
-            disabled={isGenerating}
-          >
-            <SelectTrigger id="proposal-template">
-              <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
-              {proposalTemplates.map(template => (
-                <SelectItem key={template.id} value={template.id}>
-                  {template.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <Select
+                value={selectedTemplateId || ''}
+                onValueChange={handleTemplateChange}
+                disabled={isGenerating}
+              >
+                <SelectTrigger id="proposal-template">
+                  <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
+                  {proposalTemplates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSetDefaultTemplate}
+              disabled={
+                isGenerating ||
+                (selectedTemplateId || null) === (lead.selectedTemplateId || null)
+              }
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Definir como Padrão
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 bg-white rounded-md">
