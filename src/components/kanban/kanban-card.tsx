@@ -218,7 +218,7 @@ export default function KanbanCard({
 
     return (
       <div className="mt-1 group relative">
-        <p className="text-xs p-3 bg-muted/40 rounded-md min-h-[5rem] border border-transparent">
+        <p className="text-xs p-3 bg-muted/40 rounded-md min-h-[5rem] border border-transparent whitespace-pre-wrap">
           {lead.observations}
         </p>
         <div className="absolute top-0 right-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-muted/40 rounded-tr-md rounded-bl-md">
@@ -380,148 +380,150 @@ export default function KanbanCard({
             </div>
           </CardHeader>
           <CardContent className="flex-1 text-sm">
-            <ScrollArea className="w-full whitespace-nowrap rounded-md">
-              <div className="space-y-4 p-4">
-                <div className="flex items-center gap-2">
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>CNPJ da Empresa</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <span className="font-mono text-xs">{lead.cnpj}</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Resumo da Proposta</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <p className="flex-1">{lead.proposalSummary}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <DollarSign className="h-4 w-4 text-primary" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Valor do Orçamento</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <p className="text-base font-bold text-primary">
-                    {formatCurrency(lead.value)}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <p className="font-medium text-sm">Formas de Pagamento:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {lead.paymentMethods.map(pm => (
-                      <Tooltip key={pm.method}>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="secondary"
-                            className="flex gap-2 items-center"
-                          >
-                            {getPaymentMethodIcon(pm.method)}
-                            <span>
-                              {pm.method
-                                .replace(' (Link)', '')
-                                .replace(' (Maquininha)', '')}
-                            </span>
-                            {pm.method.includes('Crédito') && pm.cardFee && (
-                              <span className="text-xs opacity-75">
-                                ({pm.cardFee}% taxa)
-                              </span>
-                            )}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Forma de Pagamento</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                </div>
-                <StaleLeadIndicator />
-                {(lead.status === 'Rejeitado' ||
-                  lead.status === 'Desistência') &&
-                  lead.rejectionReason && (
-                    <div className="flex items-start gap-2 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
+            <ScrollArea className="w-full rounded-md">
+                <div className="p-4" style={{ minWidth: 'max-content' }}>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
                       <Tooltip>
                         <TooltipTrigger>
-                          <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                          <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Motivo da perda do lead.</p>
+                          <p>CNPJ da Empresa</p>
                         </TooltipContent>
                       </Tooltip>
-                      <p className="text-xs text-destructive">
-                        <span className="font-semibold">Motivo:</span>{' '}
-                        {lead.rejectionReason}
+                      <span className="font-mono text-xs">{lead.cnpj}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <FileText className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Resumo da Proposta</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="flex-1 whitespace-normal">{lead.proposalSummary}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <DollarSign className="h-4 w-4 text-primary" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Valor do Orçamento</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="text-base font-bold text-primary">
+                        {formatCurrency(lead.value)}
                       </p>
                     </div>
-                  )}
-                <div className="border-t border-border pt-4 flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>E-mail do contato</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <a
-                      href={`mailto:${lead.email}`}
-                      className="text-sm text-muted-foreground hover:underline"
-                    >
-                      {lead.email}
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>WhatsApp do contato</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <a
-                      href={`https://wa.me/${lead.whatsapp}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:underline"
-                    >
-                      {lead.whatsapp}
-                    </a>
-                  </div>
-                  {getContactSourceInfo()}
-                </div>
-                <div className="border-t pt-4">
-                  <Label
-                    htmlFor={`obs-${lead.id}`}
-                    className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
-                  >
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <StickyNote className="h-3 w-3" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          Notas internas sobre a negociação. Não são visíveis para o
-                          cliente.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                    Observações Internas
-                  </Label>
-                  {renderObservationContent()}
+                    <div className="flex flex-col gap-2">
+                      <p className="font-medium text-sm">Formas de Pagamento:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {lead.paymentMethods.map(pm => (
+                          <Tooltip key={pm.method}>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant="secondary"
+                                className="flex gap-2 items-center"
+                              >
+                                {getPaymentMethodIcon(pm.method)}
+                                <span>
+                                  {pm.method
+                                    .replace(' (Link)', '')
+                                    .replace(' (Maquininha)', '')}
+                                </span>
+                                {pm.method.includes('Crédito') && pm.cardFee && (
+                                  <span className="text-xs opacity-75">
+                                    ({pm.cardFee}% taxa)
+                                  </span>
+                                )}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Forma de Pagamento</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
+                    </div>
+                    <StaleLeadIndicator />
+                    {(lead.status === 'Rejeitado' ||
+                      lead.status === 'Desistência') &&
+                      lead.rejectionReason && (
+                        <div className="flex items-start gap-2 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Motivo da perda do lead.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <p className="text-xs text-destructive">
+                            <span className="font-semibold">Motivo:</span>{' '}
+                            {lead.rejectionReason}
+                          </p>
+                        </div>
+                      )}
+                    <div className="border-t border-border pt-4 flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>E-mail do contato</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <a
+                          href={`mailto:${lead.email}`}
+                          className="text-sm text-muted-foreground hover:underline"
+                        >
+                          {lead.email}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>WhatsApp do contato</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <a
+                          href={`https://wa.me/${lead.whatsapp}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:underline"
+                        >
+                          {lead.whatsapp}
+                        </a>
+                      </div>
+                      {getContactSourceInfo()}
+                    </div>
+                    <div className="border-t pt-4">
+                      <Label
+                        htmlFor={`obs-${lead.id}`}
+                        className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"
+                      >
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <StickyNote className="h-3 w-3" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Notas internas sobre a negociação. Não são visíveis para o
+                              cliente.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                        Observações Internas
+                      </Label>
+                      {renderObservationContent()}
+                    </div>
                 </div>
               </div>
               <ScrollBar orientation="horizontal" />
@@ -650,5 +652,3 @@ export default function KanbanCard({
     </>
   );
 }
-
-    
