@@ -31,6 +31,7 @@ import {
   User as UserIcon,
   Shield,
   Users,
+  Loader2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -196,7 +197,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const isLoadingPermissions = isUserLoading || isProfileLoading;
-  const isAdmin = !isLoadingPermissions && userProfile?.isAdmin === true;
+  const showSkeletons = !isClient || isLoadingPermissions;
+  const isAdmin = !showSkeletons && userProfile?.isAdmin === true;
 
   useEffect(() => {
     if (!user || !firestore) {
@@ -273,83 +275,59 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return '...';
   };
 
-  if (!isClient) {
-    return (
-       <div className="flex min-h-svh w-full bg-background">
-        {/* Skeleton for Sidebar */}
-        <div className="hidden md:flex flex-col h-svh w-64 bg-sidebar text-sidebar-foreground p-2 gap-2 border-r border-sidebar-border">
-          <div className="p-2"> {/* Header skeleton */}
-            <Skeleton className="h-10 w-40 bg-sidebar-accent/50" />
-          </div>
-          <div className="flex-1 p-2 space-y-2"> {/* Content skeleton */}
-            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
-            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
-            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
-            <div className="my-2 h-px bg-sidebar-border" />
-            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
-            <Skeleton className="h-8 w-full bg-sidebar-accent/50" />
-          </div>
-          <div className="p-2"> {/* Footer skeleton */}
-            <Skeleton className="h-12 w-full bg-sidebar-accent/50" />
-          </div>
-        </div>
-        {/* Skeleton for Main Content */}
-        <div className="flex-1 flex flex-col">
-          <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
-            <Skeleton className="h-6 w-48" />
-          </header>
-          <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="animate-spin text-primary"
-            >
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            </svg>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader className="p-0">
           <Link href="/" className="block cursor-pointer p-2">
             <div className="flex items-center gap-3">
-              {settings?.sidebarLogoUrl ? (
-                <img
-                  src={settings.sidebarLogoUrl}
-                  alt="Logo da Empresa"
-                  className="h-8 w-8 object-contain"
-                />
+              {showSkeletons ? (
+                 <>
+                  <Skeleton className="h-8 w-8" />
+                  <div className="flex flex-col gap-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                 </>
+              ) : settings?.sidebarLogoUrl ? (
+                <>
+                  <img
+                    src={settings.sidebarLogoUrl}
+                    alt="Logo da Empresa"
+                    className="h-8 w-8 object-contain"
+                  />
+                  <div className="flex flex-col">
+                    <h2 className="text-base font-headline font-bold text-sidebar-foreground leading-tight">
+                      Comercial
+                    </h2>
+                    <p className="text-sm text-sidebar-foreground/80 leading-tight">
+                      Grupo Florencio
+                    </p>
+                  </div>
+                </>
               ) : (
-                <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
+                <>
+                  <Briefcase className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
+                  <div className="flex flex-col">
+                    <h2 className="text-base font-headline font-bold text-sidebar-foreground leading-tight">
+                      Comercial
+                    </h2>
+                    <p className="text-sm text-sidebar-foreground/80 leading-tight">
+                      Grupo Florencio
+                    </p>
+                  </div>
+                </>
               )}
-              <div className="flex flex-col">
-                <h2 className="text-base font-headline font-bold text-sidebar-foreground leading-tight">
-                  Comercial
-                </h2>
-                <p className="text-sm text-sidebar-foreground/80 leading-tight">
-                  Grupo Florencio
-                </p>
-              </div>
             </div>
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          {isLoadingPermissions ? (
+          {showSkeletons ? (
              <SidebarMenu>
                 <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
                 <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+                <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
+                <SidebarSeparator />
                 <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
                 <SidebarMenuItem><SidebarMenuSkeleton showIcon /></SidebarMenuItem>
              </SidebarMenu>
@@ -361,49 +339,55 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           <SidebarSeparator />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer transition-colors">
-                    <Avatar className="h-8 w-8">
-                    <AvatarImage src={userProfile?.photoURL || user?.photoURL || undefined} />
-                    <AvatarFallback>{getUserInitials(userProfile?.displayName, user?.email)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col overflow-hidden">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">
-                        {userProfile?.displayName || user?.email}
-                    </p>
-                    <div className="h-5 mt-0.5">
-                        {isLoadingPermissions ? (
-                        <div className='w-16 h-4 bg-sidebar-accent/50 animate-pulse rounded-sm' />
-                        ) : (
-                        <Badge
-                            variant="outline"
-                            className={cn(
-                            'text-xs px-1.5 py-0 border-transparent',
-                            isAdmin
-                                ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                                : 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
-                            )}
-                        >
-                            {isAdmin ? 'Gestor' : 'Vendedor'}
-                        </Badge>
-                        )}
-                    </div>
-                    </div>
+          {showSkeletons ? (
+             <div className="flex items-center gap-3 p-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex flex-col gap-1 flex-1">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-3 w-1/2" />
                 </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-56 bg-sidebar border-sidebar-border text-sidebar-foreground">
-                <DropdownMenuItem onClick={() => router.push('/profile')}>
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    <span>Meu Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-sidebar-border" />
-                 <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer transition-colors">
+                      <Avatar className="h-8 w-8">
+                      <AvatarImage src={userProfile?.photoURL || user?.photoURL || undefined} />
+                      <AvatarFallback>{getUserInitials(userProfile?.displayName, user?.email)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col overflow-hidden">
+                      <p className="text-sm font-medium text-sidebar-foreground truncate">
+                          {userProfile?.displayName || user?.email}
+                      </p>
+                      <div className="h-5 mt-0.5">
+                          <Badge
+                              variant="outline"
+                              className={cn(
+                              'text-xs px-1.5 py-0 border-transparent',
+                              isAdmin
+                                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                                  : 'bg-sidebar-accent/80 text-sidebar-accent-foreground'
+                              )}
+                          >
+                              {isAdmin ? 'Gestor' : 'Vendedor'}
+                          </Badge>
+                      </div>
+                      </div>
+                  </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-56 bg-sidebar border-sidebar-border text-sidebar-foreground">
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      <span>Meu Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-sidebar-border" />
+                  <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sair</span>
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
