@@ -319,7 +319,7 @@ export default function KanbanCard({
           <CardHeader className="pb-4">
             <div className="flex justify-between items-start gap-2">
                 <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg font-bold break-words">{lead.company}</CardTitle>
+                    <CardTitle className="text-lg font-bold break-all">{lead.company}</CardTitle>
                     <div className="text-sm text-muted-foreground space-y-1 mt-1">
                         <div className="truncate">
                             {lead.name}
@@ -335,7 +335,7 @@ export default function KanbanCard({
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center flex-shrink-0">
                     <Button
                     variant="ghost"
                     size="icon"
