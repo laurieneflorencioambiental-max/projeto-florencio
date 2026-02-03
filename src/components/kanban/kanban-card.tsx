@@ -65,7 +65,6 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import VersionHistoryModal from './version-history-modal';
 import { toDate } from '@/lib/utils';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanCardProps = {
   lead: Lead;
@@ -318,11 +317,11 @@ export default function KanbanCard({
           className="cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-shadow bg-card w-full flex flex-col"
         >
           <CardHeader className="pb-4">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <CardTitle className="text-lg font-bold">{lead.company}</CardTitle>
+            <div className="flex justify-between items-start gap-2">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg font-bold break-words">{lead.company}</CardTitle>
                 <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                  <div>
+                  <div className="truncate">
                     {lead.name}
                     {lead.role && (
                       <span className="text-xs text-muted-foreground/80">
@@ -390,7 +389,7 @@ export default function KanbanCard({
                     <p>CNPJ da Empresa</p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-mono text-xs">{lead.cnpj}</span>
+                <span className="font-mono text-xs break-all">{lead.cnpj}</span>
               </div>
               <div className="flex items-start gap-2">
                 <Tooltip>
@@ -401,7 +400,7 @@ export default function KanbanCard({
                     <p>Resumo da Proposta</p>
                   </TooltipContent>
                 </Tooltip>
-                <p className="flex-1 whitespace-normal">{lead.proposalSummary}</p>
+                <p className="flex-1 whitespace-pre-wrap">{lead.proposalSummary}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Tooltip>
@@ -477,7 +476,7 @@ export default function KanbanCard({
                   </Tooltip>
                   <a
                     href={`mailto:${lead.email}`}
-                    className="text-sm text-muted-foreground hover:underline"
+                    className="text-sm text-muted-foreground hover:underline break-all"
                   >
                     {lead.email}
                   </a>
@@ -495,7 +494,7 @@ export default function KanbanCard({
                     href={`https://wa.me/${lead.whatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground hover:underline"
+                    className="text-sm text-muted-foreground hover:underline break-all"
                   >
                     {lead.whatsapp}
                   </a>
