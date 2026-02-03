@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -217,7 +218,7 @@ export default function KanbanCard({
 
     return (
       <div className="mt-1 group relative">
-        <p className="text-xs whitespace-pre-wrap p-3 bg-muted/40 rounded-md min-h-[5rem] border border-transparent">
+        <p className="text-xs p-3 bg-muted/40 rounded-md min-h-[5rem] border border-transparent">
           {lead.observations}
         </p>
         <div className="absolute top-0 right-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-muted/40 rounded-tr-md rounded-bl-md">
@@ -378,8 +379,8 @@ export default function KanbanCard({
               </div>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-hidden text-sm">
-            <ScrollArea className="h-full w-full">
+          <CardContent className="flex-1 text-sm">
+            <ScrollArea className="w-full whitespace-nowrap rounded-md">
               <div className="space-y-4 p-4">
                 <div className="flex items-center gap-2">
                   <Tooltip>
@@ -401,7 +402,7 @@ export default function KanbanCard({
                       <p>Resumo da Proposta</p>
                     </TooltipContent>
                   </Tooltip>
-                  <p className="flex-1 whitespace-pre-wrap">{lead.proposalSummary}</p>
+                  <p className="flex-1">{lead.proposalSummary}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Tooltip>
@@ -649,3 +650,5 @@ export default function KanbanCard({
     </>
   );
 }
+
+    
