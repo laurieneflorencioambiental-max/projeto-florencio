@@ -144,7 +144,7 @@ export default function ManageTemplatesPage() {
       name={fieldName}
       render={({ field }) => (
         <FormItem className="space-y-2">
-          <Label htmlFor={`template-${fieldName}`}>{label}</Label>
+          <Label htmlFor={`template-${fieldName}`} className="font-semibold">{label}</Label>
           <Textarea id={`template-${fieldName}`} placeholder={`Conteúdo para "${label}"`} {...field} rows={3} />
           <FormMessage />
         </FormItem>
@@ -198,7 +198,7 @@ export default function ManageTemplatesPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSaveTemplate)} className="space-y-4">
-              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><Label>Nome do Modelo</Label><FormControl><Input placeholder="Ex: Treinamento NR-35" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><Label className="font-semibold">Nome do Modelo</Label><FormControl><Input placeholder="Ex: Treinamento NR-35" {...field} /></FormControl><FormMessage /></FormItem>)} />
               {renderFormField('Objeto da Proposta', 'proposalObject')}
               {renderFormField('Escopo do Serviço', 'serviceScope')}
               {renderFormField('Da Contratante', 'clientResponsibilities')}
@@ -212,7 +212,7 @@ export default function ManageTemplatesPage() {
                 name="paymentTerms"
                 render={({ field }) => (
                     <FormItem className="space-y-2">
-                        <Label htmlFor="template-paymentTerms">Condições de Pagamento Adicionais</Label>
+                        <Label htmlFor="template-paymentTerms" className="font-semibold">Condições de Pagamento Adicionais</Label>
                         <Textarea id="template-paymentTerms" placeholder="Os valores descritos nesta proposta comercial consideram o dia 05 do mês..." {...field} rows={5} />
                         <FormMessage />
                     </FormItem>
@@ -225,13 +225,13 @@ export default function ManageTemplatesPage() {
                     <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
                       <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removePlan(index)}><Trash2 className="h-4 w-4" /></Button>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`plans.${index}.name`} render={({ field }) => (<FormItem><Label>Plano</Label><FormControl><Input placeholder="Ex: Plano Bronze 1.0" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`plans.${index}.employeeRange`} render={({ field }) => (<FormItem><Label>Faixa de Funcionários</Label><FormControl><Input placeholder="Ex: 1 a 300" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.name`} render={({ field }) => (<FormItem><Label className="font-semibold">Plano</Label><FormControl><Input placeholder="Ex: Plano Bronze 1.0" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.employeeRange`} render={({ field }) => (<FormItem><Label className="font-semibold">Faixa de Funcionários</Label><FormControl><Input placeholder="Ex: 1 a 300" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
-                      <FormField control={form.control} name={`plans.${index}.servicesIncluded`} render={({ field }) => (<FormItem><Label>Serviços Inclusos</Label><FormControl><Textarea placeholder="Lista de serviços..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name={`plans.${index}.servicesIncluded`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviços Inclusos</Label><FormControl><Textarea placeholder="Lista de serviços..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`plans.${index}.investment`} render={({ field }) => (<FormItem><Label>Investimento (R$)</Label><FormControl><Input type="number" placeholder="990.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`plans.${index}.paymentType`} render={({ field }) => (<FormItem><Label>Tipo de Pagamento</Label><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2"><FormItem className="flex items-center space-x-2"><RadioGroupItem value="unique" id={`unique-${index}`} /><Label htmlFor={`unique-${index}`}>Único</Label></FormItem><FormItem className="flex items-center space-x-2"><RadioGroupItem value="monthly" id={`monthly-${index}`} /><Label htmlFor={`monthly-${index}`}>Mensal</Label></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.investment`} render={({ field }) => (<FormItem><Label className="font-semibold">Investimento (R$)</Label><FormControl><Input type="number" placeholder="990.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.paymentType`} render={({ field }) => (<FormItem><Label className="font-semibold">Tipo de Pagamento</Label><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2"><FormItem className="flex items-center space-x-2"><RadioGroupItem value="unique" id={`unique-${index}`} /><Label htmlFor={`unique-${index}`}>Único</Label></FormItem><FormItem className="flex items-center space-x-2"><RadioGroupItem value="monthly" id={`monthly-${index}`} /><Label htmlFor={`monthly-${index}`}>Mensal</Label></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
                       </div>
                     </div>
                   ))}
@@ -245,15 +245,15 @@ export default function ManageTemplatesPage() {
                     <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
                       <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeExam(index)}><Trash2 className="h-4 w-4" /></Button>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={form.control} name={`exams.${index}.service`} render={({ field }) => (<FormItem><Label>Serviço</Label><FormControl><Input placeholder="Ex: ASO" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`exams.${index}.description`} render={({ field }) => (<FormItem><Label>Descrição</Label><FormControl><Input placeholder="Ex: Clínico" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`exams.${index}.value`} render={({ field }) => (<FormItem><Label>Valor (R$)</Label><FormControl><Input type="number" placeholder="50.60" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`exams.${index}.service`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviço</Label><FormControl><Input placeholder="Ex: ASO" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`exams.${index}.description`} render={({ field }) => (<FormItem><Label className="font-semibold">Descrição</Label><FormControl><Input placeholder="Ex: Clínico" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`exams.${index}.value`} render={({ field }) => (<FormItem><Label className="font-semibold">Valor (R$)</Label><FormControl><Input type="number" placeholder="50.60" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                     </div>
                   ))}
                   <div className="flex flex-wrap items-end gap-4 pt-4 border-t">
                       <div className="flex-1 min-w-[250px]">
-                          <Label>Adicionar do Catálogo</Label>
+                          <Label className="font-semibold">Adicionar do Catálogo</Label>
                           <Select onValueChange={handleAddExamFromCatalog} value="">
                               <SelectTrigger>
                                   <SelectValue placeholder="Selecione um serviço do catálogo..." />
