@@ -74,7 +74,6 @@ export default function PricingPage() {
 
   const calculation = useMemo(() => {
     const totalCosts = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
-    // boletoFee is now a fixed real value, not a percentage.
     const subtotalWithBoleto = totalCosts + boletoFee;
     const profitValue = subtotalWithBoleto * (margin / 100);
     const subtotalWithProfit = subtotalWithBoleto + profitValue;
