@@ -64,8 +64,9 @@ export function useCollection<T = any>(
   useEffect(() => {
     if (!memoizedTargetRefOrQuery) {
       setData(null);
-      setIsLoading(false);
       setError(null);
+      // Do not set loading to false. If we have no ref, we are still "loading"
+      // the dependencies required to build the ref.
       return;
     }
 

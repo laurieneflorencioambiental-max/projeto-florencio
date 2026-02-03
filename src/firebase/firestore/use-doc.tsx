@@ -50,8 +50,9 @@ export function useDoc<T = any>(
   useEffect(() => {
     if (!memoizedDocRef) {
       setData(null);
-      setIsLoading(false);
       setError(null);
+      // Do not set loading to false. If we have no ref, we are still "loading"
+      // the dependencies required to build the ref.
       return;
     }
 
