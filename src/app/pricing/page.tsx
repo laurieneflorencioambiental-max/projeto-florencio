@@ -44,6 +44,8 @@ const initialCosts: CostFactors = {
   pedagio: 0,
   aluguelEquipamento: 0,
   calibracao: 0,
+  laboratorio: 0,
+  gasolinaLocomocao: 0,
 };
 
 export default function PricingPage() {
@@ -72,8 +74,8 @@ export default function PricingPage() {
 
   const calculation = useMemo(() => {
     const totalCosts = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
-    const boletoCost = totalCosts * (boletoFee / 100);
-    const subtotalWithBoleto = totalCosts + boletoCost;
+    // boletoFee is now a fixed real value, not a percentage.
+    const subtotalWithBoleto = totalCosts + boletoFee;
     const profitValue = subtotalWithBoleto * (margin / 100);
     const subtotalWithProfit = subtotalWithBoleto + profitValue;
     const taxesValue = subtotalWithProfit * (taxes / 100);
@@ -81,7 +83,7 @@ export default function PricingPage() {
     
     return {
       totalCosts,
-      boletoCost,
+      boletoCost: boletoFee,
       subtotalWithBoleto,
       profitValue,
       taxesValue,
@@ -173,6 +175,8 @@ export default function PricingPage() {
     { key: 'pedagio', label: 'Pedágio' },
     { key: 'aluguelEquipamento', label: 'Aluguel de Equipamento' },
     { key: 'calibracao', label: 'Calibração' },
+    { key: 'laboratorio', label: 'Laboratório' },
+    { key: 'gasolinaLocomocao', label: 'Gasolina / Locomoção' },
   ];
 
   return (
@@ -221,11 +225,11 @@ export default function PricingPage() {
             </Card>
             
             <Card className="bg-muted/30">
-                <CardHeader><CardTitle className="text-lg">Ajustes Financeiros (%)</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg">Ajustes Financeiros</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="boleto-fee">Taxa do Boleto (%)</Label>
-                        <Input id="boleto-fee" type="number" placeholder="0" value={boletoFee} onChange={e => setBoletoFee(parseFloat(e.target.value) || 0)} />
+                        <Label htmlFor="boleto-fee">Taxa do Boleto (R$)</Label>
+                        <Input id="boleto-fee" type="number" placeholder="0.00" value={boletoFee} onChange={e => setBoletoFee(parseFloat(e.target.value) || 0)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="margin">Margem de Lucro (%)</Label>
@@ -280,7 +284,7 @@ export default function PricingPage() {
                 <span className="font-medium">{formatCurrency(calculation.totalCosts)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Custo Boleto ({boletoFee}%)</span>
+                <span className="text-muted-foreground">Custo Boleto (Fixo)</span>
                 <span className="font-medium">{formatCurrency(calculation.boletoCost)}</span>
             </div>
              <div className="flex justify-between items-center text-sm font-semibold border-t pt-2">
@@ -309,3 +313,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    

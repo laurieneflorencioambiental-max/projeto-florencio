@@ -198,6 +198,8 @@ export interface CostFactors {
   pedagio: number;
   aluguelEquipamento: number;
   calibracao: number;
+  laboratorio: number;
+  gasolinaLocomocao: number;
 }
 
 export const costFactorsSchema = z.object({
@@ -209,6 +211,8 @@ export const costFactorsSchema = z.object({
   pedagio: z.number(),
   aluguelEquipamento: z.number(),
   calibracao: z.number(),
+  laboratorio: z.number(),
+  gasolinaLocomocao: z.number(),
 });
 
 export const pricingTemplateSchema = z.object({
@@ -288,3 +292,5 @@ export const partnershipDocumentSchema = z.object({
   createdAt: z.any(),
 });
 export type PartnershipDocument = z.infer<typeof partnershipDocumentSchema>;
+
+    

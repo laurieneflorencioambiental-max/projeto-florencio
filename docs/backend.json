@@ -171,10 +171,12 @@
             "almoco": { "type": "number" },
             "pedagio": { "type": "number" },
             "aluguelEquipamento": { "type": "number" },
-            "calibracao": { "type": "number" }
+            "calibracao": { "type": "number" },
+            "laboratorio": { "type": "number" },
+            "gasolinaLocomocao": { "type": "number" }
           }
         },
-        "boletoFee": { "type": "number" },
+        "boletoFee": { "type": "number", "description": "Fixed fee for boleto payment in BRL." },
         "margin": { "type": "number" },
         "taxes": { "type": "number" },
         "finalPrice": { "type": "number" }
@@ -377,3 +379,5 @@
     ]
   }
 }
+
+    
