@@ -154,8 +154,10 @@ export default function MarketingPage() {
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const now = new Date();
     setSelectedMonth(now.getMonth());
     setSelectedYear(now.getFullYear());
@@ -190,6 +192,11 @@ export default function MarketingPage() {
   }, [user, isUserLoading, router]);
 
   const filteredActions = useMemo(() => {
+    const timeSensitiveFilter = filter === 'today' || filter === 'week';
+    if (!isClient && timeSensitiveFilter) {
+      return [];
+    }
+
     if (selectedMonth === null || selectedYear === null) return [];
     const data = actions || [];
     if (filter === 'all') return data;
@@ -219,9 +226,13 @@ export default function MarketingPage() {
           return true;
       }
     });
-  }, [actions, filter, selectedMonth, selectedYear]);
+  }, [actions, filter, selectedMonth, selectedYear, isClient]);
 
   const filteredEntries = useMemo(() => {
+    const timeSensitiveFilter = filter === 'today' || filter === 'week';
+    if (!isClient && timeSensitiveFilter) {
+      return [];
+    }
     if (selectedMonth === null || selectedYear === null) return [];
     const data = entries || [];
     if (filter === 'all') return data;
@@ -251,9 +262,13 @@ export default function MarketingPage() {
           return true;
       }
     });
-  }, [entries, filter, selectedMonth, selectedYear]);
+  }, [entries, filter, selectedMonth, selectedYear, isClient]);
 
   const filteredTools = useMemo(() => {
+    const timeSensitiveFilter = filter === 'today' || filter === 'week';
+    if (!isClient && timeSensitiveFilter) {
+      return [];
+    }
     if (selectedMonth === null || selectedYear === null) return [];
     const data = tools || [];
     if (filter === 'all') return data;
@@ -283,7 +298,7 @@ export default function MarketingPage() {
           return true;
       }
     });
-  }, [tools, filter, selectedMonth, selectedYear]);
+  }, [tools, filter, selectedMonth, selectedYear, isClient]);
 
   // ROI Handlers
   const handleAddEntry = async (e: React.FormEvent) => {
@@ -813,7 +828,7 @@ export default function MarketingPage() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newActionDeadline ? (
+                      {newActionDeadline && isClient ? (
                         format(newActionDeadline, 'PPP', { locale: ptBR })
                       ) : (
                         <span>Escolha uma data</span>
@@ -884,6 +899,7 @@ export default function MarketingPage() {
               {sortedActions.map(action => {
                 const deadline = getDate(action.deadline);
                 const isExpired =
+                  isClient &&
                   deadline &&
                   action.status !== 'Concluída' &&
                   isPast(deadline) &&
@@ -958,7 +974,7 @@ export default function MarketingPage() {
                             <Clock className="h-3 w-3" />
                             <span>
                             {isExpired ? 'Prazo Expirado' : 'Prazo'}:{' '}
-                            {format(deadline, 'dd/MM/yyyy')}
+                            {isClient ? format(deadline, 'dd/MM/yyyy') : '...'}
                             </span>
                         </div>
                        )}
@@ -1073,7 +1089,7 @@ export default function MarketingPage() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newToolDueDate ? (
+                      {newToolDueDate && isClient ? (
                         format(newToolDueDate, 'PPP', { locale: ptBR })
                       ) : (
                         <span>Escolha uma data</span>
@@ -1147,7 +1163,7 @@ export default function MarketingPage() {
                 {filteredTools.map(tool => {
                   const dueDate = getDate(tool.dueDate);
                   const isToolOverdue =
-                    dueDate && isPast(dueDate) && !isToday(dueDate);
+                    isClient && dueDate && isPast(dueDate) && !isToday(dueDate);
 
                   return (
                     <TableRow
@@ -1175,7 +1191,7 @@ export default function MarketingPage() {
                                 {isToolOverdue && <AlertCircle className="h-4 w-4" />}
                                 <span>
                                     {isToolOverdue ? 'Vencido em ' : 'Vence em '}
-                                    {format(dueDate, 'dd/MM/yyyy')}
+                                    {isClient ? format(dueDate, 'dd/MM/yyyy') : '...'}
                                 </span>
                             </div>
                          )}

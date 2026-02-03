@@ -81,8 +81,10 @@ export default function BudgetsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   const [selectedSeller, setSelectedSeller] = useState<{uid: string, name: string} | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const now = new Date();
     setSelectedMonth(now.getMonth());
     setSelectedYear(now.getFullYear());
@@ -284,7 +286,13 @@ export default function BudgetsPage() {
 
 
   const filteredLeads = useMemo(() => {
+    const timeSensitiveFilter = filter === 'today' || filter === 'week';
+    if (!isClient && timeSensitiveFilter) {
+      return []; // On server or initial client render, return empty for time-sensitive filters
+    }
+
     if (selectedMonth === null || selectedYear === null) return [];
+    
     const leadsData = leads || [];
     const now = new Date();
     
@@ -327,7 +335,7 @@ export default function BudgetsPage() {
       lead.company.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-  }, [filter, selectedMonth, selectedYear, leads, searchTerm]);
+  }, [filter, selectedMonth, selectedYear, leads, searchTerm, isClient]);
 
   if (isUserLoading || !user || areLeadsLoading || areUsersLoading || areTemplatesLoading || areSettingsLoading) {
     return (
