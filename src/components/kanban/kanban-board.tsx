@@ -38,20 +38,22 @@ export default function KanbanBoard({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <div className="flex gap-4 overflow-x-auto pb-4">
       {visibleStatuses.map(status => (
-        <KanbanColumn
-          key={status}
-          status={status}
-          allLeads={allLeads}
-          leads={leads.filter(lead => lead.status === status)}
-          onDrop={handleDrop}
-          onUpdateLead={onUpdateLead}
-          onDeleteLead={onDeleteLead}
-          proposalTemplates={proposalTemplates}
-          settings={settings}
-          currentSeller={currentSeller}
-        />
+        <div key={status} className="w-80 flex-shrink-0 lg:w-96">
+          <KanbanColumn
+            key={status}
+            status={status}
+            allLeads={allLeads}
+            leads={leads.filter(lead => lead.status === status)}
+            onDrop={handleDrop}
+            onUpdateLead={onUpdateLead}
+            onDeleteLead={onDeleteLead}
+            proposalTemplates={proposalTemplates}
+            settings={settings}
+            currentSeller={currentSeller}
+          />
+        </div>
       ))}
     </div>
   );
