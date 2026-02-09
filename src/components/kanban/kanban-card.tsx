@@ -317,65 +317,66 @@ export default function KanbanCard({
           className="cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-shadow bg-card w-full flex flex-col"
         >
           <CardHeader className="pb-4">
-            <div className="flex justify-between items-start gap-2">
-                <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg font-bold break-all">{lead.company}</CardTitle>
-                    <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                        <div className="truncate">
-                            {lead.name}
-                            {lead.role && (
-                            <span className="text-xs text-muted-foreground/80">
-                                , {lead.role}
-                            </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            <FormattedCreationDate />
-                        </div>
-                    </div>
+            <CardTitle className="text-lg font-bold break-words">
+              {lead.company}
+            </CardTitle>
+
+            <div className="flex justify-between items-end">
+              <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                <div className="truncate">
+                  {lead.name}
+                  {lead.role && (
+                    <span className="text-xs text-muted-foreground/80">
+                      , {lead.role}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center flex-shrink-0">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <FormattedCreationDate />
+                </div>
+              </div>
+              <div className="flex items-center flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Editar</span>
+                </Button>
+                <AlertDialog
+                  open={isDeleteDialogOpen}
+                  onOpenChange={setIsDeleteDialogOpen}
+                >
+                  <AlertDialogTrigger asChild>
                     <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setIsEditModalOpen(true)}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
                     >
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Editar</span>
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
                     </Button>
-                    <AlertDialog
-                    open={isDeleteDialogOpen}
-                    onOpenChange={setIsDeleteDialogOpen}
-                    >
-                    <AlertDialogTrigger asChild>
-                        <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Excluir</span>
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá
-                            permanentemente o orçamento da empresa "{lead.company}".
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete}>
-                            Excluir
-                        </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá
+                        permanentemente o orçamento da empresa "{lead.company}".
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="flex-1 py-0 px-6">
