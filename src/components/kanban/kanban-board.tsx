@@ -2,7 +2,6 @@
 
 import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
 import KanbanColumn from './kanban-column';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type KanbanBoardProps = {
   allLeads: Lead[];
@@ -39,24 +38,21 @@ export default function KanbanBoard({
   };
 
   return (
-    <ScrollArea className="w-full whitespace-nowrap">
-      <div className="flex w-max space-x-4 pb-4">
-        {visibleStatuses.map(status => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            allLeads={allLeads}
-            leads={leads.filter(lead => lead.status === status)}
-            onDrop={handleDrop}
-            onUpdateLead={onUpdateLead}
-            onDeleteLead={onDeleteLead}
-            proposalTemplates={proposalTemplates}
-            settings={settings}
-            currentSeller={currentSeller}
-          />
-        ))}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      {visibleStatuses.map(status => (
+        <KanbanColumn
+          key={status}
+          status={status}
+          allLeads={allLeads}
+          leads={leads.filter(lead => lead.status === status)}
+          onDrop={handleDrop}
+          onUpdateLead={onUpdateLead}
+          onDeleteLead={onDeleteLead}
+          proposalTemplates={proposalTemplates}
+          settings={settings}
+          currentSeller={currentSeller}
+        />
+      ))}
+    </div>
   );
 }

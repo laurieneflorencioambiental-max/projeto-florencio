@@ -5,7 +5,6 @@ import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
 import KanbanCard from './kanban-card';
 import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 type KanbanColumnProps = {
   status: Status;
@@ -60,11 +59,11 @@ export default function KanbanColumn({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'flex flex-col h-[calc(100vh-12rem)] w-[320px] rounded-lg bg-muted/50 transition-colors',
+        'flex flex-col rounded-lg bg-muted/50 transition-colors',
         isOver && 'bg-primary/20'
       )}
     >
-      <CardHeader className="p-4 sticky top-0 bg-muted/50 z-10 backdrop-blur-sm">
+      <CardHeader className="p-4 sticky top-14 sm:top-16 bg-muted/80 z-10 backdrop-blur-sm rounded-t-lg">
         <CardTitle className="font-headline text-lg flex justify-between items-center text-foreground/80">
           {status}
           <span
@@ -77,22 +76,25 @@ export default function KanbanColumn({
           </span>
         </CardTitle>
       </CardHeader>
-      <ScrollArea className="flex-1">
-        <CardContent className="flex flex-col gap-4 p-2 md:p-4 h-full">
-          {leads.map(lead => (
-            <KanbanCard
-              key={lead.id}
-              lead={lead}
-              allLeads={allLeads}
-              onUpdateLead={onUpdateLead}
-              onDeleteLead={onDeleteLead}
-              proposalTemplates={proposalTemplates}
-              appSettings={settings}
-              currentSeller={currentSeller}
-            />
-          ))}
-        </CardContent>
-      </ScrollArea>
+      <CardContent className="flex flex-col gap-4 p-2 md:p-4 min-h-[10rem]">
+        {leads.map(lead => (
+          <KanbanCard
+            key={lead.id}
+            lead={lead}
+            allLeads={allLeads}
+            onUpdateLead={onUpdateLead}
+            onDeleteLead={onDeleteLead}
+            proposalTemplates={proposalTemplates}
+            appSettings={settings}
+            currentSeller={currentSeller}
+          />
+        ))}
+        {leads.length === 0 && isOver && (
+          <div className="h-24 border-2 border-dashed rounded-md flex items-center justify-center text-muted-foreground text-sm bg-primary/10">
+            Solte aqui para mover
+          </div>
+        )}
+      </CardContent>
     </div>
   );
 }
