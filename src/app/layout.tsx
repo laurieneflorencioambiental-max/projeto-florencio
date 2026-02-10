@@ -21,18 +21,6 @@ export default function RootLayout({
   const isPartnershipPage = pathname.startsWith('/partnership/');
 
   useEffect(() => {
-    // Service Worker registration
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/' }) // Explicitly defining scope
-        .then(registration => {
-          console.log('Service Worker registrado com sucesso com escopo:', registration.scope);
-        })
-        .catch(error => {
-          console.error('Falha ao registrar o Service Worker:', error);
-        });
-    }
-
     const applyTheme = () => {
       const theme = localStorage.getItem('theme');
       if (
@@ -72,7 +60,6 @@ export default function RootLayout({
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1b7689" />
-        <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
