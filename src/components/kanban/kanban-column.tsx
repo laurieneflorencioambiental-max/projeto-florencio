@@ -64,7 +64,7 @@ export default function KanbanColumn({
         isOver && 'bg-primary/20'
       )}
     >
-      <CardHeader className="p-4 sticky top-14 sm:top-16 bg-muted/80 z-10 backdrop-blur-sm rounded-t-lg">
+      <CardHeader className="p-4 bg-muted/80 rounded-t-lg">
         <CardTitle className="font-headline text-lg flex justify-between items-center text-foreground/80">
           {status}
           <span
