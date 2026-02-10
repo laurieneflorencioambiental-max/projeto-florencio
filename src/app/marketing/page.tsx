@@ -84,10 +84,10 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import {
-  suggestCampaignGoalAction,
-  analyzeCampaignPerformanceAction,
-} from '@/app/actions';
+// import {
+//   suggestCampaignGoalAction,
+//   analyzeCampaignPerformanceAction,
+// } from '@/app/actions';
 import {
   useUser,
   useFirestore,
@@ -465,67 +465,19 @@ export default function MarketingPage() {
   };
 
   const handleSuggestGoal = async () => {
-    if (!newActionSource) {
-      toast({
-        variant: 'destructive',
-        title: 'Fonte não selecionada',
-        description: 'Por favor, selecione uma fonte de investimento primeiro.',
-      });
-      return;
-    }
-    setIsSuggestingGoal(true);
-    setGoalSuggestion(null);
-
-    const investmentValue = newActionPercentageGoal
-      ? parseFloat(newActionPercentageGoal)
-      : undefined;
-
-    try {
-      const result = await suggestCampaignGoalAction(
-        newActionSource,
-        investmentValue,
-        entries || []
-      );
-      if (result.suggestedPercentage > 0) {
-        setNewActionPercentageGoal(String(result.suggestedPercentage));
-        setGoalSuggestion(result.justification);
-        toast({
-          title: 'Sugestão Gerada!',
-          description: 'A IA sugeriu uma meta para sua campanha.',
-        });
-      } else {
-        setGoalSuggestion(result.justification);
-      }
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível gerar uma sugestão.',
-      });
-    } finally {
-      setIsSuggestingGoal(false);
-    }
+    toast({
+      variant: 'destructive',
+      title: 'Funcionalidade desativada',
+      description: 'A sugestão por IA está temporariamente desativada.',
+    });
   };
 
   const handleAnalyzePerformance = async () => {
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
-
-    try {
-      const result = await analyzeCampaignPerformanceAction(entries || []);
-      setAnalysisResult(result.analysis);
-    } catch (error) {
-      console.error(error);
-      setAnalysisResult('Não foi possível gerar a análise. Tente novamente.');
-      toast({
-        variant: 'destructive',
-        title: 'Erro na Análise',
-        description: 'Ocorreu um erro ao se comunicar com o serviço de IA.',
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
+    toast({
+      variant: 'destructive',
+      title: 'Funcionalidade desativada',
+      description: 'A análise por IA está temporariamente desativada.',
+    });
   };
 
   const sortedActions = useMemo(() => {
@@ -787,14 +739,14 @@ export default function MarketingPage() {
                     variant="ghost"
                     size="sm"
                     onClick={handleSuggestGoal}
-                    disabled={isSuggestingGoal}
+                    disabled={true}
                   >
                     {isSuggestingGoal ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <Sparkles className="mr-2 h-4 w-4 text-primary" />
                     )}
-                    Sugerir Meta
+                    Sugerir Meta (IA)
                   </Button>
                 </div>
                 <Input
@@ -1401,20 +1353,18 @@ export default function MarketingPage() {
           <div className="flex flex-col items-center justify-center gap-4">
             <Button
               onClick={handleAnalyzePerformance}
-              disabled={isAnalyzing || (entries || []).length === 0}
+              disabled={true}
             >
               {isAnalyzing ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
-              {isAnalyzing ? 'Analisando...' : 'Gerar Análise Estratégica'}
+              {isAnalyzing ? 'Analisando...' : 'Gerar Análise (IA)'}
             </Button>
-            {(entries || []).length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Adicione pelo menos um cálculo de ROI para habilitar a análise.
+            <p className="text-sm text-muted-foreground">
+                (Funcionalidade de IA temporariamente desativada)
               </p>
-            )}
           </div>
           {(isAnalyzing || analysisResult) && (
             <div className="mt-6 border-t pt-6">

@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, Check, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getFollowUpMessageAction } from '@/app/actions';
+// import { getFollowUpMessageAction } from '@/app/actions'; // Temporarily removed
 import type { Lead } from '@/lib/types';
 
 type FollowUpModalProps = {
@@ -28,39 +28,22 @@ export default function FollowUpModal({
   isOpen,
   onOpenChange,
 }: FollowUpModalProps) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState('A funcionalidade de IA está temporariamente desativada para corrigir um problema de publicação. Ela será reativada em breve.');
   const [isLoading, setIsLoading] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
   const { toast } = useToast();
 
   const generateMessage = () => {
-    if (lead.rejectionReason) {
-      setIsLoading(true);
-      setMessage('');
-      setHasCopied(false);
-
-      getFollowUpMessageAction(lead)
-        .then(result => {
-          setMessage(result.followUpMessage);
-        })
-        .catch(error => {
-          console.error(error);
-          setMessage('Falha ao gerar mensagem.');
-          toast({
-            variant: 'destructive',
-            title: 'Erro',
-            description: 'Não foi possível gerar a mensagem de follow-up.',
-          });
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
+    // AI functionality is temporarily disabled.
+    setIsLoading(false);
+    setMessage('A funcionalidade de IA está temporariamente desativada para corrigir um problema de publicação. Ela será reativada em breve.');
   }
 
   useEffect(() => {
     if (isOpen) {
-      generateMessage();
+      // Set a default message instead of generating one
+      setMessage('A funcionalidade de IA está temporariamente desativada para corrigir um problema de publicação. Ela será reativada em breve.');
+      setIsLoading(false);
     }
   }, [isOpen, lead]);
 
@@ -90,19 +73,11 @@ export default function FollowUpModal({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {isLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[250px]" />
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-[120px] w-full" />
-            </div>
-          ) : (
-            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={8} className="bg-muted" />
-          )}
+          <Textarea value={message} readOnly rows={8} className="bg-muted" />
         </div>
         <DialogFooter className='justify-between'>
           <div>
-            <Button variant="ghost" onClick={generateMessage} disabled={isLoading}>
+            <Button variant="ghost" onClick={generateMessage} disabled={true}>
               <Sparkles className="mr-2 h-4 w-4" />
               Gerar Novamente
             </Button>
