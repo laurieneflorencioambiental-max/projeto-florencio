@@ -318,37 +318,34 @@ export default function KanbanCard({
           className="cursor-grab active:cursor-grabbing shadow-md hover:shadow-lg transition-shadow bg-card w-full flex flex-col"
         >
           <CardHeader className="pb-4">
-            <div className="flex items-start justify-between gap-4">
-                <CardTitle className="flex-1 text-lg font-bold break-words min-w-0">
-                    {lead.company}
-                </CardTitle>
-                <div className="flex flex-shrink-0 items-center -mr-2 -mt-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Editar</span>
-                    </Button>
-                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Excluir</span>
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                <AlertDialogDescription>Esta ação não pode ser desfeita. Isso excluirá permanentemente o orçamento da empresa "{lead.company}".</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+            <div className="flex flex-shrink-0 items-center -ml-2 -mt-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditModalOpen(true)}>
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Editar</span>
+              </Button>
+              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Excluir</span>
+                      </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta ação não pode ser desfeita. Isso excluirá permanentemente o orçamento da empresa "{lead.company}".</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </AlertDialog>
             </div>
-
-            <div className="text-sm text-muted-foreground space-y-1 mt-2">
+            <CardTitle className="text-lg font-bold break-words min-w-0 pt-1">
+                {lead.company}
+            </CardTitle>
+            <div className="text-sm text-muted-foreground space-y-1">
               <div className="truncate">
                 {lead.name}
                 {lead.role && (
