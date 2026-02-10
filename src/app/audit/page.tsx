@@ -90,12 +90,14 @@ export default function AuditPage() {
   };
 
   const filteredLogs = useMemo(() => {
-    if (!auditLogs || !isClient) return [];
+    if (!auditLogs) return [];
 
     let timeFiltered = auditLogs;
 
     // Time filter
     if (filterPeriod !== 'all') {
+      if (!isClient) return []; // Defer date-sensitive logic to client
+
       const now = new Date();
       let interval: Interval;
       switch (filterPeriod) {

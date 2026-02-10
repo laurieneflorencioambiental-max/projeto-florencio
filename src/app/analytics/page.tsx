@@ -82,10 +82,15 @@ export default function AnalyticsPage() {
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
 
   const filteredLeads = useMemo(() => {
-    if (!leads || !isClient) return [];
+    if (!leads) return [];
     if (filter === 'all') {
       return leads;
     }
+    // Defer date-sensitive logic until the client has mounted
+    if (!isClient) {
+      return [];
+    }
+    
     const now = new Date();
     let interval: Interval;
     switch (filter) {

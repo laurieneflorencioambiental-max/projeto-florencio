@@ -286,24 +286,23 @@ export default function BudgetsPage() {
 
 
   const filteredLeads = useMemo(() => {
-    const timeSensitiveFilter = filter === 'today' || filter === 'week';
-    if (!isClient && timeSensitiveFilter) {
-      return []; // On server or initial client render, return empty for time-sensitive filters
-    }
-
+    const leadsData = leads || [];
     if (selectedMonth === null || selectedYear === null) return [];
     
-    const leadsData = leads || [];
-    const now = new Date();
+    // Defer date-sensitive logic until the client has mounted
+    if (!isClient && (filter === 'today' || filter === 'week')) {
+      return [];
+    }
     
     let timeFilteredLeads: Lead[];
 
     if (filter === 'all') {
       timeFilteredLeads = leadsData;
     } else {
+      const now = new Date();
       timeFilteredLeads = leadsData.filter(lead => {
         if (!lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
-          return false; // Skip leads without a valid date
+          return false;
         }
         const leadDate = lead.createdAt.toDate();
         switch (filter) {

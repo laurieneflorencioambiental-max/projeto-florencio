@@ -77,6 +77,10 @@ import {
   endOfWeek,
   getYear,
   getMonth,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -186,14 +190,13 @@ export default function MarketingPage() {
   }, [user, isUserLoading, router]);
 
   const filteredActions = useMemo(() => {
-    const timeSensitiveFilter = filter === 'today' || filter === 'week';
-    if (!isClient && timeSensitiveFilter) {
-      return [];
-    }
-
-    if (selectedMonth === null || selectedYear === null) return [];
     const data = actions || [];
     if (filter === 'all') return data;
+    
+    if (!isClient) return []; // Defer date-sensitive logic to client
+
+    if (selectedMonth === null || selectedYear === null) return [];
+    
     const now = new Date();
     return data.filter(action => {
       const actionDate = toDate(action.deadline);
@@ -223,13 +226,13 @@ export default function MarketingPage() {
   }, [actions, filter, selectedMonth, selectedYear, isClient]);
 
   const filteredEntries = useMemo(() => {
-    const timeSensitiveFilter = filter === 'today' || filter === 'week';
-    if (!isClient && timeSensitiveFilter) {
-      return [];
-    }
-    if (selectedMonth === null || selectedYear === null) return [];
     const data = entries || [];
     if (filter === 'all') return data;
+
+    if (!isClient) return []; // Defer date-sensitive logic to client
+
+    if (selectedMonth === null || selectedYear === null) return [];
+    
     const now = new Date();
     return data.filter(entry => {
       const entryDate = toDate(entry.createdAt);
@@ -259,13 +262,13 @@ export default function MarketingPage() {
   }, [entries, filter, selectedMonth, selectedYear, isClient]);
 
   const filteredTools = useMemo(() => {
-    const timeSensitiveFilter = filter === 'today' || filter === 'week';
-    if (!isClient && timeSensitiveFilter) {
-      return [];
-    }
-    if (selectedMonth === null || selectedYear === null) return [];
     const data = tools || [];
     if (filter === 'all') return data;
+
+    if (!isClient) return []; // Defer date-sensitive logic to client
+
+    if (selectedMonth === null || selectedYear === null) return [];
+    
     const now = new Date();
     return data.filter(tool => {
       const toolDate = toDate(tool.dueDate);
