@@ -4,30 +4,51 @@ import { NextResponse } from 'next/server';
 
 // This route serves the service worker file.
 export async function GET() {
-  const swScript = `
-    const CACHE_NAME = 'florencio-comercial-cache-v1';
-    // urlsToCache is left empty in development to prevent caching issues.
-    const urlsToCache = [];
+  const isProduction = process.env.NODE_ENV === 'production';
 
-    self.addEventListener('install', (event) => {
-      // Perform install steps
-      event.waitUntil(
-        caches.open(CACHE_NAME)
-          .then(function(cache) {
-            console.log('Opened cache');
-            if (urlsToCache.length > 0) {
+  // In development, serve a dummy service worker that does nothing to prevent caching issues.
+  // In production, you would have your actual service worker logic here.
+  const swScript = isProduction
+    ? `
+      const CACHE_NAME = 'florencio-comercial-cache-v1';
+      // Add assets to cache for production PWA
+      const urlsToCache = [
+        '/',
+        '/manifest.json'
+      ];
+
+      self.addEventListener('install', (event) => {
+        event.waitUntil(
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              console.log('Opened cache');
               return cache.addAll(urlsToCache);
-            }
-          })
-      );
-    });
+            })
+        );
+      });
 
-    self.addEventListener('fetch', (event) => {
-      // For development, it's often best to bypass the cache to avoid stale data.
-      // This fetch handler will simply fetch from the network.
-      event.respondWith(fetch(event.request));
-    });
-  `;
+      self.addEventListener('fetch', (event) => {
+        // More sophisticated caching strategies can be implemented here for production
+        event.respondWith(
+          caches.match(event.request)
+            .then((response) => {
+              return response || fetch(event.request);
+            })
+        );
+      });
+    `
+    : `
+      // This is a no-op service worker for development.
+      // It immediately activates and doesn't intercept any network requests.
+      self.addEventListener('install', (event) => {
+        event.waitUntil(self.skipWaiting());
+      });
+
+      self.addEventListener('activate', (event) => {
+        event.waitUntil(self.clients.claim());
+        console.log('Development Service Worker activated.');
+      });
+    `;
 
   return new NextResponse(swScript, {
     headers: {
