@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const [isClient, setIsClient] = useState(false);
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -99,6 +100,7 @@ export default function DashboardPage() {
   const { data: settings } = useDoc<AppSettings>(settingsRef);
   
   useEffect(() => {
+    setIsClient(true);
     if (!isUserLoading && !user) {
       router.replace('/login');
     }
@@ -373,7 +375,7 @@ export default function DashboardPage() {
                       <TableCell className="font-medium">{lead.company}</TableCell>
                       <TableCell>{lead.createdBy}</TableCell>
                       <TableCell className="text-right font-bold text-amber-600">
-                        {differenceInDays(new Date(), toDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt)!)}
+                        {isClient ? differenceInDays(new Date(), toDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt)!) : '...'}
                       </TableCell>
                     </TableRow>
                   ))

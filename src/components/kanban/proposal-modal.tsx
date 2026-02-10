@@ -78,6 +78,11 @@ export default function ProposalModal({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [proposalState, setProposalState] = useState<ProposalState>({
@@ -499,7 +504,7 @@ Grupo Florencio`;
                   <h2 className="text-xl font-semibold">Proposta Comercial</h2>
                   <p className="text-sm">{fullProposalNumber}</p>
                   <p className="text-sm">
-                    Data: {new Date().toLocaleDateString('pt-BR')}
+                    Data: {isClient ? new Date().toLocaleDateString('pt-BR') : '...'}
                   </p>
                 </div>
               </header>

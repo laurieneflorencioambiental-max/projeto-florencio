@@ -18,6 +18,11 @@ import '../../globals.css';
 
 function PartnershipPageContent({ partnershipData, settings }: { partnershipData: PartnershipDocument, settings: Partial<AppSettings> }) {
     const { partnerName, templates } = partnershipData;
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const formatCurrency = (value: number) => {
         if (!value) return 'R$ 0,00';
@@ -51,7 +56,7 @@ function PartnershipPageContent({ partnershipData, settings }: { partnershipData
                         <h2 className="text-xl font-semibold">Detalhes da Parceria</h2>
                         <p className="text-sm">
                         Data:{' '}
-                        {new Date().toLocaleDateString('pt-BR')}
+                        {isClient ? new Date().toLocaleDateString('pt-BR') : '...'}
                         </p>
                     </div>
                 </header>
