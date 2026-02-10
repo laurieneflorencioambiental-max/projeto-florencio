@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -76,7 +77,7 @@ export default function KanbanColumn({
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 p-2 md:p-4 min-h-[10rem]">
+      <CardContent className="flex flex-col gap-4 p-4 min-h-[10rem]">
         {leads.map(lead => (
           <KanbanCard
             key={lead.id}
