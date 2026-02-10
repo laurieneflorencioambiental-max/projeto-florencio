@@ -3,14 +3,21 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, Storage } f
 import { initializeFirebase } from '@/firebase';
 import { firebaseConfig } from './config';
 
-let storage: Storage;
-try {
-    const { firebaseApp } = initializeFirebase();
-    // Initialize Storage with the bucket URL for robust connection.
-    storage = getStorage(firebaseApp, `gs://${firebaseConfig.storageBucket}`);
-} catch (e) {
-    console.error("Firebase Storage could not be initialized:", e);
-}
+let storageInstance: Storage | null = null;
+
+const getStorageInstance = (): Storage => {
+    if (!storageInstance) {
+        try {
+            const { firebaseApp } = initializeFirebase();
+            storageInstance = getStorage(firebaseApp, `gs://${firebaseConfig.storageBucket}`);
+        } catch (e) {
+            console.error("Firebase Storage could not be initialized:", e);
+            throw new Error("Firebase Storage initialization failed.");
+        }
+    }
+    return storageInstance;
+};
+
 
 export type ImageType =
   | 'proposalLogoUrl'
@@ -21,6 +28,7 @@ export type ImageType =
   | 'profilePicture';
 
 export const uploadImageAndGetUrl = async (file: File, imageType: ImageType): Promise<string> => {
+    const storage = getStorageInstance();
     if (!storage) throw new Error("Firebase Storage is not initialized.");
 
     const filePath = `customization/${imageType}/${Date.now()}-${file.name}`;
@@ -40,6 +48,7 @@ export const uploadImageAndGetUrl = async (file: File, imageType: ImageType): Pr
 };
 
 export const deleteImageByUrl = async (url: string): Promise<void> => {
+    const storage = getStorageInstance();
     if (!storage) throw new Error("Firebase Storage is not initialized.");
     if (!url.includes(firebaseConfig.storageBucket!)) {
         console.warn("URL does not seem to be a Firebase Storage URL. Skipping delete.", url);
