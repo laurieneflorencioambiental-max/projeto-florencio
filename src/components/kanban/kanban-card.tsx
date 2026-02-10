@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -318,7 +319,7 @@ export default function KanbanCard({
         >
           <CardHeader className="pb-4">
             <div className="flex items-start justify-between gap-4">
-                <CardTitle className="flex-1 text-lg font-bold break-words">
+                <CardTitle className="flex-1 text-lg font-bold break-words min-w-0">
                     {lead.company}
                 </CardTitle>
                 <div className="flex flex-shrink-0 items-center -mr-2 -mt-2">
