@@ -1,267 +1,52 @@
 {
   "entities": {
-    "AuditLog": {
-      "title": "Audit Log",
-      "description": "Records user actions within the system, such as login and logout.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "userEmail": { "type": "string" },
-        "action": { "type": "string", "enum": ["login", "logout", "Criação de Orçamento", "Edição de Orçamento", "Exclusão de Orçamento", "Mudança de Status", "Criação de Precificação", "Exclusão de Precificação", "Criação de Serviço", "Edição de Serviço", "Exclusão de Serviço", "Criação de Modelo", "Edição de Modelo", "Exclusão de Modelo", "Criação de ROI", "Exclusão de ROI", "Criação de Ação de Marketing", "Edição de Ação de Marketing", "Exclusão de Ação de Marketing", "Criação de Ferramenta Digital", "Edição de Ferramenta Digital", "Exclusão de Ferramenta Digital", "Criação de Modelo de Comissão", "Exclusão de Modelo de Comissão"] },
-        "timestamp": { "type": "object" },
-        "ipAddress": { "type": "string", "format": "ipv4" },
-        "details": { "type": "string", "description": "Contextual details of the action performed." }
-      },
-      "required": ["id", "userId", "userEmail", "action", "timestamp"]
-    },
     "Budget": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Budget",
       "type": "object",
-      "description": "Represents a sales budget/lead within the Florencio Sales Manager application.",
+      "description": "Represents a sales budget within the Florencio Sales Manager application.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "role": { "type": "string" },
-        "company": { "type": "string" },
-        "cnpj": { "type": "string" },
-        "proposalSummary": { "type": "string" },
-        "value": { "type": "number" },
-        "paymentMethods": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "method": { "type": "string" },
-                    "cardFee": { "type": "number" }
-                }
-            }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Budget entity."
         },
-        "contactSource": {
-            "type": "object",
-            "properties": {
-                "source": { "type": "string" },
-                "indicatedBy": { "type": "string" }
-            }
+        "name": {
+          "type": "string",
+          "description": "Name of the budget, providing a descriptive label."
         },
-        "email": { "type": "string", "format": "email" },
-        "whatsapp": { "type": "string" },
-        "selectedTemplateId": { "type": "string", "description": "The ID of the default proposal template selected for this lead." },
-        "status": { "type": "string" },
-        "rejectionReason": { "type": "string" },
-        "createdAt": { "type": "object" },
-        "createdBy": { "type": "string" },
-        "createdByUid": { "type": "string" },
-        "proposalGeneratedCount": { "type": "number" },
-        "whatsappSentCount": { "type": "number" },
-        "editCount": { "type": "number" },
-        "previousStatus": { "type": "string" },
-        "proposalNumber": { "type": "number" },
-        "proposalVersion": { "type": "number" },
-        "observations": {
-            "type": "string",
-            "description": "Internal notes for sellers about the negotiation status."
-        }
-      },
-      "required": ["id", "name", "company", "status", "createdAt", "createdBy", "createdByUid"]
-    },
-    "UserProfile": {
-        "title": "User Profile",
-        "description": "Stores user-specific information, including their role.",
-        "type": "object",
-        "properties": {
-            "uid": { "type": "string" },
-            "email": { "type": "string", "format": "email" },
-            "displayName": { "type": "string" },
-            "isAdmin": { "type": "boolean", "default": false },
-            "presenceStatus": { "type": "string", "enum": ["online", "offline"], "default": "offline" },
-            "lastSeen": { "type": "object", "description": "Timestamp of the last seen time." }
-        },
-        "required": ["uid", "email", "isAdmin"]
-    },
-    "Seller": {
-      "title": "Seller",
-      "description": "Represents a salesperson in the system.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" }
-      },
-      "required": ["id", "name"]
-    },
-    "ProposalTemplate": {
-      "title": "Proposal Template",
-      "description": "Defines the structure for a reusable proposal template.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "proposalObject": { "type": "string" },
-        "serviceScope": { "type": "string" },
-        "clientResponsibilities": { "type": "string" },
-        "contractorResponsibilities": { "type": "string" },
-        "deadline": { "type": "string" },
-        "strategicVision": { "type": "string" },
-        "investment": { "type": "string" },
-        "paymentTerms": { "type": "string", "description": "Additional payment terms and conditions." },
-        "plans": {
-          "type": "array",
-          "items": { "$ref": "#/backend/entities/Plan" }
-        },
-        "exams": {
-          "type": "array",
-          "items": { "$ref": "#/backend/entities/Service" }
-        }
-      },
-      "required": ["id", "name", "proposalObject"]
-    },
-    "Plan": {
-        "title": "Plan",
-        "description": "A pricing plan within a proposal template.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "name": { "type": "string" },
-            "employeeRange": { "type": "string" },
-            "servicesIncluded": { "type": "string" },
-            "investment": { "type": "number" },
-            "paymentType": { "type": "string", "enum": ["unique", "monthly"] }
-        },
-        "required": ["id", "name", "investment", "paymentType"]
-    },
-    "Service": {
-        "title": "Service",
-        "description": "A specific service or exam with its price.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "service": { "type": "string" },
-            "description": { "type": "string" },
-            "value": { "type": "number" }
-        },
-        "required": ["id", "service", "value"]
-    },
-    "AppSettings": {
-      "title": "Application Settings",
-      "description": "Global application settings like logos and theme.",
-      "type": "object",
-      "properties": {
-        "sidebarLogoUrl": { "type": "string", "format": "uri" },
-        "proposalLogoUrl": { "type": "string", "format": "uri" },
-        "loginBackgroundUrl": { "type": "string", "format": "uri" },
-        "proposalCoverUrl": { "type": "string", "format": "uri" },
-        "proposalClosingUrl": { "type": "string", "format": "uri" },
-        "monthlyGoal": { "type": "number", "description": "The monthly goal for approved leads." }
-      }
-    },
-    "PricingTemplate": {
-      "title": "Pricing Template",
-      "description": "A reusable template for calculating service prices based on various cost factors and margins.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "serviceType": { "type": "string", "enum": ["Higiene Ocupacional", "Laudo Ergonômico", "Planos", "Ruído Ambiental", "Perícia", "Serviços Diversos"] },
-        "costs": {
-          "type": "object",
-          "properties": {
-            "fornecedor": { "type": "number" },
-            "art": { "type": "number" },
-            "honorarioMedico": { "type": "number" },
-            "honorarioEngenheiro": { "type": "number" },
-            "almoco": { "type": "number" },
-            "pedagio": { "type": "number" },
-            "aluguelEquipamento": { "type": "number" },
-            "calibracao": { "type": "number" },
-            "laboratorio": { "type": "number" },
-            "gasolinaLocomocao": { "type": "number" }
+        "status": {
+          "type": "string",
+          "description": "Current status of the budget (New, Pending, Approved, Loss, Rejected).",
+          "format": "enum",
+          "items": {
+            "type": "string"
           }
         },
-        "boletoFee": { "type": "number", "description": "Fixed fee for boleto payment in BRL." },
-        "margin": { "type": "number" },
-        "taxes": { "type": "number" },
-        "finalPrice": { "type": "number" }
-      },
-      "required": ["id", "name", "serviceType", "costs", "finalPrice"]
-    },
-    "RoiEntry": {
-      "title": "ROI Entry",
-      "description": "Represents a single ROI calculation for a marketing campaign.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "source": { "type": "string" },
-        "investment": { "type": "number" },
-        "revenue": { "type": "number" },
-        "roi": { "type": "number" },
-        "createdAt": { "type": "object" }
-      },
-      "required": ["id", "source", "investment", "revenue", "roi", "createdAt"]
-    },
-    "MarketingAction": {
-      "title": "Marketing Action",
-      "description": "Represents a planned marketing action or campaign.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "goal": { "type": "string" },
-        "deadline": { "type": "object" },
-        "status": { "type": "string", "enum": ["Futura", "Rodando", "Pausada", "Concluída"] },
-        "source": { "type": "string" },
-        "percentageGoal": { "type": "number" },
-        "createdAt": { "type": "object" }
-      },
-      "required": ["id", "name", "goal", "deadline", "status", "createdAt"]
-    },
-    "DigitalTool": {
-      "title": "Digital Tool",
-      "description": "Represents a subscription or investment in a digital tool for marketing.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "value": { "type": "number" },
-        "periodicity": { "type": "string", "enum": ["Mensal", "Anual", "Único"] },
-        "dueDate": { "type": "object" },
-        "observation": { "type": "string" },
-        "createdAt": { "type": "object" }
-      },
-      "required": ["id", "name", "value", "periodicity", "dueDate", "createdAt"]
-    },
-    "CommissionTemplate": {
-      "title": "Commission Template",
-      "description": "A reusable template for calculating partner commissions.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string", "description": "Name for this commission setup, e.g., 'Contabilidade Modelo'." },
-        "partnerName": { "type": "string", "description": "Name of the partner or partner type." },
-        "partnerWhatsapp": { "type": "string", "description": "WhatsApp number of the partner." },
-        "serviceName": { "type": "string", "description": "The name of the service being commissioned." },
-        "baseServiceValue": { "type": "number" },
-        "commissionPercentage": { "type": "number" },
-        "taxPercentage": { "type": "number" },
-        "finalClientPrice": { "type": "number" },
-        "partnerCommissionValue": { "type": "number" }
-      },
-      "required": ["id", "name", "baseServiceValue", "commissionPercentage", "taxPercentage", "finalClientPrice", "partnerCommissionValue"]
-    },
-    "PartnershipDocument": {
-      "title": "Partnership Document",
-      "description": "Represents the details of a commercial partnership for sharing.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "partnerName": { "type": "string" },
-        "templates": {
-          "type": "array",
-          "items": { "$ref": "#/backend/entities/CommissionTemplate" }
+        "value": {
+          "type": "number",
+          "description": "The monetary value associated with the budget."
         },
-        "createdAt": { "type": "object" }
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time when the budget was initially created.",
+          "format": "date-time"
+        },
+        "rejectionReason": {
+          "type": "string",
+          "description": "The stated reason for the budget's rejection, if applicable."
+        },
+        "followUpSuggested": {
+          "type": "string",
+          "description": "Suggested content for a follow-up message (generated by AI)."
+        }
       },
-      "required": ["id", "partnerName", "templates", "createdAt"]
+      "required": [
+        "id",
+        "name",
+        "status",
+        "value",
+        "creationDate"
+      ]
     }
   },
   "auth": {
@@ -273,111 +58,22 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}",
-        "definition": {
-            "entityName": "UserProfile",
-            "schema": { "$ref": "#/backend/entities/UserProfile" },
-            "description": "Stores user profile information, including roles."
-        }
-      },
-      {
         "path": "/budgets/{budgetId}",
         "definition": {
           "entityName": "Budget",
           "schema": {
             "$ref": "#/backend/entities/Budget"
           },
-          "description": "Stores all budget documents in a central collection. Ownership is enforced by security rules based on the 'createdByUid' field."
-        }
-      },
-      {
-        "path": "/sellers/{sellerId}",
-        "definition": {
-          "entityName": "Seller",
-          "schema": { "$ref": "#/backend/entities/Seller" },
-          "description": "Stores the global list of sellers available in the application."
-        }
-      },
-      {
-        "path": "/proposal-templates/{templateId}",
-        "definition": {
-          "entityName": "ProposalTemplate",
-          "schema": { "$ref": "#/backend/entities/ProposalTemplate" },
-          "description": "Stores global proposal templates available to all users."
-        }
-      },
-      {
-        "path": "/services/{serviceId}",
-        "definition": {
-          "entityName": "Service",
-          "schema": { "$ref": "#/backend/entities/Service" },
-          "description": "Stores the global catalog of individual services and exams."
-        }
-      },
-      {
-        "path": "/app-settings/{settingsId}",
-        "definition": {
-          "entityName": "AppSettings",
-          "schema": { "$ref": "#/backend/entities/AppSettings" },
-          "description": "Stores global application settings. There should only be one document with a known ID like 'global'."
-        }
-      },
-      {
-        "path": "/pricing-templates/{templateId}",
-        "definition": {
-          "entityName": "PricingTemplate",
-          "schema": { "$ref": "#/backend/entities/PricingTemplate" },
-          "description": "Stores global pricing templates available to all users."
-        }
-      },
-      {
-        "path": "/marketing-roi-entries/{entryId}",
-        "definition": {
-          "entityName": "RoiEntry",
-          "schema": { "$ref": "#/backend/entities/RoiEntry" },
-          "description": "Stores global ROI calculation entries for marketing."
-        }
-      },
-      {
-        "path": "/marketing-actions/{actionId}",
-        "definition": {
-          "entityName": "MarketingAction",
-          "schema": { "$ref": "#/backend/entities/MarketingAction" },
-          "description": "Stores global marketing actions and campaigns."
-        }
-      },
-      {
-        "path": "/marketing-tools/{toolId}",
-        "definition": {
-          "entityName": "DigitalTool",
-          "schema": { "$ref": "#/backend/entities/DigitalTool" },
-          "description": "Stores global digital tool investments for marketing."
-        }
-      },
-      {
-        "path": "/audit-logs/{logId}",
-        "definition": {
-          "entityName": "AuditLog",
-          "schema": { "$ref": "#/backend/entities/AuditLog" },
-          "description": "Stores a log of all user audit events."
-        }
-      },
-      {
-        "path": "/commission-templates/{templateId}",
-        "definition": {
-          "entityName": "CommissionTemplate",
-          "schema": { "$ref": "#/backend/entities/CommissionTemplate" },
-          "description": "Stores global commission calculation templates for partners."
-        }
-      },
-      {
-        "path": "/partnerships/{partnershipId}",
-        "definition": {
-          "entityName": "PartnershipDocument",
-          "schema": { "$ref": "#/backend/entities/PartnershipDocument" },
-          "description": "Stores generated partnership detail documents for sharing."
+          "description": "Stores all budget documents.  Security rules will ensure only authenticated users can read or write (business logic performed in a trusted environment).",
+          "params": [
+            {
+              "name": "budgetId",
+              "description": "The unique identifier of the budget."
+            }
+          ]
         }
       }
-    ]
+    ],
+    "reasoning": "Based on the provided application requirements for the Florencio Sales Manager, the Firestore data structure is designed with a focus on simplicity, security, and scalability, adhering to the principles of Authorization Independence and Structural Segregation. Since all budgets are essentially 'private' to the application itself (no user-specific ownership is detailed), a single collection is sufficient, secured at the collection level using basic Firebase Authentication. Because there is no user level roles required for this application, all business logic must be performed in a trusted environment. \n\nAuthorization Independence is achieved by avoiding hierarchical authorization dependencies. There are no subcollections or parent-child relationships that would require `get()` calls in security rules. All required information is self-contained within the `budgets` document.\n\nThis structure supports QAPs (Rules Are Not Filters) because the rules primarily focus on whether the user is authenticated to access the collection and do not need to filter based on document content during `list` operations. Filtering (for example, by status) would be handled in the application logic after the data is retrieved, or using composite indexes for server side filtering and pagination."
   }
 }

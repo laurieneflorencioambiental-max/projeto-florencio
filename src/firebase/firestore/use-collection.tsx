@@ -58,15 +58,14 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
     if (!memoizedTargetRefOrQuery) {
       setData(null);
+      setIsLoading(false);
       setError(null);
-      // Do not set loading to false. If we have no ref, we are still "loading"
-      // the dependencies required to build the ref.
       return;
     }
 

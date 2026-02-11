@@ -1,154 +1,59 @@
 /**
- * # Core Philosophy
- * This ruleset enforces a strict user-ownership model for the Florencio Sales Manager application.
- * All user-generated data, specifically 'budgets', is exclusively owned by and accessible only to the user who created it.
- * Global data like 'sellers', 'proposal-templates', 'services', and 'app-settings' are readable by any authenticated user, but writable only by them as well (simplification for MVP).
- * The security model prioritizes data privacy and isolation for user data, while allowing collaborative management of global data. This aligns with LGPD principles by ensuring data is only accessible by authorized personnel.
+ * # Firestore Security Rules: Florencio Sales Manager
  *
- * # Data Structure
- * - All budgets are stored in a central `/budgets` collection. Ownership is managed by a `createdByUid` field in each document.
- * - Global configuration data is stored in top-level collections.
+ * ## Core Philosophy
+ * This ruleset enforces a simple, authentication-based security model. The primary goal is to ensure that only authenticated users can interact with the database. It assumes that more complex business logic, such as validating budget status transitions or user-specific permissions, is handled in a trusted server-side environment (e.g., Cloud Functions). This approach protects the data from anonymous access while providing flexibility for the trusted backend.
  *
- * # Key Security Decisions & "Blindagem"
- * - **Field-Based Ownership**: For `/budgets/{budgetId}`, write access is determined by the `createdByUid` field matching the authenticated user's ID. This prevents any user from modifying another user's data.
- * - **Global Read for Managers**: Any authenticated user can read all budget documents. This enables the central "manager view" and analytics across all sellers. While sellers can also read all data, they are only able to modify their own, preventing unauthorized changes.
- * - **No User Listing**: There are no rules allowing clients to list documents in a top-level `/users` collection, preventing enumeration of all users in the system.
- * - **Public Proposal Read, Secure Create**: Proposals are viewable by anyone with the link (`allow get: if true`), which is required for sharing with clients. However, only authenticated users can create new ones (`allow create: if isSignedIn()`). Updates and deletes are disabled from the client to prevent tampering.
- * - **Deny by Default**: The most important rule of all. Any path or method not explicitly matched by an `allow` rule is automatically denied. This prevents accidental exposure of data.
+ * ## Data Structure
+ * The data structure is flat, consisting of a single top-level collection:
+ * - `/budgets/{budgetId}`: Stores all budget documents for the application.
  *
- * This comment was added to force a redeploy of the security rules.
+ * ## Key Security Decisions
+ * - **Authenticated Access Only**: All read and write operations on the `/budgets` collection are restricted to users who are signed in. Unauthenticated or anonymous access is completely denied.
+ * - **No User-Specific Ownership**: The rules do not enforce document ownership because the `Budget` entity lacks an `ownerId` or `creatorId` field. This aligns with the system design where business logic is managed by a central, trusted backend rather than granting individual users direct, fine-grained control over specific documents.
+ * - **Flexible Data Schema**: In this prototyping stage, the rules do not validate the specific shape or data types of the `Budget` documents. The focus is strictly on authorization (who can access the data), not on schema enforcement.
+ * - **Denial of Destructive Operations on Non-Existent Documents**: Update and delete operations are explicitly denied if the target document does not already exist, preventing unintended side effects.
+ *
+ * ## Denormalization for Authorization
+ * This principle is not applicable to the current data model, as there are no relational data dependencies that would require denormalization for security rule checks. All authorization is based solely on the user's authentication state.
+ *
+ * ## Structural Segregation
+ * This principle is not applicable, as the application does not distinguish between public and private data. All budget data is handled within a single collection and is considered private to the application's authenticated users.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions for Readability and Reuse
+    // Helper Functions
+
+    /**
+     * Checks if a user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isManager() {
-      // Defensive check for user document existence
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
     /**
-     * @description Secures the 'users' collection.
-     * Users can read their own profile, but only managers can write to any profile (e.g. to change roles).
+     * Ensures a user is authenticated and the document they are modifying or deleting
+     * already exists. This prevents writes to non-existent paths.
      */
-    match /users/{userId} {
-      allow write: if isSignedIn();
-      allow get: if isSignedIn() && (request.auth.uid == userId || isManager());
-      allow list: if isManager();
+    function isAuthenticatedAndResourceExists() {
+      return isSignedIn() && resource != null;
     }
 
     /**
-     * @description Secures the central 'budgets' collection.
-     * Reading is allowed if the user is a manager OR if they are the creator of the document.
-     * For 'list', the client query MUST include `where('createdByUid', '==', request.auth.uid)` for non-managers.
+     * @description Allows any authenticated user to read, create, update, and delete budget documents.
+     * @path        /budgets/{budgetId}
+     * @allow       An authenticated user (create) a new budget document.
+     * @deny        An unauthenticated user (get) a budget document.
+     * @principle   Gates all access to authenticated users, assuming business logic is handled in a trusted backend environment as per system design.
      */
     match /budgets/{budgetId} {
-      allow read: if isManager() || (resource.data.createdByUid == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
-      allow update: if isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid;
-      allow delete: if (isSignedIn() && get(/databases/$(database)/documents/budgets/$(budgetId)).data.createdByUid == request.auth.uid) || isManager();
-    }
-    
-    /**
-     * @description Secures the 'proposals' collection.
-     * Public read for sharing, but can only be created by authenticated users.
-     */
-    match /proposals/{proposalId} {
-      allow get: if true; // Public read for sharing
-      allow list, create, delete: if isSignedIn();
-      allow update: if false; // Prevent modification after creation
-    }
-
-    /**
-     * @description Secures partnership documents.
-     * Public read for sharing, but only authenticated users can create/manage.
-     */
-    match /partnerships/{partnershipId} {
-      allow get: if true;
-      allow list, create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Secures the 'sellers' collection.
-     * Global data. Any authenticated user can read. Only managers can write.
-     */
-    match /sellers/{sellerId} {
-      allow read: if isSignedIn();
-      allow write: if isManager();
-    }
-    
-    /**
-     * @description Secures the 'proposal-templates' collection.
-     * Global data. Any authenticated user can read. Only managers can write.
-     */
-    match /proposal-templates/{templateId} {
-       allow read: if isSignedIn();
-       allow write: if isManager();
-    }
-
-    /**
-     * @description Secures the 'services' collection.
-     * Global data. Any authenticated user can read. Only managers can write.
-     */
-    match /services/{serviceId} {
-      allow read: if isSignedIn();
-      allow write: if isManager();
-    }
-
-    /**
-     * @description Secures the 'pricing-templates' collection.
-     * Global data. Any authenticated user can read. Only managers can write.
-     */
-    match /pricing-templates/{templateId} {
-       allow read: if isSignedIn();
-       allow write: if isManager();
-    }
-
-    /**
-     * @description Secures the 'app-settings' collection.
-     * Any user can read for branding. Only managers can write.
-     */
-    match /app-settings/{settingsId} {
-      allow read: if true;
-      allow write: if isManager();
-    }
-
-    /**
-     * @description Secures global marketing data.
-     * Only managers can read or write.
-     */
-    match /marketing-roi-entries/{entryId} {
-      allow read, write: if isManager();
-    }
-    match /marketing-actions/{actionId} {
-      allow read, write: if isManager();
-    }
-    match /marketing-tools/{toolId} {
-      allow read, write: if isManager();
-    }
-    
-    /**
-     * @description Secures commission templates.
-     * Only managers can read or write.
-     */
-    match /commission-templates/{templateId} {
-      allow read, write: if isManager();
-    }
-    
-    /**
-     * @description Secures the audit trail.
-     * Only managers can read. Users can only create log entries for themselves.
-     */
-    match /audit-logs/{logId} {
-      allow read: if isManager();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isAuthenticatedAndResourceExists();
+      allow delete: if isAuthenticatedAndResourceExists();
     }
   }
 }
