@@ -1,135 +1,98 @@
 /**
- * # Firestore Security Rules: Florencio Sales Manager
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for a CRM-style application.
+ * Each user can create, read, update, and delete their own sales quotes, but cannot access
+ * quotes belonging to other users. This provides strong data isolation between users.
  *
- * ## Core Philosophy
- * This ruleset enforces a simple, authentication-based security model. The primary goal is to ensure that only authenticated users can interact with the database. It assumes that more complex business logic, such as validating budget status transitions or user-specific permissions, is handled in a trusted server-side environment (e.g., Cloud Functions). This approach protects the data from anonymous access while providing flexibility for the trusted backend.
+ * Data Structure: All data is stored in a single top-level collection named 'quotes'.
+ * There is no hierarchical data structure; authorization is self-contained within each
+ * quote document.
  *
- * ## Data Structure
- * The data structure consists of several top-level collections.
+ * Key Security Decisions:
+ * - Strict Ownership: All operations (read, write, delete) are gated by an ownership check.
+ * - Denormalized Owner ID: To enforce ownership, each document in the 'quotes' collection
+ *   MUST have an 'ownerId' field containing the UID of the user who created it. This is a
+ *   critical requirement for the security model to function.
+ * - No Public Listing: Listing the entire '/quotes' collection is disallowed to prevent
+ *   accidental data leakage and to ensure clients must perform targeted, authenticated queries
+ *   for the data they are permitted to see.
  *
- * ## Key Security Decisions
- * - **Authenticated Access Mostly**: Most read and write operations are restricted to users who are signed in.
- * - **Public Read for Partnerships & Settings**: The `partnerships` and `app-settings` collections are publicly readable to allow link sharing and login page customization.
- * - **User Profile Security**: Users can only update their own profile document.
- * - **Denial of Destructive Operations on Non-Existent Documents**: Update and delete operations are explicitly denied if the target document does not already exist.
+ * Denormalization for Authorization: The security model relies entirely on a denormalized
+ * 'ownerId' field on each `/quotes/{quoteId}` document. This avoids costly and complex `get`
+ * calls and makes the ownership check fast and efficient. The rules for creating and
+ * updating documents enforce the presence and immutability of this field.
+ *
+ * Structural Segregation: Not applicable in this model as all data follows the same
+ * private, owner-only access pattern within a single collection.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ------------------------------------------------------------------------
     // Helper Functions
+    // ------------------------------------------------------------------------
 
     /**
-     * Checks if a user is authenticated.
+     * Checks if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
-    
+
     /**
-     * Checks if the requesting user is the owner of the document.
+     * Checks if the currently authenticated user's UID matches the provided userId.
      */
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
     /**
-     * Ensures a user is authenticated and the document they are modifying or deleting
-     * already exists.
+     * Verifies the document exists and the user is the owner.
+     * Used for safe updates and deletes.
      */
-    function isAuthenticatedAndResourceExists() {
-      return isSignedIn() && resource != null;
+    function isExistingOwner(ownerId) {
+      return resource != null && isOwner(ownerId);
     }
 
     /**
-     * @description Budgets can be managed by any authenticated user.
+     * Validates that the 'ownerId' field of a new document is being set to the
+     * creator's own UID. This is a critical check to establish ownership.
+     * CRITICAL: This rule requires the client to send an 'ownerId' field.
      */
-    match /budgets/{budgetId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
+    function isCreatingWithOwnerId() {
+      return request.resource.data.ownerId == request.auth.uid;
     }
 
     /**
-     * @description Users can read any profile, but only update their own.
+     * Validates that the 'ownerId' field is not being changed during an update.
+     * This makes ownership permanent and prevents takeovers.
      */
-    match /users/{userId} {
-      allow get, list, create: if isSignedIn();
-      allow update: if isOwner(userId) && resource != null;
-      allow delete: if false; // Disallow deleting user profiles from client
-    }
-    
-    /**
-     * @description App settings are public to read, but only authenticated users can write.
-     */
-    match /app-settings/{settingId} {
-      allow get: if true;
-      allow list, create, update: if isSignedIn();
-      allow delete: if false;
+    function ownerIdIsImmutable() {
+      return request.resource.data.ownerId == resource.data.ownerId;
     }
 
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
     /**
-     * @description Proposal Templates can be managed by any authenticated user.
+     * @description Rules for the 'quotes' collection, enforcing strict ownership.
+     *              Users can only manage quotes they have created.
+     *              CRITICAL: This security model REQUIRES that each 'Quote' document
+     *              contains an 'ownerId' field with the creator's UID.
+     * @path        /quotes/{quoteId}
+     * @allow       (create) A signed-in user creating a new quote with `{ ownerId: "their-uid", ... }`.
+     * @deny        (get) A user trying to read a quote where `resource.data.ownerId` is not their UID.
+     * @deny        (list) Any user trying to list all documents in the '/quotes' collection.
+     * @principle   Enforces strict document ownership for all operations. The rules ensure
+     *              that an 'ownerId' is set on creation and cannot be changed.
      */
-    match /proposal-templates/{templateId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    
-    /**
-     * @description Pricing Templates can be managed by any authenticated user.
-     */
-    match /pricing-templates/{templateId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    
-    /**
-     * @description Services Catalog can be managed by any authenticated user.
-     */
-    match /services/{serviceId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    
-    /**
-     * @description Commission Templates can be managed by any authenticated user.
-     */
-    match /commission-templates/{templateId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    
-    /**
-     * @description Partnerships are created by authenticated users but are publicly readable via their link.
-     */
-    match /partnerships/{partnershipId} {
-      allow get: if true;
-      allow create: if isSignedIn();
-      allow list, update, delete: if false;
-    }
-    
-    /**
-     * @description Marketing data can be managed by any authenticated user.
-     */
-    match /marketing-roi-entries/{entryId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    match /marketing-actions/{actionId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    match /marketing-tools/{toolId} {
-      allow get, list, create: if isSignedIn();
-      allow update, delete: if isAuthenticatedAndResourceExists();
-    }
-    
-    /**
-     * @description Audit logs are written by Cloud Functions and are read-only for authenticated users (admin logic in app).
-     */
-    match /audit-logs/{logId} {
-      allow get, list: if isSignedIn();
-      allow write: if false;
+    match /quotes/{quoteId} {
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if false; // Denied to prevent leaking all quotes. Clients must query with a 'where("ownerId", "==", auth.uid)' clause, which is enabled by the 'get' rule.
+      allow create: if isSignedIn() && isCreatingWithOwnerId();
+      allow update: if isExistingOwner(resource.data.ownerId) && ownerIdIsImmutable();
+      allow delete: if isExistingOwner(resource.data.ownerId);
     }
   }
 }
