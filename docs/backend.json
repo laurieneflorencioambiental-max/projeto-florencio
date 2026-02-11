@@ -1,54 +1,47 @@
 {
   "entities": {
-    "Quote": {
+    "Budget": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Quote",
+      "title": "Budget",
       "type": "object",
-      "description": "Represents a sales quote in the system.",
+      "description": "Represents a sales budget within the Florencio Sales Manager application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the quote."
+          "description": "Unique identifier for the Budget entity."
         },
         "customerName": {
           "type": "string",
-          "description": "Name of the customer associated with the quote."
+          "description": "The name of the customer associated with the budget."
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the quote."
+          "description": "Detailed description of the budget."
         },
         "amount": {
           "type": "number",
-          "description": "The total amount of the quote."
+          "description": "The total monetary value of the budget."
         },
         "status": {
           "type": "string",
-          "description": "The current status of the quote (e.g., New, Pending, Approved, Loss, Rejected)."
+          "description": "Current status of the budget (e.g., New, Pending, Approved, Loss, Rejected)."
         },
         "rejectionReason": {
           "type": "string",
-          "description": "The reason for rejection, if the quote is rejected."
+          "description": "The reason for rejection, if the budget was rejected."
         },
-        "followUpHistory": {
-          "type": "array",
-          "description": "An array of follow-up events for this quote.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
+        "followUpDate": {
           "type": "string",
-          "description": "The date and time the quote was created.",
+          "description": "Date for a scheduled follow-up.  Can be used to track when the follow-up email/message was sent.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
         "customerName",
+        "description",
         "amount",
-        "status",
-        "createdAt"
+        "status"
       ]
     }
   },
@@ -61,22 +54,26 @@
   "firestore": {
     "structure": [
       {
-        "path": "/quotes/{quoteId}",
+        "path": "/users/{userId}/budgets/{budgetId}",
         "definition": {
-          "entityName": "Quote",
+          "entityName": "Budget",
           "schema": {
-            "$ref": "#/backend/entities/Quote"
+            "$ref": "#/backend/entities/Budget"
           },
-          "description": "Stores sales quotes with Kanban status. Supports QAPs through the `status` field. The entire document is self-contained for authorization.",
+          "description": "Stores budget information for a specific user. Path-based ownership ensures only the user can access their budgets.",
           "params": [
             {
-              "name": "quoteId",
-              "description": "Unique identifier for the quote."
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique identifier for the budget."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to manage sales quotes and their status within a Kanban board. A single collection `quotes` stores all quote documents. The structure ensures authorization independence by not relying on hierarchical data access. Security rules can be written to allow only authorized users (e.g., sales representatives) to create, read, update, and delete quotes. Segregation is implicitly achieved as all quotes reside in the same collection with similar access needs (subject to status-based rules). The `status` field is used for QAPs. Follow-up history is embedded within the quote document."
+    "reasoning": "The Firestore structure is designed to manage sales budgets within the Florencio Sales Manager application, prioritizing security, scalability, and ease of debugging. It emphasizes Authorization Independence by avoiding hierarchical authorization dependencies (`get()`) and ensures clear authorization intent. The structure also facilitates secure `list` operations and maintains data integrity.\n\nAuthorization Independence is achieved by avoiding nested data structures that would require `get()` calls in security rules. All data relevant to authorization for a given document is contained within that document itself or can be derived from the document's path (e.g., user ID from `/users/{userId}`).\n\nQAPs (Rules are not Filters) are supported by ensuring that list operations can be performed securely without filtering data based on document content. Private user data is stored under path-based ownership (`/users/{userId}/budgets/{budgetId}`). This ensures that only the user has access to their budgets, preventing unauthorized access through listing operations.\n\nThe structure uses structural segregation by placing budgets into a single collection under the user ID. This ensures that all budgets in a given collection share the same security posture, simplifying security rules.\n\nExplicit State Modeling is implemented using the `status` field in the `Budget` entity, enabling clear tracking of the budget's lifecycle (New, Pending, Approved, Loss, Rejected).\n\nThe structure is designed for clarity and debuggability, with semantic naming conventions and standardized authorization fields."
   }
 }
