@@ -1,1 +1,10 @@
-{}
+runConfig:
+  minInstances: 0
+backend:
+  image: us-central1-docker.pkg.dev/studio-4254367347-1a796/apphosting/nextn:latest
+  serviceAccount: 815408673372-compute@developer.gserviceaccount.com
+labels:
+  managed-by: firebase
+  firebase-project-id: studio-4254367347-1a796
+  firebase-app-id: 1:815408673372:web:44b8bdab1310fa06b2ec99
+env: []
