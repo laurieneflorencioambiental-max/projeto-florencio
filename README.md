@@ -4,7 +4,4 @@ This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
 
-<!-- This comment is to trigger a new deployment -->
-<!-- Forçando uma nova implantação para resolver o bloqueio de publicação. -->
-<!-- Final attempt to force a clean build. -->
-<!-- Reverting apphosting.yaml to original state and forcing a clean publish. -->
+<!-- Final attempt to force a clean build and resolve publishing lock. -->
