@@ -1,98 +1,89 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model for a CRM-style application.
- * Each user can create, read, update, and delete their own sales quotes, but cannot access
- * quotes belonging to other users. This provides strong data isolation between users.
- *
- * Data Structure: All data is stored in a single top-level collection named 'quotes'.
- * There is no hierarchical data structure; authorization is self-contained within each
- * quote document.
- *
- * Key Security Decisions:
- * - Strict Ownership: All operations (read, write, delete) are gated by an ownership check.
- * - Denormalized Owner ID: To enforce ownership, each document in the 'quotes' collection
- *   MUST have an 'ownerId' field containing the UID of the user who created it. This is a
- *   critical requirement for the security model to function.
- * - No Public Listing: Listing the entire '/quotes' collection is disallowed to prevent
- *   accidental data leakage and to ensure clients must perform targeted, authenticated queries
- *   for the data they are permitted to see.
- *
- * Denormalization for Authorization: The security model relies entirely on a denormalized
- * 'ownerId' field on each `/quotes/{quoteId}` document. This avoids costly and complex `get`
- * calls and makes the ownership check fast and efficient. The rules for creating and
- * updating documents enforce the presence and immutability of this field.
- *
- * Structural Segregation: Not applicable in this model as all data follows the same
- * private, owner-only access pattern within a single collection.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
-    // Helper Functions
-    // ------------------------------------------------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
+    // Helper function to check if a user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    
+    // Helper function to check if the requester is an admin.
+    // This reads the user's own profile document to check the `isAdmin` flag.
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    /**
-     * Verifies the document exists and the user is the owner.
-     * Used for safe updates and deletes.
-     */
-    function isExistingOwner(ownerId) {
-      return resource != null && isOwner(ownerId);
+    // Users can read their own profile. Admins can read any user's profile.
+    // Users can update their own profile (e.g., display name, photo).
+    match /users/{userId} {
+      allow get: if request.auth.uid == userId || isAdmin();
+      allow list: if isAdmin();
+      allow update: if request.auth.uid == userId;
+      // Creation/deletion should be handled securely, e.g., via a Cloud Function or manually.
+      allow create, delete: if false;
     }
 
-    /**
-     * Validates that the 'ownerId' field of a new document is being set to the
-     * creator's own UID. This is a critical check to establish ownership.
-     * CRITICAL: This rule requires the client to send an 'ownerId' field.
-     */
-    function isCreatingWithOwnerId() {
-      return request.resource.data.ownerId == request.auth.uid;
+    // Budgets (Leads) can be managed by their creator or any admin.
+    match /budgets/{budgetId} {
+      // Users can list and read budgets. The app's queries MUST enforce filtering for non-admins.
+      allow read: if isSignedIn();
+      
+      // A user can only create a budget with their own UID as the creator.
+      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
+      
+      // Only the document creator or an admin can update or delete it.
+      allow update, delete: if isSignedIn() && (resource.data.createdByUid == request.auth.uid || isAdmin());
     }
 
-    /**
-     * Validates that the 'ownerId' field is not being changed during an update.
-     * This makes ownership permanent and prevents takeovers.
-     */
-    function ownerIdIsImmutable() {
-      return request.resource.data.ownerId == resource.data.ownerId;
+    // Templates and services can be read by any authenticated user for creating proposals.
+    // Only admins can create, update, or delete them.
+    match /proposal-templates/{templateId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    // ------------------------------------------------------------------------
-    // Collection Rules
-    // ------------------------------------------------------------------------
+    match /services/{serviceId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    // Pricing and commission templates are for admin use only.
+    match /pricing-templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
 
-    /**
-     * @description Rules for the 'quotes' collection, enforcing strict ownership.
-     *              Users can only manage quotes they have created.
-     *              CRITICAL: This security model REQUIRES that each 'Quote' document
-     *              contains an 'ownerId' field with the creator's UID.
-     * @path        /quotes/{quoteId}
-     * @allow       (create) A signed-in user creating a new quote with `{ ownerId: "their-uid", ... }`.
-     * @deny        (get) A user trying to read a quote where `resource.data.ownerId` is not their UID.
-     * @deny        (list) Any user trying to list all documents in the '/quotes' collection.
-     * @principle   Enforces strict document ownership for all operations. The rules ensure
-     *              that an 'ownerId' is set on creation and cannot be changed.
-     */
-    match /quotes/{quoteId} {
-      allow get: if isOwner(resource.data.ownerId);
-      allow list: if false; // Denied to prevent leaking all quotes. Clients must query with a 'where("ownerId", "==", auth.uid)' clause, which is enabled by the 'get' rule.
-      allow create: if isSignedIn() && isCreatingWithOwnerId();
-      allow update: if isExistingOwner(resource.data.ownerId) && ownerIdIsImmutable();
-      allow delete: if isExistingOwner(resource.data.ownerId);
+    match /commission-templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // All marketing-related data is for admin use only.
+    match /marketing-actions/{id}      { allow read, write: if isAdmin(); }
+    match /marketing-roi-entries/{id} { allow read, write: if isAdmin(); }
+    match /marketing-tools/{id}       { allow read, write: if isAdmin(); }
+
+    // App settings need to be publicly get-able for login screen styling, but only writable by admins.
+    match /app-settings/{settingId} {
+      allow get: if true;
+      allow write: if isAdmin();
+    }
+
+    // Generated proposals and partnership links must be publicly readable.
+    // Creation is handled within the app by authenticated users.
+    match /proposals/{proposalId} {
+      allow get: if true;
+      allow create: if isSignedIn();
+    }
+    
+    match /partnerships/{partnershipId} {
+        allow get: if true;
+        allow create: if isAdmin();
+    }
+
+    // Audit logs are written by a backend function and should only be readable by admins.
+    match /audit-logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; 
     }
   }
 }
