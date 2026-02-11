@@ -1,25 +1,5 @@
-/**
- * # Firestore Security Rules
- *
- * ## Core Philosophy
- * This ruleset enforces a strict user-ownership security model. All application data is private and scoped directly to the authenticated user who created it. There is no concept of public data or shared access between users. The default security posture is to deny all access unless explicitly granted by a rule.
- *
- * ## Data Structure
- * The data is organized hierarchically under a top-level `users` collection. All user-specific data, such as `budgets`, is stored in subcollections within their own user document path (e.g., `/users/{userId}/budgets/{budgetId}`). This structure ensures that a user's data is logically and securely partitioned from all other users' data.
- *
- * ## Key Security Decisions
- * - **Strict User Scoping**: A user can only read or write data that exists within their own document tree (i.e., `/users/{their-own-userId}/...`).
- * - **No User Listing**: It is not possible to list the documents in the top-level `/users` collection, preventing enumeration of the application's user base.
- * - **Path-Based Authorization**: Authorization is determined by the document's path, specifically the `{userId}` wildcard. This avoids the need for slow and costly `get()` calls to other documents for authorization checks.
- * - **Deny by Default**: Any request to a path not explicitly defined in these rules will be rejected.
- *
- * ## Denormalization for Authorization
- * The current model relies entirely on path-based authorization. The `userId` in the path (e.g., `/users/{userId}`) is the sole source of truth for ownership. This is highly performant as it requires no extra document reads to verify access. For this prototype, documents do not need to contain a redundant `userId` field, as authorization is enforced at the path level.
- *
- * ## Structural Segregation
- * Data is segregated by user into private subcollections. All budgets for a user are stored in `/users/{userId}/budgets`, ensuring a consistent and simple security posture for all documents within that collection path. This segregation makes it safe to allow list operations, as they are inherently scoped to the authenticated user's private data.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -27,52 +7,102 @@ service cloud.firestore {
     // Helper Functions
     // ------------------------------------------------------------------------
 
-    /**
-     * Checks if a user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the given userId.
-     * This is the core function for enforcing user-specific data ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks for ownership on an existing document.
-     * Ensures that update and delete operations only target documents that
-     * already exist and are owned by the user.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    function isAdmin() {
+      // Check a user's document in the 'users' collection for an 'isAdmin' flag.
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
-
 
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
 
-    /**
-     * @description Rules for the `budgets` subcollection, which contains private
-     *              sales budgets for each user.
-     * @path        /users/{userId}/budgets/{budgetId}
-     * @allow       (create) A signed-in user creates a new budget document inside
-     *              their own `/users/{userId}/budgets` path.
-     * @deny        (get) A user attempts to read a budget from another user's path,
-     *              e.g., `/users/another-user-id/budgets/some-budget-id`.
-     * @principle   Restricts all access (read, write) to a user's own data tree,
-     *              enforcing strict data privacy and ownership.
-     */
-    match /users/{userId}/budgets/{budgetId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+    // User profiles
+    match /users/{userId} {
+      // Admins can read any user profile for management.
+      // A regular user can only read their own profile.
+      allow get: if isAdmin() || isOwner(userId);
+
+      // Only Admins can list all users (e.g., for analytics or user management).
+      allow list: if isAdmin();
+      
+      // A user can update their own profile (displayName, photoURL, presence).
+      // An admin can update any user's profile (e.g., to grant admin rights).
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Disallow client-side creation or deletion of user profiles to maintain integrity.
+      allow create, delete: if false;
+    }
+
+    // Budgets (Leads)
+    match /budgets/{budgetId} {
+      // An admin can get any budget. A user can only get a budget they created.
+      allow get: if isSignedIn() && (isAdmin() || resource.data.createdByUid == request.auth.uid);
+      
+      // Admins can list all budgets. Users must filter to their own budgets in the query.
+      allow list: if isSignedIn(); 
+
+      // Any authenticated user can create a budget.
+      allow create: if isSignedIn();
+
+      // An admin or the creator of the budget can update or delete it.
+      allow update, delete: if isSignedIn() && (isAdmin() || resource.data.createdByUid == request.auth.uid);
+    }
+    
+    // Services in the catalog
+    match /services/{serviceId} {
+        // Admins can manage the service catalog.
+        allow write: if isAdmin();
+        // Any authenticated user can read the catalog.
+        allow read: if isSignedIn();
+    }
+
+    // Templates for proposals, pricing, and commissions
+    match /proposal-templates/{templateId} {
+        allow write: if isAdmin();
+        allow read: if isSignedIn();
+    }
+    match /pricing-templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
+    match /commission-templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // Publicly sharable documents
+    match /proposals/{proposalId} {
+      allow get: if true; // Anyone with the link can view.
+      allow create: if isSignedIn();
+      allow list, update, delete: if false;
+    }
+    match /partnerships/{partnershipId} {
+        allow get: if true; // Anyone with the link can view.
+        allow create: if isAdmin();
+        allow list, update, delete: if false;
+    }
+
+    // Global application settings
+    match /app-settings/global {
+      allow get: if true; // Readable by anyone for UI config (logos, etc.).
+      allow write: if isAdmin(); // Writable only by admins.
+    }
+    
+    // Marketing related collections
+    match /marketing-roi-entries/{entryId} { allow read, write: if isAdmin(); }
+    match /marketing-actions/{actionId} { allow read, write: if isAdmin(); }
+    match /marketing-tools/{toolId} { allow read, write: if isAdmin(); }
+
+    // Audit logs
+    match /audit-logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Written by Cloud Function only.
     }
   }
 }
