@@ -5,20 +5,13 @@
  * This ruleset enforces a simple, authentication-based security model. The primary goal is to ensure that only authenticated users can interact with the database. It assumes that more complex business logic, such as validating budget status transitions or user-specific permissions, is handled in a trusted server-side environment (e.g., Cloud Functions). This approach protects the data from anonymous access while providing flexibility for the trusted backend.
  *
  * ## Data Structure
- * The data structure is flat, consisting of a single top-level collection:
- * - `/budgets/{budgetId}`: Stores all budget documents for the application.
+ * The data structure consists of several top-level collections.
  *
  * ## Key Security Decisions
- * - **Authenticated Access Only**: All read and write operations on the `/budgets` collection are restricted to users who are signed in. Unauthenticated or anonymous access is completely denied.
- * - **No User-Specific Ownership**: The rules do not enforce document ownership because the `Budget` entity lacks an `ownerId` or `creatorId` field. This aligns with the system design where business logic is managed by a central, trusted backend rather than granting individual users direct, fine-grained control over specific documents.
- * - **Flexible Data Schema**: In this prototyping stage, the rules do not validate the specific shape or data types of the `Budget` documents. The focus is strictly on authorization (who can access the data), not on schema enforcement.
- * - **Denial of Destructive Operations on Non-Existent Documents**: Update and delete operations are explicitly denied if the target document does not already exist, preventing unintended side effects.
- *
- * ## Denormalization for Authorization
- * This principle is not applicable to the current data model, as there are no relational data dependencies that would require denormalization for security rule checks. All authorization is based solely on the user's authentication state.
- *
- * ## Structural Segregation
- * This principle is not applicable, as the application does not distinguish between public and private data. All budget data is handled within a single collection and is considered private to the application's authenticated users.
+ * - **Authenticated Access Mostly**: Most read and write operations are restricted to users who are signed in.
+ * - **Public Read for Partnerships & Settings**: The `partnerships` and `app-settings` collections are publicly readable to allow link sharing and login page customization.
+ * - **User Profile Security**: Users can only update their own profile document.
+ * - **Denial of Destructive Operations on Non-Existent Documents**: Update and delete operations are explicitly denied if the target document does not already exist.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -32,28 +25,111 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    
+    /**
+     * Checks if the requesting user is the owner of the document.
+     */
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
 
     /**
      * Ensures a user is authenticated and the document they are modifying or deleting
-     * already exists. This prevents writes to non-existent paths.
+     * already exists.
      */
     function isAuthenticatedAndResourceExists() {
       return isSignedIn() && resource != null;
     }
 
     /**
-     * @description Allows any authenticated user to read, create, update, and delete budget documents.
-     * @path        /budgets/{budgetId}
-     * @allow       An authenticated user (create) a new budget document.
-     * @deny        An unauthenticated user (get) a budget document.
-     * @principle   Gates all access to authenticated users, assuming business logic is handled in a trusted backend environment as per system design.
+     * @description Budgets can be managed by any authenticated user.
      */
     match /budgets/{budgetId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+
+    /**
+     * @description Users can read any profile, but only update their own.
+     */
+    match /users/{userId} {
+      allow get, list, create: if isSignedIn();
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if false; // Disallow deleting user profiles from client
+    }
+    
+    /**
+     * @description App settings are public to read, but only authenticated users can write.
+     */
+    match /app-settings/{settingId} {
+      allow get: if true;
+      allow list, create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    /**
+     * @description Proposal Templates can be managed by any authenticated user.
+     */
+    match /proposal-templates/{templateId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    
+    /**
+     * @description Pricing Templates can be managed by any authenticated user.
+     */
+    match /pricing-templates/{templateId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    
+    /**
+     * @description Services Catalog can be managed by any authenticated user.
+     */
+    match /services/{serviceId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    
+    /**
+     * @description Commission Templates can be managed by any authenticated user.
+     */
+    match /commission-templates/{templateId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    
+    /**
+     * @description Partnerships are created by authenticated users but are publicly readable via their link.
+     */
+    match /partnerships/{partnershipId} {
+      allow get: if true;
       allow create: if isSignedIn();
-      allow update: if isAuthenticatedAndResourceExists();
-      allow delete: if isAuthenticatedAndResourceExists();
+      allow list, update, delete: if false;
+    }
+    
+    /**
+     * @description Marketing data can be managed by any authenticated user.
+     */
+    match /marketing-roi-entries/{entryId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    match /marketing-actions/{actionId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    match /marketing-tools/{toolId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isAuthenticatedAndResourceExists();
+    }
+    
+    /**
+     * @description Audit logs are written by Cloud Functions and are read-only for authenticated users (admin logic in app).
+     */
+    match /audit-logs/{logId} {
+      allow get, list: if isSignedIn();
+      allow write: if false;
     }
   }
 }
