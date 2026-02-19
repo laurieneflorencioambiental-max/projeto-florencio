@@ -4,4 +4,4 @@ This is a NextJS starter in Firebase Studio.
 
 To get started, take a look at src/app/page.tsx.
 
-<!-- Forçando uma nova implantação limpa para resolver o estado travado do backend. -->
+<!-- Forçando uma nova implantação limpa para resolver erros de cache do webpack. -->

@@ -1,0 +1,14 @@
+# Query: let interval: Interval
+# ContextLines: 1
+
+2 results - 2 files
+
+src/app/analytics/page.tsx:
+  94      const now = new Date();
+  95:     let interval: { start: Date; end: Date };
+  96      switch (filter) {
+
+src/app/audit/page.tsx:
+  101        const now = new Date();
+  102:       let interval: Interval;
+  103        switch (filterPeriod) {
