@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useFirestore, initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
-import type { ProposalData, Plan, Exam, AppSettings } from '@/lib/types';
+import type { ProposalData, Plan, AppSettings } from '@/lib/types';
 import {
   Loader2,
   Leaf,
@@ -423,7 +423,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {proposalState.exams.map((exam: Exam, index: number) => (
+                    {proposalState.exams.map((exam: any, index: number) => (
                       <tr
                         key={exam.id}
                         className={cn(

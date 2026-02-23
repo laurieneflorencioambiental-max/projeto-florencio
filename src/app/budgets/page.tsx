@@ -58,7 +58,7 @@ type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
 
 const months = Array.from({ length: 12 }, (_, i) => ({
   value: i,
-  label: ptBR.localize?.month(i, { width: 'wide' }),
+  label: ptBR.localize?.month(i as any, { width: 'wide' }),
 }));
 
 export default function BudgetsPage() {

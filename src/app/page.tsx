@@ -375,7 +375,7 @@ export default function DashboardPage() {
                       <TableCell className="font-medium">{lead.company}</TableCell>
                       <TableCell>{lead.createdBy}</TableCell>
                       <TableCell className="text-right font-bold text-amber-600">
-                        {isClient ? differenceInDays(new Date(), toDate((lead.versionHistory?.slice(-1)[0] || lead).editedAt || lead.createdAt)!) : '...'}
+                        {isClient ? differenceInDays(new Date(), toDate(((lead.versionHistory?.slice(-1)[0] as any)?.editedAt) || (lead as any).editedAt || lead.createdAt)!) : '...'}
                       </TableCell>
                     </TableRow>
                   ))
@@ -412,6 +412,7 @@ export default function DashboardPage() {
       </div>
 
        <AddLeadModal
+        proposalTemplates={[]}
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}

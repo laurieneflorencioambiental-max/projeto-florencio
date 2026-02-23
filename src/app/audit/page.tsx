@@ -42,6 +42,7 @@ import {
   startOfYear,
   endOfYear,
 } from 'date-fns';
+import type { Interval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -99,7 +100,7 @@ export default function AuditPage() {
       if (!isClient) return []; // Defer date-sensitive logic to client
 
       const now = new Date();
-      let interval: Interval;
+      let interval: Interval | null = null;
       switch (filterPeriod) {
         case 'today':
           interval = { start: startOfDay(now), end: endOfDay(now) };

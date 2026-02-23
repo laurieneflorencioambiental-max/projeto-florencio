@@ -141,7 +141,7 @@ export default function KanbanCard({
   const getContactSourceInfo = () => {
     const { source, indicatedBy } = lead.contactSource;
     let icon = <Users className="h-4 w-4 text-muted-foreground" />;
-    let text = source;
+    let text: string = source;
     if (source === 'Indicação' && indicatedBy) {
       icon = <UserCheck className="h-4 w-4 text-muted-foreground" />;
       text = `${source} (${indicatedBy})`;

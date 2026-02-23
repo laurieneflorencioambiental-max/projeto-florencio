@@ -42,6 +42,7 @@ import {
   endOfYear,
   isWithinInterval,
 } from 'date-fns';
+import type { Interval } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
@@ -92,7 +93,7 @@ export default function AnalyticsPage() {
     }
     
     const now = new Date();
-    let interval: Interval;
+    let interval: Interval | null = null;
     switch (filter) {
       case 'today':
         interval = { start: startOfDay(now), end: endOfDay(now) };
@@ -250,7 +251,7 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="conversionRate" type="number" unit="%" />
                 <ChartTooltip
                   cursor={false}
-                  content={<ChartTooltipContent unit="%" hideIndicator />}
+                  content={<ChartTooltipContent hideIndicator />}
                 />
                 <Bar dataKey="conversionRate" fill="var(--color-conversion)" radius={4} />
               </BarChart>

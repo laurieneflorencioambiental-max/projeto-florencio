@@ -2,7 +2,7 @@
 
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase';
+import { initializeFirebase } from './init'; // Importação relativa para quebrar a dependência circular
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -10,9 +10,9 @@ interface FirebaseClientProviderProps {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
+    // Inicializa o Firebase no lado do cliente, apenas uma vez por montagem de componente.
     return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); // Array de dependências vazio garante que isso rode apenas uma vez
 
   return (
     <FirebaseProvider

@@ -246,7 +246,7 @@ export default function SettingsPage() {
 
     setIsUploading(prev => ({ ...prev, [imageType]: true }));
     try {
-      const oldUrl = appSettings?.[imageType];
+      const oldUrl = (appSettings as any)?.[imageType];
 
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
@@ -293,7 +293,7 @@ export default function SettingsPage() {
     const config = configMap[imageType];
 
     try {
-      const oldUrl = appSettings?.[imageType];
+      const oldUrl = (appSettings as any)?.[imageType];
 
       await setDoc(settingsRef, { [imageType]: null }, { merge: true });
 

@@ -1,9 +1,9 @@
 'use client';
 
-// Implementação e exportação da inicialização do Firebase
-export * from "./init";
+// Correção da exportação para evitar loop circular
+export { initializeFirebase } from "./init";
 
-// Re-exportação de hooks, provedores e utilitários
+// Re-exportação de hooks e provedores
 export * from "./provider";
 export * from "./client-provider";
 export * from "./non-blocking-login";

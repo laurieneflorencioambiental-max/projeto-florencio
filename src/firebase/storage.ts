@@ -1,11 +1,11 @@
 'use client';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, Storage } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { initializeFirebase } from '@/firebase';
 import { firebaseConfig } from './config';
 
-let storageInstance: Storage | null = null;
+let storageInstance: any | null = null;
 
-const getStorageInstance = (): Storage => {
+const getStorageInstance = (): any => {
     if (!storageInstance) {
         try {
             const { firebaseApp } = initializeFirebase();

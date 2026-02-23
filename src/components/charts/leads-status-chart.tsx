@@ -43,7 +43,7 @@ const chartConfig = statuses.reduce((acc, status) => {
 export default function LeadsStatusChart({ leads }: LeadsStatusChartProps) {
   const chartData = useMemo(() => {
     const statusCounts = leads.reduce((acc, lead) => {
-      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      acc[lead.status as Status] = (acc[lead.status as Status] || 0) + 1;
       return acc;
     }, {} as Record<Status, number>);
 
