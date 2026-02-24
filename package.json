@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "NODE_ENV=production next build",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
@@ -46,6 +46,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "18.2.0",
     "recharts": "^2.15.1",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"
