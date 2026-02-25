@@ -50,7 +50,7 @@ export default function RootLayout({
 
   const isInMaintenance = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
 
-  // Favicon SVG padrão com a cor da marca para evitar o flash do ícone padrão do Firebase durante o carregamento
+  // Favicon SVG padrão com a cor da marca
   const defaultFavicon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b7689' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='14' x='2' y='7' rx='2' ry='2'/%3E%3Cpath d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'/%3E%3C/svg%3E`;
 
   return (
@@ -63,7 +63,8 @@ export default function RootLayout({
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1b7689" />
-        <link rel="icon" href={defaultFavicon} />
+        {/* Forçamos o ícone no head para o carregamento inicial SSR */}
+        <link rel="icon" type="image/svg+xml" href={defaultFavicon} />
         <link rel="shortcut icon" href={defaultFavicon} />
         <link rel="apple-touch-icon" href={defaultFavicon} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
