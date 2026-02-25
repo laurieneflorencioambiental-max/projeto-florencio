@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -9,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import AppLayout from '@/components/layout/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
 import MaintenancePage from '@/components/maintenance-page';
+import { DynamicFavicon } from '@/components/dynamic-favicon';
 
 export default function RootLayout({
   children,
@@ -50,6 +50,9 @@ export default function RootLayout({
 
   const isInMaintenance = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
 
+  // Favicon SVG padrão com a cor da marca para evitar o flash do ícone padrão do Firebase durante o carregamento
+  const defaultFavicon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b7689' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='14' x='2' y='7' rx='2' ry='2'/%3E%3Cpath d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'/%3E%3C/svg%3E`;
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -60,6 +63,9 @@ export default function RootLayout({
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1b7689" />
+        <link rel="icon" href={defaultFavicon} />
+        <link rel="shortcut icon" href={defaultFavicon} />
+        <link rel="apple-touch-icon" href={defaultFavicon} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -76,6 +82,7 @@ export default function RootLayout({
           <MaintenancePage />
         ) : (
           <FirebaseClientProvider>
+            <DynamicFavicon />
             {isLoginPage || isProposalPage || isPartnershipPage ? (
               children
             ) : (
