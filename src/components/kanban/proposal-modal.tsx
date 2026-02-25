@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -106,11 +105,12 @@ export default function ProposalModal({
   };
 
   const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplateId(templateId); // Keep track of the selected template ID
+    // If templateId is 'none', we treat it as no template
+    const actualId = templateId === 'none' ? null : templateId;
+    setSelectedTemplateId(actualId);
 
-    const template = proposalTemplates.find(t => t.id === templateId);
+    const template = proposalTemplates.find(t => t.id === actualId);
     
-    // Reset to lead defaults if no template is selected
     const investmentText = lead.value > 0
         ? `
 <div class="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
@@ -149,14 +149,12 @@ export default function ProposalModal({
   };
 
   const resetState = () => {
-    const defaultTemplateId = lead.selectedTemplateId || '';
-    setSelectedTemplateId(defaultTemplateId);
+    const defaultTemplateId = lead.selectedTemplateId || 'none';
     handleTemplateChange(defaultTemplateId);
 
     let currentProposalNumber = lead.proposalNumber;
 
     if (!currentProposalNumber) {
-      // This is a simplified way to get the next number. In a real multi-user app, this should be handled by a backend.
       const highestProposalNumber = Math.max(
         0,
         ...allLeads.map(l => l.proposalNumber || 0)
@@ -169,7 +167,6 @@ export default function ProposalModal({
     const proposalId = `PTC-FLO-SST-${paddedNumber}.${version}`;
     setFullProposalNumber(proposalId);
 
-    // Update lead state if a new number was generated
     if (!lead.proposalNumber) {
       onUpdateLead({
         ...lead,
@@ -235,7 +232,6 @@ export default function ProposalModal({
         return proposalUrl;
       };
 
-      // Race the proposal generation against the timeout
       const result = await Promise.race([proposalGeneration(), timeoutPromise]);
       return result;
     } catch (error) {
@@ -299,7 +295,6 @@ Atenciosamente,
 *Grupo Florencio*`;
       url = `https://wa.me/${lead.whatsapp}?text=${encodeURIComponent(text)}`;
     } else {
-      // email
       const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
       const body = `Prezado(a) *${lead.name}*,
 
@@ -327,7 +322,7 @@ Grupo Florencio`;
   };
   
   const handleDownloadPdf = async () => {
-    const element = document.getElementById('proposal-container'); // Capture the whole container with covers
+    const element = document.getElementById('proposal-container');
     if (!element) {
         toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.' });
         return;
@@ -337,18 +332,18 @@ Grupo Florencio`;
 
     try {
         const canvas = await html2canvas(element, { 
-            scale: 2, // Higher scale for better quality
-            useCORS: true, // Important for external images
+            scale: 2,
+            useCORS: true,
             logging: false,
         });
         
         const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 210; // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
+        const imgWidth = 210;
+        const pageHeight = 297;
         const imgHeight = canvas.height * imgWidth / canvas.width;
         let heightLeft = imgHeight;
         
-        const pdf = new jsPDF('p', 'mm', 'a4', true); // 'true' for compression
+        const pdf = new jsPDF('p', 'mm', 'a4', true);
         let position = 0;
         
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
@@ -429,7 +424,7 @@ Grupo Florencio`;
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <Select
-                value={selectedTemplateId || ''}
+                value={selectedTemplateId || 'none'}
                 onValueChange={handleTemplateChange}
                 disabled={isGenerating}
               >
@@ -437,7 +432,7 @@ Grupo Florencio`;
                   <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
+                  <SelectItem value="none">Nenhum (usará proposta padrão)</SelectItem>
                   {proposalTemplates.map(template => (
                     <SelectItem key={template.id} value={template.id}>
                       {template.name}
@@ -480,7 +475,6 @@ Grupo Florencio`;
               style={{ color: '#596371', minHeight: '100%' }}
               id="proposal-content"
             >
-              {/* Cabeçalho da Proposta */}
               <header className="flex justify-between items-center pb-4 border-b">
                 <div>
                   {logoUrl ? (
@@ -513,7 +507,6 @@ Grupo Florencio`;
                 Esta proposta comercial detalha o escopo e os valores dos serviços, não substituindo um contrato formal. Caso necessário, um contrato de prestação de serviços será elaborado em etapa posterior.
               </p>
 
-              {/* Informações do Cliente */}
               <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Para:
@@ -530,7 +523,6 @@ Grupo Florencio`;
 
               <div className="border-b my-8"></div>
 
-              {/* Sobre Nós e Missão, Visão, Valores */}
               <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2">Sobre nós</h3>
                 <p className="text-sm leading-relaxed mt-4">
@@ -655,7 +647,7 @@ Grupo Florencio`;
                 <h3 className="text-lg font-semibold mt-6">Objetivo</h3>
                 <p className="text-sm leading-relaxed mt-4">
                   Temos por objetivo o compromisso em oferecer serviços de Saúde
-                  Ocupacional e Segurança do Trabalho com excelência e em
+                  Ocupacional e Segurança do Trabalho with excelência e em
                   conformidade com a legislação, promovendo ambientes
                   corporativos seguros, saudáveis e produtivos.
                 </p>
@@ -677,7 +669,6 @@ Grupo Florencio`;
                 </p>
               </section>
 
-              {/* Corpo da Proposta */}
               <section className="my-8 space-y-6">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Objeto da Proposta
@@ -722,7 +713,6 @@ Grupo Florencio`;
                 </div>
               </section>
 
-              {/* Investimento com Planos */}
               <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Investimento
@@ -853,7 +843,6 @@ Grupo Florencio`;
                 )}
               </section>
 
-              {/* Condições de Pagamento */}
               <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Condições de Pagamento
@@ -878,7 +867,6 @@ Grupo Florencio`;
 
               <div className="border-b my-8"></div>
 
-              {/* Termo de Aprovação */}
               <section className="my-8" style={{ breakBefore: 'page' }}>
                 <h3 className="text-lg font-semibold mb-4">
                   Termo de aprovação:
@@ -935,7 +923,6 @@ Grupo Florencio`;
                 </div>
               </section>
 
-              {/* Rodapé */}
               <footer className="text-center pt-8 border-t mt-8">
                 <p className="font-bold" style={{ color: '#1b7689' }}>
                   Grupo Florencio

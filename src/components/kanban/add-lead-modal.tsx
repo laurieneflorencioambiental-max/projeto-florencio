@@ -228,14 +228,17 @@ export default function AddLeadModal({
                   render={({ field }) => (
                   <FormItem>
                       <FormLabel>Modelo de Proposta Padrão</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                      <Select 
+                        onValueChange={value => field.onChange(value === 'none' ? null : value)} 
+                        defaultValue={field.value || 'none'}
+                      >
                       <FormControl>
                           <SelectTrigger>
                           <SelectValue placeholder="Nenhum (usará proposta padrão)" />
                           </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                          <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
+                          <SelectItem value="none">Nenhum (usará proposta padrão)</SelectItem>
                           {proposalTemplates.map(template => (
                               <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                           ))}

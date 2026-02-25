@@ -237,8 +237,8 @@ export default function EditLeadModal({
                   <FormItem>
                       <FormLabel>Modelo de Proposta Padrão</FormLabel>
                       <Select
-                      onValueChange={value => field.onChange(value === '' ? null : value)}
-                      value={field.value || ''}
+                        onValueChange={value => field.onChange(value === 'none' ? null : value)}
+                        value={field.value || 'none'}
                       >
                       <FormControl>
                           <SelectTrigger>
@@ -246,7 +246,7 @@ export default function EditLeadModal({
                           </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                          <SelectItem value="">Nenhum (usará proposta padrão)</SelectItem>
+                          <SelectItem value="none">Nenhum (usará proposta padrão)</SelectItem>
                           {proposalTemplates.map(template => (
                           <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                           ))}
