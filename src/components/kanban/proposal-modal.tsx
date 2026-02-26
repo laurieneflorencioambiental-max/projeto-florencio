@@ -105,7 +105,6 @@ export default function ProposalModal({
   };
 
   const handleTemplateChange = (templateId: string) => {
-    // If templateId is 'none', we treat it as no template
     const actualId = templateId === 'none' ? null : templateId;
     setSelectedTemplateId(actualId);
 
@@ -647,7 +646,7 @@ Grupo Florencio`;
                 <h3 className="text-lg font-semibold mt-6">Objetivo</h3>
                 <p className="text-sm leading-relaxed mt-4">
                   Temos por objetivo o compromisso em oferecer serviços de Saúde
-                  Ocupacional e Segurança do Trabalho with excelência e em
+                  Ocupacional e Segurança do Trabalho com excelência e em
                   conformidade com a legislação, promovendo ambientes
                   corporativos seguros, saudáveis e produtivos.
                 </p>
@@ -724,78 +723,58 @@ Grupo Florencio`;
                 )}
 
                 {proposalState.plans && proposalState.plans.length > 0 && (
-                  <div className="mt-4">
+                  <div className="mt-4 space-y-8">
                     <p className="text-sm mb-4">
                       Abaixo seguem as opções dos Planos, de acordo com a
                       estratégia financeira da sua empresa.
                     </p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse text-sm">
-                        <thead>
-                          <tr
-                            style={{ backgroundColor: '#1b7689' }}
-                            className="text-white"
-                          >
-                            <th className="p-3 text-left font-semibold">
-                              Planos
-                            </th>
-                            <th className="p-3 text-left font-semibold">
-                              Faixa de Funcionários
-                            </th>
-                            <th className="p-3 text-left font-semibold">
-                              Serviços Inclusos
-                            </th>
-                            <th className="p-3 text-left font-semibold">
-                              Investimento
-                            </th>
-                            <th className="p-3 text-center font-semibold">
-                              PG Único
-                            </th>
-                            <th className="p-3 text-center font-semibold">
-                              PG Mensal
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {proposalState.plans.map((plan, index) => (
-                            <tr
-                              key={plan.id}
-                              className={cn(
-                                'border-b',
-                                index % 2 === 0 ? 'bg-blue-50' : 'bg-blue-100'
-                              )}
-                              style={{
-                                borderColor: 'rgba(27, 118, 137, 0.2)',
-                              }}
-                            >
-                              <td className="p-3 align-top">{plan.name}</td>
-                              <td className="p-3 align-top">
-                                {plan.employeeRange}
-                              </td>
-                              <td className="p-3 align-top whitespace-pre-wrap">
-                                {plan.servicesIncluded}
-                              </td>
-                              <td className="p-3 align-top">
-                                {formatCurrency(plan.investment)}
-                              </td>
-                              <td className="p-3 text-center align-top">
-                                {plan.paymentType === 'unique' ? 'X' : ''}
-                              </td>
-                              <td className="p-3 text-center align-top">
-                                {plan.paymentType === 'monthly' ? 'X' : ''}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    
+                    {proposalState.plans.map((plan, index) => (
+                      <div key={plan.id} className="border rounded-lg overflow-hidden">
+                        <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>
+                          <span>{plan.name}</span>
+                          <span className="text-xs uppercase opacity-90">Modelo: {plan.paymentType === 'unique' ? 'Único' : 'Mensal'}</span>
+                        </div>
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/30">
+                          <div className="space-y-3">
+                            <div><p className="text-xs font-bold text-primary uppercase">Finalidade</p><p className="text-sm">{plan.purpose || 'N/A'}</p></div>
+                            <div><p className="text-xs font-bold text-primary uppercase">Diferencial</p><p className="text-sm">{plan.differentiator || 'N/A'}</p></div>
+                            <div><p className="text-xs font-bold text-primary uppercase">Foco</p><p className="text-sm">{plan.focus || 'N/A'}</p></div>
+                            <div><p className="text-xs font-bold text-primary uppercase">Faixa de Funcionários</p><p className="text-sm">{plan.employeeRange}</p></div>
+                          </div>
+                          <div className="space-y-3">
+                            <p className="text-xs font-bold text-primary uppercase">Serviços Inclusos</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                          </div>
+                        </div>
+                        
+                        {plan.extraServices && plan.extraServices.length > 0 && (
+                          <div className="p-4 border-t border-dashed bg-white">
+                            <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Serviços Adicionais (Pagos por fora)</p>
+                            <div className="grid grid-cols-1 gap-1">
+                              {plan.extraServices.map((es, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 last:border-0">
+                                  <span>{es.name}</span>
+                                  <span className="font-semibold">{formatCurrency(es.value)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
+                          <span className="font-bold text-sm">Investimento do Plano:</span>
+                          <span className="text-xl font-bold text-primary">{formatCurrency(plan.investment)}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
+                
                 {proposalState.exams && proposalState.exams.length > 0 && (
                   <div className="mt-8">
-                    <p className="text-sm mb-4">
-                      Abaixo seguem os valores de exames complementares (se
-                      aplicável).
+                    <p className="text-sm mb-4 font-semibold">
+                      Investimentos Adicionais - Exames/Serviços Avulsos (Gerais)
                     </p>
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-sm">
@@ -804,15 +783,9 @@ Grupo Florencio`;
                             style={{ backgroundColor: '#1b7689' }}
                             className="text-white"
                           >
-                            <th className="p-3 text-left font-semibold">
-                              Serviço
-                            </th>
-                            <th className="p-3 text-left font-semibold">
-                              Descrição
-                            </th>
-                            <th className="p-3 text-left font-semibold">
-                              Valor
-                            </th>
+                            <th className="p-3 text-left font-semibold">Serviço</th>
+                            <th className="p-3 text-left font-semibold">Descrição</th>
+                            <th className="p-3 text-left font-semibold">Valor</th>
                           </tr>
                         </thead>
                         <tbody>

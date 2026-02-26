@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { ProposalTemplate, Plan, Service } from '@/lib/types';
+import type { ProposalTemplate, Plan, Service, ExtraService } from '@/lib/types';
 import { planSchema, serviceSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -43,7 +42,79 @@ const templateFormSchema = z.object({
   exams: z.array(serviceSchema).optional(),
 });
 
-const defaultText = 'A ser definido na proposta.';
+// Componente para gerenciar serviços extras dentro de cada plano
+function ExtraServicesFields({ planIndex }: { planIndex: number }) {
+  const { control } = useFormContext<z.infer<typeof templateFormSchema>>();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `plans.${planIndex}.extraServices`,
+  });
+
+  return (
+    <div className="mt-4 space-y-3 bg-muted/30 p-3 rounded-md border border-dashed">
+      <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+        Serviços Pagos por Fora
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={() => append({ name: '', value: 0 })}
+        >
+          <Plus className="mr-1 h-3 w-3" /> Adicionar Serviço Adicional
+        </Button>
+      </Label>
+      
+      {fields.length > 0 ? (
+        <div className="space-y-2">
+          {fields.map((field, index) => (
+            <div key={field.id} className="flex items-center gap-2">
+              <FormField
+                control={control}
+                name={`plans.${planIndex}.extraServices.${index}.name`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input placeholder="Nome do serviço" {...field} className="h-8 text-sm" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`plans.${planIndex}.extraServices.${index}.value`}
+                render={({ field }) => (
+                  <FormItem className="w-24">
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="R$"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        className="h-8 text-sm"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive"
+                onClick={() => remove(index)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[10px] text-muted-foreground italic text-center py-2">Nenhum serviço adicional cadastrado para este plano.</p>
+      )}
+    </div>
+  );
+}
 
 export default function ManageTemplatesPage() {
   const { user, isUserLoading } = useUser();
@@ -62,7 +133,19 @@ export default function ManageTemplatesPage() {
 
   const form = useForm<z.infer<typeof templateFormSchema>>({
     resolver: zodResolver(templateFormSchema),
-    defaultValues: { name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [] },
+    defaultValues: {
+      name: '',
+      proposalObject: '',
+      serviceScope: '',
+      clientResponsibilities: '',
+      contractorResponsibilities: '',
+      deadline: '',
+      investment: '',
+      strategicVision: '',
+      paymentTerms: '',
+      plans: [],
+      exams: []
+    },
   });
 
   const { fields: planFields, append: appendPlan, remove: removePlan } = useFieldArray({ control: form.control, name: 'plans' });
@@ -82,7 +165,11 @@ export default function ManageTemplatesPage() {
   const handleSaveTemplate = async (data: z.infer<typeof templateFormSchema>) => {
     if (!firestore) return;
 
-    const plansWithIds = data.plans.map(p => ({ ...p, id: p.id || `plan-${Date.now()}-${Math.random()}` }));
+    const plansWithIds = data.plans.map(p => ({
+      ...p,
+      id: p.id || `plan-${Date.now()}-${Math.random()}`,
+      extraServices: p.extraServices || []
+    }));
     const examsWithIds = data.exams?.map(e => ({ ...e, id: e.id || `exam-${Date.now()}-${Math.random()}` })) || [];
 
     if (editingTemplateId) {
@@ -102,7 +189,11 @@ export default function ManageTemplatesPage() {
 
   const handleStartEditing = (template: ProposalTemplate) => {
     setEditingTemplateId(template.id);
-    form.reset({ ...template, plans: template.plans || [], exams: template.exams || [] });
+    form.reset({
+      ...template,
+      plans: template.plans?.map(p => ({ ...p, extraServices: p.extraServices || [] })) || [],
+      exams: template.exams || []
+    });
     if (formCardRef.current) {
       formCardRef.current.scrollIntoView({ behavior: 'smooth' });
     }
@@ -228,18 +319,45 @@ export default function ManageTemplatesPage() {
                         <FormField control={form.control} name={`plans.${index}.name`} render={({ field }) => (<FormItem><Label className="font-semibold">Plano</Label><FormControl><Input placeholder="Ex: Plano Bronze 1.0" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`plans.${index}.employeeRange`} render={({ field }) => (<FormItem><Label className="font-semibold">Faixa de Funcionários</Label><FormControl><Input placeholder="Ex: 1 a 300" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={form.control} name={`plans.${index}.purpose`} render={({ field }) => (<FormItem><Label className="font-semibold">Finalidade</Label><FormControl><Input placeholder="Ex: Conformidade legal" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.differentiator`} render={({ field }) => (<FormItem><Label className="font-semibold">Diferencial</Label><FormControl><Input placeholder="Ex: Suporte 24h" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.focus`} render={({ field }) => (<FormItem><Label className="font-semibold">Foco</Label><FormControl><Input placeholder="Ex: Prevenção de multas" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      </div>
+
                       <FormField control={form.control} name={`plans.${index}.servicesIncluded`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviços Inclusos</Label><FormControl><Textarea placeholder="Lista de serviços..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      <ExtraServicesFields planIndex={index} />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                         <FormField control={form.control} name={`plans.${index}.investment`} render={({ field }) => (<FormItem><Label className="font-semibold">Investimento (R$)</Label><FormControl><Input type="number" placeholder="990.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`plans.${index}.paymentType`} render={({ field }) => (<FormItem><Label className="font-semibold">Tipo de Pagamento</Label><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2"><FormItem className="flex items-center space-x-2"><RadioGroupItem value="unique" id={`unique-${index}`} /><Label htmlFor={`unique-${index}`}>Único</Label></FormItem><FormItem className="flex items-center space-x-2"><RadioGroupItem value="monthly" id={`monthly-${index}`} /><Label htmlFor={`monthly-${index}`}>Mensal</Label></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.paymentType`} render={({ field }) => (
+                          <FormItem>
+                            <Label className="font-semibold">Modelo de Contratação</Label>
+                            <FormControl>
+                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2">
+                                <FormItem className="flex items-center space-x-2">
+                                  <RadioGroupItem value="unique" id={`unique-${index}`} />
+                                  <Label htmlFor={`unique-${index}`}>Único</Label>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2">
+                                  <RadioGroupItem value="monthly" id={`monthly-${index}`} />
+                                  <Label htmlFor={`monthly-${index}`}>Mensal</Label>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                       </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, paymentType: 'unique' })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
+                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, paymentType: 'unique', purpose: '', differentiator: '', focus: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
                 </CardContent>
               </Card>
 
-              <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Investimentos - Exames/Serviços Avulsos</CardTitle></CardHeader>
+              <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Investimentos - Exames/Serviços Avulsos (Gerais)</CardTitle></CardHeader>
                 <CardContent className="space-y-4 pt-6">
                   {examFields.map((field, index) => (
                     <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
@@ -254,11 +372,12 @@ export default function ManageTemplatesPage() {
                   <div className="flex flex-wrap items-end gap-4 pt-4 border-t">
                       <div className="flex-1 min-w-[250px]">
                           <Label className="font-semibold">Adicionar do Catálogo</Label>
-                          <Select onValueChange={handleAddExamFromCatalog} value="">
+                          <Select onValueChange={handleAddExamFromCatalog} value="none">
                               <SelectTrigger>
                                   <SelectValue placeholder="Selecione um serviço do catálogo..." />
                               </SelectTrigger>
                               <SelectContent>
+                                  <SelectItem value="none" disabled>Selecione um serviço...</SelectItem>
                                   {servicesCatalog && servicesCatalog.length > 0 ? (
                                       servicesCatalog.map(service => (
                                           <SelectItem key={service.id} value={service.id}>
@@ -266,7 +385,7 @@ export default function ManageTemplatesPage() {
                                           </SelectItem>
                                       ))
                                   ) : (
-                                      <SelectItem value="none" disabled>Nenhum serviço no catálogo</SelectItem>
+                                      <SelectItem value="no-data" disabled>Nenhum serviço no catálogo</SelectItem>
                                   )}
                               </SelectContent>
                           </Select>
@@ -307,6 +426,14 @@ export default function ManageTemplatesPage() {
                     <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>
                     {template.paymentTerms && (
                       <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><p className="whitespace-pre-wrap">{template.paymentTerms}</p></div>
+                    )}
+                    {template.plans && template.plans.length > 0 && (
+                      <div>
+                        <h4 className='font-bold text-foreground'>Planos Cadastrados ({template.plans.length})</h4>
+                        <ul className="list-disc list-inside">
+                          {template.plans.map(p => <li key={p.id}>{p.name} - {formatCurrency(p.investment)}</li>)}
+                        </ul>
+                      </div>
                     )}
                   </div>
                 </CardContent>

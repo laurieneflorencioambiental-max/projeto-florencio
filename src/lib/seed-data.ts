@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Lead, Service, ProposalTemplate } from './types';
@@ -30,8 +29,32 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
         investment: 'O investimento total pode ser parcelado em até 3x sem juros no boleto bancário.',
         strategicVision: 'Garantir a conformidade legal da empresa, reduzir acidentes e doenças do trabalho, e evitar multas e passivos trabalhistas através de uma gestão de SST proativa e eficiente.',
         plans: [
-            { id: 'plan-1', name: 'Plano Essencial', employeeRange: 'Até 20 funcionários', servicesIncluded: 'PGR (Programa de Gerenciamento de Riscos)\nPCMSO (Programa de Controle Médico de Saúde Ocupacional)\nGestão de ASOs', investment: 1200, paymentType: 'unique' },
-            { id: 'plan-2', name: 'Plano Completo', employeeRange: 'Até 50 funcionários', servicesIncluded: 'PGR + PCMSO\nGestão de ASOs\nEnvio eSocial\nLTCAT', investment: 2500, paymentType: 'unique' },
+            { 
+              id: 'plan-1', 
+              name: 'Plano Essencial', 
+              employeeRange: 'Até 20 funcionários', 
+              servicesIncluded: 'PGR (Programa de Gerenciamento de Riscos)\nPCMSO (Programa de Controle Médico de Saúde Ocupacional)\nGestão de ASOs', 
+              investment: 1200, 
+              paymentType: 'unique',
+              purpose: 'Cumprimento das obrigatoriedades básicas.',
+              differentiator: 'Custo-benefício ideal para pequenas empresas.',
+              focus: 'Eliminar riscos de multas imediatas.',
+              extraServices: [
+                { name: 'Envio ao eSocial', value: 300 }
+              ]
+            },
+            { 
+              id: 'plan-2', 
+              name: 'Plano Completo', 
+              employeeRange: 'Até 50 funcionários', 
+              servicesIncluded: 'PGR + PCMSO\nGestão de ASOs\nEnvio eSocial\nLTCAT', 
+              investment: 2500, 
+              paymentType: 'unique',
+              purpose: 'Gestão completa e blindagem jurídica.',
+              differentiator: 'Acompanhamento mensal personalizado.',
+              focus: 'Prevenção de passivos trabalhistas.',
+              extraServices: []
+            },
         ],
         exams: []
     }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { z } from 'zod';
@@ -62,6 +61,11 @@ export const serviceSchema = z.object({
     value: z.number().min(0, 'O valor deve ser zero ou maior.'),
 });
 
+export const extraServiceSchema = z.object({
+    name: z.string().min(1, 'Nome do serviço é obrigatório'),
+    value: z.number().min(0)
+});
+
 export const planSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'O nome do plano é obrigatório.'),
@@ -69,6 +73,10 @@ export const planSchema = z.object({
     servicesIncluded: z.string().min(1, 'Os serviços inclusos são obrigatórios.'),
     investment: z.number().positive('O valor do investimento deve ser positivo.'),
     paymentType: z.enum(['unique', 'monthly']),
+    purpose: z.string().optional(),
+    differentiator: z.string().optional(),
+    focus: z.string().optional(),
+    extraServices: z.array(extraServiceSchema).optional().default([]),
 });
 
 export const versionHistoryEntrySchema = z.object({
@@ -133,6 +141,7 @@ export const userProfileSchema = z.object({
 
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
+export type ExtraService = z.infer<typeof extraServiceSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
@@ -294,5 +303,3 @@ export const partnershipDocumentSchema = z.object({
   createdAt: z.any(),
 });
 export type PartnershipDocument = z.infer<typeof partnershipDocumentSchema>;
-
-    
