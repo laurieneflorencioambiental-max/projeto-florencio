@@ -369,20 +369,6 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                 />
               </>
           )}
-
-          {proposalState.auditSupport && (
-              <>
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                    Suporte em auditorias e fiscalizações
-                </h3>
-                <div
-                    className="prose dark:prose-invert max-w-none p-2"
-                    dangerouslySetInnerHTML={{
-                    __html: proposalState.auditSupport.replace(/\n/g, '<br />'),
-                    }}
-                />
-              </>
-          )}
         </section>
 
         {/* Investment */}
@@ -428,6 +414,12 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                           <>
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
                             <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                          </>
+                      )}
+                      {plan.auditSupport && (
+                          <>
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.auditSupport}</p>
                           </>
                       )}
                     </div>

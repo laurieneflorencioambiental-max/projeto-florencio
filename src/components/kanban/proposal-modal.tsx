@@ -93,7 +93,6 @@ export default function ProposalModal({
     investment: 'A ser definido na proposta.',
     strategicVision: 'A ser definido na proposta.',
     strategicManagement: 'A ser definido na proposta.',
-    auditSupport: '',
     paymentTerms: '',
     plans: [],
     exams: [],
@@ -132,7 +131,6 @@ export default function ProposalModal({
       investment: template?.investment || investmentText,
       strategicVision: template?.strategicVision || 'A ser definido na proposta.',
       strategicManagement: template?.strategicManagement || 'A ser definido na proposta.',
-      auditSupport: template?.auditSupport || '',
       paymentTerms: template?.paymentTerms || '',
       plans: template?.plans || [],
       exams: template?.exams || [],
@@ -749,17 +747,6 @@ Grupo Florencio`;
                         </div>
                     </>
                 )}
-
-                {proposalState.auditSupport && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Suporte em auditorias e fiscalizações
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="auditSupport" />
-                        </div>
-                    </>
-                )}
               </section>
 
               <section className="my-8">
@@ -803,6 +790,12 @@ Grupo Florencio`;
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
                                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                                </>
+                            )}
+                            {plan.auditSupport && (
+                                <>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
+                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.auditSupport}</p>
                                 </>
                             )}
                           </div>

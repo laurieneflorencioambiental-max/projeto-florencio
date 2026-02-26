@@ -40,6 +40,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               purpose: 'Cumprimento das obrigatoriedades básicas.',
               differentiator: 'Custo-benefício ideal para pequenas empresas.',
               focus: 'Eliminar riscos de multas imediatas.',
+              auditSupport: 'Suporte remoto para fiscalizações básicas.',
               extraServices: [
                 { name: 'Envio ao eSocial', value: 300 }
               ]
@@ -54,6 +55,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               purpose: 'Gestão completa e blindagem jurídica.',
               differentiator: 'Acompanhamento mensal personalizado.',
               focus: 'Prevenção de passivos trabalhistas.',
+              auditSupport: 'Acompanhamento presencial em auditorias e fiscalizações do trabalho.',
               extraServices: []
             },
         ],

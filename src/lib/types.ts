@@ -77,11 +77,12 @@ export const planSchema = z.object({
     employeeRange: z.string().default(''),
     servicesIncluded: z.string().default(''),
     investments: z.array(investmentItemSchema).optional().default([]),
-    investment: z.number().optional().default(0), // Mantido para compatibilidade, mas priorizaremos a lista
+    investment: z.number().optional().default(0),
     paymentType: z.enum(['unique', 'monthly', 'active_contract_monthly']).default('unique'),
     purpose: z.string().optional().default(''),
     differentiator: z.string().optional().default(''),
     focus: z.string().optional().default(''),
+    auditSupport: z.string().optional().default(''),
     extraServices: z.array(extraServiceSchema).optional().default([]),
 });
 
@@ -165,7 +166,6 @@ export type ProposalTemplate = {
   strategicVision: string;
   strategicManagement?: string;
   investment: string;
-  auditSupport?: string;
   paymentTerms?: string;
   plans: Plan[];
   exams: Service[];
