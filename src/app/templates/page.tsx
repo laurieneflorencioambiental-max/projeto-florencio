@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { ProposalTemplate, Plan, Service, ExtraService } from '@/lib/types';
-import { planSchema, serviceSchema } from '@/lib/types';
+import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem } from '@/lib/types';
+import { planSchema, serviceSchema, investmentItemSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,16 +30,17 @@ import { logClientEvent } from '@/lib/audit-client';
 
 const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
-  proposalObject: z.string().min(1, 'O objeto da proposta é obrigatório.'),
-  serviceScope: z.string(),
-  clientResponsibilities: z.string(),
-  contractorResponsibilities: z.string(),
-  deadline: z.string(),
-  investment: z.string(),
-  strategicVision: z.string(),
-  paymentTerms: z.string().optional(),
-  plans: z.array(planSchema),
-  exams: z.array(serviceSchema).optional(),
+  proposalObject: z.string().optional().default(''),
+  serviceScope: z.string().optional().default(''),
+  clientResponsibilities: z.string().optional().default(''),
+  contractorResponsibilities: z.string().optional().default(''),
+  deadline: z.string().optional().default(''),
+  investment: z.string().optional().default(''),
+  strategicVision: z.string().optional().default(''),
+  auditSupport: z.string().optional().default(''),
+  paymentTerms: z.string().optional().default(''),
+  plans: z.array(planSchema).optional().default([]),
+  exams: z.array(serviceSchema).optional().default([]),
 });
 
 // Componente para gerenciar serviços extras dentro de cada plano
@@ -116,6 +117,80 @@ function ExtraServicesFields({ planIndex }: { planIndex: number }) {
   );
 }
 
+// Componente para gerenciar múltiplos itens de investimento dentro de cada plano
+function PlanInvestmentFields({ planIndex }: { planIndex: number }) {
+  const { control } = useFormContext<z.infer<typeof templateFormSchema>>();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `plans.${planIndex}.investments`,
+  });
+
+  return (
+    <div className="mt-4 space-y-3 bg-primary/5 p-3 rounded-md border border-primary/20">
+      <Label className="font-bold text-xs uppercase tracking-wider text-primary flex items-center justify-between">
+        Detalhamento do Investimento
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs border-primary/30 text-primary"
+          onClick={() => append({ label: '', value: 0 })}
+        >
+          <Plus className="mr-1 h-3 w-3" /> Adicionar Linha de Investimento
+        </Button>
+      </Label>
+      
+      {fields.length > 0 ? (
+        <div className="space-y-2">
+          {fields.map((field, index) => (
+            <div key={field.id} className="flex items-center gap-2">
+              <FormField
+                control={control}
+                name={`plans.${planIndex}.investments.${index}.label`}
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input placeholder="Descrição do investimento (ex: Valor Admissional)" {...field} className="h-8 text-sm" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`plans.${planIndex}.investments.${index}.value`}
+                render={({ field }) => (
+                  <FormItem className="w-24">
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="R$"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        className="h-8 text-sm"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive"
+                onClick={() => remove(index)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[10px] text-muted-foreground italic text-center py-2">Use o botão "+" para adicionar os valores de investimento deste plano.</p>
+      )}
+    </div>
+  );
+}
+
 export default function ManageTemplatesPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -142,6 +217,7 @@ export default function ManageTemplatesPage() {
       deadline: '',
       investment: '',
       strategicVision: '',
+      auditSupport: '',
       paymentTerms: '',
       plans: [],
       exams: []
@@ -158,29 +234,35 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', auditSupport: '', paymentTerms: '', plans: [], exams: [] });
     setEditingTemplateId(null);
   };
 
   const handleSaveTemplate = async (data: z.infer<typeof templateFormSchema>) => {
     if (!firestore) return;
 
-    const plansWithIds = data.plans.map(p => ({
+    const plansWithIds = (data.plans || []).map(p => ({
       ...p,
       id: p.id || `plan-${Date.now()}-${Math.random()}`,
-      extraServices: p.extraServices || []
+      extraServices: p.extraServices || [],
+      investments: p.investments || []
     }));
     const examsWithIds = data.exams?.map(e => ({ ...e, id: e.id || `exam-${Date.now()}-${Math.random()}` })) || [];
 
+    const templateData = {
+        ...data,
+        plans: plansWithIds,
+        exams: examsWithIds
+    };
+
     if (editingTemplateId) {
       const templateRef = doc(firestore, 'proposal-templates', editingTemplateId);
-      await setDoc(templateRef, { ...data, plans: plansWithIds, exams: examsWithIds }, { merge: true });
+      await setDoc(templateRef, templateData, { merge: true });
       logClientEvent('Edição de Modelo', auth, `Modelo: ${data.name}`);
       toast({ title: 'Sucesso', description: 'Modelo de proposta atualizado.' });
     } else {
       const newDocRef = doc(templatesCollectionRef!);
-      const newTemplateWithId = { ...data, id: newDocRef.id, plans: plansWithIds, exams: examsWithIds };
-      await setDoc(newDocRef, newTemplateWithId);
+      await setDoc(newDocRef, { ...templateData, id: newDocRef.id });
       logClientEvent('Criação de Modelo', auth, `Modelo: ${data.name}`);
       toast({ title: 'Sucesso', description: 'Novo modelo de proposta adicionado.' });
     }
@@ -191,7 +273,11 @@ export default function ManageTemplatesPage() {
     setEditingTemplateId(template.id);
     form.reset({
       ...template,
-      plans: template.plans?.map(p => ({ ...p, extraServices: p.extraServices || [] })) || [],
+      plans: template.plans?.map(p => ({ 
+        ...p, 
+        extraServices: p.extraServices || [],
+        investments: p.investments || []
+      })) || [],
       exams: template.exams || []
     });
     if (formCardRef.current) {
@@ -232,7 +318,7 @@ export default function ManageTemplatesPage() {
   const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id' | 'name' | 'plans' | 'exams' | 'paymentTerms'>) => (
     <FormField
       control={form.control}
-      name={fieldName}
+      name={fieldName as any}
       render={({ field }) => (
         <FormItem className="space-y-2">
           <Label htmlFor={`template-${fieldName}`} className="font-semibold">{label}</Label>
@@ -295,8 +381,9 @@ export default function ManageTemplatesPage() {
               {renderFormField('Da Contratante', 'clientResponsibilities')}
               {renderFormField('Da Contratada', 'contractorResponsibilities')}
               {renderFormField('Prazo para Realização dos Serviços', 'deadline')}
-              {renderFormField('Investimento', 'investment')}
+              {renderFormField('Investimento Geral', 'investment')}
               {renderFormField('Nossa Visão Estratégica', 'strategicVision')}
+              {renderFormField('Suporte em auditorias e fiscalizações', 'auditSupport')}
               
               <FormField
                 control={form.control}
@@ -329,15 +416,15 @@ export default function ManageTemplatesPage() {
 
                       <FormField control={form.control} name={`plans.${index}.servicesIncluded`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviços Inclusos</Label><FormControl><Textarea placeholder="Lista de serviços..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                       
+                      <PlanInvestmentFields planIndex={index} />
                       <ExtraServicesFields planIndex={index} />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                        <FormField control={form.control} name={`plans.${index}.investment`} render={({ field }) => (<FormItem><Label className="font-semibold">Investimento (R$)</Label><FormControl><Input type="number" placeholder="990.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                      <div className="pt-4 border-t">
                         <FormField control={form.control} name={`plans.${index}.paymentType`} render={({ field }) => (
                           <FormItem>
                             <Label className="font-semibold">Modelo de Contratação</Label>
                             <FormControl>
-                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2">
+                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2 pt-2">
                                 <FormItem className="flex items-center space-x-2">
                                   <RadioGroupItem value="unique" id={`unique-${index}`} />
                                   <Label htmlFor={`unique-${index}`}>Único</Label>
@@ -345,6 +432,10 @@ export default function ManageTemplatesPage() {
                                 <FormItem className="flex items-center space-x-2">
                                   <RadioGroupItem value="monthly" id={`monthly-${index}`} />
                                   <Label htmlFor={`monthly-${index}`}>Mensal</Label>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2">
+                                  <RadioGroupItem value="active_contract_monthly" id={`active-contract-${index}`} />
+                                  <Label htmlFor={`active-contract-${index}`}>Por Contrato ativo, mensal.</Label>
                                 </FormItem>
                               </RadioGroup>
                             </FormControl>
@@ -354,7 +445,7 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, paymentType: 'unique', purpose: '', differentiator: '', focus: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
+                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, investments: [], paymentType: 'unique', purpose: '', differentiator: '', focus: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
                 </CardContent>
               </Card>
 
@@ -418,13 +509,14 @@ export default function ManageTemplatesPage() {
                 <CardHeader><CardTitle className="truncate">{template.name}</CardTitle></CardHeader>
                 <CardContent className="flex-1">
                   <div className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border space-y-4 h-96 overflow-y-auto">
-                    <div><h4 className='font-bold text-foreground'>Objeto da Proposta</h4><p className="whitespace-pre-wrap">{template.proposalObject}</p></div>
-                    <div><h4 className='font-bold text-foreground'>Escopo do Serviço</h4><p className="whitespace-pre-wrap">{template.serviceScope}</p></div>
-                    <div><h4 className='font-bold text-foreground'>Da Contratante</h4><p className="whitespace-pre-wrap">{template.clientResponsibilities}</p></div>
-                    <div><h4 className='font-bold text-foreground'>Da Contratada</h4><p className="whitespace-pre-wrap">{template.contractorResponsibilities}</p></div>
-                    <div><h4 className='font-bold text-foreground'>Prazo</h4><p className="whitespace-pre-wrap">{template.deadline}</p></div>
-                    <div><h4 className='font-bold text-foreground'>Investimento</h4><p className="whitespace-pre-wrap">{template.investment}</p></div>
-                    <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>
+                    {template.proposalObject && <div><h4 className='font-bold text-foreground'>Objeto da Proposta</h4><p className="whitespace-pre-wrap">{template.proposalObject}</p></div>}
+                    {template.serviceScope && <div><h4 className='font-bold text-foreground'>Escopo do Serviço</h4><p className="whitespace-pre-wrap">{template.serviceScope}</p></div>}
+                    {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><p className="whitespace-pre-wrap">{template.clientResponsibilities}</p></div>}
+                    {template.contractorResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratada</h4><p className="whitespace-pre-wrap">{template.contractorResponsibilities}</p></div>}
+                    {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><p className="whitespace-pre-wrap">{template.deadline}</p></div>}
+                    {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><p className="whitespace-pre-wrap">{template.investment}</p></div>}
+                    {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>}
+                    {template.auditSupport && <div><h4 className='font-bold text-foreground'>Suporte em Auditorias</h4><p className="whitespace-pre-wrap">{template.auditSupport}</p></div>}
                     {template.paymentTerms && (
                       <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><p className="whitespace-pre-wrap">{template.paymentTerms}</p></div>
                     )}
@@ -432,7 +524,15 @@ export default function ManageTemplatesPage() {
                       <div>
                         <h4 className='font-bold text-foreground'>Planos Cadastrados ({template.plans.length})</h4>
                         <ul className="list-disc list-inside">
-                          {template.plans.map(p => <li key={p.id}>{p.name} - {formatCurrency(p.investment)}</li>)}
+                          {template.plans.map(p => (
+                            <li key={p.id}>
+                                {p.name} - 
+                                {p.investments && p.investments.length > 0 
+                                    ? formatCurrency(p.investments.reduce((sum, inv) => sum + inv.value, 0))
+                                    : formatCurrency(p.investment || 0)
+                                }
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     )}

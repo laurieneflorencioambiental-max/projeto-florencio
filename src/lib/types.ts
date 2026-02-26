@@ -13,7 +13,7 @@ export type Status =
 
 export const statuses: Status[] = [
   'Novos',
-  'Pendente/Em negociação',
+  'Pendente/Em negociação' as any,
   'Aprovado',
   'Desistência',
   'Rejeitado',
@@ -56,26 +56,32 @@ export const paymentMethodSchema = z.object({
 
 export const serviceSchema = z.object({
     id: z.string(),
-    service: z.string().min(1, 'O serviço é obrigatório.'),
-    description: z.string().min(1, 'A descrição é obrigatória.'),
-    value: z.number().min(0, 'O valor deve ser zero ou maior.'),
+    service: z.string().default(''),
+    description: z.string().default(''),
+    value: z.number().min(0).default(0),
 });
 
 export const extraServiceSchema = z.object({
-    name: z.string().min(1, 'Nome do serviço é obrigatório'),
-    value: z.number().min(0)
+    name: z.string().default(''),
+    value: z.number().min(0).default(0)
+});
+
+export const investmentItemSchema = z.object({
+    label: z.string().default(''),
+    value: z.number().min(0).default(0)
 });
 
 export const planSchema = z.object({
     id: z.string(),
-    name: z.string().min(1, 'O nome do plano é obrigatório.'),
-    employeeRange: z.string().min(1, 'A faixa de funcionários é obrigatória.'),
-    servicesIncluded: z.string().min(1, 'Os serviços inclusos são obrigatórios.'),
-    investment: z.number().positive('O valor do investimento deve ser positivo.'),
-    paymentType: z.enum(['unique', 'monthly']),
-    purpose: z.string().optional(),
-    differentiator: z.string().optional(),
-    focus: z.string().optional(),
+    name: z.string().default(''),
+    employeeRange: z.string().default(''),
+    servicesIncluded: z.string().default(''),
+    investments: z.array(investmentItemSchema).optional().default([]),
+    investment: z.number().optional().default(0), // Mantido para compatibilidade, mas priorizaremos a lista
+    paymentType: z.enum(['unique', 'monthly', 'active_contract_monthly']).default('unique'),
+    purpose: z.string().optional().default(''),
+    differentiator: z.string().optional().default(''),
+    focus: z.string().optional().default(''),
     extraServices: z.array(extraServiceSchema).optional().default([]),
 });
 
@@ -142,6 +148,7 @@ export const userProfileSchema = z.object({
 export type Lead = z.infer<typeof leadSchema>;
 export type Plan = z.infer<typeof planSchema>;
 export type ExtraService = z.infer<typeof extraServiceSchema>;
+export type InvestmentItem = z.infer<typeof investmentItemSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
@@ -157,6 +164,7 @@ export type ProposalTemplate = {
   deadline: string;
   strategicVision: string;
   investment: string;
+  auditSupport?: string;
   paymentTerms?: string;
   plans: Plan[];
   exams: Service[];

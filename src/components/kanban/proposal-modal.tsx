@@ -92,6 +92,7 @@ export default function ProposalModal({
     deadline: 'A ser definido na proposta.',
     investment: 'A ser definido na proposta.',
     strategicVision: 'A ser definido na proposta.',
+    auditSupport: '',
     paymentTerms: '',
     plans: [],
     exams: [],
@@ -129,6 +130,7 @@ export default function ProposalModal({
       deadline: template?.deadline || 'A ser definido na proposta.',
       investment: template?.investment || investmentText,
       strategicVision: template?.strategicVision || 'A ser definido na proposta.',
+      auditSupport: template?.auditSupport || '',
       paymentTerms: template?.paymentTerms || '',
       plans: template?.plans || [],
       exams: template?.exams || [],
@@ -398,7 +400,7 @@ Grupo Florencio`;
         )}
         onBlur={handleBlur}
         dangerouslySetInnerHTML={{
-          __html: String(proposalState[field]).replace(/\n/g, '<br />'),
+          __html: String(proposalState[field] || '').replace(/\n/g, '<br />'),
         }}
       ></div>
     );
@@ -669,47 +671,82 @@ Grupo Florencio`;
               </section>
 
               <section className="my-8 space-y-6">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Objeto da Proposta
-                </h3>
-                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <EditableDiv field="proposalObject" />
-                </div>
+                {proposalState.proposalObject && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Objeto da Proposta
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="proposalObject" />
+                        </div>
+                    </>
+                )}
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Escopo do Serviço
-                </h3>
-                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <EditableDiv field="serviceScope" />
-                </div>
+                {proposalState.serviceScope && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Escopo do Serviço
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="serviceScope" />
+                        </div>
+                    </>
+                )}
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Da Contratante
-                </h3>
-                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <EditableDiv field="clientResponsibilities" />
-                </div>
+                {proposalState.clientResponsibilities && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Da Contratante
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="clientResponsibilities" />
+                        </div>
+                    </>
+                )}
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Da Contratada
-                </h3>
-                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <EditableDiv field="contractorResponsibilities" />
-                </div>
+                {proposalState.contractorResponsibilities && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Da Contratada
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="contractorResponsibilities" />
+                        </div>
+                    </>
+                )}
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Prazo para Realização dos Serviços
-                </h3>
-                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <EditableDiv field="deadline" />
-                </div>
+                {proposalState.deadline && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Prazo para Realização dos Serviços
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="deadline" />
+                        </div>
+                    </>
+                )}
 
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Nossa Visão Estratégica
-                </h3>
-                <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <EditableDiv field="strategicVision" />
-                </div>
+                {proposalState.strategicVision && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Nossa Visão Estratégica
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="strategicVision" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.auditSupport && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Suporte em auditorias e fiscalizações
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="auditSupport" />
+                        </div>
+                    </>
+                )}
               </section>
 
               <section className="my-8">
@@ -730,30 +767,54 @@ Grupo Florencio`;
                     </p>
                     
                     {proposalState.plans.map((plan, index) => (
-                      <div key={plan.id} className="border rounded-lg overflow-hidden">
+                      <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
                         <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>
                           <span>{plan.name}</span>
-                          <span className="text-xs uppercase opacity-90">Modelo: {plan.paymentType === 'unique' ? 'Único' : 'Mensal'}</span>
+                          <span className="text-xs uppercase opacity-90">
+                            Modelo: {
+                                plan.paymentType === 'unique' ? 'Único' : 
+                                plan.paymentType === 'monthly' ? 'Mensal' : 
+                                'Por Contrato ativo, mensal.'
+                            }
+                          </span>
                         </div>
-                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/30">
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                           <div className="space-y-3">
-                            <div><p className="text-xs font-bold text-primary uppercase">Finalidade</p><p className="text-sm whitespace-pre-wrap leading-tight">{plan.purpose || 'N/A'}</p></div>
-                            <div><p className="text-xs font-bold text-primary uppercase">Diferencial</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.differentiator || 'N/A'}</p></div>
-                            <div><p className="text-xs font-bold text-primary uppercase">Foco</p><p className="text-sm">{plan.focus || 'N/A'}</p></div>
-                            <div><p className="text-xs font-bold text-primary uppercase">Faixa de Funcionários</p><p className="text-sm">{plan.employeeRange}</p></div>
+                            {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><p className="text-sm whitespace-pre-wrap leading-tight">{plan.purpose}</p></div>}
+                            {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.differentiator}</p></div>}
+                            {plan.focus && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm">{plan.focus}</p></div>}
+                            {plan.employeeRange && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm">{plan.employeeRange}</p></div>}
                           </div>
                           <div className="space-y-3">
-                            <p className="text-xs font-bold text-primary uppercase">Serviços Inclusos</p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                            {plan.servicesIncluded && (
+                                <>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
+                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                                </>
+                            )}
                           </div>
                         </div>
                         
+                        {plan.investments && plan.investments.length > 0 && (
+                            <div className="p-4 bg-white border-t border-dashed">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Composição do Investimento</p>
+                                <div className="space-y-1">
+                                    {plan.investments.map((inv, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-50 last:border-0">
+                                            <span>{inv.label}</span>
+                                            <span className="font-semibold">{formatCurrency(inv.value)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {plan.extraServices && plan.extraServices.length > 0 && (
                           <div className="p-4 border-t border-dashed bg-white">
-                            <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Serviços Adicionais (Pagos por fora)</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais (Pagos por fora)</p>
                             <div className="grid grid-cols-1 gap-1">
                               {plan.extraServices.map((es, idx) => (
-                                <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 last:border-0">
+                                <div key={idx} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100 last:border-0">
                                   <span>{es.name}</span>
                                   <span className="font-semibold">{formatCurrency(es.value)}</span>
                                 </div>
@@ -763,8 +824,14 @@ Grupo Florencio`;
                         )}
                         
                         <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
-                          <span className="font-bold text-sm">Investimento do Plano:</span>
-                          <span className="text-xl font-bold text-primary">{formatCurrency(plan.investment)}</span>
+                          <span className="font-bold text-sm">Investimento Total do Plano:</span>
+                          <span className="text-xl font-bold text-primary">
+                            {formatCurrency(
+                                plan.investments && plan.investments.length > 0 
+                                ? plan.investments.reduce((sum, inv) => sum + inv.value, 0)
+                                : (plan.investment || 0)
+                            )}
+                          </span>
                         </div>
                       </div>
                     ))}

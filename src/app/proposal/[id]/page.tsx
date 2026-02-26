@@ -266,71 +266,109 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
         {/* Dynamic content sections */}
         <section className="my-8 space-y-6">
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Objeto da Proposta
-          </h3>
-          <div
-            className="prose dark:prose-invert max-w-none p-2"
-            dangerouslySetInnerHTML={{
-              __html: proposalState.proposalObject.replace(/\n/g, '<br />'),
-            }}
-          />
+          {proposalState.proposalObject && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Objeto da Proposta
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.proposalObject.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
 
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Escopo do Serviço
-          </h3>
-          <div
-            className="prose dark:prose-invert max-w-none p-2"
-            dangerouslySetInnerHTML={{
-              __html: proposalState.serviceScope.replace(/\n/g, '<br />'),
-            }}
-          />
+          {proposalState.serviceScope && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Escopo do Serviço
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.serviceScope.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
 
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Da Contratante
-          </h3>
-          <div
-            className="prose dark:prose-invert max-w-none p-2"
-            dangerouslySetInnerHTML={{
-              __html: proposalState.clientResponsibilities.replace(
-                /\n/g,
-                '<br />'
-              ),
-            }}
-          />
+          {proposalState.clientResponsibilities && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Da Contratante
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.clientResponsibilities.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
 
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Da Contratada
-          </h3>
-          <div
-            className="prose dark:prose-invert max-w-none p-2"
-            dangerouslySetInnerHTML={{
-              __html: proposalState.contractorResponsibilities.replace(
-                /\n/g,
-                '<br />'
-              ),
-            }}
-          />
+          {proposalState.contractorResponsibilities && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Da Contratada
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.contractorResponsibilities.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
 
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Prazo para Realização dos Serviços
-          </h3>
-          <div
-            className="prose dark:prose-invert max-w-none p-2"
-            dangerouslySetInnerHTML={{
-              __html: proposalState.deadline.replace(/\n/g, '<br />'),
-            }}
-          />
+          {proposalState.deadline && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Prazo para Realização dos Serviços
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.deadline.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
 
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Nossa Visão Estratégica
-          </h3>
-          <div
-            className="prose dark:prose-invert max-w-none p-2"
-            dangerouslySetInnerHTML={{
-              __html: proposalState.strategicVision.replace(/\n/g, '<br />'),
-            }}
-          />
+          {proposalState.strategicVision && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Nossa Visão Estratégica
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.strategicVision.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.auditSupport && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Suporte em auditorias e fiscalizações
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.auditSupport.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
         </section>
 
         {/* Investment */}
@@ -338,7 +376,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <h3 className="text-lg font-semibold mb-2 border-b pb-2">
             Investimento
           </h3>
-          {lead.value > 0 && (
+          {lead.value > 0 && proposalState.investment && (
             <div
               className="prose dark:prose-invert max-w-none p-2"
               dangerouslySetInnerHTML={{ __html: proposalState.investment }}
@@ -356,21 +394,45 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                 <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
                   <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>
                     <span>{plan.name}</span>
-                    <span className="text-xs uppercase opacity-90">Modelo: {plan.paymentType === 'unique' ? 'Único' : 'Mensal'}</span>
+                    <span className="text-xs uppercase opacity-90">
+                        Modelo: {
+                            plan.paymentType === 'unique' ? 'Único' : 
+                            plan.paymentType === 'monthly' ? 'Mensal' : 
+                            'Por Contrato ativo, mensal.'
+                        }
+                    </span>
                   </div>
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                     <div className="space-y-3">
-                      <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.purpose || 'N/A'}</p></div>
-                      <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.differentiator || 'N/A'}</p></div>
-                      <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm leading-tight">{plan.focus || 'N/A'}</p></div>
-                      <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm leading-tight">{plan.employeeRange}</p></div>
+                      {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.purpose}</p></div>}
+                      {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.differentiator}</p></div>}
+                      {plan.focus && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm leading-tight">{plan.focus}</p></div>}
+                      {plan.employeeRange && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm leading-tight">{plan.employeeRange}</p></div>}
                     </div>
                     <div className="space-y-3">
-                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                      {plan.servicesIncluded && (
+                          <>
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                          </>
+                      )}
                     </div>
                   </div>
                   
+                  {plan.investments && plan.investments.length > 0 && (
+                    <div className="p-4 bg-white border-t border-dashed">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Composição do Investimento</p>
+                        <div className="space-y-1">
+                            {plan.investments.map((inv, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-50 last:border-0">
+                                    <span>{inv.label}</span>
+                                    <span className="font-semibold text-foreground">{formatCurrency(inv.value)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  )}
+
                   {plan.extraServices && plan.extraServices.length > 0 && (
                     <div className="p-4 border-t border-dashed bg-white">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais (Pagos por fora)</p>
@@ -386,8 +448,14 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                   )}
                   
                   <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
-                    <span className="font-bold text-sm">Investimento do Plano:</span>
-                    <span className="text-xl font-bold text-primary">{formatCurrency(plan.investment)}</span>
+                    <span className="font-bold text-sm">Investimento Total do Plano:</span>
+                    <span className="text-xl font-bold text-primary">
+                        {formatCurrency(
+                            plan.investments && plan.investments.length > 0 
+                            ? plan.investments.reduce((sum, inv) => sum + inv.value, 0)
+                            : (plan.investment || 0)
+                        )}
+                    </span>
                   </div>
                 </div>
               ))}
