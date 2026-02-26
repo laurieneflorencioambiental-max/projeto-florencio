@@ -28,19 +28,19 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
         deadline: 'O prazo para elaboração dos programas é de 30 dias após a assinatura do contrato. Os exames serão agendados conforme disponibilidade.',
         investment: 'O investimento total pode ser parcelado em até 3x sem juros no boleto bancário.',
         strategicVision: 'Garantir a conformidade legal da empresa, reduzir acidentes e doenças do trabalho, e evitar multas e passivos trabalhistas através de uma gestão de SST proativa e eficiente.',
-        strategicManagement: 'Nossa gestão estratégica foca na redução de custos operacionais através da prevenção, garantindo que sua empresa esteja sempre à frente das exigências legais.',
         plans: [
             { 
               id: 'plan-1', 
               name: 'Plano Essencial', 
               employeeRange: 'Até 20 funcionários', 
               servicesIncluded: 'PGR (Programa de Gerenciamento de Riscos)\nPCMSO (Programa de Controle Médico de Saúde Ocupacional)\nGestão de ASOs', 
-              investment: 1200, 
+              investments: [{ label: 'Investimento único', value: 1200 }],
               paymentType: 'unique',
               purpose: 'Cumprimento das obrigatoriedades básicas.',
               differentiator: 'Custo-benefício ideal para pequenas empresas.',
               focus: 'Eliminar riscos de multas imediatas.',
               auditSupport: 'Suporte remoto para fiscalizações básicas.',
+              strategicManagement: 'Gestão focada em conformidade mínima obrigatória.',
               extraServices: [
                 { name: 'Envio ao eSocial', value: 300 }
               ]
@@ -50,12 +50,13 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               name: 'Plano Completo', 
               employeeRange: 'Até 50 funcionários', 
               servicesIncluded: 'PGR + PCMSO\nGestão de ASOs\nEnvio eSocial\nLTCAT', 
-              investment: 2500, 
+              investments: [{ label: 'Investimento integral', value: 2500 }],
               paymentType: 'unique',
               purpose: 'Gestão completa e blindagem jurídica.',
               differentiator: 'Acompanhamento mensal personalizado.',
               focus: 'Prevenção de passivos trabalhistas.',
               auditSupport: 'Acompanhamento presencial em auditorias e fiscalizações do trabalho.',
+              strategicManagement: 'Gestão proativa com foco em redução de custos por sinistralidade.',
               extraServices: []
             },
         ],

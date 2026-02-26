@@ -355,20 +355,6 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                 />
               </>
           )}
-
-          {proposalState.strategicManagement && (
-              <>
-                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                    Gestão Estratégica
-                </h3>
-                <div
-                    className="prose dark:prose-invert max-w-none p-2"
-                    dangerouslySetInnerHTML={{
-                    __html: proposalState.strategicManagement.replace(/\n/g, '<br />'),
-                    }}
-                />
-              </>
-          )}
         </section>
 
         {/* Investment */}
@@ -420,6 +406,12 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                           <>
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
                             <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.auditSupport}</p>
+                          </>
+                      )}
+                      {plan.strategicManagement && (
+                          <>
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.strategicManagement}</p>
                           </>
                       )}
                     </div>
@@ -664,6 +656,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
     </main>
   );
 }
+
 
 export default function ProposalViewerPage() {
   const params = useParams();

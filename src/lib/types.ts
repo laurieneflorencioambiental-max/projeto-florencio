@@ -83,6 +83,7 @@ export const planSchema = z.object({
     differentiator: z.string().optional().default(''),
     focus: z.string().optional().default(''),
     auditSupport: z.string().optional().default(''),
+    strategicManagement: z.string().optional().default(''),
     extraServices: z.array(extraServiceSchema).optional().default([]),
 });
 
@@ -164,7 +165,6 @@ export type ProposalTemplate = {
   contractorResponsibilities: string;
   deadline: string;
   strategicVision: string;
-  strategicManagement?: string;
   investment: string;
   paymentTerms?: string;
   plans: Plan[];

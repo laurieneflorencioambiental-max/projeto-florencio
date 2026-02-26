@@ -37,7 +37,6 @@ const templateFormSchema = z.object({
   deadline: z.string().optional().default(''),
   investment: z.string().optional().default(''),
   strategicVision: z.string().optional().default(''),
-  strategicManagement: z.string().optional().default(''),
   paymentTerms: z.string().optional().default(''),
   plans: z.array(planSchema).optional().default([]),
   exams: z.array(serviceSchema).optional().default([]),
@@ -217,7 +216,6 @@ export default function ManageTemplatesPage() {
       deadline: '',
       investment: '',
       strategicVision: '',
-      strategicManagement: '',
       paymentTerms: '',
       plans: [],
       exams: []
@@ -234,7 +232,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', strategicManagement: '', paymentTerms: '', plans: [], exams: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [] });
     setEditingTemplateId(null);
   };
 
@@ -277,7 +275,8 @@ export default function ManageTemplatesPage() {
         ...p, 
         extraServices: p.extraServices || [],
         investments: p.investments || [],
-        auditSupport: p.auditSupport || ''
+        auditSupport: p.auditSupport || '',
+        strategicManagement: p.strategicManagement || ''
       })) || [],
       exams: template.exams || []
     });
@@ -384,7 +383,6 @@ export default function ManageTemplatesPage() {
               {renderFormField('Prazo para Realização dos Serviços', 'deadline')}
               {renderFormField('Investimento Geral', 'investment')}
               {renderFormField('Nossa Visão Estratégica', 'strategicVision')}
-              {renderFormField('Gestão Estratégica', 'strategicManagement')}
               
               <FormField
                 control={form.control}
@@ -419,6 +417,8 @@ export default function ManageTemplatesPage() {
                       
                       <FormField control={form.control} name={`plans.${index}.auditSupport`} render={({ field }) => (<FormItem><Label className="font-semibold">Suporte em auditorias e fiscalizações</Label><FormControl><Textarea placeholder="Descreva o suporte oferecido neste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
 
+                      <FormField control={form.control} name={`plans.${index}.strategicManagement`} render={({ field }) => (<FormItem><Label className="font-semibold">Gestão Estratégica</Label><FormControl><Textarea placeholder="Descreva a estratégia de gestão para este plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
+
                       <PlanInvestmentFields planIndex={index} />
                       <ExtraServicesFields planIndex={index} />
 
@@ -448,7 +448,7 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, investments: [], paymentType: 'unique', purpose: '', differentiator: '', focus: '', auditSupport: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
+                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, investments: [], paymentType: 'unique', purpose: '', differentiator: '', focus: '', auditSupport: '', strategicManagement: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
                 </CardContent>
               </Card>
 
@@ -519,7 +519,6 @@ export default function ManageTemplatesPage() {
                     {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><p className="whitespace-pre-wrap">{template.deadline}</p></div>}
                     {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><p className="whitespace-pre-wrap">{template.investment}</p></div>}
                     {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>}
-                    {template.strategicManagement && <div><h4 className='font-bold text-foreground'>Gestão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicManagement}</p></div>}
                     {template.paymentTerms && (
                       <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><p className="whitespace-pre-wrap">{template.paymentTerms}</p></div>
                     )}

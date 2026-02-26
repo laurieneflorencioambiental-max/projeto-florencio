@@ -92,7 +92,6 @@ export default function ProposalModal({
     deadline: 'A ser definido na proposta.',
     investment: 'A ser definido na proposta.',
     strategicVision: 'A ser definido na proposta.',
-    strategicManagement: 'A ser definido na proposta.',
     paymentTerms: '',
     plans: [],
     exams: [],
@@ -130,7 +129,6 @@ export default function ProposalModal({
       deadline: template?.deadline || 'A ser definido na proposta.',
       investment: template?.investment || investmentText,
       strategicVision: template?.strategicVision || 'A ser definido na proposta.',
-      strategicManagement: template?.strategicManagement || 'A ser definido na proposta.',
       paymentTerms: template?.paymentTerms || '',
       plans: template?.plans || [],
       exams: template?.exams || [],
@@ -736,17 +734,6 @@ Grupo Florencio`;
                         </div>
                     </>
                 )}
-
-                {proposalState.strategicManagement && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Gestão Estratégica
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="strategicManagement" />
-                        </div>
-                    </>
-                )}
               </section>
 
               <section className="my-8">
@@ -796,6 +783,12 @@ Grupo Florencio`;
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
                                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.auditSupport}</p>
+                                </>
+                            )}
+                            {plan.strategicManagement && (
+                                <>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
+                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.strategicManagement}</p>
                                 </>
                             )}
                           </div>
@@ -952,7 +945,7 @@ Grupo Florencio`;
                     Em nossa busca contínua em promover práticas de Segurança do
                     Trabalho e Sustentabilidade, gostaríamos de propor uma
                     parceria em nossas mídias sociais. Caso tenhamos a honra de
-                    realizar este projeto com a sua empresa, gostaríamos de saber
+                    realizar este projeto with a sua empresa, gostaríamos de saber
                     se podemos divulgar nosso trabalho realizado nas suas
                     instalações em nossas plataformas digitais, como Instagram,
                     Linkedin, Site, YouTube?
