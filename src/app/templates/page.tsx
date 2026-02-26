@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem, ComplexityDefinition } from '@/lib/types';
-import { planSchema, serviceSchema, investmentItemSchema, complexityDefinitionSchema } from '@/lib/types';
+import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem, ComplexityDefinition, PlanStructureItem } from '@/lib/types';
+import { planSchema, serviceSchema, investmentItemSchema, complexityDefinitionSchema, planStructureItemSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile, ShieldAlert } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile, ShieldAlert, LayoutGrid } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -42,6 +42,7 @@ const templateFormSchema = z.object({
   plans: z.array(planSchema).optional().default([]),
   exams: z.array(serviceSchema).optional().default([]),
   complexityDefinitions: z.array(complexityDefinitionSchema).optional().default([]),
+  planStructure: z.array(planStructureItemSchema).optional().default([]),
 });
 
 const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
@@ -302,12 +303,14 @@ export default function ManageTemplatesPage() {
       plans: [],
       exams: [],
       complexityDefinitions: [],
+      planStructure: [],
     },
   });
 
   const { fields: planFields, append: appendPlan, remove: removePlan } = useFieldArray({ control: form.control, name: 'plans' });
   const { fields: examFields, append: appendExam, remove: removeExam } = useFieldArray({ control: form.control, name: 'exams' });
   const { fields: complexityFields, append: appendComplexity, remove: removeComplexity } = useFieldArray({ control: form.control, name: 'complexityDefinitions' });
+  const { fields: planStructureFields, append: appendPlanStructure, remove: removePlanStructure } = useFieldArray({ control: form.control, name: 'planStructure' });
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -316,7 +319,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [], planStructure: [] });
     setEditingTemplateId(null);
   };
 
@@ -331,12 +334,14 @@ export default function ManageTemplatesPage() {
     }));
     const examsWithIds = data.exams?.map(e => ({ ...e, id: e.id || `exam-${Date.now()}-${Math.random()}` })) || [];
     const complexWithIds = data.complexityDefinitions?.map(c => ({ ...c, id: c.id || `complexity-${Date.now()}-${Math.random()}` })) || [];
+    const structureWithIds = data.planStructure?.map(s => ({ ...s, id: s.id || `struct-${Date.now()}-${Math.random()}` })) || [];
 
     const templateData = {
         ...data,
         plans: plansWithIds,
         exams: examsWithIds,
-        complexityDefinitions: complexWithIds
+        complexityDefinitions: complexWithIds,
+        planStructure: structureWithIds
     };
 
     if (editingTemplateId) {
@@ -366,7 +371,8 @@ export default function ManageTemplatesPage() {
         specificManagement: p.specificManagement || ''
       })) || [],
       exams: template.exams || [],
-      complexityDefinitions: template.complexityDefinitions || []
+      complexityDefinitions: template.complexityDefinitions || [],
+      planStructure: template.planStructure || [],
     });
     if (formCardRef.current) {
       formCardRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -472,8 +478,10 @@ export default function ManageTemplatesPage() {
               <FormField control={form.control} name="name" render={({ field }) => (<FormItem><Label className="font-semibold">Nome do Modelo</Label><FormControl><Input placeholder="Ex: Treinamento NR-35" {...field} /></FormControl><FormMessage /></FormItem>)} />
               {renderRichTextFormArea('Objeto da Proposta', 'proposalObject')}
               {renderRichTextFormArea('Escopo do Serviço', 'serviceScope')}
-              {renderRichTextFormArea('Da Contratante', 'clientResponsibilities')}
+              
               {renderRichTextFormArea('Da Contratada', 'contractorResponsibilities')}
+              {renderRichTextFormArea('Da Contratante', 'clientResponsibilities')}
+              
               {renderRichTextFormArea('Prazo para Realização dos Serviços', 'deadline')}
               
               <Card className="pt-4">
@@ -495,6 +503,31 @@ export default function ManageTemplatesPage() {
                         <Button type="button" variant="outline" size="sm" onClick={() => appendComplexity({ id: `complex-${Date.now()}-high`, title: 'Alta Complexidade', description: '' })}><Plus className="mr-1 h-3 w-3" /> Alta</Button>
                         <Button type="button" variant="ghost" size="sm" onClick={() => appendComplexity({ id: `complex-${Date.now()}`, title: '', description: '' })}><Plus className="mr-1 h-3 w-3" /> Outro nível</Button>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-4 italic">
+                        Abaixo seguem as opções dos Planos, de acordo com a estratégia financeira da sua empresa. Investimento - Opções - Baixa Complexidade, Média Complexidade, Alta Complexidade:
+                    </p>
+                </CardContent>
+              </Card>
+
+              <Card className="pt-4">
+                <CardHeader className="py-0">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <LayoutGrid className="h-5 w-5" /> Estrutura dos Planos
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Avalie o plano que melhor se adequa a estrutura organizacional da sua empresa hoje:</p>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-6">
+                    {planStructureFields.map((field, index) => (
+                        <div key={field.id} className="border p-4 rounded-md space-y-3 relative bg-card shadow-sm">
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removePlanStructure(index)}><Trash2 className="h-4 w-4" /></Button>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name={`planStructure.${index}.plan`} render={({ field }) => (<FormItem><Label className="font-semibold">Plano</Label><FormControl><Input placeholder="Ex: Essencial" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={form.control} name={`planStructure.${index}.profile`} render={({ field }) => (<FormItem><Label className="font-semibold">Perfil</Label><FormControl><Input placeholder="Ex: Regularização" {...field} /></FormControl></FormItem>)} />
+                                <FormField control={form.control} name={`planStructure.${index}.objective`} render={({ field }) => (<FormItem><Label className="font-semibold">Objetivo</Label><FormControl><Input placeholder="Ex: Atendimento a exigência legal" {...field} /></FormControl></FormItem>)} />
+                            </div>
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendPlanStructure({ id: `struct-${Date.now()}`, plan: '', profile: '', objective: '' })}><Plus className="mr-1 h-3 w-3" /> Adicionar Linha na Estrutura</Button>
                 </CardContent>
               </Card>
 
@@ -633,8 +666,9 @@ export default function ManageTemplatesPage() {
                         </div>
                     )}
 
-                    {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.clientResponsibilities }} /></div>}
                     {template.contractorResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratada</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.contractorResponsibilities }} /></div>}
+                    {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.clientResponsibilities }} /></div>}
+                    
                     {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.deadline }} /></div>}
                     {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.investment }} /></div>}
                     {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.strategicVision }} /></div>}

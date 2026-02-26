@@ -8,6 +8,7 @@ import type {
   ProposalState,
   ProposalData,
   ComplexityDefinition,
+  PlanStructureItem,
 } from '@/lib/types';
 import {
   Dialog,
@@ -107,6 +108,7 @@ export default function ProposalModal({
     plans: [],
     exams: [],
     complexityDefinitions: [],
+    planStructure: [],
   });
   
   const formatCurrency = (value: number) => {
@@ -145,6 +147,7 @@ export default function ProposalModal({
       plans: template?.plans || [],
       exams: template?.exams || [],
       complexityDefinitions: template?.complexityDefinitions || [],
+      planStructure: template?.planStructure || [],
     });
   };
 
@@ -416,6 +419,14 @@ Grupo Florencio`;
                   newDefs[index] = { ...newDefs[index], [fieldKey]: content };
                   return { ...prev, complexityDefinitions: newDefs };
               });
+          } else if (parts[0] === 'planStructure') {
+              const index = parseInt(parts[1]);
+              const fieldKey = parts[2] as keyof PlanStructureItem;
+              setProposalState(prev => {
+                  const newStruct = [...(prev.planStructure || [])];
+                  newStruct[index] = { ...newStruct[index], [fieldKey]: content };
+                  return { ...prev, planStructure: newStruct };
+              });
           }
       } else {
           setProposalState(prevState => ({
@@ -459,6 +470,10 @@ Grupo Florencio`;
                 const index = parseInt(parts[1]);
                 const fieldKey = parts[2] as keyof ComplexityDefinition;
                 return String(proposalState.complexityDefinitions?.[index]?.[fieldKey] || '');
+            } else if (parts[0] === 'planStructure') {
+                const index = parseInt(parts[1]);
+                const fieldKey = parts[2] as keyof PlanStructureItem;
+                return String(proposalState.planStructure?.[index]?.[fieldKey] || '');
             }
         }
         return String((proposalState as any)[field] || '');
@@ -791,6 +806,28 @@ Grupo Florencio`;
                     </>
                 )}
 
+                {proposalState.contractorResponsibilities && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Da Contratada
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="contractorResponsibilities" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.clientResponsibilities && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Da Contratante
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="clientResponsibilities" />
+                        </div>
+                    </>
+                )}
+
                 {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -808,29 +845,45 @@ Grupo Florencio`;
                                 </div>
                             ))}
                         </div>
+                        <p className="text-xs text-muted-foreground mt-4 italic">
+                            Abaixo seguem as opções dos Planos, de acordo com a estratégia financeira da sua empresa. Investimento - Opções - Baixa Complexidade, Média Complexidade, Alta Complexidade:
+                        </p>
                     </>
                 )}
 
-                {proposalState.clientResponsibilities && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Da Contratante
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="clientResponsibilities" />
+                {proposalState.planStructure && proposalState.planStructure.length > 0 && (
+                    <div className="my-8 overflow-hidden rounded-lg border border-[#1b7689]">
+                        <div className="bg-[#1b7689] p-3 text-center text-white font-bold uppercase tracking-wider">
+                            ESTRUTURA DOS PLANOS
                         </div>
-                    </>
-                )}
-
-                {proposalState.contractorResponsibilities && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Da Contratada
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="contractorResponsibilities" />
+                        <div className="bg-[#1b7689] p-2 text-center text-white text-xs border-t border-white/20">
+                            Avalie o plano que melhor se adequa a estrutura organizacional da sua empresa hoje:
                         </div>
-                    </>
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="bg-[#8ec7d1] text-[#1b7689]">
+                                    <th className="p-2 border-r border-[#1b7689] text-sm font-bold">PLANO</th>
+                                    <th className="p-2 border-r border-[#1b7689] text-sm font-bold">PERFIL</th>
+                                    <th className="p-2 text-sm font-bold">OBJETIVO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {proposalState.planStructure.map((item, index) => (
+                                    <tr key={item.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689]">
+                                        <td className="p-2 border-r border-[#1b7689] text-xs">
+                                            <EditableDiv field="dummy" path={`planStructure.${index}.plan`} />
+                                        </td>
+                                        <td className="p-2 border-r border-[#1b7689] text-xs">
+                                            <EditableDiv field="dummy" path={`planStructure.${index}.profile`} />
+                                        </td>
+                                        <td className="p-2 text-xs">
+                                            <EditableDiv field="dummy" path={`planStructure.${index}.objective`} />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
 
                 {proposalState.deadline && (

@@ -77,6 +77,13 @@ export const complexityDefinitionSchema = z.object({
     description: z.string().default(''),
 });
 
+export const planStructureItemSchema = z.object({
+    id: z.string(),
+    plan: z.string().default(''),
+    profile: z.string().default(''),
+    objective: z.string().default(''),
+});
+
 export const planSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -159,6 +166,7 @@ export type Plan = z.infer<typeof planSchema>;
 export type ExtraService = z.infer<typeof extraServiceSchema>;
 export type InvestmentItem = z.infer<typeof investmentItemSchema>;
 export type ComplexityDefinition = z.infer<typeof complexityDefinitionSchema>;
+export type PlanStructureItem = z.infer<typeof planStructureItemSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
@@ -178,6 +186,7 @@ export type ProposalTemplate = {
   plans: Plan[];
   exams: Service[];
   complexityDefinitions?: ComplexityDefinition[];
+  planStructure?: PlanStructureItem[];
 };
 
 export type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;
