@@ -163,6 +163,7 @@ export type ProposalTemplate = {
   contractorResponsibilities: string;
   deadline: string;
   strategicVision: string;
+  strategicManagement?: string;
   investment: string;
   auditSupport?: string;
   paymentTerms?: string;

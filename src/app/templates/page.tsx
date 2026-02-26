@@ -37,6 +37,7 @@ const templateFormSchema = z.object({
   deadline: z.string().optional().default(''),
   investment: z.string().optional().default(''),
   strategicVision: z.string().optional().default(''),
+  strategicManagement: z.string().optional().default(''),
   auditSupport: z.string().optional().default(''),
   paymentTerms: z.string().optional().default(''),
   plans: z.array(planSchema).optional().default([]),
@@ -217,6 +218,7 @@ export default function ManageTemplatesPage() {
       deadline: '',
       investment: '',
       strategicVision: '',
+      strategicManagement: '',
       auditSupport: '',
       paymentTerms: '',
       plans: [],
@@ -234,7 +236,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', auditSupport: '', paymentTerms: '', plans: [], exams: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', strategicManagement: '', auditSupport: '', paymentTerms: '', plans: [], exams: [] });
     setEditingTemplateId(null);
   };
 
@@ -383,6 +385,7 @@ export default function ManageTemplatesPage() {
               {renderFormField('Prazo para Realização dos Serviços', 'deadline')}
               {renderFormField('Investimento Geral', 'investment')}
               {renderFormField('Nossa Visão Estratégica', 'strategicVision')}
+              {renderFormField('Gestão Estratégica', 'strategicManagement')}
               {renderFormField('Suporte em auditorias e fiscalizações', 'auditSupport')}
               
               <FormField
@@ -516,6 +519,7 @@ export default function ManageTemplatesPage() {
                     {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><p className="whitespace-pre-wrap">{template.deadline}</p></div>}
                     {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><p className="whitespace-pre-wrap">{template.investment}</p></div>}
                     {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>}
+                    {template.strategicManagement && <div><h4 className='font-bold text-foreground'>Gestão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicManagement}</p></div>}
                     {template.auditSupport && <div><h4 className='font-bold text-foreground'>Suporte em Auditorias</h4><p className="whitespace-pre-wrap">{template.auditSupport}</p></div>}
                     {template.paymentTerms && (
                       <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><p className="whitespace-pre-wrap">{template.paymentTerms}</p></div>

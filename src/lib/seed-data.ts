@@ -28,6 +28,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
         deadline: 'O prazo para elaboração dos programas é de 30 dias após a assinatura do contrato. Os exames serão agendados conforme disponibilidade.',
         investment: 'O investimento total pode ser parcelado em até 3x sem juros no boleto bancário.',
         strategicVision: 'Garantir a conformidade legal da empresa, reduzir acidentes e doenças do trabalho, e evitar multas e passivos trabalhistas através de uma gestão de SST proativa e eficiente.',
+        strategicManagement: 'Nossa gestão estratégica foca na redução de custos operacionais através da prevenção, garantindo que sua empresa esteja sempre à frente das exigências legais.',
         plans: [
             { 
               id: 'plan-1', 

@@ -356,6 +356,20 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
+          {proposalState.strategicManagement && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Gestão Estratégica
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.strategicManagement.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
           {proposalState.auditSupport && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">

@@ -92,6 +92,7 @@ export default function ProposalModal({
     deadline: 'A ser definido na proposta.',
     investment: 'A ser definido na proposta.',
     strategicVision: 'A ser definido na proposta.',
+    strategicManagement: 'A ser definido na proposta.',
     auditSupport: '',
     paymentTerms: '',
     plans: [],
@@ -130,6 +131,7 @@ export default function ProposalModal({
       deadline: template?.deadline || 'A ser definido na proposta.',
       investment: template?.investment || investmentText,
       strategicVision: template?.strategicVision || 'A ser definido na proposta.',
+      strategicManagement: template?.strategicManagement || 'A ser definido na proposta.',
       auditSupport: template?.auditSupport || '',
       paymentTerms: template?.paymentTerms || '',
       plans: template?.plans || [],
@@ -733,6 +735,17 @@ Grupo Florencio`;
                         </h3>
                         <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
                         <EditableDiv field="strategicVision" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.strategicManagement && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Gestão Estratégica
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="strategicManagement" />
                         </div>
                     </>
                 )}
