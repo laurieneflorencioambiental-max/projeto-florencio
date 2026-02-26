@@ -98,7 +98,6 @@ export default function CatalogPage() {
   };
 
   const formatCurrency = (value: number) => {
-    if (!value && value !== 0) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -170,9 +169,12 @@ export default function CatalogPage() {
                 <FormField control={form.control} name="description" render={({ field }) => (<FormItem><Label>Descrição</Label><FormControl><Input placeholder="Ex: Exame Admissional" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="value" render={({ field }) => (
                   <FormItem>
-                    <Label>Valor Padrão (R$)</Label>
+                    <Label>Valor Padrão</Label>
                     <FormControl>
-                      <Input type="number" placeholder="50.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                        <Input type="number" step="0.01" placeholder="50,00" {...field} className="pl-9" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -213,7 +215,7 @@ export default function CatalogPage() {
                   <TableRow key={service.id}>
                     <TableCell className="font-medium">{service.service}</TableCell>
                     <TableCell>{service.description}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(service.value)}</TableCell>
+                    <TableCell className="text-right font-semibold text-primary">{formatCurrency(service.value)}</TableCell>
                     <TableCell className="text-center">
                       <Button variant="ghost" size="icon" onClick={() => handleStartEditing(service)}><Pencil className="h-4 w-4" /></Button>
                       <AlertDialog>

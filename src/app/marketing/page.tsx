@@ -189,6 +189,13 @@ export default function MarketingPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value || 0);
+  };
+
   const filteredActions = useMemo(() => {
     const data = actions || [];
     if (filter === 'all') return data;
@@ -991,16 +998,20 @@ export default function MarketingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tool-value">Valor (R$)</Label>
-                <Input
-                  id="tool-value"
-                  type="number"
-                  placeholder="Ex: 54.90"
-                  value={newToolValue}
-                  onChange={e => setNewToolValue(e.target.value)}
-                  min="0.01"
-                  step="0.01"
-                />
+                <Label htmlFor="tool-value">Valor</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                  <Input
+                    id="tool-value"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={newToolValue}
+                    onChange={e => setNewToolValue(e.target.value)}
+                    min="0.01"
+                    className="pl-9"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1145,11 +1156,8 @@ export default function MarketingPage() {
                             </div>
                          )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {tool.value.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                      <TableCell className="text-right font-bold text-primary">
+                        {formatCurrency(tool.value)}
                       </TableCell>
                       <TableCell className="text-center">
                         <Button
@@ -1215,28 +1223,36 @@ export default function MarketingPage() {
                 </Select>
               </div>
               <div className="space-y-2 md:col-span-1">
-                <Label htmlFor="investment">Investimento Total (R$)</Label>
-                <Input
-                  id="investment"
-                  type="number"
-                  placeholder="Ex: 5000"
-                  value={newInvestment}
-                  onChange={e => setNewInvestment(e.target.value)}
-                  min="0.01"
-                  step="0.01"
-                />
+                <Label htmlFor="investment">Investimento Total</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                  <Input
+                    id="investment"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={newInvestment}
+                    onChange={e => setNewInvestment(e.target.value)}
+                    min="0.01"
+                    className="pl-9"
+                  />
+                </div>
               </div>
               <div className="space-y-2 md:col-span-1">
-                <Label htmlFor="revenue">Receita Gerada (R$)</Label>
-                <Input
-                  id="revenue"
-                  type="number"
-                  placeholder="Ex: 25000"
-                  value={newRevenue}
-                  onChange={e => setNewRevenue(e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
+                <Label htmlFor="revenue">Receita Gerada</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                  <Input
+                    id="revenue"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={newRevenue}
+                    onChange={e => setNewRevenue(e.target.value)}
+                    min="0"
+                    className="pl-9"
+                  />
+                </div>
               </div>
               <Button type="submit" className="w-full md:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -1265,16 +1281,10 @@ export default function MarketingPage() {
                         {entry.source}
                       </TableCell>
                       <TableCell className="text-right">
-                        {entry.investment.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        {formatCurrency(entry.investment)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {entry.revenue.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        })}
+                        {formatCurrency(entry.revenue)}
                       </TableCell>
                       <TableCell
                         className={`text-right font-bold ${
@@ -1301,16 +1311,10 @@ export default function MarketingPage() {
                       Total Consolidado
                     </TableCell>
                     <TableCell className="text-right font-bold">
-                      {totals.totalInvestment.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
+                      {formatCurrency(totals.totalInvestment)}
                     </TableCell>
                     <TableCell className="text-right font-bold">
-                      {totals.totalRevenue.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
+                      {formatCurrency(totals.totalRevenue)}
                     </TableCell>
                     <TableCell
                       className={`text-right font-extrabold text-lg ${

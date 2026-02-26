@@ -107,10 +107,7 @@ export default function CommissionsPage() {
   }, [baseServiceValue, commissionPercentage, taxPercentage]);
 
   const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) {
-        return (0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
   
   const resetForm = () => {
@@ -326,7 +323,7 @@ export default function CommissionsPage() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="partner-name">Nome do Parceiro (Opcional)</Label>
+                    <Label htmlFor="partner-name">Nome do Parceiro</Label>
                     <Input id="partner-name" placeholder="Ex: Contabilidade XYZ" value={partnerName} onChange={e => setPartnerName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
@@ -334,7 +331,7 @@ export default function CommissionsPage() {
                     <Input id="partner-whatsapp" placeholder="Ex: 5521999998888" value={partnerWhatsapp} onChange={e => setPartnerWhatsapp(e.target.value)} />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="service-name">Nome do Serviço (Opcional)</Label>
+                    <Label htmlFor="service-name">Nome do Serviço</Label>
                     <Input id="service-name" placeholder="Ex: ASO Clínico" value={serviceName} onChange={e => setServiceName(e.target.value)} />
                 </div>
             </div>
@@ -362,18 +359,21 @@ export default function CommissionsPage() {
             </div>
 
             <Card className="bg-muted/30">
-                <CardHeader><CardTitle className="text-lg">Valores de Entrada</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg font-bold">Valores de Entrada</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                      <div className="space-y-2">
-                        <Label htmlFor="base-service-value">Valor do Serviço (R$)</Label>
-                        <Input id="base-service-value" type="number" placeholder="52.60" value={baseServiceValue} onChange={e => setBaseServiceValue(parseFloat(e.target.value) || 0)} />
+                        <Label htmlFor="base-service-value">Valor do Serviço</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                            <Input id="base-service-value" type="number" step="0.01" placeholder="0,00" value={baseServiceValue} onChange={e => setBaseServiceValue(parseFloat(e.target.value) || 0)} className="pl-9" />
+                        </div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="commission-percentage">Comissão do Parceiro (%)</Label>
                         <Input id="commission-percentage" type="number" placeholder="18" value={commissionPercentage} onChange={e => setCommissionPercentage(parseFloat(e.target.value) || 0)} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="tax-percentage">Imposto sobre Serviço (%)</Label>
+                        <Label htmlFor="tax-percentage">Imposto (%)</Label>
                         <Input id="tax-percentage" type="number" placeholder="6" value={taxPercentage} onChange={e => setTaxPercentage(parseFloat(e.target.value) || 0)} />
                     </div>
                 </CardContent>
@@ -386,7 +386,7 @@ export default function CommissionsPage() {
             </div>
             <div className="flex gap-2 self-end">
                 <Button variant="outline" onClick={resetForm}>Limpar</Button>
-                <Button onClick={handleSaveNewTemplate}><Save className="mr-2 h-4 w-4" />Salvar como Novo Modelo</Button>
+                <Button onClick={handleSaveNewTemplate}><Save className="mr-2 h-4 w-4" />Salvar Modelo</Button>
             </div>
           </CardFooter>
         </Card>
@@ -422,7 +422,7 @@ export default function CommissionsPage() {
                                                         <p className="font-medium">{template.serviceName || 'Serviço não especificado'}</p>
                                                         <p className="text-xs text-muted-foreground">{template.name}</p>
                                                     </TableCell>
-                                                    <TableCell>{formatCurrency(template.finalClientPrice)}</TableCell>
+                                                    <TableCell className="font-bold text-primary">{formatCurrency(template.finalClientPrice)}</TableCell>
                                                     <TableCell className="text-right space-x-2">
                                                         <Button size="sm" variant="outline" onClick={() => loadTemplate(template)}>Carregar</Button>
                                                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteTemplate(template.id)}><Trash2 className="h-4 w-4"/></Button>
@@ -455,47 +455,47 @@ export default function CommissionsPage() {
       </div>
 
       <div className="lg:col-span-1">
-        <Card className="sticky top-6">
-          <CardHeader>
+        <Card className="sticky top-6 border-primary shadow-lg">
+          <CardHeader className="bg-primary/5">
             <CardTitle>Resultado do Cálculo</CardTitle>
-             <CardDescription>Este é o detalhamento dos valores com base nos dados que você inseriu.</CardDescription>
+             <CardDescription>Detalhamento dos repasses e precificação.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 pt-6">
             <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Valor Base do Serviço</span>
+                <span className="text-muted-foreground">Valor Base (Sua Receita)</span>
                 <span className="font-medium">{formatCurrency(baseServiceValue)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Comissão do Parceiro ({commissionPercentage}%)</span>
-                <span className="font-medium text-green-600">{formatCurrency(calculation.commissionValue)}</span>
+                <span className="font-medium text-green-600">+{formatCurrency(calculation.commissionValue)}</span>
             </div>
              <div className="flex justify-between items-center text-sm font-semibold border-t pt-2">
-                <span className="text-muted-foreground">Subtotal (Base + Comissão)</span>
+                <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatCurrency(calculation.subtotal)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Imposto ({taxPercentage}%)</span>
-                <span className="font-medium text-red-600">{formatCurrency(calculation.taxValue)}</span>
+                <span className="font-medium text-red-600">+{formatCurrency(calculation.taxValue)}</span>
             </div>
             <div className="flex justify-between items-center border-t pt-4 mt-4">
               <div>
                 <p className='font-semibold'>Sua Receita Bruta</p>
-                <p className='text-xs text-muted-foreground'>(Valor do Serviço)</p>
+                <p className='text-[10px] text-muted-foreground'>(Valor do Serviço)</p>
               </div>
-              <span className="font-bold text-lg">{formatCurrency(baseServiceValue)}</span>
+              <span className="font-bold text-lg text-primary">{formatCurrency(baseServiceValue)}</span>
             </div>
             <div className="flex justify-between items-center">
               <div>
                 <p className='font-semibold'>Comissão do Parceiro</p>
-                 <p className='text-xs text-muted-foreground'>(Valor a ser pago ao parceiro)</p>
+                 <p className='text-[10px] text-muted-foreground'>(Valor a ser pago ao parceiro)</p>
               </div>
-              <span className="font-bold text-lg">{formatCurrency(calculation.commissionValue)}</span>
+              <span className="font-bold text-lg text-green-600">{formatCurrency(calculation.commissionValue)}</span>
             </div>
           </CardContent>
-          <CardFooter className="bg-muted/50 p-4 rounded-b-lg">
+          <CardFooter className="bg-primary/10 p-4 rounded-b-lg border-t">
             <div className="w-full">
                 <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold">Preço Final para Cliente</span>
+                    <span className="text-lg font-bold">Preço Final Cliente</span>
                     <span className="text-2xl font-bold text-primary">{formatCurrency(calculation.finalClientPrice)}</span>
                 </div>
             </div>

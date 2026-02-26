@@ -221,9 +221,12 @@ export default function EditLeadModal({
                   name="value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor (R$)</FormLabel>
+                      <FormLabel>Valor do Orçamento</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="15000" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                          <Input type="number" step="0.01" placeholder="0,00" {...field} className="pl-9" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -290,7 +293,10 @@ export default function EditLeadModal({
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <Input type="number" placeholder="Taxa %" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="w-24"/>
+                                  <div className="relative">
+                                    <Input type="number" placeholder="Taxa" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="w-24 pr-6"/>
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                                  </div>
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>

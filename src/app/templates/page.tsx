@@ -45,7 +45,7 @@ const templateFormSchema = z.object({
   planStructure: z.array(planStructureItemSchema).optional().default([]),
 });
 
-const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
+const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨', '⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
 
 // Componente de Barra de Ferramentas para Edição de Texto
 function FormattingToolbar({ textareaId }: { textareaId: string }) {
@@ -167,15 +167,19 @@ function ExtraServicesFields({ planIndex }: { planIndex: number }) {
                 control={control}
                 name={`plans.${planIndex}.extraServices.${index}.value`}
                 render={({ field }) => (
-                  <FormItem className="w-24">
+                  <FormItem className="w-32">
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="R$"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-sm"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="h-8 text-xs pl-7"
+                        />
+                      </div>
                     </FormControl>
                   </FormItem>
                 )}
@@ -232,7 +236,7 @@ function PlanInvestmentFields({ planIndex }: { planIndex: number }) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input placeholder="Descrição do investimento (ex: Valor Admissional)" {...field} className="h-8 text-sm" />
+                      <Input placeholder="Descrição do investimento" {...field} className="h-8 text-sm" />
                     </FormControl>
                   </FormItem>
                 )}
@@ -241,15 +245,19 @@ function PlanInvestmentFields({ planIndex }: { planIndex: number }) {
                 control={control}
                 name={`plans.${planIndex}.investments.${index}.value`}
                 render={({ field }) => (
-                  <FormItem className="w-24">
+                  <FormItem className="w-32">
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="R$"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        className="h-8 text-sm"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="h-8 text-xs pl-7"
+                        />
+                      </div>
                     </FormControl>
                   </FormItem>
                 )}
@@ -430,11 +438,10 @@ export default function ManageTemplatesPage() {
   );
 
   const formatCurrency = (value: number) => {
-    if (!value && value !== 0) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(value);
+    }).format(value || 0);
   };
   
   const handleAddExamFromCatalog = (serviceId: string) => {
@@ -602,7 +609,18 @@ export default function ManageTemplatesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={form.control} name={`exams.${index}.service`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviço</Label><FormControl><Input placeholder="Ex: ASO" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`exams.${index}.description`} render={({ field }) => (<FormItem><Label className="font-semibold">Descrição</Label><FormControl><Input placeholder="Ex: Clínico" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`exams.${index}.value`} render={({ field }) => (<FormItem><Label className="font-semibold">Valor (R$)</Label><FormControl><Input type="number" placeholder="50.60" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`exams.${index}.value`} render={({ field }) => (
+                          <FormItem>
+                            <Label className="font-semibold">Valor</Label>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                                <Input type="number" step="0.01" placeholder="0,00" {...field} className="pl-9" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
                       </div>
                     </div>
                   ))}
@@ -682,10 +700,12 @@ export default function ManageTemplatesPage() {
                           {template.plans.map(p => (
                             <li key={p.id}>
                                 {p.name} - 
+                                <span className="font-bold text-primary ml-1">
                                 {p.investments && p.investments.length > 0 
                                     ? formatCurrency(p.investments.reduce((sum, inv) => sum + inv.value, 0))
                                     : formatCurrency(p.investment || 0)
                                 }
+                                </span>
                             </li>
                           ))}
                         </ul>

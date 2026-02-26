@@ -96,7 +96,10 @@ export default function PricingPage() {
   };
 
   const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
   };
   
   const resetForm = () => {
@@ -196,7 +199,7 @@ export default function PricingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="pricing-name">Nome da Precificação</Label>
-                    <Input id="pricing-name" placeholder="Ex: Laudo de Ruído Ambiental - Cliente Padrão" value={name} onChange={e => setName(e.target.value)} />
+                    <Input id="pricing-name" placeholder="Ex: Laudo de Ruído Ambiental" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="service-type">Tipo de Serviço</Label>
@@ -212,23 +215,29 @@ export default function PricingPage() {
             </div>
 
             <Card className="bg-muted/30">
-                <CardHeader><CardTitle className="text-lg">Fatores de Custo (R$)</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg font-bold">Fatores de Custo</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {costFields.map(({ key, label }) => (
                         <div key={key} className="space-y-2">
                             <Label htmlFor={key}>{label}</Label>
-                            <Input id={key} type="number" placeholder="0.00" value={costs[key]} onChange={e => handleCostChange(key, e.target.value)} />
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">R$</span>
+                                <Input id={key} type="number" step="0.01" placeholder="0,00" value={costs[key]} onChange={e => handleCostChange(key, e.target.value)} className="pl-8 text-xs" />
+                            </div>
                         </div>
                     ))}
                 </CardContent>
             </Card>
             
             <Card className="bg-muted/30">
-                <CardHeader><CardTitle className="text-lg">Ajustes Financeiros</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-lg font-bold">Ajustes Financeiros</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="boleto-fee">Taxa do Boleto (R$)</Label>
-                        <Input id="boleto-fee" type="number" placeholder="0.00" value={boletoFee} onChange={e => setBoletoFee(parseFloat(e.target.value) || 0)} />
+                        <Label htmlFor="boleto-fee">Taxa do Boleto</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                            <Input id="boleto-fee" type="number" step="0.01" placeholder="0,00" value={boletoFee} onChange={e => setBoletoFee(parseFloat(e.target.value) || 0)} className="pl-9" />
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="margin">Margem de Lucro (%)</Label>
@@ -258,7 +267,7 @@ export default function PricingPage() {
                              <div key={template.id} className="flex items-center justify-between p-3 border rounded-lg bg-background">
                                 <div>
                                     <p className="font-semibold">{template.name}</p>
-                                    <p className="text-sm text-muted-foreground">{template.serviceType} - {formatCurrency(template.finalPrice)}</p>
+                                    <p className="text-sm text-muted-foreground">{template.serviceType} - <span className="font-bold text-primary">{formatCurrency(template.finalPrice)}</span></p>
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <Button size="sm" variant="outline" onClick={() => loadTemplate(template)}>Carregar</Button>
@@ -273,11 +282,11 @@ export default function PricingPage() {
       </div>
 
       <div className="lg:col-span-1">
-        <Card className="sticky top-6">
-          <CardHeader>
+        <Card className="sticky top-6 border-primary/50 shadow-md">
+          <CardHeader className="bg-primary/5">
             <CardTitle>Resultado da Precificação</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 pt-6">
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Total de Custos Diretos</span>
                 <span className="font-medium">{formatCurrency(calculation.totalCosts)}</span>
@@ -292,14 +301,14 @@ export default function PricingPage() {
             </div>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Lucro ({margin}%)</span>
-                <span className="font-medium text-green-600">{formatCurrency(calculation.profitValue)}</span>
+                <span className="font-medium text-green-600">+{formatCurrency(calculation.profitValue)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Impostos ({taxes}%)</span>
-                <span className="font-medium text-red-600">{formatCurrency(calculation.taxesValue)}</span>
+                <span className="font-medium text-red-600">+{formatCurrency(calculation.taxesValue)}</span>
             </div>
           </CardContent>
-          <CardFooter className="bg-muted/50 p-4 rounded-b-lg">
+          <CardFooter className="bg-primary/10 p-4 rounded-b-lg border-t">
             <div className="w-full">
                 <div className="flex justify-between items-center">
                     <span className="text-lg font-bold">Preço Final de Venda</span>
@@ -312,5 +321,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
