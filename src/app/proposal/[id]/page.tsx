@@ -361,7 +361,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                     <div className="space-y-3">
                       <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><p className="text-sm leading-tight">{plan.purpose || 'N/A'}</p></div>
-                      <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm leading-tight">{plan.differentiator || 'N/A'}</p></div>
+                      <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.differentiator || 'N/A'}</p></div>
                       <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm leading-tight">{plan.focus || 'N/A'}</p></div>
                       <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm leading-tight">{plan.employeeRange}</p></div>
                     </div>

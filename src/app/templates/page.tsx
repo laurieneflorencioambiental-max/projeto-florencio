@@ -320,11 +320,12 @@ export default function ManageTemplatesPage() {
                         <FormField control={form.control} name={`plans.${index}.employeeRange`} render={({ field }) => (<FormItem><Label className="font-semibold">Faixa de Funcionários</Label><FormControl><Input placeholder="Ex: 1 a 300" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name={`plans.${index}.purpose`} render={({ field }) => (<FormItem><Label className="font-semibold">Finalidade</Label><FormControl><Input placeholder="Ex: Conformidade legal" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`plans.${index}.differentiator`} render={({ field }) => (<FormItem><Label className="font-semibold">Diferencial</Label><FormControl><Input placeholder="Ex: Suporte 24h" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`plans.${index}.focus`} render={({ field }) => (<FormItem><Label className="font-semibold">Foco</Label><FormControl><Input placeholder="Ex: Prevenção de multas" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
+
+                      <FormField control={form.control} name={`plans.${index}.differentiator`} render={({ field }) => (<FormItem><Label className="font-semibold">Diferencial</Label><FormControl><Textarea placeholder="Liste aqui os diferenciais deste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
 
                       <FormField control={form.control} name={`plans.${index}.servicesIncluded`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviços Inclusos</Label><FormControl><Textarea placeholder="Lista de serviços..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                       
