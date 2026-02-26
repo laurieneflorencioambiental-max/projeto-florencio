@@ -321,7 +321,7 @@ export default function ManageTemplatesPage() {
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`plans.${index}.purpose`} render={({ field }) => (<FormItem><Label className="font-semibold">Finalidade</Label><FormControl><Input placeholder="Ex: Conformidade legal" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`plans.${index}.purpose`} render={({ field }) => (<FormItem><Label className="font-semibold">Finalidade</Label><FormControl><Textarea placeholder="Liste as finalidades deste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`plans.${index}.focus`} render={({ field }) => (<FormItem><Label className="font-semibold">Foco</Label><FormControl><Input placeholder="Ex: Prevenção de multas" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
 

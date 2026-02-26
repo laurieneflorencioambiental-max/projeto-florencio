@@ -737,7 +737,7 @@ Grupo Florencio`;
                         </div>
                         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/30">
                           <div className="space-y-3">
-                            <div><p className="text-xs font-bold text-primary uppercase">Finalidade</p><p className="text-sm">{plan.purpose || 'N/A'}</p></div>
+                            <div><p className="text-xs font-bold text-primary uppercase">Finalidade</p><p className="text-sm whitespace-pre-wrap leading-tight">{plan.purpose || 'N/A'}</p></div>
                             <div><p className="text-xs font-bold text-primary uppercase">Diferencial</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.differentiator || 'N/A'}</p></div>
                             <div><p className="text-xs font-bold text-primary uppercase">Foco</p><p className="text-sm">{plan.focus || 'N/A'}</p></div>
                             <div><p className="text-xs font-bold text-primary uppercase">Faixa de Funcionários</p><p className="text-sm">{plan.employeeRange}</p></div>
