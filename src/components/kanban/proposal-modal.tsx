@@ -984,7 +984,7 @@ Grupo Florencio`;
 
                         {plan.extraServices && plan.extraServices.length > 0 && (
                           <div className="p-4 border-t border-dashed bg-white">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais (Pagos por fora)</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais</p>
                             <div className="grid grid-cols-1 gap-1">
                               {plan.extraServices.map((es, idx) => (
                                 <div key={idx} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100 last:border-0">

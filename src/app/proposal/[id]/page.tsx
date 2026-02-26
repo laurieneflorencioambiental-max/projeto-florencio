@@ -492,7 +492,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
                   {plan.extraServices && plan.extraServices.length > 0 && (
                     <div className="p-4 border-t border-dashed bg-white">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais (Pagos por fora)</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais</p>
                       <div className="grid grid-cols-1 gap-1">
                         {plan.extraServices.map((es, idx) => (
                           <div key={idx} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100 last:border-0">
@@ -660,11 +660,12 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             <p className="font-semibold">Prezado cliente,</p>
             <p>
               Em nossa busca contínua em promover práticas de Segurança do
-              Trabalho e Sustentabilidade, gostaríamos de propor uma parceria em
-              nossas mídias sociais. Caso tenhamos a honra de realizar este
-              projeto com a sua empresa, gostaríamos de saber se podemos divulgar
-              nosso trabalho realizado nas suas instalações em nossas plataformas
-              digitais, como Instagram, Linkedin, Site, YouTube?
+              Trabalho e Sustentabilidade, gostaríamos de propor uma
+              parceria em nossas mídias sociais. Caso tenhamos a honra de
+              realizar este projeto com a sua empresa, gostaríamos de saber
+              se podemos divulgar nosso trabalho realizado nas suas
+              instalações em nossas plataformas digitais, como Instagram,
+              Linkedin, Site, YouTube?
             </p>
             <p>
               Acreditamos que essa parceria poderá beneficiar a imagem positiva

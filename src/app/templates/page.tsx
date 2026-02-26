@@ -136,7 +136,7 @@ function ExtraServicesFields({ planIndex }: { planIndex: number }) {
   return (
     <div className="mt-4 space-y-3 bg-muted/30 p-3 rounded-md border border-dashed">
       <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-        Serviços Pagos por Fora
+        Serviços Adicionais
         <Button
           type="button"
           variant="outline"
