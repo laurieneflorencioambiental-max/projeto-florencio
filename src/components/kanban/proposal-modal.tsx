@@ -7,6 +7,7 @@ import type {
   Plan,
   ProposalState,
   ProposalData,
+  ComplexityDefinition,
 } from '@/lib/types';
 import {
   Dialog,
@@ -37,7 +38,8 @@ import {
   Underline,
   List,
   Link as LinkIcon,
-  Smile
+  Smile,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   Select,
@@ -104,6 +106,7 @@ export default function ProposalModal({
     paymentTerms: '',
     plans: [],
     exams: [],
+    complexityDefinitions: [],
   });
   
   const formatCurrency = (value: number) => {
@@ -141,6 +144,7 @@ export default function ProposalModal({
       paymentTerms: template?.paymentTerms || '',
       plans: template?.plans || [],
       exams: template?.exams || [],
+      complexityDefinitions: template?.complexityDefinitions || [],
     });
   };
 
@@ -404,6 +408,14 @@ Grupo Florencio`;
                   newPlans[index] = { ...newPlans[index], [fieldKey]: content };
                   return { ...prev, plans: newPlans };
               });
+          } else if (parts[0] === 'complexityDefinitions') {
+              const index = parseInt(parts[1]);
+              const fieldKey = parts[2] as keyof ComplexityDefinition;
+              setProposalState(prev => {
+                  const newDefs = [...(prev.complexityDefinitions || [])];
+                  newDefs[index] = { ...newDefs[index], [fieldKey]: content };
+                  return { ...prev, complexityDefinitions: newDefs };
+              });
           }
       } else {
           setProposalState(prevState => ({
@@ -421,7 +433,6 @@ Grupo Florencio`;
         const url = window.prompt('Insira a URL:', 'https://');
         if (url) {
             execCommand('createLink', url);
-            // Aplicar estilo ao link para garantir visibilidade na proposta
             const selection = window.getSelection();
             if (selection && selection.anchorNode) {
                 const parent = selection.anchorNode.parentElement;
@@ -444,6 +455,10 @@ Grupo Florencio`;
                 const index = parseInt(parts[1]);
                 const fieldKey = parts[2] as keyof Plan;
                 return String(proposalState.plans[index]?.[fieldKey] || '');
+            } else if (parts[0] === 'complexityDefinitions') {
+                const index = parseInt(parts[1]);
+                const fieldKey = parts[2] as keyof ComplexityDefinition;
+                return String(proposalState.complexityDefinitions?.[index]?.[fieldKey] || '');
             }
         }
         return String((proposalState as any)[field] || '');
@@ -776,6 +791,26 @@ Grupo Florencio`;
                     </>
                 )}
 
+                {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                            São considerados Contratos de Baixa Complexidade, grande Complexidade:
+                        </h3>
+                        <p className="text-sm italic mb-4">As opções de planos são de acordo com a estratégia financeira da sua empresa.</p>
+                        <div className="space-y-4">
+                            {proposalState.complexityDefinitions.map((def, index) => (
+                                <div key={def.id} className="p-4 border rounded-lg bg-blue-50/30">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <ShieldCheck className="h-5 w-5 text-primary" />
+                                        <EditableDiv field="dummy" path={`complexityDefinitions.${index}.title`} className="font-bold text-base" />
+                                    </div>
+                                    <EditableDiv field="dummy" path={`complexityDefinitions.${index}.description`} className="text-sm leading-relaxed" />
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+
                 {proposalState.clientResponsibilities && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -833,11 +868,6 @@ Grupo Florencio`;
 
                 {proposalState.plans && proposalState.plans.length > 0 && (
                   <div className="mt-4 space-y-8">
-                    <p className="text-sm mb-4">
-                      Abaixo seguem as opções dos Planos, de acordo com a
-                      estratégia financeira da sua empresa.
-                    </p>
-                    
                     {proposalState.plans.map((plan, index) => (
                       <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
                         <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>

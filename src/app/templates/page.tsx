@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem } from '@/lib/types';
-import { planSchema, serviceSchema, investmentItemSchema } from '@/lib/types';
+import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem, ComplexityDefinition } from '@/lib/types';
+import { planSchema, serviceSchema, investmentItemSchema, complexityDefinitionSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,7 @@ const templateFormSchema = z.object({
   paymentTerms: z.string().optional().default(''),
   plans: z.array(planSchema).optional().default([]),
   exams: z.array(serviceSchema).optional().default([]),
+  complexityDefinitions: z.array(complexityDefinitionSchema).optional().default([]),
 });
 
 const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
@@ -299,12 +300,14 @@ export default function ManageTemplatesPage() {
       strategicVision: '',
       paymentTerms: '',
       plans: [],
-      exams: []
+      exams: [],
+      complexityDefinitions: [],
     },
   });
 
   const { fields: planFields, append: appendPlan, remove: removePlan } = useFieldArray({ control: form.control, name: 'plans' });
   const { fields: examFields, append: appendExam, remove: removeExam } = useFieldArray({ control: form.control, name: 'exams' });
+  const { fields: complexityFields, append: appendComplexity, remove: removeComplexity } = useFieldArray({ control: form.control, name: 'complexityDefinitions' });
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -313,7 +316,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [] });
     setEditingTemplateId(null);
   };
 
@@ -327,11 +330,13 @@ export default function ManageTemplatesPage() {
       investments: p.investments || []
     }));
     const examsWithIds = data.exams?.map(e => ({ ...e, id: e.id || `exam-${Date.now()}-${Math.random()}` })) || [];
+    const complexWithIds = data.complexityDefinitions?.map(c => ({ ...c, id: c.id || `complexity-${Date.now()}-${Math.random()}` })) || [];
 
     const templateData = {
         ...data,
         plans: plansWithIds,
-        exams: examsWithIds
+        exams: examsWithIds,
+        complexityDefinitions: complexWithIds
     };
 
     if (editingTemplateId) {
@@ -360,7 +365,8 @@ export default function ManageTemplatesPage() {
         strategicManagement: p.strategicManagement || '',
         specificManagement: p.specificManagement || ''
       })) || [],
-      exams: template.exams || []
+      exams: template.exams || [],
+      complexityDefinitions: template.complexityDefinitions || []
     });
     if (formCardRef.current) {
       formCardRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -469,12 +475,39 @@ export default function ManageTemplatesPage() {
               {renderRichTextFormArea('Da Contratante', 'clientResponsibilities')}
               {renderRichTextFormArea('Da Contratada', 'contractorResponsibilities')}
               {renderRichTextFormArea('Prazo para Realização dos Serviços', 'deadline')}
+              
+              <Card className="pt-4">
+                <CardHeader className="py-0">
+                    <CardTitle className="text-lg">Complexidade dos Contratos</CardTitle>
+                    <p className="text-sm text-muted-foreground">"São considerados Contratos de Baixa Complexidade, grande Complexidade:"</p>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-6">
+                    {complexityFields.map((field, index) => (
+                        <div key={field.id} className="border p-4 rounded-md space-y-3 relative bg-card shadow-sm">
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeComplexity(index)}><Trash2 className="h-4 w-4" /></Button>
+                            <FormField control={form.control} name={`complexityDefinitions.${index}.title`} render={({ field }) => (<FormItem><Label className="font-semibold">Título (ex: Baixa Complexidade)</Label><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                            {renderRichTextFormArea('Descrição Explicativa', `complexityDefinitions.${index}.description`)}
+                        </div>
+                    ))}
+                    <div className="flex gap-2 flex-wrap">
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendComplexity({ id: `complex-${Date.now()}-low`, title: 'Baixa Complexidade', description: '' })}><Plus className="mr-1 h-3 w-3" /> Baixa</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendComplexity({ id: `complex-${Date.now()}-mid`, title: 'Média Complexidade', description: '' })}><Plus className="mr-1 h-3 w-3" /> Média</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendComplexity({ id: `complex-${Date.now()}-high`, title: 'Alta Complexidade', description: '' })}><Plus className="mr-1 h-3 w-3" /> Alta</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => appendComplexity({ id: `complex-${Date.now()}`, title: '', description: '' })}><Plus className="mr-1 h-3 w-3" /> Outro nível</Button>
+                    </div>
+                </CardContent>
+              </Card>
+
               {renderRichTextFormArea('Investimento Geral', 'investment')}
               {renderRichTextFormArea('Nossa Visão Estratégica', 'strategicVision')}
               
               {renderRichTextFormArea('Condições de Pagamento Adicionais', 'paymentTerms')}
 
-              <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Planos de Investimento</CardTitle></CardHeader>
+              <Card className="pt-4">
+                <CardHeader className="py-0">
+                    <CardTitle className="text-lg">Planos de Investimento</CardTitle>
+                    <p className="text-sm text-muted-foreground">"As opções de planos são de acordo com a estratégia financeira da sua empresa."</p>
+                </CardHeader>
                 <CardContent className="space-y-4 pt-6">
                   {planFields.map((field, index) => (
                     <div key={field.id} className="border p-4 rounded-md space-y-3 relative bg-card shadow-sm">
@@ -590,6 +623,16 @@ export default function ManageTemplatesPage() {
                   <div className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border space-y-4 h-96 overflow-y-auto">
                     {template.proposalObject && <div><h4 className='font-bold text-foreground'>Objeto da Proposta</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.proposalObject }} /></div>}
                     {template.serviceScope && <div><h4 className='font-bold text-foreground'>Escopo do Serviço</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.serviceScope }} /></div>}
+                    
+                    {template.complexityDefinitions && template.complexityDefinitions.length > 0 && (
+                        <div>
+                            <h4 className='font-bold text-foreground'>Definições de Complexidade</h4>
+                            <ul className="list-disc list-inside">
+                                {template.complexityDefinitions.map(c => <li key={c.id}>{c.title}</li>)}
+                            </ul>
+                        </div>
+                    )}
+
                     {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.clientResponsibilities }} /></div>}
                     {template.contractorResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratada</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.contractorResponsibilities }} /></div>}
                     {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.deadline }} /></div>}

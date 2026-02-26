@@ -15,6 +15,7 @@ import {
   Calendar as CalendarIcon,
   AlertCircle,
   Gem,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
@@ -294,6 +295,31 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
+          {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    São considerados Contratos de Baixa Complexidade, grande Complexidade:
+                </h3>
+                <p className="text-sm italic mb-4">As opções de planos são de acordo com a estratégia financeira da sua empresa.</p>
+                <div className="grid gap-4">
+                    {proposalState.complexityDefinitions.map((def) => (
+                        <div key={def.id} className="p-4 border rounded-lg bg-blue-50/20">
+                            <div className="flex items-center gap-2 mb-2">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                <h4 className="font-bold text-base text-primary">{def.title}</h4>
+                            </div>
+                            <div
+                                className="prose prose-sm dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{
+                                __html: def.description.replace(/\n/g, '<br />'),
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+              </>
+          )}
+
           {proposalState.clientResponsibilities && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -371,11 +397,6 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
           {proposalState.plans && proposalState.plans.length > 0 && (
             <div className="mt-4 space-y-8">
-              <p className="text-sm mb-4">
-                Abaixo seguem as opções dos Planos, de acordo com a estratégia
-                financeira da sua empresa.
-              </p>
-              
               {proposalState.plans.map((plan) => (
                 <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
                   <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>
@@ -390,8 +411,8 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                   </div>
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                     <div className="space-y-3">
-                      {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.purpose}</p></div>}
-                      {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm leading-tight whitespace-pre-wrap">{plan.differentiator}</p></div>}
+                      {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.purpose }} /></div>}
+                      {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.differentiator }} /></div>}
                       {plan.focus && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm leading-tight">{plan.focus}</p></div>}
                       {plan.employeeRange && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm leading-tight">{plan.employeeRange}</p></div>}
                     </div>
@@ -399,25 +420,25 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                       {plan.servicesIncluded && (
                           <>
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.servicesIncluded }} />
                           </>
                       )}
                       {plan.auditSupport && (
                           <>
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.auditSupport}</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.auditSupport }} />
                           </>
                       )}
                       {plan.strategicManagement && (
                           <>
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.strategicManagement}</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.strategicManagement }} />
                           </>
                       )}
                       {plan.specificManagement && (
                           <>
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.specificManagement}</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.specificManagement }} />
                           </>
                       )}
                     </div>
