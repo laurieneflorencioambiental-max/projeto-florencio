@@ -35,7 +35,9 @@ import {
   Bold,
   Italic,
   Underline,
-  List
+  List,
+  Link as LinkIcon,
+  Smile
 } from 'lucide-react';
 import {
   Select,
@@ -51,6 +53,7 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type ProposalModalProps = {
   lead: Lead;
@@ -63,6 +66,8 @@ type ProposalModalProps = {
   proposalCoverUrl?: string | null;
   proposalClosingUrl?: string | null;
 };
+
+const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
 
 export default function ProposalModal({
   lead,
@@ -380,44 +385,104 @@ Grupo Florencio`;
   const EditableDiv = ({
     field,
     className,
+    path, // Para campos aninhados como plans.0.purpose
   }: {
-    field: keyof Omit<ProposalState, 'plans' | 'exams'>;
+    field: string;
     className?: string;
+    path?: string;
   }) => {
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-      setProposalState(prevState => ({
-        ...prevState,
-        [field]: e.currentTarget.innerHTML,
-      }));
+      const content = e.currentTarget.innerHTML;
+      if (path) {
+          // Lógica simplificada para planos: path format like "plans.0.fieldName"
+          const parts = path.split('.');
+          if (parts[0] === 'plans') {
+              const index = parseInt(parts[1]);
+              const fieldKey = parts[2] as keyof Plan;
+              setProposalState(prev => {
+                  const newPlans = [...prev.plans];
+                  newPlans[index] = { ...newPlans[index], [fieldKey]: content };
+                  return { ...prev, plans: newPlans };
+              });
+          }
+      } else {
+          setProposalState(prevState => ({
+            ...prevState,
+            [field]: content,
+          }));
+      }
     };
 
-    const execCommand = (cmd: string) => {
-        document.execCommand(cmd, false);
+    const execCommand = (cmd: string, val?: string) => {
+        document.execCommand(cmd, false, val);
     };
 
-    const insertList = () => {
-        document.execCommand('insertUnorderedList', false);
+    const insertLink = () => {
+        const url = window.prompt('Insira a URL:', 'https://');
+        if (url) {
+            execCommand('createLink', url);
+            // Aplicar estilo ao link para garantir visibilidade na proposta
+            const selection = window.getSelection();
+            if (selection && selection.anchorNode) {
+                const parent = selection.anchorNode.parentElement;
+                if (parent && parent.tagName === 'A') {
+                    parent.setAttribute('style', 'color: #1b7689; text-decoration: underline; font-weight: bold;');
+                    parent.setAttribute('target', '_blank');
+                }
+            }
+        }
+    };
+
+    const insertEmoji = (emoji: string) => {
+        execCommand('insertText', emoji);
+    };
+
+    const getInitialContent = () => {
+        if (path) {
+            const parts = path.split('.');
+            if (parts[0] === 'plans') {
+                const index = parseInt(parts[1]);
+                const fieldKey = parts[2] as keyof Plan;
+                return String(proposalState.plans[index]?.[fieldKey] || '');
+            }
+        }
+        return String((proposalState as any)[field] || '');
     };
 
     return (
       <div className="relative group">
-        <div className="absolute -top-10 left-0 hidden group-focus-within:flex items-center gap-1 p-1 bg-white border rounded shadow-md z-50">
+        <div className="absolute -top-10 left-0 hidden group-focus-within:flex items-center gap-1 p-1 bg-white border rounded shadow-md z-50 flex-wrap max-w-[300px]">
             <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('bold'); }}><Bold className="h-4 w-4"/></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('italic'); }}><Italic className="h-4 w-4"/></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('underline'); }}><Underline className="h-4 w-4"/></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); insertList(); }}><List className="h-4 w-4"/></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('insertUnorderedList'); }}><List className="h-4 w-4"/></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); insertLink(); }}><LinkIcon className="h-4 w-4"/></Button>
+            
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()}><Smile className="h-4 w-4"/></Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" onOpenAutoFocus={e => e.preventDefault()}>
+                    <div className="grid grid-cols-6 gap-1">
+                        {COMMON_EMOJIS.map(emoji => (
+                            <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onMouseDown={(e) => { e.preventDefault(); insertEmoji(emoji); }}>
+                                {emoji}
+                            </Button>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
         </div>
         <div
             contentEditable={!isGenerating}
             suppressContentEditableWarning
-            data-field={field}
             className={cn(
             'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm min-h-[1.5rem]',
             className
             )}
             onBlur={handleBlur}
             dangerouslySetInnerHTML={{
-            __html: String(proposalState[field] || '').replace(/\n/g, '<br />'),
+            __html: getInitialContent().replace(/\n/g, '<br />'),
             }}
         ></div>
       </div>
@@ -787,8 +852,8 @@ Grupo Florencio`;
                         </div>
                         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                           <div className="space-y-3">
-                            {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><p className="text-sm whitespace-pre-wrap leading-tight">{plan.purpose}</p></div>}
-                            {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.differentiator}</p></div>}
+                            {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><EditableDiv field="dummy" path={`plans.${index}.purpose`} className="text-sm leading-tight bg-white/50" /></div>}
+                            {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><EditableDiv field="dummy" path={`plans.${index}.differentiator`} className="text-sm leading-relaxed bg-white/50" /></div>}
                             {plan.focus && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm">{plan.focus}</p></div>}
                             {plan.employeeRange && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm">{plan.employeeRange}</p></div>}
                           </div>
@@ -796,25 +861,25 @@ Grupo Florencio`;
                             {plan.servicesIncluded && (
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
-                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.servicesIncluded}</p>
+                                    <EditableDiv field="dummy" path={`plans.${index}.servicesIncluded`} className="text-sm leading-relaxed bg-white/50" />
                                 </>
                             )}
                             {plan.auditSupport && (
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
-                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.auditSupport}</p>
+                                    <EditableDiv field="dummy" path={`plans.${index}.auditSupport`} className="text-sm leading-relaxed bg-white/50" />
                                 </>
                             )}
                             {plan.strategicManagement && (
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
-                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.strategicManagement}</p>
+                                    <EditableDiv field="dummy" path={`plans.${index}.strategicManagement`} className="text-sm leading-relaxed bg-white/50" />
                                 </>
                             )}
                             {plan.specificManagement && (
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
-                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.specificManagement}</p>
+                                    <EditableDiv field="dummy" path={`plans.${index}.specificManagement`} className="text-sm leading-relaxed bg-white/50" />
                                 </>
                             )}
                           </div>
@@ -971,7 +1036,7 @@ Grupo Florencio`;
                     Em nossa busca contínua em promover práticas de Segurança do
                     Trabalho e Sustentabilidade, gostaríamos de propor uma
                     parceria em nossas mídias sociais. Caso tenhamos a honra de
-                    realizar este projeto with a sua empresa, gostaríamos de saber
+                    realizar este projeto com a sua empresa, gostaríamos de saber
                     se podemos divulgar nosso trabalho realizado nas suas
                     instalações em nossas plataformas digitais, como Instagram,
                     Linkedin, Site, YouTube?

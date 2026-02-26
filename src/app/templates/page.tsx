@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { logClientEvent } from '@/lib/audit-client';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
@@ -42,6 +43,8 @@ const templateFormSchema = z.object({
   exams: z.array(serviceSchema).optional().default([]),
 });
 
+const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
+
 // Componente de Barra de Ferramentas para Edição de Texto
 function FormattingToolbar({ textareaId }: { textareaId: string }) {
   const insertTag = (tag: string, closingTag?: string) => {
@@ -56,19 +59,34 @@ function FormattingToolbar({ textareaId }: { textareaId: string }) {
     let replacement = '';
     if (tag === 'ul') {
         replacement = `<ul>\n  <li>${selectedText || 'Item'}</li>\n</ul>`;
+    } else if (tag === 'a') {
+        const url = window.prompt('Insira a URL (ex: https://google.com):', 'https://');
+        if (!url) return;
+        replacement = `<a href="${url}" target="_blank" style="color: #1b7689; text-decoration: underline; font-weight: bold;">${selectedText || 'Clique aqui'}</a>`;
     } else {
         replacement = `<${tag}>${selectedText}</${closingTag || tag}>`;
     }
 
     textarea.value = text.substring(0, start) + replacement + text.substring(end);
     textarea.focus();
-    
-    // Disparar evento de input para o react-hook-form perceber a mudança
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const textarea = document.getElementById(textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+
+    textarea.value = text.substring(0, start) + emoji + text.substring(end);
+    textarea.focus();
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   return (
-    <div className="flex items-center gap-1 mb-1 p-1 border rounded-t-md bg-muted/20">
+    <div className="flex items-center gap-1 mb-1 p-1 border rounded-t-md bg-muted/20 flex-wrap">
       <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('b')} title="Negrito">
         <Bold className="h-4 w-4" />
       </Button>
@@ -81,6 +99,26 @@ function FormattingToolbar({ textareaId }: { textareaId: string }) {
       <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('ul')} title="Lista">
         <List className="h-4 w-4" />
       </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('a')} title="Inserir Link">
+        <LinkIcon className="h-4 w-4" />
+      </Button>
+      
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="Emojis">
+            <Smile className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-2">
+          <div className="grid grid-cols-6 gap-1">
+            {COMMON_EMOJIS.map(emoji => (
+              <Button key={emoji} type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onClick={() => insertEmoji(emoji)}>
+                {emoji}
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -359,17 +397,19 @@ export default function ManageTemplatesPage() {
     toast({ title: 'Sucesso', description: `Modelo "${template.name}" duplicado.` });
   };
 
-  const renderFormField = (label: string, fieldName: keyof Omit<ProposalTemplate, 'id' | 'name' | 'plans' | 'exams' | 'paymentTerms'>) => (
+  const renderRichTextFormArea = (label: string, fieldName: string) => (
     <FormField
       control={form.control}
       name={fieldName as any}
       render={({ field }) => {
-        const id = `template-${fieldName}`;
+        const id = `field-${fieldName.replace(/\./g, '-')}`;
         return (
           <FormItem className="space-y-2">
             <Label htmlFor={id} className="font-semibold">{label}</Label>
             <FormattingToolbar textareaId={id} />
-            <Textarea id={id} placeholder={`Conteúdo para "${label}"`} {...field} rows={3} className="rounded-t-none" />
+            <FormControl>
+              <Textarea id={id} placeholder={`Conteúdo para "${label}"`} {...field} rows={3} className="rounded-t-none" />
+            </FormControl>
             <FormMessage />
           </FormItem>
         );
@@ -424,54 +464,36 @@ export default function ManageTemplatesPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSaveTemplate)} className="space-y-4">
               <FormField control={form.control} name="name" render={({ field }) => (<FormItem><Label className="font-semibold">Nome do Modelo</Label><FormControl><Input placeholder="Ex: Treinamento NR-35" {...field} /></FormControl><FormMessage /></FormItem>)} />
-              {renderFormField('Objeto da Proposta', 'proposalObject')}
-              {renderFormField('Escopo do Serviço', 'serviceScope')}
-              {renderFormField('Da Contratante', 'clientResponsibilities')}
-              {renderFormField('Da Contratada', 'contractorResponsibilities')}
-              {renderFormField('Prazo para Realização dos Serviços', 'deadline')}
-              {renderFormField('Investimento Geral', 'investment')}
-              {renderFormField('Nossa Visão Estratégica', 'strategicVision')}
+              {renderRichTextFormArea('Objeto da Proposta', 'proposalObject')}
+              {renderRichTextFormArea('Escopo do Serviço', 'serviceScope')}
+              {renderRichTextFormArea('Da Contratante', 'clientResponsibilities')}
+              {renderRichTextFormArea('Da Contratada', 'contractorResponsibilities')}
+              {renderRichTextFormArea('Prazo para Realização dos Serviços', 'deadline')}
+              {renderRichTextFormArea('Investimento Geral', 'investment')}
+              {renderRichTextFormArea('Nossa Visão Estratégica', 'strategicVision')}
               
-              <FormField
-                control={form.control}
-                name="paymentTerms"
-                render={({ field }) => {
-                    const id = "template-paymentTerms";
-                    return (
-                        <FormItem className="space-y-2">
-                            <Label htmlFor={id} className="font-semibold">Condições de Pagamento Adicionais</Label>
-                            <FormattingToolbar textareaId={id} />
-                            <Textarea id={id} placeholder="Os valores descritos nesta proposta comercial consideram o dia 05 do mês..." {...field} rows={5} className="rounded-t-none" />
-                            <FormMessage />
-                        </FormItem>
-                    );
-                }}
-                />
+              {renderRichTextFormArea('Condições de Pagamento Adicionais', 'paymentTerms')}
 
               <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Planos de Investimento</CardTitle></CardHeader>
                 <CardContent className="space-y-4 pt-6">
                   {planFields.map((field, index) => (
-                    <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
+                    <div key={field.id} className="border p-4 rounded-md space-y-3 relative bg-card shadow-sm">
                       <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removePlan(index)}><Trash2 className="h-4 w-4" /></Button>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField control={form.control} name={`plans.${index}.name`} render={({ field }) => (<FormItem><Label className="font-semibold">Plano</Label><FormControl><Input placeholder="Ex: Plano Bronze 1.0" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`plans.${index}.employeeRange`} render={({ field }) => (<FormItem><Label className="font-semibold">Faixa de Funcionários</Label><FormControl><Input placeholder="Ex: 1 a 300" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name={`plans.${index}.purpose`} render={({ field }) => (<FormItem><Label className="font-semibold">Finalidade</Label><FormControl><Textarea placeholder="Liste as finalidades deste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
+                      <div className="grid grid-cols-1 gap-4">
+                        {renderRichTextFormArea('Finalidade', `plans.${index}.purpose`)}
                         <FormField control={form.control} name={`plans.${index}.focus`} render={({ field }) => (<FormItem><Label className="font-semibold">Foco</Label><FormControl><Input placeholder="Ex: Prevenção de multas" {...field} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
 
-                      <FormField control={form.control} name={`plans.${index}.differentiator`} render={({ field }) => (<FormItem><Label className="font-semibold">Diferencial</Label><FormControl><Textarea placeholder="Liste aqui os diferenciais deste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
-
-                      <FormField control={form.control} name={`plans.${index}.servicesIncluded`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviços Inclusos</Label><FormControl><Textarea placeholder="Lista de serviços..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      
-                      <FormField control={form.control} name={`plans.${index}.auditSupport`} render={({ field }) => (<FormItem><Label className="font-semibold">Suporte em auditorias e fiscalizações</Label><FormControl><Textarea placeholder="Descreva o suporte oferecido neste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
-
-                      <FormField control={form.control} name={`plans.${index}.strategicManagement`} render={({ field }) => (<FormItem><Label className="font-semibold">Gestão Estratégica</Label><FormControl><Textarea placeholder="Descreva a estratégia de gestão para este plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
-
-                      <FormField control={form.control} name={`plans.${index}.specificManagement`} render={({ field }) => (<FormItem><Label className="font-semibold">Gestão específica por contrato</Label><FormControl><Textarea placeholder="Descreva os termos de gestão específica deste contrato..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
+                      {renderRichTextFormArea('Diferencial', `plans.${index}.differentiator`)}
+                      {renderRichTextFormArea('Serviços Inclusos', `plans.${index}.servicesIncluded`)}
+                      {renderRichTextFormArea('Suporte em auditorias e fiscalizações', `plans.${index}.auditSupport`)}
+                      {renderRichTextFormArea('Gestão Estratégica', `plans.${index}.strategicManagement`)}
+                      {renderRichTextFormArea('Gestão específica por contrato', `plans.${index}.specificManagement`)}
 
                       <PlanInvestmentFields planIndex={index} />
                       <ExtraServicesFields planIndex={index} />
@@ -509,7 +531,7 @@ export default function ManageTemplatesPage() {
               <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Investimentos - Exames/Serviços Avulsos (Gerais)</CardTitle></CardHeader>
                 <CardContent className="space-y-4 pt-6">
                   {examFields.map((field, index) => (
-                    <div key={field.id} className="border p-4 rounded-md space-y-3 relative">
+                    <div key={field.id} className="border p-4 rounded-md space-y-3 relative bg-card shadow-sm">
                       <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeExam(index)}><Trash2 className="h-4 w-4" /></Button>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={form.control} name={`exams.${index}.service`} render={({ field }) => (<FormItem><Label className="font-semibold">Serviço</Label><FormControl><Input placeholder="Ex: ASO" {...field} /></FormControl><FormMessage /></FormItem>)} />
