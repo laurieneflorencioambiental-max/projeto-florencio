@@ -84,6 +84,7 @@ export const planSchema = z.object({
     focus: z.string().optional().default(''),
     auditSupport: z.string().optional().default(''),
     strategicManagement: z.string().optional().default(''),
+    specificManagement: z.string().optional().default(''),
     extraServices: z.array(extraServiceSchema).optional().default([]),
 });
 

@@ -32,6 +32,10 @@ import {
   Gem,
   FileDown,
   Save,
+  Bold,
+  Italic,
+  Underline,
+  List
 } from 'lucide-react';
 import {
   Select,
@@ -387,20 +391,36 @@ Grupo Florencio`;
       }));
     };
 
+    const execCommand = (cmd: string) => {
+        document.execCommand(cmd, false);
+    };
+
+    const insertList = () => {
+        document.execCommand('insertUnorderedList', false);
+    };
+
     return (
-      <div
-        contentEditable={!isGenerating}
-        suppressContentEditableWarning
-        data-field={field}
-        className={cn(
-          'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm',
-          className
-        )}
-        onBlur={handleBlur}
-        dangerouslySetInnerHTML={{
-          __html: String(proposalState[field] || '').replace(/\n/g, '<br />'),
-        }}
-      ></div>
+      <div className="relative group">
+        <div className="absolute -top-10 left-0 hidden group-focus-within:flex items-center gap-1 p-1 bg-white border rounded shadow-md z-50">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('bold'); }}><Bold className="h-4 w-4"/></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('italic'); }}><Italic className="h-4 w-4"/></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('underline'); }}><Underline className="h-4 w-4"/></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); insertList(); }}><List className="h-4 w-4"/></Button>
+        </div>
+        <div
+            contentEditable={!isGenerating}
+            suppressContentEditableWarning
+            data-field={field}
+            className={cn(
+            'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm min-h-[1.5rem]',
+            className
+            )}
+            onBlur={handleBlur}
+            dangerouslySetInnerHTML={{
+            __html: String(proposalState[field] || '').replace(/\n/g, '<br />'),
+            }}
+        ></div>
+      </div>
     );
   };
 
@@ -789,6 +809,12 @@ Grupo Florencio`;
                                 <>
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
                                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.strategicManagement}</p>
+                                </>
+                            )}
+                            {plan.specificManagement && (
+                                <>
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
+                                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.specificManagement}</p>
                                 </>
                             )}
                           </div>

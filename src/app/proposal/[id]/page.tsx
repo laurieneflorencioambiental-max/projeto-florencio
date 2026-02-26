@@ -414,6 +414,12 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                             <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.strategicManagement}</p>
                           </>
                       )}
+                      {plan.specificManagement && (
+                          <>
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{plan.specificManagement}</p>
+                          </>
+                      )}
                     </div>
                   </div>
                   

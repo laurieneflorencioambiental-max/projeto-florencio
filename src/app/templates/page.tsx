@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2 } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,49 @@ const templateFormSchema = z.object({
   plans: z.array(planSchema).optional().default([]),
   exams: z.array(serviceSchema).optional().default([]),
 });
+
+// Componente de Barra de Ferramentas para Edição de Texto
+function FormattingToolbar({ textareaId }: { textareaId: string }) {
+  const insertTag = (tag: string, closingTag?: string) => {
+    const textarea = document.getElementById(textareaId) as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    let replacement = '';
+    if (tag === 'ul') {
+        replacement = `<ul>\n  <li>${selectedText || 'Item'}</li>\n</ul>`;
+    } else {
+        replacement = `<${tag}>${selectedText}</${closingTag || tag}>`;
+    }
+
+    textarea.value = text.substring(0, start) + replacement + text.substring(end);
+    textarea.focus();
+    
+    // Disparar evento de input para o react-hook-form perceber a mudança
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  return (
+    <div className="flex items-center gap-1 mb-1 p-1 border rounded-t-md bg-muted/20">
+      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('b')} title="Negrito">
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('i')} title="Itálico">
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('u')} title="Sublinhado">
+        <Underline className="h-4 w-4" />
+      </Button>
+      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertTag('ul')} title="Lista">
+        <List className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 // Componente para gerenciar serviços extras dentro de cada plano
 function ExtraServicesFields({ planIndex }: { planIndex: number }) {
@@ -276,7 +319,8 @@ export default function ManageTemplatesPage() {
         extraServices: p.extraServices || [],
         investments: p.investments || [],
         auditSupport: p.auditSupport || '',
-        strategicManagement: p.strategicManagement || ''
+        strategicManagement: p.strategicManagement || '',
+        specificManagement: p.specificManagement || ''
       })) || [],
       exams: template.exams || []
     });
@@ -319,13 +363,17 @@ export default function ManageTemplatesPage() {
     <FormField
       control={form.control}
       name={fieldName as any}
-      render={({ field }) => (
-        <FormItem className="space-y-2">
-          <Label htmlFor={`template-${fieldName}`} className="font-semibold">{label}</Label>
-          <Textarea id={`template-${fieldName}`} placeholder={`Conteúdo para "${label}"`} {...field} rows={3} />
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        const id = `template-${fieldName}`;
+        return (
+          <FormItem className="space-y-2">
+            <Label htmlFor={id} className="font-semibold">{label}</Label>
+            <FormattingToolbar textareaId={id} />
+            <Textarea id={id} placeholder={`Conteúdo para "${label}"`} {...field} rows={3} className="rounded-t-none" />
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 
@@ -387,13 +435,17 @@ export default function ManageTemplatesPage() {
               <FormField
                 control={form.control}
                 name="paymentTerms"
-                render={({ field }) => (
-                    <FormItem className="space-y-2">
-                        <Label htmlFor="template-paymentTerms" className="font-semibold">Condições de Pagamento Adicionais</Label>
-                        <Textarea id="template-paymentTerms" placeholder="Os valores descritos nesta proposta comercial consideram o dia 05 do mês..." {...field} rows={5} />
-                        <FormMessage />
-                    </FormItem>
-                )}
+                render={({ field }) => {
+                    const id = "template-paymentTerms";
+                    return (
+                        <FormItem className="space-y-2">
+                            <Label htmlFor={id} className="font-semibold">Condições de Pagamento Adicionais</Label>
+                            <FormattingToolbar textareaId={id} />
+                            <Textarea id={id} placeholder="Os valores descritos nesta proposta comercial consideram o dia 05 do mês..." {...field} rows={5} className="rounded-t-none" />
+                            <FormMessage />
+                        </FormItem>
+                    );
+                }}
                 />
 
               <Card className="pt-4"><CardHeader className="py-0"><CardTitle className="text-lg">Planos de Investimento</CardTitle></CardHeader>
@@ -418,6 +470,8 @@ export default function ManageTemplatesPage() {
                       <FormField control={form.control} name={`plans.${index}.auditSupport`} render={({ field }) => (<FormItem><Label className="font-semibold">Suporte em auditorias e fiscalizações</Label><FormControl><Textarea placeholder="Descreva o suporte oferecido neste plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
 
                       <FormField control={form.control} name={`plans.${index}.strategicManagement`} render={({ field }) => (<FormItem><Label className="font-semibold">Gestão Estratégica</Label><FormControl><Textarea placeholder="Descreva a estratégia de gestão para este plano..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
+
+                      <FormField control={form.control} name={`plans.${index}.specificManagement`} render={({ field }) => (<FormItem><Label className="font-semibold">Gestão específica por contrato</Label><FormControl><Textarea placeholder="Descreva os termos de gestão específica deste contrato..." {...field} rows={3} /></FormControl><FormMessage /></FormItem>)} />
 
                       <PlanInvestmentFields planIndex={index} />
                       <ExtraServicesFields planIndex={index} />
@@ -448,7 +502,7 @@ export default function ManageTemplatesPage() {
                       </div>
                     </div>
                   ))}
-                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, investments: [], paymentType: 'unique', purpose: '', differentiator: '', focus: '', auditSupport: '', strategicManagement: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
+                  <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, investments: [], paymentType: 'unique', purpose: '', differentiator: '', focus: '', auditSupport: '', strategicManagement: '', specificManagement: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
                 </CardContent>
               </Card>
 
@@ -512,15 +566,15 @@ export default function ManageTemplatesPage() {
                 <CardHeader><CardTitle className="truncate">{template.name}</CardTitle></CardHeader>
                 <CardContent className="flex-1">
                   <div className="text-sm text-muted-foreground p-4 rounded-md bg-muted/50 border space-y-4 h-96 overflow-y-auto">
-                    {template.proposalObject && <div><h4 className='font-bold text-foreground'>Objeto da Proposta</h4><p className="whitespace-pre-wrap">{template.proposalObject}</p></div>}
-                    {template.serviceScope && <div><h4 className='font-bold text-foreground'>Escopo do Serviço</h4><p className="whitespace-pre-wrap">{template.serviceScope}</p></div>}
-                    {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><p className="whitespace-pre-wrap">{template.clientResponsibilities}</p></div>}
-                    {template.contractorResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratada</h4><p className="whitespace-pre-wrap">{template.contractorResponsibilities}</p></div>}
-                    {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><p className="whitespace-pre-wrap">{template.deadline}</p></div>}
-                    {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><p className="whitespace-pre-wrap">{template.investment}</p></div>}
-                    {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><p className="whitespace-pre-wrap">{template.strategicVision}</p></div>}
+                    {template.proposalObject && <div><h4 className='font-bold text-foreground'>Objeto da Proposta</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.proposalObject }} /></div>}
+                    {template.serviceScope && <div><h4 className='font-bold text-foreground'>Escopo do Serviço</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.serviceScope }} /></div>}
+                    {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.clientResponsibilities }} /></div>}
+                    {template.contractorResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratada</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.contractorResponsibilities }} /></div>}
+                    {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.deadline }} /></div>}
+                    {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.investment }} /></div>}
+                    {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.strategicVision }} /></div>}
                     {template.paymentTerms && (
-                      <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><p className="whitespace-pre-wrap">{template.paymentTerms}</p></div>
+                      <div><h4 className='font-bold text-foreground'>Condições de Pagamento Adicionais</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.paymentTerms }} /></div>
                     )}
                     {template.plans && template.plans.length > 0 && (
                       <div>
