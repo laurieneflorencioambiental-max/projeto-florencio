@@ -200,8 +200,8 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                   Visão
                 </h4>
                 <p className="text-sm leading-relaxed mt-2 text-left">
-                  Sermos reconhecidos pela excelência dos nossos serviços, de forma
-                  a garantir qualidade, satisfação do cliente exercendo papel
+                  Sermos reconhecidos pela excelência dos nossos serviços, de de
+                  forma a garantir qualidade, satisfação do cliente exercendo papel
                   estratégico na execução de todos os trabalhos prestados.
                 </p>
               </div>
@@ -332,7 +332,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                    São considerados Contratos de Baixa Complexidade, grande Complexidade:
+                    São considerados Contratos de Baixa Complexidade, Média Complexidade, Alta Complexidade:
                 </h3>
                 <p className="text-sm italic mb-4">As opções de planos são de acordo com a estratégia financeira da sua empresa.</p>
                 <div className="grid gap-4">
@@ -719,65 +719,65 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
 
 export default function ProposalViewerPage() {
-  const params = useParams();
-  const [proposalData, setProposalData] = useState<ProposalData | null>(null);
-  const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const params = useParams();
+    const [proposalData, setProposalData] = useState<ProposalData | null>(null);
+    const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  const id = params.id as string;
+    const id = params.id as string;
 
-  useEffect(() => {
-    if (!id) {
-      setIsLoading(false);
-      setError('ID da proposta não encontrado.');
-      return;
-    }
-
-    const fetchProposalAndSettings = async () => {
-      setIsLoading(true);
-      try {
-        const { firestore } = initializeFirebase();
-
-        const proposalRef = doc(firestore, 'proposals', id);
-        const proposalSnap = await getDoc(proposalRef);
-
-        if (!proposalSnap.exists()) {
-          setError('Proposta não encontrada.');
+    useEffect(() => {
+        if (!id) {
           setIsLoading(false);
+          setError('ID da proposta não encontrado.');
           return;
         }
 
-        const fetchedProposalData = proposalSnap.data() as ProposalData;
+        const fetchProposalAndSettings = async () => {
+          setIsLoading(true);
+          try {
+            const { firestore } = initializeFirebase();
 
-        const settingsRef = doc(firestore, 'app-settings', 'global');
-        const settingsSnap = await getDoc(settingsRef);
+            const proposalRef = doc(firestore, 'proposals', id);
+            const proposalSnap = await getDoc(proposalRef);
 
-        const settings = settingsSnap.exists()
-          ? (settingsSnap.data() as AppSettings)
-          : {};
+            if (!proposalSnap.exists()) {
+              setError('Proposta não encontrada.');
+              setIsLoading(false);
+              return;
+            }
 
-        setProposalData({
-          ...fetchedProposalData,
-          logoUrl: fetchedProposalData.logoUrl ?? settings.proposalLogoUrl,
-          proposalCoverUrl:
-            fetchedProposalData.proposalCoverUrl ?? settings.proposalCoverUrl,
-          proposalClosingUrl:
-            fetchedProposalData.proposalClosingUrl ??
-            settings.proposalClosingUrl,
-        });
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Ocorreu um erro ao carregar a proposta.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+            const fetchedProposalData = proposalSnap.data() as ProposalData;
 
-    fetchProposalAndSettings();
-  }, [id]);
+            const settingsRef = doc(firestore, 'app-settings', 'global');
+            const settingsSnap = await getDoc(settingsRef);
 
-  if (isLoading) {
+            const settings = settingsSnap.exists()
+              ? (settingsSnap.data() as AppSettings)
+              : {};
+
+            setProposalData({
+              ...fetchedProposalData,
+              logoUrl: fetchedProposalData.logoUrl ?? settings.proposalLogoUrl,
+              proposalCoverUrl:
+                fetchedProposalData.proposalCoverUrl ?? settings.proposalCoverUrl,
+              proposalClosingUrl:
+                fetchedProposalData.proposalClosingUrl ??
+                settings.proposalClosingUrl,
+            });
+          } catch (err) {
+            console.error('Error fetching data:', err);
+            setError('Ocorreu um erro ao carregar a proposta.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchProposalAndSettings();
+    }, [id]);
+
+    if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />

@@ -494,7 +494,7 @@ export default function ManageTemplatesPage() {
               <Card className="pt-4">
                 <CardHeader className="py-0">
                     <CardTitle className="text-lg">Complexidade dos Contratos</CardTitle>
-                    <p className="text-sm text-muted-foreground">"São considerados Contratos de Baixa Complexidade, grande Complexidade:"</p>
+                    <p className="text-sm text-muted-foreground">"São considerados Contratos de Baixa Complexidade, Média Complexidade, Alta Complexidade:"</p>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-6">
                     {complexityFields.map((field, index) => (

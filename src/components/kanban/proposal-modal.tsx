@@ -831,7 +831,7 @@ Grupo Florencio`;
                 {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                            São considerados Contratos de Baixa Complexidade, grande Complexidade:
+                            São considerados Contratos de Baixa Complexidade, Média Complexidade, Alta Complexidade:
                         </h3>
                         <p className="text-sm italic mb-4">As opções de planos são de acordo com a estratégia financeira da sua empresa.</p>
                         <div className="space-y-4">
