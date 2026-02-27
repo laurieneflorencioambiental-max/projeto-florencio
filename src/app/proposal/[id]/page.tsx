@@ -497,43 +497,6 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
           </h3>
           
-          {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
-              <div className="space-y-10 mt-6">
-                  {proposalState.investmentOptions.map((opt) => (
-                      <div key={opt.id} className="space-y-4">
-                          <h4 className="font-bold text-[#1b7689] text-base" dangerouslySetInnerHTML={{ __html: opt.title }} />
-                          <div className="overflow-hidden rounded-lg border border-[#8ec7d1]">
-                              <table className="w-full border-collapse">
-                                  <thead>
-                                      <tr className="bg-[#8ec7d1] text-[#1b7689]">
-                                          <th className="p-3 border-r border-[#1b7689] text-sm font-bold text-left w-3/4">Serviço</th>
-                                          <th className="p-3 text-sm font-bold text-center">Investimento</th>
-                                      </tr>
-                                  </thead>
-                                  <tbody>
-                                      {opt.items.map((item) => (
-                                          <tr key={item.id} className="border-t border-[#8ec7d1] bg-white">
-                                              <td className="p-3 border-r border-[#8ec7d1] text-xs leading-relaxed whitespace-pre-wrap">
-                                                  {item.service}
-                                              </td>
-                                              <td className="p-3 text-center text-xs font-bold text-[#1b7689]">
-                                                  {item.value}
-                                              </td>
-                                          </tr>
-                                      ))}
-                                  </tbody>
-                              </table>
-                          </div>
-                          {opt.observations && (
-                              <div className="p-3 bg-gray-50 border border-[#8ec7d1] rounded-lg">
-                                  <div className="text-xs italic leading-relaxed" dangerouslySetInnerHTML={{ __html: opt.observations }} />
-                              </div>
-                          )}
-                      </div>
-                  ))}
-              </div>
-          )}
-
           {lead.value > 0 && proposalState.investment && (
             <div
               className="prose dark:prose-invert max-w-none p-2 mt-8"
@@ -633,6 +596,45 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               ))}
             </div>
           )}
+
+          {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
+              <div className="space-y-10 mt-12">
+                  <h3 className="text-lg font-bold border-b pb-2 mb-4">Opções de Investimento Customizáveis</h3>
+                  {proposalState.investmentOptions.map((opt) => (
+                      <div key={opt.id} className="space-y-4">
+                          <h4 className="font-bold text-[#1b7689] text-base" dangerouslySetInnerHTML={{ __html: opt.title }} />
+                          <div className="overflow-hidden rounded-lg border border-[#8ec7d1]">
+                              <table className="w-full border-collapse">
+                                  <thead>
+                                      <tr className="bg-[#8ec7d1] text-[#1b7689]">
+                                          <th className="p-3 border-r border-[#8ec7d1] text-sm font-bold text-left w-3/4">Serviço</th>
+                                          <th className="p-3 text-sm font-bold text-center">Investimento</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      {opt.items.map((item) => (
+                                          <tr key={item.id} className="border-t border-[#8ec7d1] bg-white">
+                                              <td className="p-3 border-r border-[#8ec7d1] text-xs leading-relaxed whitespace-pre-wrap">
+                                                  {item.service}
+                                              </td>
+                                              <td className="p-3 text-center text-xs font-bold text-[#1b7689]">
+                                                  {item.value}
+                                              </td>
+                                          </tr>
+                                      ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                          {opt.observations && (
+                              <div className="p-3 bg-gray-50 border border-[#8ec7d1] rounded-lg">
+                                  <div className="text-xs italic leading-relaxed" dangerouslySetInnerHTML={{ __html: opt.observations }} />
+                              </div>
+                          )}
+                      </div>
+                  ))}
+              </div>
+          )}
+
           {proposalState.exams && proposalState.exams.length > 0 && (
             <div className="mt-8">
               <p className="text-sm mb-4 font-semibold">

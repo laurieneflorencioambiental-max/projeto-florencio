@@ -617,48 +617,6 @@ export default function ManageTemplatesPage() {
 
               {renderRichTextFormArea('Investimento Geral', 'investment')}
 
-              <Card className="pt-4">
-                <CardHeader className="py-0">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <Coins className="h-5 w-5" /> Opções de Investimento (Customizável)
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">Adicione diferentes opções de investimento com tabelas detalhadas.</p>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                    {investmentOptionsFields.map((field, index) => (
-                        <div key={field.id} className="border p-4 rounded-md space-y-4 relative bg-card shadow-sm">
-                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeInvestmentOption(index)}><Trash2 className="h-4 w-4" /></Button>
-                            <FormField
-                                control={form.control}
-                                name={`investmentOptions.${index}.title`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <Label className="font-bold">Título da Opção (ex: 7.1. Investimento - Opção 1:)</Label>
-                                        <FormControl><Input {...field} /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                            
-                            <InvestmentOptionItemFields optionIndex={index} />
-
-                            <FormField
-                                control={form.control}
-                                name={`investmentOptions.${index}.observations`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <Label className="text-xs font-bold text-muted-foreground">Observações da Opção</Label>
-                                        <FormControl><Textarea placeholder="ex: OBS: os serviços do item 6.1 não estão inclusos..." {...field} className="h-20 text-xs" /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    ))}
-                    <Button type="button" variant="outline" onClick={() => appendInvestmentOption({ id: `opt-${Date.now()}`, title: '', items: [], observations: '' })}>
-                        <Plus className="mr-2 h-4 w-4" /> Adicionar Nova Opção de Investimento
-                    </Button>
-                </CardContent>
-              </Card>
-
               {renderRichTextFormArea('Nossa Visão Estratégica', 'strategicVision')}
               
               {renderRichTextFormArea('Condições de Pagamento Adicionais', 'paymentTerms')}
@@ -718,6 +676,48 @@ export default function ManageTemplatesPage() {
                     </div>
                   ))}
                   <Button type="button" variant="outline" onClick={() => appendPlan({ id: `plan-${Date.now()}`, name: '', employeeRange: '', servicesIncluded: '', investment: 0, investments: [], paymentType: 'unique', purpose: '', differentiator: '', focus: '', auditSupport: '', strategicManagement: '', specificManagement: '', extraServices: [] })}><Plus className="mr-2 h-4 w-4" /> Adicionar Plano</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="pt-4">
+                <CardHeader className="py-0">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Coins className="h-5 w-5" /> Opções de Investimento (Customizável)
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Adicione diferentes opções de investimento com tabelas detalhadas.</p>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                    {investmentOptionsFields.map((field, index) => (
+                        <div key={field.id} className="border p-4 rounded-md space-y-4 relative bg-card shadow-sm">
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeInvestmentOption(index)}><Trash2 className="h-4 w-4" /></Button>
+                            <FormField
+                                control={form.control}
+                                name={`investmentOptions.${index}.title`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <Label className="font-bold">Título da Opção (ex: 7.1. Investimento - Opção 1:)</Label>
+                                        <FormControl><Input {...field} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <InvestmentOptionItemFields optionIndex={index} />
+
+                            <FormField
+                                control={form.control}
+                                name={`investmentOptions.${index}.observations`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <Label className="text-xs font-bold text-muted-foreground">Observações da Opção</Label>
+                                        <FormControl><Textarea placeholder="ex: OBS: os serviços do item 6.1 não estão inclusos..." {...field} className="h-20 text-xs" /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => appendInvestmentOption({ id: `opt-${Date.now()}`, title: '', items: [], observations: '' })}>
+                        <Plus className="mr-2 h-4 w-4" /> Adicionar Nova Opção de Investimento
+                    </Button>
                 </CardContent>
               </Card>
 
@@ -809,15 +809,6 @@ export default function ManageTemplatesPage() {
                     
                     {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.deadline }} /></div>}
                     
-                    {template.investmentOptions && template.investmentOptions.length > 0 && (
-                        <div>
-                            <h4 className='font-bold text-foreground'>Opções de Investimento ({template.investmentOptions.length})</h4>
-                            <ul className="list-disc list-inside">
-                                {template.investmentOptions.map(o => <li key={o.id}>{o.title || '(Sem título)'}</li>)}
-                            </ul>
-                        </div>
-                    )}
-
                     {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.investment }} /></div>}
                     {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.strategicVision }} /></div>}
                     {template.paymentTerms && (
@@ -840,6 +831,14 @@ export default function ManageTemplatesPage() {
                           ))}
                         </ul>
                       </div>
+                    )}
+                    {template.investmentOptions && template.investmentOptions.length > 0 && (
+                        <div>
+                            <h4 className='font-bold text-foreground'>Opções de Investimento ({template.investmentOptions.length})</h4>
+                            <ul className="list-disc list-inside">
+                                {template.investmentOptions.map(o => <li key={o.id}>{o.title || '(Sem título)'}</li>)}
+                            </ul>
+                        </div>
                     )}
                   </div>
                 </CardContent>

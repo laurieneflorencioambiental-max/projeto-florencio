@@ -1073,63 +1073,6 @@ Grupo Florencio`;
                   Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
                 </h3>
                 
-                {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
-                    <div className="space-y-8 mt-6">
-                        {proposalState.investmentOptions.map((opt, optIdx) => (
-                            <div key={opt.id} className="space-y-4">
-                                <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.title`} className="font-bold text-primary text-base" />
-                                
-                                <div className="grid grid-cols-1 gap-0 border border-[#8ec7d1] rounded-lg overflow-hidden">
-                                    <div className="grid grid-cols-4 bg-[#8ec7d1] text-[#1b7689] font-bold text-center p-3 border-b border-[#8ec7d1]">
-                                        <div className="col-span-3">Serviço</div>
-                                        <div>Investimento</div>
-                                    </div>
-                                    {opt.items.map((item, itemIdx) => (
-                                        <div key={item.id} className="grid grid-cols-4 border-b last:border-0 border-[#8ec7d1] items-center group relative">
-                                            <div className="col-span-3 p-3 border-r border-[#8ec7d1] min-h-[3rem]">
-                                                <Textarea 
-                                                    value={item.service} 
-                                                    onChange={e => handleUpdateOptionItem(optIdx, itemIdx, 'service', e.target.value)}
-                                                    placeholder="Serviço..."
-                                                    className="border-none shadow-none focus-visible:ring-0 p-0 text-sm h-full resize-none bg-transparent"
-                                                />
-                                            </div>
-                                            <div className="p-3 text-center min-h-[3rem]">
-                                                <Input 
-                                                    value={item.value} 
-                                                    onChange={e => handleUpdateOptionItem(optIdx, itemIdx, 'value', e.target.value)}
-                                                    placeholder="R$..."
-                                                    className="border-none shadow-none focus-visible:ring-0 p-0 text-center text-sm font-semibold bg-transparent"
-                                                />
-                                            </div>
-                                            <Button 
-                                                variant="destructive" 
-                                                size="icon" 
-                                                className="absolute -right-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8" 
-                                                onClick={() => handleRemoveOptionItem(optIdx, itemIdx)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="w-full h-10 border-t border-dashed border-[#8ec7d1] text-[#1b7689] hover:bg-[#8ec7d1]/10 rounded-none"
-                                        onClick={() => handleAddOptionItem(optIdx)}
-                                    >
-                                        <Plus className="h-4 w-4 mr-2" /> Adicionar Item à Tabela
-                                    </Button>
-                                </div>
-
-                                <div className="p-3 bg-[#8ec7d1]/10 border border-[#8ec7d1] rounded-md">
-                                    <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.observations`} className="text-xs italic" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
                 {lead.value > 0 && (
                   <div className="prose dark:prose-invert max-w-none p-2 rounded-md mt-8">
                     <EditableDiv field="investment" />
@@ -1227,6 +1170,64 @@ Grupo Florencio`;
                       </div>
                     ))}
                   </div>
+                )}
+
+                {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
+                    <div className="space-y-8 mt-12">
+                        <h3 className="text-lg font-bold border-b pb-2 mb-4">Opções de Investimento Customizáveis</h3>
+                        {proposalState.investmentOptions.map((opt, optIdx) => (
+                            <div key={opt.id} className="space-y-4">
+                                <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.title`} className="font-bold text-primary text-base" />
+                                
+                                <div className="grid grid-cols-1 gap-0 border border-[#8ec7d1] rounded-lg overflow-hidden">
+                                    <div className="grid grid-cols-4 bg-[#8ec7d1] text-[#1b7689] font-bold text-center p-3 border-b border-[#8ec7d1]">
+                                        <div className="col-span-3">Serviço</div>
+                                        <div>Investimento</div>
+                                    </div>
+                                    {opt.items.map((item, itemIdx) => (
+                                        <div key={item.id} className="grid grid-cols-4 border-b last:border-0 border-[#8ec7d1] items-center group relative">
+                                            <div className="col-span-3 p-3 border-r border-[#8ec7d1] min-h-[3rem]">
+                                                <Textarea 
+                                                    value={item.service} 
+                                                    onChange={e => handleUpdateOptionItem(optIdx, itemIdx, 'service', e.target.value)}
+                                                    placeholder="Serviço..."
+                                                    className="border-none shadow-none focus-visible:ring-0 p-0 text-sm h-full resize-none bg-transparent"
+                                                />
+                                            </div>
+                                            <div className="p-3 text-center min-h-[3rem]">
+                                                <Input 
+                                                    value={item.value} 
+                                                    onChange={e => handleUpdateOptionItem(optIdx, itemIdx, 'value', e.target.value)}
+                                                    placeholder="R$..."
+                                                    className="border-none shadow-none focus-visible:ring-0 p-0 text-center text-sm font-semibold bg-transparent"
+                                                />
+                                            </div>
+                                            <Button 
+                                                variant="destructive" 
+                                                size="icon" 
+                                                className="absolute -right-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8" 
+                                                onClick={() => handleRemoveOptionItem(optIdx, itemIdx)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="w-full h-10 border-t border-dashed border-[#8ec7d1] text-[#1b7689] hover:bg-[#8ec7d1]/10 rounded-none"
+                                        onClick={() => handleAddOptionItem(optIdx)}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" /> Adicionar Item à Tabela
+                                    </Button>
+                                </div>
+
+                                <div className="p-3 bg-[#8ec7d1]/10 border border-[#8ec7d1] rounded-md">
+                                    <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.observations`} className="text-xs italic" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 )}
                 
                 {proposalState.exams && proposalState.exams.length > 0 && (
