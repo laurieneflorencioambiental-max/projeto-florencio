@@ -66,6 +66,7 @@ type ProposalModalProps = {
   proposalTemplates: ProposalTemplate[];
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
+  proposalLocationUrl?: string | null;
   proposalClosingUrl?: string | null;
 };
 
@@ -80,6 +81,7 @@ export default function ProposalModal({
   proposalTemplates,
   logoUrl,
   proposalCoverUrl,
+  proposalLocationUrl,
   proposalClosingUrl,
 }: ProposalModalProps) {
   const proposalRef = useRef<HTMLDivElement>(null);
@@ -229,6 +231,7 @@ export default function ProposalModal({
           createdAt: serverTimestamp(),
           logoUrl: logoUrl,
           proposalCoverUrl: proposalCoverUrl,
+          proposalLocationUrl: proposalLocationUrl,
           proposalClosingUrl: proposalClosingUrl,
         };
 
@@ -826,7 +829,7 @@ Grupo Florencio`;
                   Negociação para o atendimento da Prestação de Serviços de QSMS
                   - Qualidade, Segurança, Meio Ambiente e Saúde. Gostaríamos de
                   salientar o grande interesse que temos em trabalhar em parceria
-                  com a sua empresa, pois a nossa missão é oferecer serviços em
+                  with a sua empresa, pois a nossa missão é oferecer serviços em
                   gestão através de uma visão estratégica buscando a satisfação
                   do cliente e melhorias para a sociedade.
                 </p>
@@ -1257,6 +1260,18 @@ Grupo Florencio`;
                 <p className="text-xs">www.grupoflorencio.com.br</p>
               </footer>
             </div>
+            {proposalLocationUrl && (
+              <div
+                className="a4-page"
+                style={{ padding: 0, marginTop: '1rem' }}
+              >
+                <img
+                  src={proposalLocationUrl}
+                  alt="Nossa Localização Estratégica"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             {proposalClosingUrl && (
               <div
                 className="a4-page"

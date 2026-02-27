@@ -204,6 +204,7 @@ export type ProposalData = {
   createdAt: any; // Using `any` for Firestore serverTimestamp
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
+  proposalLocationUrl?: string | null;
   proposalClosingUrl?: string | null;
 };
 
@@ -212,6 +213,7 @@ export const appSettingsSchema = z.object({
   proposalLogoUrl: z.string().url().optional().nullable(),
   loginBackgroundUrl: z.string().url().optional().nullable(),
   proposalCoverUrl: z.string().url().optional().nullable(),
+  proposalLocationUrl: z.string().url().optional().nullable(),
   proposalClosingUrl: z.string().url().optional().nullable(),
   staleLeadDays: z.number().optional().nullable(),
   monthlyGoal: z.number().optional().nullable(),

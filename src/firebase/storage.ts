@@ -24,6 +24,7 @@ export type ImageType =
   | 'sidebarLogoUrl'
   | 'loginBackgroundUrl'
   | 'proposalCoverUrl'
+  | 'proposalLocationUrl'
   | 'proposalClosingUrl'
   | 'profilePicture';
 

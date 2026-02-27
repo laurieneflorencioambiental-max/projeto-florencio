@@ -38,6 +38,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
     fullProposalNumber,
     logoUrl,
     proposalCoverUrl,
+    proposalLocationUrl,
     proposalClosingUrl,
   } = proposalData;
   const [mediaConsent, setMediaConsent] = useState<'yes' | 'no' | undefined>(
@@ -159,7 +160,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             style={{ borderColor: '#1b7689' }}
           >
             <p className="text-sm italic">
-              "Nossos serviços são investimentos, onde trazemos benefícios que
+              "Nossos serviços are investimentos, onde trazemos benefícios que
               superam qualquer custo, pois não é sobre preço, é sobre entregar
               resultados valiosos. Comprometemo-nos integralmente a proporcionar
               excelência em Saúde e Segurança do Trabalho, impulsionados pela
@@ -779,6 +780,15 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <p className="text-xs">www.grupoflorencio.com.br</p>
         </footer>
       </div>
+      {proposalLocationUrl && (
+        <div className="a4-page shadow-lg mt-8" style={{ padding: 0 }}>
+          <img
+            src={proposalLocationUrl}
+            alt="Nossa Localização Estratégica"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
       {proposalClosingUrl && (
         <div className="a4-page shadow-lg mt-8" style={{ padding: 0 }}>
           <img
@@ -837,6 +847,8 @@ export default function ProposalViewerPage() {
               logoUrl: fetchedProposalData.logoUrl ?? settings.proposalLogoUrl,
               proposalCoverUrl:
                 fetchedProposalData.proposalCoverUrl ?? settings.proposalCoverUrl,
+              proposalLocationUrl:
+                fetchedProposalData.proposalLocationUrl ?? settings.proposalLocationUrl,
               proposalClosingUrl:
                 fetchedProposalData.proposalClosingUrl ??
                 settings.proposalClosingUrl,
