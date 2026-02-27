@@ -177,8 +177,13 @@ export type ProposalTemplate = {
   name: string;
   proposalObject: string;
   serviceScope: string;
+  methodology?: string;
+  psychosocialTools?: string;
+  lgpdSecurity?: string;
   clientResponsibilities: string;
   contractorResponsibilities: string;
+  preliminaryErgonomicAnalysis?: string;
+  postErgonomicImplementation?: string;
   deadline: string;
   strategicVision: string;
   investment: string;

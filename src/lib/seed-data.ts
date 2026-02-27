@@ -34,6 +34,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               name: 'Plano Essencial', 
               employeeRange: 'Até 20 funcionários', 
               servicesIncluded: 'PGR (Programa de Gerenciamento de Riscos)\nPCMSO (Programa de Controle Médico de Saúde Ocupacional)\nGestão de ASOs', 
+              investment: 1200,
               investments: [{ label: 'Investimento único', value: 1200 }],
               paymentType: 'unique',
               purpose: 'Cumprimento das obrigatoriedades básicas.',
@@ -41,6 +42,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               focus: 'Eliminar riscos de multas imediatas.',
               auditSupport: 'Suporte remoto para fiscalizações básicas.',
               strategicManagement: 'Gestão focada em conformidade mínima obrigatória.',
+              specificManagement: 'Acompanhamento técnico específico do plano.',
               extraServices: [
                 { name: 'Envio ao eSocial', value: 300 }
               ]
@@ -50,6 +52,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               name: 'Plano Completo', 
               employeeRange: 'Até 50 funcionários', 
               servicesIncluded: 'PGR + PCMSO\nGestão de ASOs\nEnvio eSocial\nLTCAT', 
+              investment: 2500,
               investments: [{ label: 'Investimento integral', value: 2500 }],
               paymentType: 'unique',
               purpose: 'Gestão completa e blindagem jurídica.',
@@ -57,6 +60,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
               focus: 'Prevenção de passivos trabalhistas.',
               auditSupport: 'Acompanhamento presencial em auditorias e fiscalizações do trabalho.',
               strategicManagement: 'Gestão proativa com foco em redução de custos por sinistralidade.',
+              specificManagement: 'Acompanhamento técnico específico do plano.',
               extraServices: []
             },
         ],

@@ -33,8 +33,13 @@ const templateFormSchema = z.object({
   name: z.string().min(1, 'O nome do modelo é obrigatório.'),
   proposalObject: z.string().optional().default(''),
   serviceScope: z.string().optional().default(''),
+  methodology: z.string().optional().default(''),
+  psychosocialTools: z.string().optional().default(''),
+  lgpdSecurity: z.string().optional().default(''),
   clientResponsibilities: z.string().optional().default(''),
   contractorResponsibilities: z.string().optional().default(''),
+  preliminaryErgonomicAnalysis: z.string().optional().default(''),
+  postErgonomicImplementation: z.string().optional().default(''),
   deadline: z.string().optional().default(''),
   investment: z.string().optional().default(''),
   strategicVision: z.string().optional().default(''),
@@ -302,8 +307,13 @@ export default function ManageTemplatesPage() {
       name: '',
       proposalObject: '',
       serviceScope: '',
+      methodology: '',
+      psychosocialTools: '',
+      lgpdSecurity: '',
       clientResponsibilities: '',
       contractorResponsibilities: '',
+      preliminaryErgonomicAnalysis: '',
+      postErgonomicImplementation: '',
       deadline: '',
       investment: '',
       strategicVision: '',
@@ -327,7 +337,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', clientResponsibilities: '', contractorResponsibilities: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [], planStructure: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', methodology: '', psychosocialTools: '', lgpdSecurity: '', clientResponsibilities: '', contractorResponsibilities: '', preliminaryErgonomicAnalysis: '', postErgonomicImplementation: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [], planStructure: [] });
     setEditingTemplateId(null);
   };
 
@@ -370,6 +380,11 @@ export default function ManageTemplatesPage() {
     setEditingTemplateId(template.id);
     form.reset({
       ...template,
+      methodology: template.methodology || '',
+      psychosocialTools: template.psychosocialTools || '',
+      lgpdSecurity: template.lgpdSecurity || '',
+      preliminaryErgonomicAnalysis: template.preliminaryErgonomicAnalysis || '',
+      postErgonomicImplementation: template.postErgonomicImplementation || '',
       plans: template.plans?.map(p => ({ 
         ...p, 
         extraServices: p.extraServices || [],
@@ -486,8 +501,15 @@ export default function ManageTemplatesPage() {
               {renderRichTextFormArea('Objeto da Proposta', 'proposalObject')}
               {renderRichTextFormArea('Escopo do Serviço', 'serviceScope')}
               
+              {renderRichTextFormArea('Metodologia', 'methodology')}
+              {renderRichTextFormArea('Ferramentas de avaliação dos Fatores psicossociais', 'psychosocialTools')}
+              {renderRichTextFormArea('Segurança LGPD', 'lgpdSecurity')}
+              
               {renderRichTextFormArea('Da Contratada', 'contractorResponsibilities')}
               {renderRichTextFormArea('Da Contratante', 'clientResponsibilities')}
+              
+              {renderRichTextFormArea('Análise Ergonômica Preliminar', 'preliminaryErgonomicAnalysis')}
+              {renderRichTextFormArea('Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)', 'postErgonomicImplementation')}
               
               {renderRichTextFormArea('Prazo para Realização dos Serviços', 'deadline')}
               

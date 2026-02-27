@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFirestore, initializeFirebase } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
-import type { ProposalData, Plan, AppSettings } from '@/lib/types';
+import type { ProposalData, AppSettings } from '@/lib/types';
 import {
   Loader2,
   Leaf,
@@ -13,7 +13,6 @@ import {
   Settings,
   HardHat,
   Calendar as CalendarIcon,
-  AlertCircle,
   Gem,
   ShieldCheck,
 } from 'lucide-react';
@@ -244,7 +243,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <h3 className="text-lg font-semibold mt-6">Objetivo</h3>
           <p className="text-sm leading-relaxed mt-4">
             Temos por objetivo o compromisso em oferecer serviços de Saúde
-            Ocupacional e Segurança do Trabalho com excelência e em conformidade
+            Ocupacional e Segurança do Trabalho com excellence e em conformidade
             with a legislação, promovendo ambientes corporativos seguros,
             saudáveis e produtivos.
           </p>
@@ -295,6 +294,48 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
+          {proposalState.methodology && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Metodologia
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.methodology.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.psychosocialTools && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Ferramentas de avaliação dos Fatores psicossociais
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.psychosocialTools.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.lgpdSecurity && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Segurança LGPD
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.lgpdSecurity.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
           {proposalState.contractorResponsibilities && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -321,6 +362,40 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                     className="prose dark:prose-invert max-w-none p-2"
                     dangerouslySetInnerHTML={{
                     __html: proposalState.clientResponsibilities.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.preliminaryErgonomicAnalysis && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Análise Ergonômica Preliminar
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.preliminaryErgonomicAnalysis.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.postErgonomicImplementation && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.postErgonomicImplementation.replace(
                         /\n/g,
                         '<br />'
                     ),

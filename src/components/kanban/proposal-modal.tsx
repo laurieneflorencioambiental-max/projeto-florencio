@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -99,8 +98,13 @@ export default function ProposalModal({
   const [proposalState, setProposalState] = useState<ProposalState>({
     proposalObject: lead.proposalSummary,
     serviceScope: 'A ser definido na proposta.',
+    methodology: '',
+    psychosocialTools: '',
+    lgpdSecurity: '',
     clientResponsibilities: 'A ser definido na proposta.',
     contractorResponsibilities: 'A ser definido na proposta.',
+    preliminaryErgonomicAnalysis: '',
+    postErgonomicImplementation: '',
     deadline: 'A ser definido na proposta.',
     investment: 'A ser definido na proposta.',
     strategicVision: 'A ser definido na proposta.',
@@ -138,8 +142,13 @@ export default function ProposalModal({
     setProposalState({
       proposalObject: template?.proposalObject || lead.proposalSummary,
       serviceScope: template?.serviceScope || 'A ser definido na proposta.',
+      methodology: template?.methodology || '',
+      psychosocialTools: template?.psychosocialTools || '',
+      lgpdSecurity: template?.lgpdSecurity || '',
       clientResponsibilities: template?.clientResponsibilities || 'A ser definido na proposta.',
       contractorResponsibilities: template?.contractorResponsibilities || 'A ser definido na proposta.',
+      preliminaryErgonomicAnalysis: template?.preliminaryErgonomicAnalysis || '',
+      postErgonomicImplementation: template?.postErgonomicImplementation || '',
       deadline: template?.deadline || 'A ser definido na proposta.',
       investment: template?.investment || investmentText,
       strategicVision: template?.strategicVision || 'A ser definido na proposta.',
@@ -522,16 +531,62 @@ Grupo Florencio`;
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="font-headline">
-            Gerador de Proposta
-          </DialogTitle>
-          <DialogDescription>
-            Visualize, edite e envie a proposta para {lead.company}.
-          </DialogDescription>
+        <DialogHeader className="pt-4 flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-col gap-1">
+            <DialogTitle className="font-headline">
+                Gerador de Proposta
+            </DialogTitle>
+            <DialogDescription>
+                Visualize, edite e envie a proposta para {lead.company}.
+            </DialogDescription>
+          </div>
+          <div className="flex gap-2 items-center flex-wrap justify-end">
+            <Button
+              variant="outline"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf || isGenerating}
+            >
+              {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+              Salvar como PDF
+            </Button>
+            <Button
+              onClick={() => handleShare('open')}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="mr-2 h-4 w-4" />
+              )}
+              Gerar e Abrir
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleShare('copy')}
+              disabled={isGenerating}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copiar Link
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleShare('email')}
+              disabled={isGenerating}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Email
+            </Button>
+            <Button onClick={() => handleShare('whatsapp')} disabled={isGenerating}>
+              <Send className="mr-2 h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="mb-4 space-y-2">
+        <div className="mb-4 space-y-2 px-6">
           <Label htmlFor="proposal-template">
             Selecione um Modelo de Serviço
           </Label>
@@ -570,7 +625,7 @@ Grupo Florencio`;
           </div>
         </div>
 
-        <ScrollArea className="flex-1 bg-white rounded-md">
+        <ScrollArea className="flex-1 bg-white rounded-md mx-6 mb-6">
           <div ref={proposalRef} className="p-0" id="proposal-container">
             {proposalCoverUrl && (
               <div
@@ -659,7 +714,7 @@ Grupo Florencio`;
                     "Nossos serviços são investimentos, onde trazemos benefícios
                     que superam qualquer custo, pois não é sobre preço, é sobre
                     entregar resultados valiosos. Comprometemo-nos
-                    integralmente a proporcionar excelência em Saúde e Segurança
+                    integralmente a proporcionar excellence em Saúde e Segurança
                     do Trabalho, impulsionados pela nossa especialização e
                     dedicação incansável.”
                   </p>
@@ -806,6 +861,39 @@ Grupo Florencio`;
                     </>
                 )}
 
+                {proposalState.methodology && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Metodologia
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="methodology" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.psychosocialTools && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Ferramentas de avaliação dos Fatores psicossociais
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="psychosocialTools" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.lgpdSecurity && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Segurança LGPD
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="lgpdSecurity" />
+                        </div>
+                    </>
+                )}
+
                 {proposalState.contractorResponsibilities && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
@@ -824,6 +912,28 @@ Grupo Florencio`;
                         </h3>
                         <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
                         <EditableDiv field="clientResponsibilities" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.preliminaryErgonomicAnalysis && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Análise Ergonômica Preliminar
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="preliminaryErgonomicAnalysis" />
+                        </div>
+                    </>
+                )}
+
+                {proposalState.postErgonomicImplementation && (
+                    <>
+                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                        Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)
+                        </h3>
+                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                        <EditableDiv field="postErgonomicImplementation" />
                         </div>
                     </>
                 )}
@@ -1161,58 +1271,6 @@ Grupo Florencio`;
             )}
           </div>
         </ScrollArea>
-
-        <DialogFooter className="pt-4 flex-wrap justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground text-left mr-auto pt-2">
-            {isGenerating
-              ? 'Gerando link, aguarde...'
-              : 'Clique em qualquer texto para editar antes de gerar o link.'}
-          </p>
-          <div className="flex gap-2 items-center flex-wrap justify-end">
-            <Button
-              variant="outline"
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf || isGenerating}
-            >
-              {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-              Salvar como PDF
-            </Button>
-            <Button
-              onClick={() => handleShare('open')}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ExternalLink className="mr-2 h-4 w-4" />
-              )}
-              Gerar e Abrir
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleShare('copy')}
-              disabled={isGenerating}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              Copiar Link
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleShare('email')}
-              disabled={isGenerating}
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Email
-            </Button>
-            <Button onClick={() => handleShare('whatsapp')} disabled={isGenerating}>
-              <Send className="mr-2 h-4 w-4" />
-              WhatsApp
-            </Button>
-            <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Fechar
-            </Button>
-          </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
