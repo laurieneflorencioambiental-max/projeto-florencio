@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem, ComplexityDefinition, PlanStructureItem } from '@/lib/types';
-import { planSchema, serviceSchema, investmentItemSchema, complexityDefinitionSchema, planStructureItemSchema } from '@/lib/types';
+import type { ProposalTemplate, Plan, Service, ExtraService, InvestmentItem, ComplexityDefinition, PlanStructureItem, InvestmentOption, InvestmentOptionItem } from '@/lib/types';
+import { planSchema, serviceSchema, investmentItemSchema, complexityDefinitionSchema, planStructureItemSchema, investmentOptionSchema } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile, ShieldAlert, LayoutGrid } from 'lucide-react';
+import { Trash2, PlusCircle, Save, Pencil, X, Copy, Plus, Loader2, Bold, Italic, Underline, List, Link as LinkIcon, Smile, ShieldAlert, LayoutGrid, Coins } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
@@ -48,6 +48,7 @@ const templateFormSchema = z.object({
   exams: z.array(serviceSchema).optional().default([]),
   complexityDefinitions: z.array(complexityDefinitionSchema).optional().default([]),
   planStructure: z.array(planStructureItemSchema).optional().default([]),
+  investmentOptions: z.array(investmentOptionSchema).optional().default([]),
 });
 
 const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨', '⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
@@ -286,6 +287,51 @@ function PlanInvestmentFields({ planIndex }: { planIndex: number }) {
   );
 }
 
+// Componente para gerenciar itens de uma opção de investimento
+function InvestmentOptionItemFields({ optionIndex }: { optionIndex: number }) {
+    const { control } = useFormContext<z.infer<typeof templateFormSchema>>();
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: `investmentOptions.${optionIndex}.items`,
+    });
+
+    return (
+        <div className="space-y-2 pt-2">
+            <Label className="text-xs font-bold text-muted-foreground flex justify-between items-center">
+                Itens da Tabela (Serviço e Valor)
+                <Button type="button" variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => append({ id: `item-${Date.now()}-${Math.random()}`, service: '', value: '' })}>
+                    <Plus className="h-3 w-3 mr-1" /> Adicionar Item
+                </Button>
+            </Label>
+            {fields.map((field, index) => (
+                <div key={field.id} className="flex gap-2 items-start">
+                    <FormField
+                        control={control}
+                        name={`investmentOptions.${optionIndex}.items.${index}.service`}
+                        render={({ field }) => (
+                            <FormItem className="flex-[3]">
+                                <FormControl><Textarea placeholder="Descrição do serviço" {...field} className="h-10 min-h-0 text-xs" /></FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={control}
+                        name={`investmentOptions.${optionIndex}.items.${index}.value`}
+                        render={({ field }) => (
+                            <FormItem className="flex-[1]">
+                                <FormControl><Input placeholder="ex: R$ 1.000,00" {...field} className="h-10 text-xs" /></FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <Button type="button" variant="ghost" size="icon" className="h-10 w-8 text-destructive" onClick={() => remove(index)}>
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export default function ManageTemplatesPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -322,6 +368,7 @@ export default function ManageTemplatesPage() {
       exams: [],
       complexityDefinitions: [],
       planStructure: [],
+      investmentOptions: [],
     },
   });
 
@@ -329,6 +376,7 @@ export default function ManageTemplatesPage() {
   const { fields: examFields, append: appendExam, remove: removeExam } = useFieldArray({ control: form.control, name: 'exams' });
   const { fields: complexityFields, append: appendComplexity, remove: removeComplexity } = useFieldArray({ control: form.control, name: 'complexityDefinitions' });
   const { fields: planStructureFields, append: appendPlanStructure, remove: removePlanStructure } = useFieldArray({ control: form.control, name: 'planStructure' });
+  const { fields: investmentOptionsFields, append: appendInvestmentOption, remove: removeInvestmentOption } = useFieldArray({ control: form.control, name: 'investmentOptions' });
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -337,7 +385,7 @@ export default function ManageTemplatesPage() {
   }, [user, isUserLoading, router]);
 
   const resetForm = () => {
-    form.reset({ name: '', proposalObject: '', serviceScope: '', methodology: '', psychosocialTools: '', lgpdSecurity: '', clientResponsibilities: '', contractorResponsibilities: '', preliminaryErgonomicAnalysis: '', postErgonomicImplementation: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [], planStructure: [] });
+    form.reset({ name: '', proposalObject: '', serviceScope: '', methodology: '', psychosocialTools: '', lgpdSecurity: '', clientResponsibilities: '', contractorResponsibilities: '', preliminaryErgonomicAnalysis: '', postErgonomicImplementation: '', deadline: '', investment: '', strategicVision: '', paymentTerms: '', plans: [], exams: [], complexityDefinitions: [], planStructure: [], investmentOptions: [] });
     setEditingTemplateId(null);
   };
 
@@ -353,13 +401,19 @@ export default function ManageTemplatesPage() {
     const examsWithIds = data.exams?.map(e => ({ ...e, id: e.id || `exam-${Date.now()}-${Math.random()}` })) || [];
     const complexWithIds = data.complexityDefinitions?.map(c => ({ ...c, id: c.id || `complexity-${Date.now()}-${Math.random()}` })) || [];
     const structureWithIds = data.planStructure?.map(s => ({ ...s, id: s.id || `struct-${Date.now()}-${Math.random()}` })) || [];
+    const optionsWithIds = data.investmentOptions?.map(o => ({
+        ...o,
+        id: o.id || `opt-${Date.now()}-${Math.random()}`,
+        items: o.items.map(i => ({ ...i, id: i.id || `item-${Date.now()}-${Math.random()}` }))
+    })) || [];
 
     const templateData = {
         ...data,
         plans: plansWithIds,
         exams: examsWithIds,
         complexityDefinitions: complexWithIds,
-        planStructure: structureWithIds
+        planStructure: structureWithIds,
+        investmentOptions: optionsWithIds
     };
 
     if (editingTemplateId) {
@@ -396,6 +450,7 @@ export default function ManageTemplatesPage() {
       exams: template.exams || [],
       complexityDefinitions: template.complexityDefinitions || [],
       planStructure: template.planStructure || [],
+      investmentOptions: template.investmentOptions || [],
     });
     if (formCardRef.current) {
       formCardRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -561,6 +616,49 @@ export default function ManageTemplatesPage() {
               </Card>
 
               {renderRichTextFormArea('Investimento Geral', 'investment')}
+
+              <Card className="pt-4">
+                <CardHeader className="py-0">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Coins className="h-5 w-5" /> Opções de Investimento (Customizável)
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Adicione diferentes opções de investimento com tabelas detalhadas.</p>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                    {investmentOptionsFields.map((field, index) => (
+                        <div key={field.id} className="border p-4 rounded-md space-y-4 relative bg-card shadow-sm">
+                            <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-destructive" onClick={() => removeInvestmentOption(index)}><Trash2 className="h-4 w-4" /></Button>
+                            <FormField
+                                control={form.control}
+                                name={`investmentOptions.${index}.title`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <Label className="font-bold">Título da Opção (ex: 7.1. Investimento - Opção 1:)</Label>
+                                        <FormControl><Input {...field} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            
+                            <InvestmentOptionItemFields optionIndex={index} />
+
+                            <FormField
+                                control={form.control}
+                                name={`investmentOptions.${index}.observations`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <Label className="text-xs font-bold text-muted-foreground">Observações da Opção</Label>
+                                        <FormControl><Textarea placeholder="ex: OBS: os serviços do item 6.1 não estão inclusos..." {...field} className="h-20 text-xs" /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => appendInvestmentOption({ id: `opt-${Date.now()}`, title: '', items: [], observations: '' })}>
+                        <Plus className="mr-2 h-4 w-4" /> Adicionar Nova Opção de Investimento
+                    </Button>
+                </CardContent>
+              </Card>
+
               {renderRichTextFormArea('Nossa Visão Estratégica', 'strategicVision')}
               
               {renderRichTextFormArea('Condições de Pagamento Adicionais', 'paymentTerms')}
@@ -710,6 +808,16 @@ export default function ManageTemplatesPage() {
                     {template.clientResponsibilities && <div><h4 className='font-bold text-foreground'>Da Contratante</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.clientResponsibilities }} /></div>}
                     
                     {template.deadline && <div><h4 className='font-bold text-foreground'>Prazo</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.deadline }} /></div>}
+                    
+                    {template.investmentOptions && template.investmentOptions.length > 0 && (
+                        <div>
+                            <h4 className='font-bold text-foreground'>Opções de Investimento ({template.investmentOptions.length})</h4>
+                            <ul className="list-disc list-inside">
+                                {template.investmentOptions.map(o => <li key={o.id}>{o.title || '(Sem título)'}</li>)}
+                            </ul>
+                        </div>
+                    )}
+
                     {template.investment && <div><h4 className='font-bold text-foreground'>Investimento Geral</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.investment }} /></div>}
                     {template.strategicVision && <div><h4 className='font-bold text-foreground'>Visão Estratégica</h4><div className="whitespace-pre-wrap prose prose-xs" dangerouslySetInnerHTML={{ __html: template.strategicVision }} /></div>}
                     {template.paymentTerms && (

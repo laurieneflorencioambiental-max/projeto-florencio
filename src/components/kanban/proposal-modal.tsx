@@ -9,6 +9,8 @@ import type {
   ProposalData,
   ComplexityDefinition,
   PlanStructureItem,
+  InvestmentOption,
+  InvestmentOptionItem,
 } from '@/lib/types';
 import {
   Dialog,
@@ -40,6 +42,8 @@ import {
   Link as LinkIcon,
   Smile,
   ShieldCheck,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import {
   Select,
@@ -115,6 +119,7 @@ export default function ProposalModal({
     exams: [],
     complexityDefinitions: [],
     planStructure: [],
+    investmentOptions: [],
   });
   
   const formatCurrency = (value: number) => {
@@ -159,6 +164,7 @@ export default function ProposalModal({
       exams: template?.exams || [],
       complexityDefinitions: template?.complexityDefinitions || [],
       planStructure: template?.planStructure || [],
+      investmentOptions: template?.investmentOptions || [],
     });
   };
 
@@ -401,6 +407,34 @@ Grupo Florencio`;
     { label: 'Auditorias e Inspeções', icon: Eye },
   ];
 
+  const handleUpdateOptionItem = (optIndex: number, itemIndex: number, fieldKey: keyof InvestmentOptionItem, newValue: string) => {
+      setProposalState(prev => {
+          const newOptions = [...(prev.investmentOptions || [])];
+          const newItems = [...newOptions[optIndex].items];
+          newItems[itemIndex] = { ...newItems[itemIndex], [fieldKey]: newValue };
+          newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
+          return { ...prev, investmentOptions: newOptions };
+      });
+  };
+
+  const handleAddOptionItem = (optIndex: number) => {
+      setProposalState(prev => {
+          const newOptions = [...(prev.investmentOptions || [])];
+          const newItems = [...newOptions[optIndex].items, { id: `item-${Date.now()}-${Math.random()}`, service: '', value: '' }];
+          newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
+          return { ...prev, investmentOptions: newOptions };
+      });
+  };
+
+  const handleRemoveOptionItem = (optIndex: number, itemIndex: number) => {
+      setProposalState(prev => {
+          const newOptions = [...(prev.investmentOptions || [])];
+          const newItems = newOptions[optIndex].items.filter((_, idx) => idx !== itemIndex);
+          newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
+          return { ...prev, investmentOptions: newOptions };
+      });
+  };
+
   const EditableDiv = ({
     field,
     className,
@@ -438,6 +472,14 @@ Grupo Florencio`;
                   const newStruct = [...(prev.planStructure || [])];
                   newStruct[index] = { ...newStruct[index], [fieldKey]: content };
                   return { ...prev, planStructure: newStruct };
+              });
+          } else if (parts[0] === 'investmentOptions') {
+              const index = parseInt(parts[1]);
+              const fieldKey = parts[2] as keyof InvestmentOption;
+              setProposalState(prev => {
+                  const newOptions = [...(prev.investmentOptions || [])];
+                  newOptions[index] = { ...newOptions[index], [fieldKey]: content };
+                  return { ...prev, investmentOptions: newOptions };
               });
           }
       } else {
@@ -486,6 +528,10 @@ Grupo Florencio`;
                 const index = parseInt(parts[1]);
                 const fieldKey = parts[2] as keyof PlanStructureItem;
                 return String(proposalState.planStructure?.[index]?.[fieldKey] || '');
+            } else if (parts[0] === 'investmentOptions') {
+                const index = parseInt(parts[1]);
+                const fieldKey = parts[2] as keyof InvestmentOption;
+                return String((proposalState.investmentOptions?.[index] as any)?.[fieldKey] || '');
             }
         }
         return String((proposalState as any)[field] || '');
@@ -1024,16 +1070,75 @@ Grupo Florencio`;
 
               <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                  Investimento
+                  Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
                 </h3>
+                
+                {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
+                    <div className="space-y-8 mt-6">
+                        {proposalState.investmentOptions.map((opt, optIdx) => (
+                            <div key={opt.id} className="space-y-4">
+                                <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.title`} className="font-bold text-primary text-base" />
+                                
+                                <div className="grid grid-cols-1 gap-0 border border-[#8ec7d1] rounded-lg overflow-hidden">
+                                    <div className="grid grid-cols-4 bg-[#8ec7d1] text-[#1b7689] font-bold text-center p-3 border-b border-[#8ec7d1]">
+                                        <div className="col-span-3">Serviço</div>
+                                        <div>Investimento</div>
+                                    </div>
+                                    {opt.items.map((item, itemIdx) => (
+                                        <div key={item.id} className="grid grid-cols-4 border-b last:border-0 border-[#8ec7d1] items-center group relative">
+                                            <div className="col-span-3 p-3 border-r border-[#8ec7d1] min-h-[3rem]">
+                                                <Textarea 
+                                                    value={item.service} 
+                                                    onChange={e => handleUpdateOptionItem(optIdx, itemIdx, 'service', e.target.value)}
+                                                    placeholder="Serviço..."
+                                                    className="border-none shadow-none focus-visible:ring-0 p-0 text-sm h-full resize-none bg-transparent"
+                                                />
+                                            </div>
+                                            <div className="p-3 text-center min-h-[3rem]">
+                                                <Input 
+                                                    value={item.value} 
+                                                    onChange={e => handleUpdateOptionItem(optIdx, itemIdx, 'value', e.target.value)}
+                                                    placeholder="R$..."
+                                                    className="border-none shadow-none focus-visible:ring-0 p-0 text-center text-sm font-semibold bg-transparent"
+                                                />
+                                            </div>
+                                            <Button 
+                                                variant="destructive" 
+                                                size="icon" 
+                                                className="absolute -right-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8" 
+                                                onClick={() => handleRemoveOptionItem(optIdx, itemIdx)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="w-full h-10 border-t border-dashed border-[#8ec7d1] text-[#1b7689] hover:bg-[#8ec7d1]/10 rounded-none"
+                                        onClick={() => handleAddOptionItem(optIdx)}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" /> Adicionar Item à Tabela
+                                    </Button>
+                                </div>
+
+                                <div className="p-3 bg-[#8ec7d1]/10 border border-[#8ec7d1] rounded-md">
+                                    <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.observations`} className="text-xs italic" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {lead.value > 0 && (
-                  <div className="prose dark:prose-invert max-w-none p-2 rounded-md">
+                  <div className="prose dark:prose-invert max-w-none p-2 rounded-md mt-8">
                     <EditableDiv field="investment" />
                   </div>
                 )}
 
                 {proposalState.plans && proposalState.plans.length > 0 && (
-                  <div className="mt-4 space-y-8">
+                  <div className="mt-12 space-y-8">
+                    <h3 className="text-lg font-bold border-b pb-2 mb-4">Planos de Investimento</h3>
                     {proposalState.plans.map((plan, index) => (
                       <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
                         <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>

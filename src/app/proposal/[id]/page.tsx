@@ -153,7 +153,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             seguros, sustentáveis e alinhados às Normas Regulamentadoras. Com
             transparência e expertise, proporcionamos a confiança que sua empresa
             precisa para elevar seus padrões de segurança e eficiência. Confie em
-            nossa experiência para alcançar resultados valiosos e duradouros.
+            nossa experiênca para alcançar resultados valiosos e duradouros.
           </p>
           <blockquote
             className="border-l-4 pl-4 py-2 my-4"
@@ -493,18 +493,57 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
         {/* Investment */}
         <section className="my-8">
-          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-            Investimento
+          <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+            Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
           </h3>
+          
+          {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
+              <div className="space-y-10 mt-6">
+                  {proposalState.investmentOptions.map((opt) => (
+                      <div key={opt.id} className="space-y-4">
+                          <h4 className="font-bold text-[#1b7689] text-base" dangerouslySetInnerHTML={{ __html: opt.title }} />
+                          <div className="overflow-hidden rounded-lg border border-[#8ec7d1]">
+                              <table className="w-full border-collapse">
+                                  <thead>
+                                      <tr className="bg-[#8ec7d1] text-[#1b7689]">
+                                          <th className="p-3 border-r border-[#1b7689] text-sm font-bold text-left w-3/4">Serviço</th>
+                                          <th className="p-3 text-sm font-bold text-center">Investimento</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      {opt.items.map((item) => (
+                                          <tr key={item.id} className="border-t border-[#8ec7d1] bg-white">
+                                              <td className="p-3 border-r border-[#8ec7d1] text-xs leading-relaxed whitespace-pre-wrap">
+                                                  {item.service}
+                                              </td>
+                                              <td className="p-3 text-center text-xs font-bold text-[#1b7689]">
+                                                  {item.value}
+                                              </td>
+                                          </tr>
+                                      ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                          {opt.observations && (
+                              <div className="p-3 bg-gray-50 border border-[#8ec7d1] rounded-lg">
+                                  <div className="text-xs italic leading-relaxed" dangerouslySetInnerHTML={{ __html: opt.observations }} />
+                              </div>
+                          )}
+                      </div>
+                  ))}
+              </div>
+          )}
+
           {lead.value > 0 && proposalState.investment && (
             <div
-              className="prose dark:prose-invert max-w-none p-2"
+              className="prose dark:prose-invert max-w-none p-2 mt-8"
               dangerouslySetInnerHTML={{ __html: proposalState.investment }}
             />
           )}
 
           {proposalState.plans && proposalState.plans.length > 0 && (
-            <div className="mt-4 space-y-8">
+            <div className="mt-12 space-y-8">
+              <h3 className="text-lg font-bold border-b pb-2 mb-4">Planos de Investimento</h3>
               {proposalState.plans.map((plan) => (
                 <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
                   <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>

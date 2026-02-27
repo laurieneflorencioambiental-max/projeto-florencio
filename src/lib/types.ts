@@ -84,6 +84,19 @@ export const planStructureItemSchema = z.object({
     objective: z.string().default(''),
 });
 
+export const investmentOptionItemSchema = z.object({
+    id: z.string(),
+    service: z.string().default(''),
+    value: z.string().default(''), // String to allow "R$ 120,00 (cada ponto)"
+});
+
+export const investmentOptionSchema = z.object({
+    id: z.string(),
+    title: z.string().default(''),
+    items: z.array(investmentOptionItemSchema).default([]),
+    observations: z.string().optional().default(''),
+});
+
 export const planSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -167,6 +180,8 @@ export type ExtraService = z.infer<typeof extraServiceSchema>;
 export type InvestmentItem = z.infer<typeof investmentItemSchema>;
 export type ComplexityDefinition = z.infer<typeof complexityDefinitionSchema>;
 export type PlanStructureItem = z.infer<typeof planStructureItemSchema>;
+export type InvestmentOption = z.infer<typeof investmentOptionSchema>;
+export type InvestmentOptionItem = z.infer<typeof investmentOptionItemSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
@@ -192,6 +207,7 @@ export type ProposalTemplate = {
   exams: Service[];
   complexityDefinitions?: ComplexityDefinition[];
   planStructure?: PlanStructureItem[];
+  investmentOptions?: InvestmentOption[];
 };
 
 export type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;
