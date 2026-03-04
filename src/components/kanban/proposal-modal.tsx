@@ -642,7 +642,7 @@ Grupo Florencio`;
             </Button>
             <Button
               variant="outline"
-              onClick={handleShare('copy')}
+              onClick={() => handleShare('copy')}
               disabled={isGenerating}
             >
               <Copy className="mr-2 h-4 w-4" />
