@@ -9,6 +9,7 @@ import type {
   PlanStructureItem, 
   InvestmentOption, 
   InvestmentOptionItem,
+  DiverseServiceItem,
   UserProfile 
 } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ export default function TemplatesPage() {
   const [complexityDefinitions, setComplexityDefinitions] = useState<ComplexityDefinition[]>([]);
   const [planStructure, setPlanStructure] = useState<PlanStructureItem[]>([]);
   const [investmentOptions, setInvestmentOptions] = useState<InvestmentOption[]>([]);
+  const [diverseServices, setDiverseServices] = useState<DiverseServiceItem[]>([]);
   const [exams, setExams] = useState<Service[]>([]);
 
   const templatesRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
@@ -114,6 +116,7 @@ export default function TemplatesPage() {
     setComplexityDefinitions([]);
     setPlanStructure([]);
     setInvestmentOptions([]);
+    setDiverseServices([]);
     setExams([]);
     setEditingId(null);
   };
@@ -147,6 +150,7 @@ export default function TemplatesPage() {
       complexityDefinitions,
       planStructure,
       investmentOptions,
+      diverseServices,
       exams,
     };
 
@@ -182,6 +186,7 @@ export default function TemplatesPage() {
     setComplexityDefinitions(template.complexityDefinitions || []);
     setPlanStructure(template.planStructure || []);
     setInvestmentOptions(template.investmentOptions || []);
+    setDiverseServices(template.diverseServices || []);
     setExams(template.exams || []);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -284,6 +289,20 @@ export default function TemplatesPage() {
     ]);
   };
 
+  const addDiverseServiceItem = () => {
+    setDiverseServices(prev => [
+      ...prev,
+      { 
+        id: `ds-${Date.now()}`, 
+        item: (prev.length + 1).toString(), 
+        employeeRange: '', 
+        servicesIncluded: '', 
+        investment: '', 
+        onDemand: '' 
+      }
+    ]);
+  };
+
   if (isUserLoading || areTemplatesLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
@@ -340,17 +359,16 @@ export default function TemplatesPage() {
               <Textarea value={serviceScope} onChange={e => setServiceScope(e.target.value)} rows={4} className="rounded-t-none" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Metodologia</Label>
-                <FormatToolbar field="methodology" />
-                <Textarea value={methodology} onChange={e => setMethodology(e.target.value)} rows={3} className="rounded-t-none" />
-              </div>
-              <div className="space-y-2">
-                <Label>Fatores Psicossociais</Label>
-                <FormatToolbar field="psychosocialTools" />
-                <Textarea value={psychosocialTools} onChange={e => setPsychosocialTools(e.target.value)} rows={3} className="rounded-t-none" />
-              </div>
+            <div className="space-y-2">
+              <Label>Metodologia</Label>
+              <FormatToolbar field="methodology" />
+              <Textarea value={methodology} onChange={e => setMethodology(e.target.value)} rows={3} className="rounded-t-none" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ferramentas de avaliação dos Fatores psicossociais</Label>
+              <FormatToolbar field="psychosocialTools" />
+              <Textarea value={psychosocialTools} onChange={e => setPsychosocialTools(e.target.value)} rows={3} className="rounded-t-none" />
             </div>
 
             <div className="space-y-2">
@@ -372,17 +390,16 @@ export default function TemplatesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Análise Ergonômica Preliminar</Label>
-                <FormatToolbar field="preliminaryErgonomicAnalysis" />
-                <Textarea value={preliminaryErgonomicAnalysis} onChange={e => setPreliminaryErgonomicAnalysis(e.target.value)} rows={3} className="rounded-t-none" />
-              </div>
-              <div className="space-y-2">
-                <Label>Roteiro Pós-Implementação Ergonômica</Label>
-                <FormatToolbar field="postErgonomicImplementation" />
-                <Textarea value={postErgonomicImplementation} onChange={e => setPostErgonomicImplementation(e.target.value)} rows={3} className="rounded-t-none" />
-              </div>
+            <div className="space-y-2">
+              <Label>Análise Ergonômica Preliminar</Label>
+              <FormatToolbar field="preliminaryErgonomicAnalysis" />
+              <Textarea value={preliminaryErgonomicAnalysis} onChange={e => setPreliminaryErgonomicAnalysis(e.target.value)} rows={3} className="rounded-t-none" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)</Label>
+              <FormatToolbar field="postErgonomicImplementation" />
+              <Textarea value={postErgonomicImplementation} onChange={e => setPostErgonomicImplementation(e.target.value)} rows={3} className="rounded-t-none" />
             </div>
 
             <Card className="bg-primary/5 border-dashed">
@@ -480,13 +497,13 @@ export default function TemplatesPage() {
             </Card>
 
             <div className="space-y-2">
-              <Label>Prazo para Realização</Label>
+              <Label>Prazo para Realização dos Serviços</Label>
               <FormatToolbar field="deadline" />
               <Textarea value={deadline} onChange={e => setDeadline(e.target.value)} rows={2} className="rounded-t-none" />
             </div>
 
             <div className="space-y-2">
-              <Label>Visão Estratégica</Label>
+              <Label>Nossa Visão Estratégica</Label>
               <FormatToolbar field="strategicVision" />
               <Textarea value={strategicVision} onChange={e => setStrategicVision(e.target.value)} rows={3} className="rounded-t-none" />
             </div>
@@ -576,7 +593,7 @@ export default function TemplatesPage() {
                           }} className="text-xs min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Suporte Auditorias</Label>
+                          <Label className="text-xs">Suporte em auditorias e fiscalizações</Label>
                           <Textarea value={plan.auditSupport} onChange={e => {
                             const newP = [...plans];
                             newP[pIdx].auditSupport = e.target.value;
@@ -592,7 +609,7 @@ export default function TemplatesPage() {
                           }} className="text-xs min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Gestão Específica</Label>
+                          <Label className="text-xs">Gestão específica por contrato</Label>
                           <Textarea value={plan.specificManagement} onChange={e => {
                             const newP = [...plans];
                             newP[pIdx].specificManagement = e.target.value;
@@ -628,7 +645,7 @@ export default function TemplatesPage() {
                               </div>
                               <Button variant="ghost" size="icon" onClick={() => {
                                 const newP = [...plans];
-                                pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
+                                newP[pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
                                 setPlans(newP);
                               }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
@@ -748,6 +765,81 @@ export default function TemplatesPage() {
               </div>
             </div>
 
+            <div className="space-y-4 border-t pt-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <TableIcon className="h-5 w-5 text-primary" /> 
+                  Opções de Investimento - Serviços Diversos
+                </h3>
+                <Button onClick={addDiverseServiceItem} variant="outline" size="sm">
+                  <PlusCircle className="mr-2 h-4 w-4" /> 
+                  Adicionar Linha
+                </Button>
+              </div>
+              <Card className="bg-muted/20">
+                <CardContent className="pt-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-[#1b7689] hover:bg-[#1b7689]">
+                        <TableHead className="text-white font-bold w-[80px] text-center">Item</TableHead>
+                        <TableHead className="text-white font-bold w-[150px]">Faixa de Funcionários</TableHead>
+                        <TableHead className="text-white font-bold">Serviços Inclusos</TableHead>
+                        <TableHead className="text-white font-bold w-[150px] text-center">Investimento</TableHead>
+                        <TableHead className="text-white font-bold w-[120px] text-center">Por Demanda</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {diverseServices.map((ds, dsIdx) => (
+                        <TableRow key={ds.id} className="bg-[#d4e9ee]">
+                          <TableCell className="text-center">
+                            <Input value={ds.item} onChange={e => {
+                              const newDS = [...diverseServices];
+                              newDS[dsIdx].item = e.target.value;
+                              setDiverseServices(newDS);
+                            }} className="border-none bg-transparent shadow-none text-center" />
+                          </TableCell>
+                          <TableCell>
+                            <Input value={ds.employeeRange} onChange={e => {
+                              const newDS = [...diverseServices];
+                              newDS[dsIdx].employeeRange = e.target.value;
+                              setDiverseServices(newDS);
+                            }} className="border-none bg-transparent shadow-none" placeholder="Ex: 1 a 5" />
+                          </TableCell>
+                          <TableCell>
+                            <Textarea value={ds.servicesIncluded} onChange={e => {
+                              const newDS = [...diverseServices];
+                              newDS[dsIdx].servicesIncluded = e.target.value;
+                              setDiverseServices(newDS);
+                            }} className="border-none bg-transparent shadow-none min-h-[40px] resize-none" placeholder="Descrição do serviço..." />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input value={ds.investment} onChange={e => {
+                              const newDS = [...diverseServices];
+                              newDS[dsIdx].investment = e.target.value;
+                              setDiverseServices(newDS);
+                            }} className="border-none bg-transparent shadow-none text-center font-bold" placeholder="R$ 0,00" />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input value={ds.onDemand} onChange={e => {
+                              const newDS = [...diverseServices];
+                              newDS[dsIdx].onDemand = e.target.value;
+                              setDiverseServices(newDS);
+                            }} className="border-none bg-transparent shadow-none text-center" placeholder="Ex: sim" />
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => setDiverseServices(prev => prev.filter(item => item.id !== ds.id))}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="space-y-2 border-t pt-6">
               <Label>Condições de Pagamento Adicionais</Label>
               <FormatToolbar field="paymentTerms" />
@@ -788,6 +880,7 @@ export default function TemplatesPage() {
                       <div className="flex flex-wrap gap-1">
                         {t.plans?.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{t.plans.length} Planos</span>}
                         {t.investmentOptions?.length > 0 && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{t.investmentOptions.length} Opções</span>}
+                        {t.diverseServices?.length > 0 && <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full">{t.diverseServices.length} Serv. Diversos</span>}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

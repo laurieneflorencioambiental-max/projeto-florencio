@@ -97,6 +97,15 @@ export const investmentOptionSchema = z.object({
     observations: z.string().optional().default(''),
 });
 
+export const diverseServiceItemSchema = z.object({
+    id: z.string(),
+    item: z.string().default(''),
+    employeeRange: z.string().default(''),
+    servicesIncluded: z.string().default(''),
+    investment: z.string().default(''),
+    onDemand: z.string().default(''),
+});
+
 export const planSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -182,6 +191,7 @@ export type ComplexityDefinition = z.infer<typeof complexityDefinitionSchema>;
 export type PlanStructureItem = z.infer<typeof planStructureItemSchema>;
 export type InvestmentOption = z.infer<typeof investmentOptionSchema>;
 export type InvestmentOptionItem = z.infer<typeof investmentOptionItemSchema>;
+export type DiverseServiceItem = z.infer<typeof diverseServiceItemSchema>;
 export type Service = z.infer<typeof serviceSchema>;
 export type VersionHistoryEntry = z.infer<typeof versionHistoryEntrySchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
@@ -208,6 +218,7 @@ export type ProposalTemplate = {
   complexityDefinitions?: ComplexityDefinition[];
   planStructure?: PlanStructureItem[];
   investmentOptions?: InvestmentOption[];
+  diverseServices?: DiverseServiceItem[];
 };
 
 export type ProposalState = Omit<ProposalTemplate, 'id' | 'name'>;

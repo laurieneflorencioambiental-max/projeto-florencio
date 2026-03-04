@@ -245,7 +245,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <h3 className="text-lg font-semibold mt-6">Objetivo</h3>
           <p className="text-sm leading-relaxed mt-4">
             Temos por objetivo o compromisso em oferecer serviços de Saúde
-            Ocupacional e Segurança do Trabalho com excellence e em conformidade
+            Ocupacional e Segurança do Trabalho com excelência e em conformidade
             com a legislação, promovendo ambientes corporativos seguros,
             saudáveis e produtivos.
           </p>
@@ -639,6 +639,39 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </div>
           )}
 
+          {proposalState.diverseServices && proposalState.diverseServices.length > 0 && (
+              <div className="space-y-8 mt-12">
+                  <div className="flex items-center gap-2 border-b pb-2 mb-4">
+                      <TableIcon className="h-5 w-5 text-primary" /> 
+                      <h3 className="text-lg font-bold">Opções de Investimento - Serviços Diversos</h3>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-[#1b7689]">
+                      <table className="w-full border-collapse">
+                          <thead>
+                              <tr className="bg-[#1b7689] text-white">
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[60px]">Item</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Faixa de Funcionários</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-left">Serviços Inclusos</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Investimento</th>
+                                  <th className="p-3 text-xs font-bold text-center w-[100px]">Por demanda</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {proposalState.diverseServices.map((ds) => (
+                                  <tr key={ds.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689]">
+                                      <td className="p-3 border-r border-[#1b7689] text-center text-xs">{ds.item}</td>
+                                      <td className="p-3 border-r border-[#1b7689] text-center text-xs">{ds.employeeRange}</td>
+                                      <td className="p-3 border-r border-[#1b7689] text-xs whitespace-pre-wrap">{ds.servicesIncluded}</td>
+                                      <td className="p-3 border-r border-[#1b7689] text-center text-xs font-bold">{ds.investment}</td>
+                                      <td className="p-3 text-center text-xs">{ds.onDemand}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          )}
+
           {proposalState.exams && proposalState.exams.length > 0 && (
             <div className="mt-8">
               <p className="text-sm mb-4 font-semibold">
@@ -783,7 +816,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               Em nossa busca contínua em promover práticas de Segurança do
               Trabalho e Sustentabilidade, gostaríamos de propor uma
               parceria em nossas mídias sociais. Caso tenhamos a honra de
-              realizar este projeto com a sua empresa, gostaríamos de saber
+              realizar este projeto with a sua empresa, gostaríamos de saber
               se podemos divulgar nosso trabalho realizado nas suas
               instalações em nossas plataformas digitais, como Instagram,
               Linkedin, Site, YouTube?

@@ -13,6 +13,7 @@ import type {
   PlanStructureItem,
   InvestmentOption,
   InvestmentOptionItem,
+  DiverseServiceItem,
 } from '@/lib/types';
 import {
   Dialog,
@@ -123,6 +124,7 @@ export default function ProposalModal({
     complexityDefinitions: [],
     planStructure: [],
     investmentOptions: [],
+    diverseServices: [],
   });
   
   const formatCurrency = (value: number) => {
@@ -168,6 +170,7 @@ export default function ProposalModal({
       complexityDefinitions: template?.complexityDefinitions || [],
       planStructure: template?.planStructure || [],
       investmentOptions: template?.investmentOptions || [],
+      diverseServices: template?.diverseServices || [],
     });
   };
 
@@ -438,6 +441,31 @@ Grupo Florencio`;
       });
   };
 
+  const handleUpdateDiverseService = (index: number, field: keyof DiverseServiceItem, value: string) => {
+    setProposalState(prev => {
+      const newDiverse = [...(prev.diverseServices || [])];
+      newDiverse[index] = { ...newDiverse[index], [field]: value };
+      return { ...prev, diverseServices: newDiverse };
+    });
+  };
+
+  const handleAddDiverseService = () => {
+    setProposalState(prev => ({
+      ...prev,
+      diverseServices: [
+        ...(prev.diverseServices || []),
+        { id: `ds-${Date.now()}`, item: ((prev.diverseServices?.length || 0) + 1).toString(), employeeRange: '', servicesIncluded: '', investment: '', onDemand: '' }
+      ]
+    }));
+  };
+
+  const handleRemoveDiverseService = (index: number) => {
+    setProposalState(prev => ({
+      ...prev,
+      diverseServices: (prev.diverseServices || []).filter((_, i) => i !== index)
+    }));
+  };
+
   const EditableDiv = ({
     field,
     className,
@@ -614,7 +642,7 @@ Grupo Florencio`;
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleShare('copy')}
+              onClick={handleShare('copy')}
               disabled={isGenerating}
             >
               <Copy className="mr-2 h-4 w-4" />
@@ -622,7 +650,7 @@ Grupo Florencio`;
             </Button>
             <Button
               variant="outline"
-              onClick={() => handleShare('email')}
+              onClick={handleShare('email')}
               disabled={isGenerating}
             >
               <Mail className="mr-2 h-4 w-4" />
@@ -766,7 +794,7 @@ Grupo Florencio`;
                     "Nossos serviços são investimentos, onde trazemos benefícios
                     que superam qualquer custo, pois não é sobre preço, é sobre
                     entregar resultados valiosos. Comprometemo-nos
-                    integralmente a proporcionar excellence em Saúde e Segurança
+                    integralmente a proporcionar excelência em Saúde e Segurança
                     do Trabalho, impulsionados pela nossa especialização e
                     dedicação incansável.”
                   </p>
@@ -1233,6 +1261,55 @@ Grupo Florencio`;
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {proposalState.diverseServices && proposalState.diverseServices.length > 0 && (
+                    <div className="space-y-8 mt-12">
+                        <div className="flex items-center gap-2 border-b pb-2 mb-4">
+                            <TableIcon className="h-5 w-5 text-primary" /> 
+                            <h3 className="text-lg font-bold">Opções de Investimento - Serviços Diversos</h3>
+                        </div>
+                        <div className="overflow-hidden rounded-lg border border-[#1b7689]">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-[#1b7689] text-white">
+                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[60px]">Item</th>
+                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Faixa de Funcionários</th>
+                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-left">Serviços Inclusos</th>
+                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Investimento</th>
+                                        <th className="p-3 text-xs font-bold text-center w-[100px]">Por demanda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {proposalState.diverseServices.map((ds, idx) => (
+                                        <tr key={ds.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689] group relative">
+                                            <td className="p-3 border-r border-[#1b7689] text-center">
+                                                <Input value={ds.item} onChange={e => handleUpdateDiverseService(idx, 'item', e.target.value)} className="border-none bg-transparent shadow-none p-0 text-center h-full focus-visible:ring-0 text-xs" />
+                                            </td>
+                                            <td className="p-3 border-r border-[#1b7689] text-center">
+                                                <Input value={ds.employeeRange} onChange={e => handleUpdateDiverseService(idx, 'employeeRange', e.target.value)} className="border-none bg-transparent shadow-none p-0 text-center h-full focus-visible:ring-0 text-xs" />
+                                            </td>
+                                            <td className="p-3 border-r border-[#1b7689]">
+                                                <Textarea value={ds.servicesIncluded} onChange={e => handleUpdateDiverseService(idx, 'servicesIncluded', e.target.value)} className="border-none bg-transparent shadow-none p-0 h-full focus-visible:ring-0 text-xs min-h-[40px] resize-none" />
+                                            </td>
+                                            <td className="p-3 border-r border-[#1b7689] text-center font-bold">
+                                                <Input value={ds.investment} onChange={e => handleUpdateDiverseService(idx, 'investment', e.target.value)} className="border-none bg-transparent shadow-none p-0 text-center h-full focus-visible:ring-0 text-xs font-bold" />
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <Input value={ds.onDemand} onChange={e => handleUpdateDiverseService(idx, 'onDemand', e.target.value)} className="border-none bg-transparent shadow-none p-0 text-center h-full focus-visible:ring-0 text-xs" />
+                                            </td>
+                                            <Button variant="destructive" size="icon" className="absolute -right-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8" onClick={() => handleRemoveDiverseService(idx)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <Button variant="ghost" size="sm" className="w-full h-10 border-t border-dashed border-[#1b7689] text-[#1b7689] hover:bg-[#1b7689]/10 rounded-none" onClick={handleAddDiverseService}>
+                                <Plus className="h-4 w-4 mr-2" /> Adicionar Linha de Serviço Diverso
+                            </Button>
+                        </div>
                     </div>
                 )}
                 
