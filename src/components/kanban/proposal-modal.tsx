@@ -1,6 +1,8 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import type {
   Lead,
   ProposalTemplate,
