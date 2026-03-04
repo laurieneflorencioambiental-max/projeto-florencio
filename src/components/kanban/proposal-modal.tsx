@@ -116,7 +116,7 @@ export default function ProposalModal({
     preliminaryErgonomicAnalysis: '',
     postErgonomicImplementation: '',
     deadline: 'A ser definido na proposta.',
-    investment: 'A ser definido na proposta.',
+    investment: '',
     strategicVision: 'A ser definido na proposta.',
     paymentTerms: '',
     plans: [],
@@ -140,17 +140,6 @@ export default function ProposalModal({
 
     const template = proposalTemplates.find(t => t.id === actualId);
     
-    const investmentText = lead.value > 0
-        ? `
-<div class="mt-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-    <p class="text-lg">Valor Total do Orçamento:</p>
-    <p class="text-2xl font-bold text-primary">${formatCurrency(
-      lead.value
-    )}</p>
-</div>
-        `
-        : 'Valores detalhados nos planos abaixo.';
-
     setProposalState({
       proposalObject: template?.proposalObject || lead.proposalSummary,
       serviceScope: template?.serviceScope || 'A ser definido na proposta.',
@@ -162,7 +151,7 @@ export default function ProposalModal({
       preliminaryErgonomicAnalysis: template?.preliminaryErgonomicAnalysis || '',
       postErgonomicImplementation: template?.postErgonomicImplementation || '',
       deadline: template?.deadline || 'A ser definido na proposta.',
-      investment: template?.investment || investmentText,
+      investment: template?.investment || '',
       strategicVision: template?.strategicVision || 'A ser definido na proposta.',
       paymentTerms: template?.paymentTerms || '',
       plans: template?.plans || [],
@@ -1104,11 +1093,9 @@ Grupo Florencio`;
                   Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
                 </h3>
                 
-                {lead.value > 0 && (
-                  <div className="prose dark:prose-invert max-w-none p-2 rounded-md mt-8">
-                    <EditableDiv field="investment" />
-                  </div>
-                )}
+                <div className="prose dark:prose-invert max-w-none p-2 rounded-md mt-8">
+                  <EditableDiv field="investment" />
+                </div>
 
                 {proposalState.plans && proposalState.plans.length > 0 && (
                   <div className="mt-12 space-y-8">

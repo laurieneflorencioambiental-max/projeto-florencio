@@ -271,7 +271,7 @@ export default function TemplatesPage() {
         servicesIncluded: '', 
         paymentType: 'unique',
         investments: [],
-        investment: 0, // Corrigido: Propriedade obrigatória do tipo Plan
+        investment: 0,
         extraServices: [],
         purpose: '',
         differentiator: '',
@@ -507,6 +507,12 @@ export default function TemplatesPage() {
               <Label>Nossa Visão Estratégica</Label>
               <FormatToolbar field="strategicVision" />
               <Textarea value={strategicVision} onChange={e => setStrategicVision(e.target.value)} rows={3} className="rounded-t-none" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Investimento</Label>
+              <FormatToolbar field="investment" />
+              <Textarea value={investment} onChange={e => setInvestment(e.target.value)} rows={3} className="rounded-t-none" placeholder="Digite manualmente os valores e condições..." />
             </div>
 
             <div className="space-y-4 border-t pt-6">

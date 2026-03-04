@@ -498,7 +498,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
           </h3>
           
-          {lead.value > 0 && proposalState.investment && (
+          {proposalState.investment && (
             <div
               className="prose dark:prose-invert max-w-none p-2 mt-8"
               dangerouslySetInnerHTML={{ __html: proposalState.investment }}
