@@ -223,7 +223,7 @@ export default function TemplatesPage() {
     if (!setter) return;
 
     if (tag === 'emoji') {
-      setter((prev: string) => prev + value);
+      setter((prev: string) => prev + (value || ''));
       return;
     }
 
@@ -242,7 +242,7 @@ export default function TemplatesPage() {
       li: ['<li>', '</li>'],
     };
 
-    const [open, close] = tags[tag];
+    const [open, close] = tags[tag as 'b' | 'i' | 'u' | 'li'];
     setter((prev: string) => prev + open + close);
   };
 
@@ -271,6 +271,7 @@ export default function TemplatesPage() {
         servicesIncluded: '', 
         paymentType: 'unique',
         investments: [],
+        investment: 0, // Corrigido: Propriedade obrigatória do tipo Plan
         extraServices: [],
         purpose: '',
         differentiator: '',
@@ -645,7 +646,7 @@ export default function TemplatesPage() {
                               </div>
                               <Button variant="ghost" size="icon" onClick={() => {
                                 const newP = [...plans];
-                                pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
+                                newP[pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
                                 setPlans(newP);
                               }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
@@ -881,7 +882,7 @@ export default function TemplatesPage() {
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {t.plans?.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{t.plans.length} Planos</span>}
-                        {t.investmentOptions?.length > 0 && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{t.investmentOptions.length} Opções</span>}
+                        {t.investmentOptions && t.investmentOptions.length > 0 && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{t.investmentOptions.length} Opções</span>}
                         {t.diverseServices && t.diverseServices.length > 0 && <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full">{t.diverseServices.length} Serv. Diversos</span>}
                       </div>
                     </TableCell>
