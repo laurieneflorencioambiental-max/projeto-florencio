@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { 
   ProposalTemplate, 
   Plan, 
@@ -30,12 +30,12 @@ import {
   Link as LinkIcon, 
   Smile, 
   Plus, 
-  ChevronDown, 
-  ChevronUp, 
   ShieldCheck,
   LayoutDashboard,
   Coins,
-  Table as TableIcon
+  Table as TableIcon,
+  Search,
+  BookMarked
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -48,6 +48,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { logClientEvent } from '@/lib/audit-client';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
 
@@ -84,12 +87,28 @@ export default function TemplatesPage() {
   const [diverseServices, setDiverseServices] = useState<DiverseServiceItem[]>([]);
   const [exams, setExams] = useState<Service[]>([]);
 
+  // Catalog State
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [selectedCatalogIds, setSelectedCatalogIds] = useState<string[]>([]);
+
   const templatesRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
   const { data: templates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesRef);
+
+  const servicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const { data: servicesCatalog, isLoading: areServicesLoading } = useCollection<Service>(servicesRef);
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
   const isAdmin = userProfile?.isAdmin === true;
+
+  const filteredCatalog = useMemo(() => {
+    if (!servicesCatalog) return [];
+    return servicesCatalog.filter(s => 
+      s.service.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+      s.description.toLowerCase().includes(catalogSearch.toLowerCase())
+    );
+  }, [servicesCatalog, catalogSearch]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -304,6 +323,28 @@ export default function TemplatesPage() {
     ]);
   };
 
+  const handleAddFromCatalog = () => {
+    if (!servicesCatalog) return;
+    const selectedServices = servicesCatalog.filter(s => selectedCatalogIds.includes(s.id));
+    
+    // Evitar duplicados no modelo (opcional, aqui apenas adicionamos)
+    const newExams = [...exams];
+    selectedServices.forEach(s => {
+        newExams.push({
+            id: `copy-${Date.now()}-${s.id}`,
+            service: s.service,
+            description: s.description,
+            value: s.value
+        });
+    });
+
+    setExams(newExams);
+    setIsCatalogModalOpen(false);
+    setSelectedCatalogIds([]);
+    setCatalogSearch('');
+    toast({ title: 'Serviços Adicionados', description: `${selectedServices.length} itens incorporados ao modelo.` });
+  };
+
   if (isUserLoading || areTemplatesLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
@@ -333,6 +374,13 @@ export default function TemplatesPage() {
       </Popover>
     </div>
   );
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -849,6 +897,91 @@ export default function TemplatesPage() {
               )}
             </div>
 
+            <div className="space-y-4 border-t pt-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <BookMarked className="h-5 w-5 text-primary" /> 
+                  Investimentos Adicionais - Exames/Serviços Avulsos
+                </h3>
+                <div className="flex gap-2">
+                    <Button onClick={() => setIsCatalogModalOpen(true)} variant="outline" size="sm">
+                        <Search className="mr-2 h-4 w-4" /> 
+                        Buscar do Catálogo
+                    </Button>
+                    <Button onClick={() => setExams(prev => [...prev, { id: `manual-${Date.now()}`, service: '', description: '', value: 0 }])} variant="outline" size="sm">
+                        <Plus className="mr-2 h-4 w-4" /> 
+                        Inserir Manualmente
+                    </Button>
+                </div>
+              </div>
+              
+              {exams.length > 0 && (
+                <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-primary/5">
+                                <TableHead>Serviço</TableHead>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead className="w-[150px]">Valor</TableHead>
+                                <TableHead className="w-[50px]"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {exams.map((exam, idx) => (
+                                <TableRow key={exam.id}>
+                                    <TableCell>
+                                        <Input 
+                                            value={exam.service} 
+                                            onChange={e => {
+                                                const newExams = [...exams];
+                                                newExams[idx].service = e.target.value;
+                                                setExams(newExams);
+                                            }} 
+                                            placeholder="Nome do serviço..."
+                                            className="h-8 text-sm"
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input 
+                                            value={exam.description} 
+                                            onChange={e => {
+                                                const newExams = [...exams];
+                                                newExams[idx].description = e.target.value;
+                                                setExams(newExams);
+                                            }} 
+                                            placeholder="Notas/Unidade..."
+                                            className="h-8 text-sm"
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="relative">
+                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                                            <Input 
+                                                type="number" 
+                                                step="0.01" 
+                                                value={exam.value} 
+                                                onChange={e => {
+                                                    const newExams = [...exams];
+                                                    newExams[idx].value = parseFloat(e.target.value) || 0;
+                                                    setExams(newExams);
+                                                }} 
+                                                className="h-8 text-sm pl-7"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button variant="ghost" size="icon" onClick={() => setExams(prev => prev.filter((_, i) => i !== idx))}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2 border-t pt-6">
               <Label>Condições de Pagamento Adicionais</Label>
               <FormatToolbar field="paymentTerms" />
@@ -890,6 +1023,7 @@ export default function TemplatesPage() {
                         {t.plans?.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{t.plans.length} Planos</span>}
                         {t.investmentOptions && t.investmentOptions.length > 0 && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full">{t.investmentOptions.length} Opções</span>}
                         {t.diverseServices && t.diverseServices.length > 0 && <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full">{t.diverseServices.length} Serv. Diversos</span>}
+                        {t.exams && t.exams.length > 0 && <span className="text-[10px] bg-green-500/10 text-green-700 px-1.5 py-0.5 rounded-full">{t.exams.length} Exames</span>}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -921,6 +1055,103 @@ export default function TemplatesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Catalog Selector Modal */}
+      <Dialog open={isCatalogModalOpen} onOpenChange={setIsCatalogModalOpen}>
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <BookMarked className="h-5 w-5" />
+                    Catálogo de Serviços
+                </DialogTitle>
+                <DialogDescription>
+                    Pesquise e selecione serviços para adicionar a este modelo de proposta.
+                </DialogDescription>
+            </DialogHeader>
+            
+            <div className="relative my-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    placeholder="Pesquisar por nome ou descrição..." 
+                    className="pl-9"
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                />
+            </div>
+
+            <ScrollArea className="flex-1 border rounded-md">
+                {areServicesLoading ? (
+                    <div className="flex flex-col items-center justify-center p-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground mt-2">Carregando catálogo...</p>
+                    </div>
+                ) : filteredCatalog.length > 0 ? (
+                    <div className="p-0">
+                        <Table>
+                            <TableHeader className="sticky top-0 bg-background z-10">
+                                <TableRow>
+                                    <TableHead className="w-[50px]"></TableHead>
+                                    <TableHead>Serviço</TableHead>
+                                    <TableHead>Descrição</TableHead>
+                                    <TableHead className="text-right">Valor Padrão</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredCatalog.map(service => (
+                                    <TableRow 
+                                        key={service.id} 
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => {
+                                            setSelectedCatalogIds(prev => 
+                                                prev.includes(service.id) 
+                                                ? prev.filter(id => id !== service.id) 
+                                                : [...prev, service.id]
+                                            );
+                                        }}
+                                    >
+                                        <TableCell onClick={e => e.stopPropagation()}>
+                                            <Checkbox 
+                                                checked={selectedCatalogIds.includes(service.id)} 
+                                                onCheckedChange={() => {
+                                                    setSelectedCatalogIds(prev => 
+                                                        prev.includes(service.id) 
+                                                        ? prev.filter(id => id !== service.id) 
+                                                        : [...prev, service.id]
+                                                    );
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{service.service}</TableCell>
+                                        <TableCell className="text-xs text-muted-foreground">{service.description}</TableCell>
+                                        <TableCell className="text-right font-semibold text-primary">{formatCurrency(service.value)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ) : (
+                    <div className="p-12 text-center text-muted-foreground">
+                        Nenhum serviço encontrado no catálogo para "{catalogSearch}".
+                    </div>
+                )}
+            </ScrollArea>
+
+            <DialogFooter className="pt-4 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                    {selectedCatalogIds.length} item(ns) selecionado(s)
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="ghost" onClick={() => {
+                        setIsCatalogModalOpen(false);
+                        setSelectedCatalogIds([]);
+                    }}>Cancelar</Button>
+                    <Button onClick={handleAddFromCatalog} disabled={selectedCatalogIds.length === 0}>
+                        Adicionar ao Modelo
+                    </Button>
+                </div>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
