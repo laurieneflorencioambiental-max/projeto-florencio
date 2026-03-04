@@ -1270,15 +1270,15 @@ Grupo Florencio`;
                             <TableIcon className="h-5 w-5 text-primary" /> 
                             <h3 className="text-lg font-bold">Opções de Investimento - Serviços Diversos</h3>
                         </div>
-                        <div className="overflow-hidden rounded-lg border border-[#1b7689]">
-                            <table className="w-full border-collapse">
+                        <div className="overflow-x-auto border border-[#1b7689] rounded-lg">
+                            <table className="w-full border-collapse min-w-[800px]">
                                 <thead>
                                     <tr className="bg-[#1b7689] text-white">
                                         <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[60px]">Item</th>
-                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Faixa de Funcionários</th>
+                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[150px]">Faixa de Funcionários</th>
                                         <th className="p-3 border-r border-white/20 text-xs font-bold text-left">Serviços Inclusos</th>
-                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Investimento</th>
-                                        <th className="p-3 text-xs font-bold text-center w-[100px]">Por demanda</th>
+                                        <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[150px]">Investimento</th>
+                                        <th className="p-3 text-xs font-bold text-center w-[120px]">Por demanda</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1291,7 +1291,7 @@ Grupo Florencio`;
                                                 <Input value={ds.employeeRange} onChange={e => handleUpdateDiverseService(idx, 'employeeRange', e.target.value)} className="border-none bg-transparent shadow-none p-0 text-center h-full focus-visible:ring-0 text-xs" />
                                             </td>
                                             <td className="p-3 border-r border-[#1b7689]">
-                                                <Textarea value={ds.servicesIncluded} onChange={e => handleUpdateDiverseService(idx, 'servicesIncluded', e.target.value)} className="border-none bg-transparent shadow-none p-0 h-full focus-visible:ring-0 text-xs min-h-[40px] resize-none" />
+                                                <Textarea value={ds.servicesIncluded} onChange={e => handleUpdateDiverseService(idx, 'servicesIncluded', e.target.value)} className="border-none bg-transparent shadow-none p-0 h-full focus-visible:ring-0 text-xs min-h-[60px] resize-none" />
                                             </td>
                                             <td className="p-3 border-r border-[#1b7689] text-center font-bold">
                                                 <Input value={ds.investment} onChange={e => handleUpdateDiverseService(idx, 'investment', e.target.value)} className="border-none bg-transparent shadow-none p-0 text-center h-full focus-visible:ring-0 text-xs font-bold" />

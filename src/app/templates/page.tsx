@@ -776,56 +776,56 @@ export default function TemplatesPage() {
                   Adicionar Linha
                 </Button>
               </div>
-              <Card className="bg-muted/20">
-                <CardContent className="pt-6">
-                  <Table>
+              <Card className="bg-muted/20 overflow-hidden">
+                <CardContent className="pt-6 overflow-x-auto p-0">
+                  <Table className="w-full min-w-[800px] border-collapse">
                     <TableHeader>
                       <TableRow className="bg-[#1b7689] hover:bg-[#1b7689]">
-                        <TableHead className="text-white font-bold w-[80px] text-center">Item</TableHead>
-                        <TableHead className="text-white font-bold w-[150px]">Faixa de Funcionários</TableHead>
-                        <TableHead className="text-white font-bold">Serviços Inclusos</TableHead>
-                        <TableHead className="text-white font-bold w-[150px] text-center">Investimento</TableHead>
+                        <TableHead className="text-white font-bold w-[60px] text-center border-r border-white/20">Item</TableHead>
+                        <TableHead className="text-white font-bold w-[150px] border-r border-white/20">Faixa de Funcionários</TableHead>
+                        <TableHead className="text-white font-bold border-r border-white/20">Serviços Inclusos</TableHead>
+                        <TableHead className="text-white font-bold w-[150px] text-center border-r border-white/20">Investimento</TableHead>
                         <TableHead className="text-white font-bold w-[120px] text-center">Por Demanda</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {diverseServices.map((ds, dsIdx) => (
-                        <TableRow key={ds.id} className="bg-[#d4e9ee]">
-                          <TableCell className="text-center">
+                        <TableRow key={ds.id} className="bg-[#d4e9ee] border-t border-[#1b7689]">
+                          <TableCell className="text-center border-r border-[#1b7689]">
                             <Input value={ds.item} onChange={e => {
                               const newDS = [...diverseServices];
                               newDS[dsIdx].item = e.target.value;
                               setDiverseServices(newDS);
-                            }} className="border-none bg-transparent shadow-none text-center" />
+                            }} className="border-none bg-transparent shadow-none text-center h-full p-1" />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="border-r border-[#1b7689]">
                             <Input value={ds.employeeRange} onChange={e => {
                               const newDS = [...diverseServices];
                               newDS[dsIdx].employeeRange = e.target.value;
                               setDiverseServices(newDS);
-                            }} className="border-none bg-transparent shadow-none" placeholder="Ex: 1 a 5" />
+                            }} className="border-none bg-transparent shadow-none h-full p-1" placeholder="Ex: 1 a 5" />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="border-r border-[#1b7689]">
                             <Textarea value={ds.servicesIncluded} onChange={e => {
                               const newDS = [...diverseServices];
                               newDS[dsIdx].servicesIncluded = e.target.value;
                               setDiverseServices(newDS);
-                            }} className="border-none bg-transparent shadow-none min-h-[40px] resize-none" placeholder="Descrição do serviço..." />
+                            }} className="border-none bg-transparent shadow-none min-h-[60px] resize-none p-1 text-xs" placeholder="Descrição do serviço..." />
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center border-r border-[#1b7689]">
                             <Input value={ds.investment} onChange={e => {
                               const newDS = [...diverseServices];
                               newDS[dsIdx].investment = e.target.value;
                               setDiverseServices(newDS);
-                            }} className="border-none bg-transparent shadow-none text-center font-bold" placeholder="R$ 0,00" />
+                            }} className="border-none bg-transparent shadow-none text-center font-bold h-full p-1" placeholder="R$ 0,00" />
                           </TableCell>
                           <TableCell className="text-center">
                             <Input value={ds.onDemand} onChange={e => {
                               const newDS = [...diverseServices];
                               newDS[dsIdx].onDemand = e.target.value;
                               setDiverseServices(newDS);
-                            }} className="border-none bg-transparent shadow-none text-center" placeholder="Ex: sim" />
+                            }} className="border-none bg-transparent shadow-none text-center h-full p-1" placeholder="Ex: sim" />
                           </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" onClick={() => setDiverseServices(prev => prev.filter(item => item.id !== ds.id))}>

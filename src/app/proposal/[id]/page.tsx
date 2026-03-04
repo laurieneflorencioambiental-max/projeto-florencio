@@ -645,8 +645,8 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                       <TableIcon className="h-5 w-5 text-primary" /> 
                       <h3 className="text-lg font-bold">Opções de Investimento - Serviços Diversos</h3>
                   </div>
-                  <div className="overflow-hidden rounded-lg border border-[#1b7689]">
-                      <table className="w-full border-collapse">
+                  <div className="overflow-x-auto border border-[#1b7689] rounded-lg">
+                      <table className="w-full border-collapse min-w-[800px]">
                           <thead>
                               <tr className="bg-[#1b7689] text-white">
                                   <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[60px]">Item</th>
