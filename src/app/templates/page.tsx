@@ -33,7 +33,8 @@ import {
   ChevronUp, 
   ShieldCheck,
   LayoutDashboard,
-  Coins
+  Coins,
+  Table as TableIcon
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -265,7 +266,13 @@ export default function TemplatesPage() {
         servicesIncluded: '', 
         paymentType: 'unique',
         investments: [],
-        extraServices: []
+        extraServices: [],
+        purpose: '',
+        differentiator: '',
+        focus: '',
+        auditSupport: '',
+        strategicManagement: '',
+        specificManagement: ''
       }
     ]);
   };
@@ -621,7 +628,7 @@ export default function TemplatesPage() {
                               </div>
                               <Button variant="ghost" size="icon" onClick={() => {
                                 const newP = [...plans];
-                                newP[pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
+                                pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
                                 setPlans(newP);
                               }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
@@ -671,8 +678,14 @@ export default function TemplatesPage() {
 
             <div className="space-y-4 border-t pt-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold flex items-center gap-2"><Table className="h-5 w-5 text-primary"/> Opções de Investimento Customizáveis</h3>
-                <Button onClick={addInvestmentOption} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Nova Tabela</Button>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <TableIcon className="h-5 w-5 text-primary" /> 
+                  Opções de Investimento Customizáveis
+                </h3>
+                <Button onClick={addInvestmentOption} variant="outline" size="sm">
+                  <PlusCircle className="mr-2 h-4 w-4" /> 
+                  Nova Tabela
+                </Button>
               </div>
               <div className="grid grid-cols-1 gap-6">
                 {investmentOptions.map((opt, optIdx) => (

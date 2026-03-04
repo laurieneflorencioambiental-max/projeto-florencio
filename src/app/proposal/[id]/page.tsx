@@ -15,6 +15,7 @@ import {
   Calendar as CalendarIcon,
   Gem,
   ShieldCheck,
+  Table as TableIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import '../../globals.css';
@@ -149,18 +150,18 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             Somos apaixonados há mais de uma década por transformar ambientes de
             trabalho. O Grupo Florêncio se consolidou como referência em Saúde e
             Segurança do Trabalho. Nossa equipe, especializada e eficiente, atua
-            with cuidado e comprometimento para criar espaços corporativos mais
+            com cuidado e comprometimento para criar espaços corporativos mais
             seguros, sustentáveis e alinhados às Normas Regulamentadoras. Com
             transparência e expertise, proporcionamos a confiança que sua empresa
             precisa para elevar seus padrões de segurança e eficiência. Confie em
-            nossa experiênca para alcançar resultados valiosos e duradouros.
+            nossa experiência para alcançar resultados valiosos e duradouros.
           </p>
           <blockquote
             className="border-l-4 pl-4 py-2 my-4"
             style={{ borderColor: '#1b7689' }}
           >
             <p className="text-sm italic">
-              "Nossos serviços are investimentos, onde trazemos benefícios que
+              "Nossos serviços são investimentos, onde trazemos benefícios que
               superam qualquer custo, pois não é sobre preço, é sobre entregar
               resultados valiosos. Comprometemo-nos integralmente a proporcionar
               excelência em Saúde e Segurança do Trabalho, impulsionados pela
@@ -245,7 +246,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <p className="text-sm leading-relaxed mt-4">
             Temos por objetivo o compromisso em oferecer serviços de Saúde
             Ocupacional e Segurança do Trabalho com excellence e em conformidade
-            with a legislação, promovendo ambientes corporativos seguros,
+            com a legislação, promovendo ambientes corporativos seguros,
             saudáveis e produtivos.
           </p>
           <div className="border-b my-6"></div>
@@ -599,7 +600,10 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
           {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
               <div className="space-y-10 mt-12">
-                  <h3 className="text-lg font-bold border-b pb-2 mb-4">Opções de Investimento Customizáveis</h3>
+                  <div className="flex items-center gap-2 border-b pb-2 mb-4">
+                      <TableIcon className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-bold">Opções de Investimento Customizáveis</h3>
+                  </div>
                   {proposalState.investmentOptions.map((opt) => (
                       <div key={opt.id} className="space-y-4">
                           <h4 className="font-bold text-[#1b7689] text-base" dangerouslySetInnerHTML={{ __html: opt.title }} />

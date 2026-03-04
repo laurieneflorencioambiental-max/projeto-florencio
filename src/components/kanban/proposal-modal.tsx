@@ -46,6 +46,7 @@ import {
   ShieldCheck,
   Plus,
   Trash2,
+  Table as TableIcon
 } from 'lucide-react';
 import {
   Select,
@@ -877,7 +878,7 @@ Grupo Florencio`;
                   Negociação para o atendimento da Prestação de Serviços de QSMS
                   - Qualidade, Segurança, Meio Ambiente e Saúde. Gostaríamos de
                   salientar o grande interesse que temos em trabalhar em parceria
-                  with a sua empresa, pois a nossa missão é oferecer serviços em
+                  com a sua empresa, pois a nossa missão é oferecer serviços em
                   gestão através de uma visão estratégica buscando a satisfação
                   do cliente e melhorias para a sociedade.
                 </p>
@@ -1176,7 +1177,10 @@ Grupo Florencio`;
 
                 {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
                     <div className="space-y-8 mt-12">
-                        <h3 className="text-lg font-bold border-b pb-2 mb-4">Opções de Investimento Customizáveis</h3>
+                        <div className="flex items-center gap-2 border-b pb-2 mb-4">
+                            <TableIcon className="h-5 w-5 text-primary" />
+                            <h3 className="text-lg font-bold">Opções de Investimento Customizáveis</h3>
+                        </div>
                         {proposalState.investmentOptions.map((opt, optIdx) => (
                             <div key={opt.id} className="space-y-4">
                                 <EditableDiv field="dummy" path={`investmentOptions.${optIdx}.title`} className="font-bold text-primary text-base" />
