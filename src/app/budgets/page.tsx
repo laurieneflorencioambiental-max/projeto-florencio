@@ -345,46 +345,49 @@ export default function BudgetsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 bg-card p-3 rounded-lg border">
-        <div className="flex justify-start items-center gap-2">
-            {isAdmin && (
-              <>
-                <User className='h-5 w-5 text-primary' />
-                <label htmlFor="seller-select" className="text-sm font-medium">
-                    Criar para:
-                </label>
-                <Select
-                    value={selectedSeller?.uid || ''}
-                    onValueChange={handleSellerChange}
-                    disabled={!isAdmin || sellerOptions.length === 0}
-                >
-                    <SelectTrigger className="w-[180px]" id="seller-select">
-                    <SelectValue placeholder="Selecione um vendedor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {sellerOptions.map(seller => (
-                        <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-              </>
-            )}
+      {/* Top Header Controls: Seller and Counter */}
+      <div className="flex flex-col gap-3 bg-card p-4 rounded-lg border shadow-sm">
+        <div className="flex flex-wrap justify-between items-center gap-4">
+          <div className="flex justify-start items-center gap-2">
+              {isAdmin && (
+                <>
+                  <User className='h-5 w-5 text-primary' />
+                  <label htmlFor="seller-select" className="text-sm font-medium whitespace-nowrap">
+                      Criar para:
+                  </label>
+                  <Select
+                      value={selectedSeller?.uid || ''}
+                      onValueChange={handleSellerChange}
+                      disabled={!isAdmin || sellerOptions.length === 0}
+                  >
+                      <SelectTrigger className="w-[180px]" id="seller-select">
+                      <SelectValue placeholder="Selecione um vendedor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                      {sellerOptions.map(seller => (
+                          <SelectItem key={seller.uid} value={seller.uid}>{seller.name}</SelectItem>
+                      ))}
+                      </SelectContent>
+                  </Select>
+                </>
+              )}
+          </div>
+          <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Novo Orçamento
+          </Button>
         </div>
-        <div className="flex justify-center items-center">
+        
+        <div className="flex justify-start items-center">
             <Badge variant="outline" className="text-sm py-1.5 px-4 bg-primary/5 border-primary/20 flex gap-2 items-center shadow-sm">
                 <Briefcase className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-muted-foreground">Orçamentos no período:</span>
                 <span className="text-primary font-bold text-base">{leadsInPeriod.length}</span>
             </Badge>
         </div>
-        <div className='flex items-center gap-2 justify-end'>
-            <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Novo Orçamento
-            </Button>
-        </div>
       </div>
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+
+      <div className="flex items-center justify-between gap-4 flex-wrap mt-2">
         <div className='flex items-center gap-4 flex-wrap'>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
