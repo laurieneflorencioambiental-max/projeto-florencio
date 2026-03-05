@@ -53,15 +53,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/components/ui/alert-dialog';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../ui/tooltip';
-import { Textarea } from '../ui/textarea';
-import { Label } from '../ui/label';
+} from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import VersionHistoryModal from './version-history-modal';
 import { toDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
