@@ -19,8 +19,6 @@ import {
   endOfDay,
   startOfWeek,
   endOfWeek,
-  startOfMonth,
-  endOfMonth,
   getYear,
   getMonth,
 } from 'date-fns';
@@ -34,25 +32,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ListFilter, PlusCircle, Search, User, Settings, Loader2, Trophy, Target, Briefcase, DollarSign, PieChart, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { ListFilter, PlusCircle, Search, User, Briefcase } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import LeadsStatusChart from '@/components/charts/leads-status-chart';
 import LostLeadsChart from '@/components/charts/lost-leads-chart';
 import ContactSourceChart from '@/components/charts/contact-source-chart';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
+import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { logClientEvent } from '@/lib/audit-client';
-import { cn, toDate } from '@/lib/utils';
+import { toDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
 
@@ -292,7 +281,6 @@ export default function BudgetsPage() {
     const leadsData = leads || [];
     if (selectedMonth === null || selectedYear === null) return [];
     
-    // Defer date-sensitive logic until the client has mounted
     if (!isClient && (filter === 'today' || filter === 'week')) {
       return [];
     }
@@ -303,8 +291,14 @@ export default function BudgetsPage() {
 
     const now = new Date();
     return leadsData.filter(lead => {
-      // Prioritize creation date, fallback to budgetDate
-      const leadDate = toDate(lead.createdAt) || (lead.budgetDate ? toDate(lead.budgetDate + 'T12:00:00') : null);
+      // Prioritize budgetDate, fallback to createdAt
+      let leadDate: Date | null = null;
+      if (lead.budgetDate) {
+        leadDate = toDate(`${lead.budgetDate}T12:00:00`);
+      } else if (lead.createdAt) {
+        leadDate = toDate(lead.createdAt);
+      }
+      
       if (!leadDate) return false;
 
       switch (filter) {

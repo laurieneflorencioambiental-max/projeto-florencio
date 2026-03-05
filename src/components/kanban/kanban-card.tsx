@@ -53,7 +53,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -293,10 +293,20 @@ export default function KanbanCard({
     );
   };
   
-  const FormattedCreationDate = () => {
+  const FormattedBudgetDate = () => {
     if (!isClient) return <span>...</span>;
+    
+    // Prefer explicitly saved budgetDate (YYYY-MM-DD)
+    if (lead.budgetDate) {
+      const parts = lead.budgetDate.split('-');
+      if (parts.length === 3) {
+        return <span>{`${parts[2]}/${parts[1]}/${parts[0]}`}</span>;
+      }
+    }
+    
+    // Fallback to createdAt if budgetDate is missing
     const date = toDate(lead.createdAt);
-    return <span>{date ? format(date, "dd/MM/yyyy 'às' HH:mm") : '...'}</span>;
+    return <span>{date ? format(date, "dd/MM/yyyy") : '...'}</span>;
   };
 
   const VersionHistoryTooltipContent = () => {
@@ -355,7 +365,7 @@ export default function KanbanCard({
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                <FormattedCreationDate />
+                <FormattedBudgetDate />
               </div>
             </div>
           </CardHeader>

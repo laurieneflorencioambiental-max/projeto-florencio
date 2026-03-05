@@ -46,6 +46,11 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
     undefined
   );
   const [approvalDate, setApprovalDate] = useState<Date>();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const formatCurrency = (value: number) => {
     if (!value) return 'R$ 0,00';
@@ -61,6 +66,19 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
     { label: 'eSocial SST', icon: Settings },
     { label: 'Auditorias e Inspeções', icon: Eye },
   ];
+
+  const renderBudgetDate = () => {
+    if (!isClient) return '...';
+    if (lead.budgetDate) {
+      const parts = lead.budgetDate.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
+    return proposalData.createdAt?.toDate
+      ? proposalData.createdAt.toDate().toLocaleDateString('pt-BR')
+      : 'Data Indisponível';
+  };
 
   return (
     <main className="bg-gray-100 dark:bg-gray-900 p-4 sm:p-8 flex flex-col items-center gap-8">
@@ -98,10 +116,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             <h2 className="text-xl font-semibold">Proposta Comercial</h2>
             <p className="text-sm">{fullProposalNumber}</p>
             <p className="text-sm">
-              Data:{' '}
-              {proposalData.createdAt?.toDate
-                ? proposalData.createdAt.toDate().toLocaleDateString('pt-BR')
-                : 'Data Indisponível'}
+              Data do Orçamento: {renderBudgetDate()}
             </p>
           </div>
         </header>
@@ -893,7 +908,7 @@ export default function ProposalViewerPage() {
     useEffect(() => {
         if (!id) {
           setIsLoading(false);
-          setError('ID da proposta não encontrado.');
+          setError('ID da parceria não encontrado.');
           return;
         }
 
