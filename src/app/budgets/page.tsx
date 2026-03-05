@@ -200,6 +200,7 @@ export default function BudgetsPage() {
         whatsapp: values.whatsapp,
         rejectionReason: values.rejectionReason || null,
         selectedTemplateId: values.selectedTemplateId || null,
+        budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: selectedSeller.name,

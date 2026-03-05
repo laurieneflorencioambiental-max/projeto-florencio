@@ -122,6 +122,7 @@ export default function DashboardPage() {
         email: values.email,
         whatsapp: values.whatsapp,
         rejectionReason: values.rejectionReason || null,
+        budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: userProfile.displayName || user.email!,

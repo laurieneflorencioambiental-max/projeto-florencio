@@ -160,6 +160,7 @@ export const leadSchema = z.object({
   status: z.enum(statuses as any),
   rejectionReason: z.enum(rejectionReasons).optional().nullable(),
   createdAt: z.any(),
+  budgetDate: z.string().optional(),
   createdBy: z.string(),
   createdByUid: z.string(),
   proposalGeneratedCount: z.number().default(0),

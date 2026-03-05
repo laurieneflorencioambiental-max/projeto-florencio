@@ -33,7 +33,7 @@ import {
 import type { Lead, VersionHistoryEntry, ProposalTemplate } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { toDate } from '@/lib/utils';
 
@@ -74,6 +74,7 @@ export default function EditLeadModal({
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
         createdAt: toDate(lead.createdAt), // Convert timestamp to Date for the form
         versionHistory: processedHistory,
+        budgetDate: lead.budgetDate || (toDate(lead.createdAt)?.toISOString().split('T')[0]),
       });
     }
   }, [lead, form]);
@@ -123,19 +124,38 @@ export default function EditLeadModal({
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="h-[60vh] p-4">
               <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="company"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Empresa</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome da empresa" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="budgetDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-primary" />
+                          Data do Orçamento
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="company"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Empresa</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome da empresa" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}

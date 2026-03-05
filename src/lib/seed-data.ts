@@ -70,6 +70,7 @@ export const seedTemplates: Omit<ProposalTemplate, 'id'>[] = [
 
 
 export const getSeedLeads = (sellers: { id: string, name: string }[], uid: string) => {
+    const today = new Date().toISOString().split('T')[0];
     const leads: Omit<Lead, 'id' | 'createdAt'>[] = [
         {
             name: 'Roberto Andrade',
@@ -93,7 +94,8 @@ export const getSeedLeads = (sellers: { id: string, name: string }[], uid: strin
             proposalNumber: 1,
             proposalVersion: 0,
             observations: 'Cliente parece bem interessado, precisa de agilidade na proposta.',
-            versionHistory: []
+            versionHistory: [],
+            budgetDate: today,
         },
         {
             name: 'Fernanda Lima',
@@ -117,7 +119,8 @@ export const getSeedLeads = (sellers: { id: string, name: string }[], uid: strin
             proposalNumber: 2,
             proposalVersion: 1,
             observations: 'Enviada proposta v1. Aguardando retorno sobre ajuste de valores.',
-            versionHistory: [{ version: 1, editedBy: 'Carlos Martins', editedAt: new Date(new Date().setDate(new Date().getDate() - 2)) }]
+            versionHistory: [{ version: 1, editedBy: 'Carlos Martins', editedAt: new Date(new Date().setDate(new Date().getDate() - 2)) }],
+            budgetDate: today,
         },
         {
             name: 'Marcos Paulo',
@@ -144,7 +147,8 @@ export const getSeedLeads = (sellers: { id: string, name: string }[], uid: strin
             versionHistory: [
                 { version: 1, editedBy: 'Ana Silva', editedAt: new Date(new Date().setDate(new Date().getDate() - 10)) },
                 { version: 2, editedBy: 'Ana Silva', editedAt: new Date(new Date().setDate(new Date().getDate() - 5)) }
-            ]
+            ],
+            budgetDate: today,
         },
         {
             name: 'Beatriz Santos',
@@ -168,7 +172,8 @@ export const getSeedLeads = (sellers: { id: string, name: string }[], uid: strin
             proposalNumber: 4,
             proposalVersion: 0,
             observations: 'Cliente achou o valor alto e fechou com concorrente que cobrou 20% a menos.',
-            versionHistory: []
+            versionHistory: [],
+            budgetDate: today,
         },
         {
             name: 'Lucas Ferreira',
@@ -192,7 +197,8 @@ export const getSeedLeads = (sellers: { id: string, name: string }[], uid: strin
             proposalNumber: 5,
             proposalVersion: 0,
             observations: 'Cliente disse que vai reavaliar o orçamento para o próximo trimestre. Pausou a negociação.',
-            versionHistory: []
+            versionHistory: [],
+            budgetDate: today,
         }
     ];
     return leads;
