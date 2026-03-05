@@ -52,6 +52,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { logClientEvent } from '@/lib/audit-client';
+import { cn, toDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 type FilterPeriod = 'all' | 'today' | 'week' | 'month' | 'year';
@@ -286,7 +288,7 @@ export default function BudgetsPage() {
   };
 
 
-  const filteredLeads = useMemo(() => {
+  const leadsInPeriod = useMemo(() => {
     const leadsData = leads || [];
     if (selectedMonth === null || selectedYear === null) return [];
     
@@ -295,47 +297,47 @@ export default function BudgetsPage() {
       return [];
     }
     
-    let timeFilteredLeads: Lead[];
-
     if (filter === 'all') {
-      timeFilteredLeads = leadsData;
-    } else {
-      const now = new Date();
-      timeFilteredLeads = leadsData.filter(lead => {
-        if (!lead.createdAt || typeof lead.createdAt.toDate !== 'function') {
-          return false;
-        }
-        const leadDate = lead.createdAt.toDate();
-        switch (filter) {
-          case 'today':
-            return isWithinInterval(leadDate, {
-              start: startOfDay(now),
-              end: endOfDay(now),
-            });
-          case 'week':
-            return isWithinInterval(leadDate, {
-              start: startOfWeek(now),
-              end: endOfWeek(now),
-            });
-          case 'month':
-             return getMonth(leadDate) === selectedMonth && getYear(leadDate) === selectedYear;
-          case 'year':
-            return getYear(leadDate) === selectedYear;
-          default:
-            return true;
-        }
-      });
+      return leadsData;
     }
 
+    const now = new Date();
+    return leadsData.filter(lead => {
+      // Prioritize creation date, fallback to budgetDate
+      const leadDate = toDate(lead.createdAt) || (lead.budgetDate ? toDate(lead.budgetDate + 'T12:00:00') : null);
+      if (!leadDate) return false;
+
+      switch (filter) {
+        case 'today':
+          return isWithinInterval(leadDate, {
+            start: startOfDay(now),
+            end: endOfDay(now),
+          });
+        case 'week':
+          return isWithinInterval(leadDate, {
+            start: startOfWeek(now),
+            end: endOfWeek(now),
+          });
+        case 'month':
+           return getMonth(leadDate) === selectedMonth && getYear(leadDate) === selectedYear;
+        case 'year':
+          return getYear(leadDate) === selectedYear;
+        default:
+          return true;
+      }
+    });
+  }, [filter, selectedMonth, selectedYear, leads, isClient]);
+
+  const filteredLeads = useMemo(() => {
     if (!searchTerm) {
-      return timeFilteredLeads;
+      return leadsInPeriod;
     }
 
-    return timeFilteredLeads.filter(lead => 
+    return leadsInPeriod.filter(lead => 
       lead.company.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-  }, [filter, selectedMonth, selectedYear, leads, searchTerm, isClient]);
+  }, [leadsInPeriod, searchTerm]);
 
   if (isUserLoading || !user || areLeadsLoading || areUsersLoading || areTemplatesLoading || areSettingsLoading) {
     return (
@@ -349,7 +351,7 @@ export default function BudgetsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 items-center gap-4 bg-card p-3 rounded-lg border">
+      <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 bg-card p-3 rounded-lg border">
         <div className="flex justify-start items-center gap-2">
             {isAdmin && (
               <>
@@ -373,6 +375,13 @@ export default function BudgetsPage() {
                 </Select>
               </>
             )}
+        </div>
+        <div className="flex justify-center items-center">
+            <Badge variant="outline" className="text-sm py-1.5 px-4 bg-primary/5 border-primary/20 flex gap-2 items-center shadow-sm">
+                <Briefcase className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-muted-foreground">Orçamentos no período:</span>
+                <span className="text-primary font-bold text-base">{leadsInPeriod.length}</span>
+            </Badge>
         </div>
         <div className='flex items-center gap-2 justify-end'>
             <Button onClick={() => setIsAddModalOpen(true)} disabled={!selectedSeller}>
