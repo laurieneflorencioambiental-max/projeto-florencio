@@ -3,7 +3,7 @@
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -33,11 +33,9 @@ import {
 import type { Lead, ProposalTemplate } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Calendar, Search, Check, ChevronsUpDown, History } from 'lucide-react';
+import { Trash2, Calendar, Check, ChevronsUpDown, History, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { toDate } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 
 const newLeadSchema = leadSchema.omit({
@@ -74,7 +72,7 @@ export default function AddLeadModal({
   existingLeads = [],
 }: AddLeadModalProps) {
   const { toast } = useToast();
-  const [isCustomerSelectorOpen, setIsCustomerSelectorOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   const today = new Date().toISOString().split('T')[0];
 
@@ -106,7 +104,6 @@ export default function AddLeadModal({
   const customerMemory = useMemo(() => {
     const map = new Map<string, any>();
     
-    // Ordenar por data para pegar os dados mais recentes de cada empresa
     const sortedLeads = [...existingLeads].sort((a, b) => {
       const dateA = toDate(a.createdAt)?.getTime() || 0;
       const dateB = toDate(b.createdAt)?.getTime() || 0;
@@ -114,7 +111,6 @@ export default function AddLeadModal({
     });
 
     sortedLeads.forEach(lead => {
-      // Identificador único: CNPJ ou Nome da Empresa
       const id = lead.cnpj?.replace(/\D/g, '') || lead.company.toLowerCase().trim();
       
       if (!map.has(id)) {
@@ -135,6 +131,16 @@ export default function AddLeadModal({
     return Array.from(map.values());
   }, [existingLeads]);
 
+  // Lógica de Autocomplete baseada na digitação do campo Empresa
+  const companySearchValue = form.watch('company');
+  const filteredSuggestions = useMemo(() => {
+    if (!companySearchValue || companySearchValue.length < 2) return [];
+    return customerMemory.filter(c => 
+      c.company.toLowerCase().includes(companySearchValue.toLowerCase()) ||
+      (c.cnpj && c.cnpj.includes(companySearchValue))
+    ).slice(0, 5); // Limita a 5 sugestões para não poluir a tela
+  }, [customerMemory, companySearchValue]);
+
   const handleSelectCustomer = (customer: any) => {
     form.setValue('company', customer.company, { shouldValidate: true });
     form.setValue('name', customer.name, { shouldValidate: true });
@@ -149,10 +155,10 @@ export default function AddLeadModal({
       form.setValue('selectedTemplateId', customer.selectedTemplateId, { shouldValidate: true });
     }
 
-    setIsCustomerSelectorOpen(false);
+    setShowSuggestions(false);
     toast({
       title: 'Dados Carregados',
-      description: `Informações da empresa ${customer.company} preenchidas automaticamente.`,
+      description: `Informações de ${customer.company} preenchidas.`,
     });
   };
 
@@ -168,74 +174,24 @@ export default function AddLeadModal({
 
   const contactSource = form.watch('contactSource.source');
 
+  // Fechar sugestões ao clicar fora (opcional, aqui usamos onBlur com delay)
+  const handleBlur = () => {
+    setTimeout(() => setShowSuggestions(false), 200);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Novo Orçamento</DialogTitle>
           <DialogDescription>
-            Preencha as informações para criar um novo lead. Você pode buscar dados de clientes atendidos anteriormente.
+            Preencha as informações do lead. Digite o nome de uma empresa já atendida para sugestões.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Seletor de Memória de Clientes */}
-        <div className="px-4 pt-2">
-          <Popover open={isCustomerSelectorOpen} onOpenChange={setIsCustomerSelectorOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={isCustomerSelectorOpen}
-                className="w-full justify-between bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors h-12"
-              >
-                <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">
-                    {customerMemory.length > 0 
-                      ? 'Pesquisar Cliente Existente (Memória)...' 
-                      : 'Nenhum cliente no histórico'}
-                  </span>
-                </div>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Digite o nome da empresa ou CNPJ..." />
-                <CommandList>
-                  <CommandEmpty>Nenhuma empresa encontrada no histórico.</CommandEmpty>
-                  <CommandGroup heading="Clientes Recentes">
-                    {customerMemory.slice(0, 10).map((customer) => (
-                      <CommandItem
-                        key={customer.cnpj || customer.company}
-                        value={customer.company + ' ' + (customer.cnpj || '')}
-                        onSelect={() => handleSelectCustomer(customer)}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold">{customer.company}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {customer.name} • {customer.cnpj}
-                          </span>
-                        </div>
-                        <Check
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            form.getValues('company') === customer.company ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="h-[60vh] p-4 pt-2">
+            <ScrollArea className="h-[65vh] p-4 pt-2">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -254,15 +210,48 @@ export default function AddLeadModal({
                       </FormItem>
                     )}
                   />
+                  
                   <FormField
                     control={form.control}
                     name="company"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="relative">
                         <FormLabel>Empresa</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome da empresa" {...field} />
+                          <div className="relative">
+                            <Input 
+                              placeholder="Nome da empresa..." 
+                              {...field} 
+                              autoComplete="off"
+                              onFocus={() => setShowSuggestions(true)}
+                              onBlur={handleBlur}
+                            />
+                            {companySearchValue && (
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                            )}
+                          </div>
                         </FormControl>
+                        {showSuggestions && filteredSuggestions.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-card border rounded-md shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                            <div className="bg-muted/50 px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                              Empresas encontradas na memória
+                            </div>
+                            <ul className="max-h-[200px] overflow-y-auto">
+                              {filteredSuggestions.map((customer) => (
+                                <li 
+                                  key={customer.cnpj || customer.company}
+                                  className="px-3 py-2 text-sm hover:bg-primary/10 cursor-pointer flex flex-col border-b last:border-0 transition-colors"
+                                  onMouseDown={() => handleSelectCustomer(customer)}
+                                >
+                                  <span className="font-bold text-primary">{customer.company}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {customer.name} {customer.cnpj ? `• ${customer.cnpj}` : ''}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
