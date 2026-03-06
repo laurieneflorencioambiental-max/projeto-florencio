@@ -1177,16 +1177,14 @@ Grupo Florencio`;
                           </div>
                         )}
                         
-                        <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
-                          <span className="font-bold text-sm">Investimento Total do Plano:</span>
-                          <span className="text-xl font-bold text-primary">
-                            {formatCurrency(
-                                plan.investments && plan.investments.length > 0 
-                                ? plan.investments.reduce((sum, inv) => sum + inv.value, 0)
-                                : (plan.investment || 0)
-                            )}
-                          </span>
-                        </div>
+                        {(!plan.investments || plan.investments.length === 0) && (
+                          <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
+                            <span className="font-bold text-sm">Investimento do Plano:</span>
+                            <span className="text-xl font-bold text-primary">
+                              {formatCurrency(plan.investment || 0)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
