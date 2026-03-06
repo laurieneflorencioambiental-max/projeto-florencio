@@ -1115,36 +1115,56 @@ Grupo Florencio`;
                           </span>
                         </div>
                         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
-                          <div className="space-y-3">
-                            {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><EditableDiv field="dummy" path={`plans.${index}.purpose`} className="text-sm leading-tight bg-white/50" /></div>}
-                            {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><EditableDiv field="dummy" path={`plans.${index}.differentiator`} className="text-sm leading-relaxed bg-white/50" /></div>}
-                            {plan.focus && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm">{plan.focus}</p></div>}
-                            {plan.employeeRange && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm">{plan.employeeRange}</p></div>}
+                          <div className="space-y-4">
+                            {plan.purpose && (
+                              <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p>
+                                <EditableDiv field="dummy" path={`plans.${index}.purpose`} className="text-sm leading-tight bg-white/50" />
+                              </div>
+                            )}
+                            {plan.differentiator && (
+                              <div className="space-y-1 border-t border-primary/10 pt-3">
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p>
+                                <EditableDiv field="dummy" path={`plans.${index}.differentiator`} className="text-sm leading-relaxed bg-white/50" />
+                              </div>
+                            )}
+                            {plan.focus && (
+                              <div className="space-y-1 border-t border-primary/10 pt-3">
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p>
+                                <p className="text-sm">{plan.focus}</p>
+                              </div>
+                            )}
+                            {plan.employeeRange && (
+                              <div className="space-y-1 border-t border-primary/10 pt-3">
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p>
+                                <p className="text-sm">{plan.employeeRange}</p>
+                              </div>
+                            )}
                           </div>
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             {plan.servicesIncluded && (
-                                <>
+                                <div className="space-y-1">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.servicesIncluded`} className="text-sm leading-relaxed bg-white/50" />
-                                </>
+                                </div>
                             )}
                             {plan.auditSupport && (
-                                <>
+                                <div className="space-y-1 border-t border-primary/10 pt-3">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.auditSupport`} className="text-sm leading-relaxed bg-white/50" />
-                                </>
+                                </div>
                             )}
                             {plan.strategicManagement && (
-                                <>
+                                <div className="space-y-1 border-t border-primary/10 pt-3">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.strategicManagement`} className="text-sm leading-relaxed bg-white/50" />
-                                </>
+                                </div>
                             )}
                             {plan.specificManagement && (
-                                <>
+                                <div className="space-y-1 border-t border-primary/10 pt-3">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.specificManagement`} className="text-sm leading-relaxed bg-white/50" />
-                                </>
+                                </div>
                             )}
                           </div>
                         </div>

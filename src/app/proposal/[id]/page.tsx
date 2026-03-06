@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
-import type { ProposalData, AppSettings } from '@/lib/types';
+import type { PartnershipDocument, AppSettings, ProposalData } from '@/lib/types';
 import {
   Loader2,
   Leaf,
@@ -536,36 +536,56 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                     </span>
                   </div>
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
-                    <div className="space-y-3">
-                      {plan.purpose && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p><div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.purpose }} /></div>}
-                      {plan.differentiator && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p><div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.differentiator }} /></div>}
-                      {plan.focus && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p><p className="text-sm leading-tight">{plan.focus}</p></div>}
-                      {plan.employeeRange && <div><p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p><p className="text-sm leading-tight">{plan.employeeRange}</p></div>}
+                    <div className="space-y-4">
+                      {plan.purpose && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p>
+                          <div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.purpose }} />
+                        </div>
+                      )}
+                      {plan.differentiator && (
+                        <div className="space-y-1 border-t border-primary/10 pt-3">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p>
+                          <div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.differentiator }} />
+                        </div>
+                      )}
+                      {plan.focus && (
+                        <div className="space-y-1 border-t border-primary/10 pt-3">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p>
+                          <p className="text-sm leading-tight">{plan.focus}</p>
+                        </div>
+                      )}
+                      {plan.employeeRange && (
+                        <div className="space-y-1 border-t border-primary/10 pt-3">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p>
+                          <p className="text-sm leading-tight">{plan.employeeRange}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {plan.servicesIncluded && (
-                          <>
+                          <div className="space-y-1">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.servicesIncluded }} />
-                          </>
+                          </div>
                       )}
                       {plan.auditSupport && (
-                          <>
+                          <div className="space-y-1 border-t border-primary/10 pt-3">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.auditSupport }} />
-                          </>
+                          </div>
                       )}
                       {plan.strategicManagement && (
-                          <>
+                          <div className="space-y-1 border-t border-primary/10 pt-3">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.strategicManagement }} />
-                          </>
+                          </div>
                       )}
                       {plan.specificManagement && (
-                          <>
+                          <div className="space-y-1 border-t border-primary/10 pt-3">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.specificManagement }} />
-                          </>
+                          </div>
                       )}
                     </div>
                   </div>
