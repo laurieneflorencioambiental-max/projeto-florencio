@@ -233,10 +233,10 @@ export default function ProposalModal({
           proposalState: proposalState,
           fullProposalNumber: fullProposalNumber,
           createdAt: serverTimestamp(),
-          logoUrl: logoUrl,
-          proposalCoverUrl: proposalCoverUrl,
-          proposalLocationUrl: proposalLocationUrl,
-          proposalClosingUrl: proposalClosingUrl,
+          logoUrl: logoUrl ?? null,
+          proposalCoverUrl: proposalCoverUrl ?? null,
+          proposalLocationUrl: proposalLocationUrl ?? null,
+          proposalClosingUrl: proposalClosingUrl ?? null,
         };
 
         if (!firestore) {
