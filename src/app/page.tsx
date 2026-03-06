@@ -33,6 +33,7 @@ import {
   ArrowRight,
   PlusCircle,
   Users,
+  Calendar as CalendarIcon,
 } from 'lucide-react';
 import {
   useUser,
@@ -49,32 +50,42 @@ import {
   isWithinInterval,
   startOfMonth,
   endOfMonth,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfYear,
+  endOfYear,
   differenceInDays,
   format,
 } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
 import SalesLeaderboard from '@/components/dashboard/sales-leaderboard';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn, toDate } from '@/lib/utils';
 import OnlineUsersCard from '@/components/dashboard/online-users-card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type FilterPeriod = 'today' | 'week' | 'month' | 'year';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
   const [isClient, setIsClient] = useState(false);
+  const [filter, setFilter] = useState<FilterPeriod>('month');
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   const isAdmin = userProfile?.isAdmin === true;
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  const [approvedThisMonthCount, setApprovedThisMonthCount] = useState(0);
-  const [staleLeads, setStaleLeads] = useState<Lead[]>([]);
-  const [goalMet, setGoalMet] = useState(false);
-  const [progressPercentage, setProgressPercentage] = useState(0);
-
 
   const leadsQuery = useMemoFirebase(
     () => {
@@ -149,24 +160,72 @@ export default function DashboardPage() {
           errorEmitter.emit('permission-error', permissionError);
       });
   };
-  
-  useEffect(() => {
-    if (!leads || !settings) return;
+
+  const filteredLeads = useMemo(() => {
+    if (!leads || !isClient) return [];
 
     const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-    const approvedCount = (leads || []).filter(lead => {
-        if (lead.status !== 'Aprovado' || !lead.createdAt) {
-            return false;
-        }
-        const leadDate = toDate(lead.createdAt);
-        return leadDate ? isWithinInterval(leadDate, { start, end }) : false;
-    }).length;
-    setApprovedThisMonthCount(approvedCount);
+    let interval: { start: Date; end: Date };
 
+    switch (filter) {
+      case 'today':
+        interval = { start: startOfDay(now), end: endOfDay(now) };
+        break;
+      case 'week':
+        interval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+        break;
+      case 'year':
+        interval = { start: startOfYear(now), end: endOfYear(now) };
+        break;
+      case 'month':
+      default:
+        interval = { start: startOfMonth(now), end: endOfMonth(now) };
+        break;
+    }
+
+    return leads.filter(lead => {
+      let leadDate: Date | null = null;
+      if (lead.budgetDate) {
+        const [year, month, day] = lead.budgetDate.split('-').map(Number);
+        leadDate = new Date(year, month - 1, day);
+      } else {
+        leadDate = toDate(lead.createdAt);
+      }
+      return leadDate ? isWithinInterval(leadDate, interval) : false;
+    });
+  }, [leads, filter, isClient]);
+
+  const { conversionRate, averageTicket, approvedCount, totalCount } = useMemo(() => {
+    const finishedLeads = filteredLeads.filter(lead =>
+      ['Aprovado', 'Desistência', 'Rejeitado'].includes(lead.status)
+    );
+    const approvedLeads = filteredLeads.filter(
+      lead => lead.status === 'Aprovado'
+    );
+    
+    const conversionRate =
+      finishedLeads.length > 0
+        ? (approvedLeads.length / finishedLeads.length) * 100
+        : 0;
+        
+    const averageTicket =
+      approvedLeads.length > 0
+        ? approvedLeads.reduce((acc, lead) => acc + (lead.value || 0), 0) /
+          approvedLeads.length
+        : 0;
+
+    return { 
+      conversionRate, 
+      averageTicket, 
+      approvedCount: approvedLeads.length,
+      totalCount: filteredLeads.length
+    };
+  }, [filteredLeads]);
+
+  const staleLeads = useMemo(() => {
+    if (!leads || !settings) return [];
     const staleDays = settings?.staleLeadDays || 7;
-    const stale = (leads || []).filter(lead => {
+    return leads.filter(lead => {
       if (lead.status !== 'Pendente/Em negociação') return false;
       const history = lead.versionHistory || [];
       const lastActivityDate = history.length > 0
@@ -175,32 +234,7 @@ export default function DashboardPage() {
       if (!lastActivityDate) return false;
       return differenceInDays(new Date(), lastActivityDate) > staleDays;
     });
-    setStaleLeads(stale);
-
-    const monthlyGoal = settings?.monthlyGoal || 10;
-    setGoalMet(approvedCount >= monthlyGoal);
-    setProgressPercentage(monthlyGoal > 0 ? (approvedCount / monthlyGoal) * 100 : 0);
-
   }, [leads, settings]);
-
-  const { conversionRate, averageTicket } = useMemo(() => {
-    const finishedLeads = (leads || []).filter(lead =>
-      ['Aprovado', 'Desistência', 'Rejeitado'].includes(lead.status)
-    );
-    const approvedLeads = finishedLeads.filter(
-      lead => lead.status === 'Aprovado'
-    );
-    const conversionRate =
-      finishedLeads.length > 0
-        ? (approvedLeads.length / finishedLeads.length) * 100
-        : 0;
-    const averageTicket =
-      approvedLeads.length > 0
-        ? approvedLeads.reduce((acc, lead) => acc + (lead.value || 0), 0) /
-          approvedLeads.length
-        : 0;
-    return { conversionRate, averageTicket };
-  }, [leads]);
 
   const recentLeads = useMemo(() => {
     return (leads || [])
@@ -215,6 +249,8 @@ export default function DashboardPage() {
   }, [leads]);
 
   const monthlyGoal = settings?.monthlyGoal || 10;
+  const goalMet = approvedCount >= monthlyGoal;
+  const progressPercentage = monthlyGoal > 0 ? Math.min((approvedCount / monthlyGoal) * 100, 100) : 0;
   
   const isLoading = isUserLoading || areLeadsLoading || areUsersLoading || isProfileLoading;
 
@@ -226,72 +262,105 @@ export default function DashboardPage() {
     );
   }
 
+  const getFilterLabel = () => {
+    switch (filter) {
+      case 'today': return 'Hoje';
+      case 'week': return 'esta Semana';
+      case 'year': return 'este Ano';
+      case 'month':
+      default: return 'este Mês';
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/budgets">
-              Ver Funil Completo <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Novo Orçamento
-          </Button>
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Bem-vindo de volta ao seu resumo comercial.</p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-card border rounded-lg px-3 py-1.5 shadow-sm">
+            <CalendarIcon className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Filtrar por:</span>
+            <Select value={filter} onValueChange={(v: FilterPeriod) => setFilter(v)}>
+              <SelectTrigger className="w-[140px] h-8 border-none shadow-none focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Hoje</SelectItem>
+                <SelectItem value="week">Esta Semana</SelectItem>
+                <SelectItem value="month">Este Mês</SelectItem>
+                <SelectItem value="year">Este Ano</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/budgets">
+                Ver Funil Completo <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Novo Orçamento
+            </Button>
+          </div>
         </div>
       </div>
       
-       <Card>
-        <CardHeader>
-            <CardTitle>Metas e Resumo do Mês</CardTitle>
-            <CardDescription>Acompanhe o progresso da sua equipe em tempo real.</CardDescription>
+       <Card className="border-primary/10 shadow-sm">
+        <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Indicadores do Período ({getFilterLabel()})</CardTitle>
+            <CardDescription>Métricas baseadas na Data do Orçamento.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            <div className="flex flex-col justify-between p-4 border rounded-lg">
-                <Label className="text-muted-foreground">Total de Orçamentos</Label>
-                <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold">{leads?.length || 0}</p>
-                    <Briefcase className="h-5 w-5 text-muted-foreground" />
+            <div className="flex flex-col justify-between p-4 border rounded-lg bg-card/50">
+                <Label className="text-muted-foreground mb-2">Total de Orçamentos</Label>
+                <div className="flex items-center justify-between">
+                    <p className="text-2xl font-bold">{totalCount}</p>
+                    <Briefcase className="h-5 w-5 text-primary/60" />
                 </div>
             </div>
-             <div className="flex flex-col justify-between p-4 border rounded-lg">
-                <Label className="text-muted-foreground">Taxa de Conversão</Label>
-                <div className="flex items-baseline gap-2">
+             <div className="flex flex-col justify-between p-4 border rounded-lg bg-card/50">
+                <Label className="text-muted-foreground mb-2">Taxa de Conversão</Label>
+                <div className="flex items-center justify-between">
                     <p className="text-2xl font-bold">{conversionRate.toFixed(1)}%</p>
-                    <PieChart className="h-5 w-5 text-muted-foreground" />
+                    <PieChart className="h-5 w-5 text-primary/60" />
                 </div>
             </div>
-            <div className="flex flex-col justify-between p-4 border rounded-lg">
-                <Label className="text-muted-foreground">Ticket Médio</Label>
-                <div className="flex items-baseline gap-2">
+            <div className="flex flex-col justify-between p-4 border rounded-lg bg-card/50">
+                <Label className="text-muted-foreground mb-2">Ticket Médio</Label>
+                <div className="flex items-center justify-between">
                     <p className="text-2xl font-bold">
                       {averageTicket.toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
                       })}
                     </p>
-                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                    <DollarSign className="h-5 w-5 text-primary/60" />
                 </div>
             </div>
-            <div className="flex flex-col justify-between p-4 border rounded-lg">
-                  <Label className="text-muted-foreground">Aprovados este Mês</Label>
-                <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold">{approvedThisMonthCount}</p>
+            <div className="flex flex-col justify-between p-4 border rounded-lg bg-card/50">
+                  <Label className="text-muted-foreground mb-2">Aprovados {getFilterLabel()}</Label>
+                <div className="flex items-center justify-between">
+                    <p className="text-2xl font-bold">{approvedCount}</p>
                     {goalMet && <Trophy className="h-6 w-6 text-yellow-500 animate-bounce" />}
                 </div>
                 {goalMet && (
-                    <p className="text-sm font-medium text-green-600 mt-2">
-                        Parabéns, você atingiu a meta do mês!
+                    <p className="text-[10px] font-bold text-green-600 mt-2 uppercase tracking-tight">
+                        Meta atingida!
                     </p>
                 )}
             </div>
-              <div className="flex flex-col justify-between p-4 border rounded-lg space-y-2">
+              <div className="flex flex-col justify-between p-4 border rounded-lg bg-primary/5 border-primary/20 space-y-2">
                 <div className="flex justify-between items-center">
-                    <Label>Meta de Aprovados</Label>
-                    <Target className="h-5 w-5 text-muted-foreground" />
+                    <Label className="text-primary font-semibold">Meta Mensal</Label>
+                    <Target className="h-5 w-5 text-primary/60" />
                 </div>
-                <div className='text-2xl font-bold'>{monthlyGoal}</div>
+                <div className='flex items-baseline gap-1'>
+                  <span className='text-2xl font-bold text-primary'>{approvedCount}</span>
+                  <span className='text-sm text-muted-foreground'>/ {monthlyGoal}</span>
+                </div>
                 <Progress value={progressPercentage} className="h-2" />
             </div>
         </CardContent>
