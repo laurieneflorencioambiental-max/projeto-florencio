@@ -487,6 +487,7 @@ export default function DashboardPage() {
         onOpenChange={setIsAddModalOpen}
         onSave={handleAddLead}
         seller={userProfile?.displayName || user?.email || ''}
+        existingLeads={leads || []}
       />
     </div>
   );

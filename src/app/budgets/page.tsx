@@ -502,6 +502,7 @@ export default function BudgetsPage() {
         onSave={handleAddLead}
         seller={selectedSeller?.name || ''}
         proposalTemplates={proposalTemplates || []}
+        existingLeads={leads || []}
       />
     </div>
   );

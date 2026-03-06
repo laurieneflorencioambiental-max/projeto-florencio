@@ -3,6 +3,7 @@
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,8 +33,12 @@ import {
 import type { Lead, ProposalTemplate } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trash2, Calendar } from 'lucide-react';
+import { Trash2, Calendar, Search, Check, ChevronsUpDown, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { toDate } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const newLeadSchema = leadSchema.omit({
   id: true,
@@ -57,6 +62,7 @@ type AddLeadModalProps = {
   onSave: (lead: z.infer<typeof newLeadSchema>) => void;
   seller: string;
   proposalTemplates: ProposalTemplate[];
+  existingLeads?: Lead[];
 };
 
 export default function AddLeadModal({
@@ -65,8 +71,10 @@ export default function AddLeadModal({
   onSave,
   seller,
   proposalTemplates,
+  existingLeads = [],
 }: AddLeadModalProps) {
   const { toast } = useToast();
+  const [isCustomerSelectorOpen, setIsCustomerSelectorOpen] = useState(false);
   
   const today = new Date().toISOString().split('T')[0];
 
@@ -94,6 +102,60 @@ export default function AddLeadModal({
     name: 'paymentMethods',
   });
 
+  // Memória Inteligente: Agrupar leads por empresa para permitir reuso de dados
+  const customerMemory = useMemo(() => {
+    const map = new Map<string, any>();
+    
+    // Ordenar por data para pegar os dados mais recentes de cada empresa
+    const sortedLeads = [...existingLeads].sort((a, b) => {
+      const dateA = toDate(a.createdAt)?.getTime() || 0;
+      const dateB = toDate(b.createdAt)?.getTime() || 0;
+      return dateB - dateA;
+    });
+
+    sortedLeads.forEach(lead => {
+      // Identificador único: CNPJ ou Nome da Empresa
+      const id = lead.cnpj?.replace(/\D/g, '') || lead.company.toLowerCase().trim();
+      
+      if (!map.has(id)) {
+        map.set(id, {
+          company: lead.company,
+          name: lead.name,
+          role: lead.role || '',
+          cnpj: lead.cnpj,
+          email: lead.email,
+          whatsapp: lead.whatsapp,
+          paymentMethods: lead.paymentMethods,
+          contactSource: lead.contactSource,
+          selectedTemplateId: lead.selectedTemplateId,
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [existingLeads]);
+
+  const handleSelectCustomer = (customer: any) => {
+    form.setValue('company', customer.company, { shouldValidate: true });
+    form.setValue('name', customer.name, { shouldValidate: true });
+    form.setValue('role', customer.role, { shouldValidate: true });
+    form.setValue('cnpj', customer.cnpj, { shouldValidate: true });
+    form.setValue('email', customer.email, { shouldValidate: true });
+    form.setValue('whatsapp', customer.whatsapp, { shouldValidate: true });
+    form.setValue('paymentMethods', customer.paymentMethods, { shouldValidate: true });
+    form.setValue('contactSource', customer.contactSource, { shouldValidate: true });
+    
+    if (customer.selectedTemplateId) {
+      form.setValue('selectedTemplateId', customer.selectedTemplateId, { shouldValidate: true });
+    }
+
+    setIsCustomerSelectorOpen(false);
+    toast({
+      title: 'Dados Carregados',
+      description: `Informações da empresa ${customer.company} preenchidas automaticamente.`,
+    });
+  };
+
   const onSubmit = (values: z.infer<typeof newLeadSchema>) => {
     onSave(values);
     onOpenChange(false);
@@ -108,16 +170,72 @@ export default function AddLeadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <DialogTitle className="font-headline">Novo Orçamento</DialogTitle>
           <DialogDescription>
-            Preencha as informações para criar um novo lead.
+            Preencha as informações para criar um novo lead. Você pode buscar dados de clientes atendidos anteriormente.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Seletor de Memória de Clientes */}
+        <div className="px-4 pt-2">
+          <Popover open={isCustomerSelectorOpen} onOpenChange={setIsCustomerSelectorOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={isCustomerSelectorOpen}
+                className="w-full justify-between bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors h-12"
+              >
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">
+                    {customerMemory.length > 0 
+                      ? 'Pesquisar Cliente Existente (Memória)...' 
+                      : 'Nenhum cliente no histórico'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Digite o nome da empresa ou CNPJ..." />
+                <CommandList>
+                  <CommandEmpty>Nenhuma empresa encontrada no histórico.</CommandEmpty>
+                  <CommandGroup heading="Clientes Recentes">
+                    {customerMemory.slice(0, 10).map((customer) => (
+                      <CommandItem
+                        key={customer.cnpj || customer.company}
+                        value={customer.company + ' ' + (customer.cnpj || '')}
+                        onSelect={() => handleSelectCustomer(customer)}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-bold">{customer.company}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {customer.name} • {customer.cnpj}
+                          </span>
+                        </div>
+                        <Check
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            form.getValues('company') === customer.company ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="h-[60vh] p-4">
+            <ScrollArea className="h-[60vh] p-4 pt-2">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -256,7 +374,7 @@ export default function AddLeadModal({
                       <FormLabel>Modelo de Proposta Padrão</FormLabel>
                       <Select 
                         onValueChange={value => field.onChange(value === 'none' ? null : value)} 
-                        defaultValue={field.value || 'none'}
+                        value={field.value || 'none'}
                       >
                       <FormControl>
                           <SelectTrigger>
@@ -336,7 +454,7 @@ export default function AddLeadModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Origem do Contato</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione a origem" />
