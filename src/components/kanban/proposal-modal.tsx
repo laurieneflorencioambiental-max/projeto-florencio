@@ -225,8 +225,11 @@ export default function ProposalModal({
 
     try {
       const proposalGeneration = async () => {
+        // Removemos o lead.value dos dados enviados para a proposta pública por segurança extra
+        const { value, ...leadWithoutInternalValue } = lead;
+
         const proposalData: Omit<ProposalData, 'id'> = {
-          lead: lead,
+          lead: leadWithoutInternalValue as Lead,
           proposalState: proposalState,
           fullProposalNumber: fullProposalNumber,
           createdAt: serverTimestamp(),
@@ -458,7 +461,7 @@ Grupo Florencio`;
   const EditableDiv = ({
     field,
     className,
-    path, // Para campos aninhados como plans.0.purpose
+    path,
   }: {
     field: string;
     className?: string;
@@ -467,7 +470,6 @@ Grupo Florencio`;
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
       const content = e.currentTarget.innerHTML;
       if (path) {
-          // Lógica simplificada para planos: path format like "plans.0.fieldName"
           const parts = path.split('.');
           if (parts[0] === 'plans') {
               const index = parseInt(parts[1]);

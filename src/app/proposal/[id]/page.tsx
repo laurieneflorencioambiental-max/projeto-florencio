@@ -667,7 +667,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                                   <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[60px]">Item</th>
                                   <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Faixa de Funcionários</th>
                                   <th className="p-3 border-r border-white/20 text-xs font-bold text-left">Serviços Inclusos</th>
-                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Investimento</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[150px]">Investimento</th>
                                   <th className="p-3 text-xs font-bold text-center w-[100px]">Por demanda</th>
                               </tr>
                           </thead>
