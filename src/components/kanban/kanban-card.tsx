@@ -367,6 +367,14 @@ export default function KanbanCard({
                 <Calendar className="h-3 w-3" />
                 <FormattedBudgetDate />
               </div>
+              {lead.proposalNumber && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <FileText className="h-3 w-3" />
+                  <span>
+                    Proposta nº: PTC-FLO-SST-{String(lead.proposalNumber).padStart(3, '0')}.{lead.proposalVersion || 0}
+                  </span>
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className="flex-1 py-0 px-6">
