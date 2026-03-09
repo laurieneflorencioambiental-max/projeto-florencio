@@ -530,7 +530,7 @@ export default function KanbanCard({
                 onClick={() => setIsProposalModalOpen(true)}
               >
                 <FileSignature className="mr-2 h-4 w-4" />
-                Gerar Proposta
+                Configurador de Proposta
               </Button>
               {lead.status === 'Rejeitado' && (
                 <Button
