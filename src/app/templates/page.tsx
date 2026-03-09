@@ -23,12 +23,6 @@ import {
   Pencil, 
   X, 
   Loader2, 
-  Bold, 
-  Italic, 
-  Underline, 
-  List, 
-  Link as LinkIcon, 
-  Smile, 
   Plus, 
   ShieldCheck,
   LayoutDashboard,
@@ -44,15 +38,11 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { logClientEvent } from '@/lib/audit-client';
-import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-
-const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
 
 export default function TemplatesPage() {
   const { user, isUserLoading } = useUser();
@@ -220,51 +210,6 @@ export default function TemplatesPage() {
     }
   };
 
-  // Rich Text Helpers
-  const insertFormat = (field: string, tag: 'b' | 'i' | 'u' | 'li' | 'link' | 'emoji', value?: string) => {
-    const setters: Record<string, Function> = {
-      proposalObject: setProposalObject,
-      serviceScope: setServiceScope,
-      methodology: setMethodology,
-      psychosocialTools: setPsychosocialTools,
-      lgpdSecurity: setLgpdSecurity,
-      contractorResponsibilities: setContractorResponsibilities,
-      clientResponsibilities: setClientResponsibilities,
-      preliminaryErgonomicAnalysis: setPreliminaryErgonomicAnalysis,
-      postErgonomicImplementation: setPostErgonomicImplementation,
-      deadline: setDeadline,
-      strategicVision: setStrategicVision,
-      investment: setInvestment,
-      paymentTerms: setPaymentTerms,
-    };
-
-    const setter = setters[field];
-    if (!setter) return;
-
-    if (tag === 'emoji') {
-      setter((prev: string) => prev + (value || ''));
-      return;
-    }
-
-    if (tag === 'link') {
-      const url = window.prompt('Insira a URL:', 'https://');
-      if (url) {
-        setter((prev: string) => `${prev} <a href="${url}" target="_blank" style="color: #1b7689; font-weight: bold; text-decoration: underline;">Link</a> `);
-      }
-      return;
-    }
-
-    const tags: Record<string, [string, string]> = {
-      b: ['<b>', '</b>'],
-      i: ['<i>', '</i>'],
-      u: ['<u>', '</u>'],
-      li: ['<li>', '</li>'],
-    };
-
-    const [open, close] = tags[tag as 'b' | 'i' | 'u' | 'li'];
-    setter((prev: string) => prev + open + close);
-  };
-
   // List Management Helpers
   const addComplexity = (type: 'Baixa' | 'Média' | 'Alta') => {
     setComplexityDefinitions(prev => [
@@ -327,7 +272,6 @@ export default function TemplatesPage() {
     if (!servicesCatalog) return;
     const selectedServices = servicesCatalog.filter(s => selectedCatalogIds.includes(s.id));
     
-    // Evitar duplicados no modelo (opcional, aqui apenas adicionamos)
     const newExams = [...exams];
     selectedServices.forEach(s => {
         newExams.push({
@@ -353,28 +297,6 @@ export default function TemplatesPage() {
     );
   }
 
-  const FormatToolbar = ({ field }: { field: string }) => (
-    <div className="flex items-center gap-1 mb-1 p-1 bg-muted/30 rounded-t-md border-b">
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertFormat(field, 'b')}><Bold className="h-4 w-4"/></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertFormat(field, 'i')}><Italic className="h-4 w-4"/></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertFormat(field, 'u')}><Underline className="h-4 w-4"/></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertFormat(field, 'li')}><List className="h-4 w-4"/></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => insertFormat(field, 'link')}><LinkIcon className="h-4 w-4"/></Button>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7"><Smile className="h-4 w-4"/></Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-2">
-          <div className="grid grid-cols-6 gap-1">
-            {COMMON_EMOJIS.map(emoji => (
-              <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onClick={() => insertFormat(field, 'emoji', emoji)}>{emoji}</Button>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -398,57 +320,48 @@ export default function TemplatesPage() {
 
             <div className="space-y-2">
               <Label>Objeto da Proposta</Label>
-              <FormatToolbar field="proposalObject" />
-              <Textarea value={proposalObject} onChange={e => setProposalObject(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={proposalObject} onChange={e => setProposalObject(e.target.value)} rows={3} />
             </div>
 
             <div className="space-y-2">
               <Label>Escopo do Serviço</Label>
-              <FormatToolbar field="serviceScope" />
-              <Textarea value={serviceScope} onChange={e => setServiceScope(e.target.value)} rows={4} className="rounded-t-none" />
+              <Textarea value={serviceScope} onChange={e => setServiceScope(e.target.value)} rows={4} />
             </div>
 
             <div className="space-y-2">
               <Label>Metodologia</Label>
-              <FormatToolbar field="methodology" />
-              <Textarea value={methodology} onChange={e => setMethodology(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={methodology} onChange={e => setMethodology(e.target.value)} rows={3} />
             </div>
 
             <div className="space-y-2">
               <Label>Ferramentas de avaliação dos Fatores psicossociais</Label>
-              <FormatToolbar field="psychosocialTools" />
-              <Textarea value={psychosocialTools} onChange={e => setPsychosocialTools(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={psychosocialTools} onChange={e => setPsychosocialTools(e.target.value)} rows={3} />
             </div>
 
             <div className="space-y-2">
               <Label>Segurança LGPD</Label>
-              <FormatToolbar field="lgpdSecurity" />
-              <Textarea value={lgpdSecurity} onChange={e => setLgpdSecurity(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={lgpdSecurity} onChange={e => setLgpdSecurity(e.target.value)} rows={3} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-y py-6 bg-muted/10 px-4 rounded-lg">
               <div className="space-y-2">
                 <Label className="text-primary font-bold">Da Contratada (Responsabilidades)</Label>
-                <FormatToolbar field="contractorResponsibilities" />
-                <Textarea value={contractorResponsibilities} onChange={e => setContractorResponsibilities(e.target.value)} rows={4} className="rounded-t-none" />
+                <Textarea value={contractorResponsibilities} onChange={e => setContractorResponsibilities(e.target.value)} rows={4} />
               </div>
               <div className="space-y-2">
                 <Label className="text-primary font-bold">Da Contratante (Responsabilidades)</Label>
-                <FormatToolbar field="clientResponsibilities" />
-                <Textarea value={clientResponsibilities} onChange={e => setClientResponsibilities(e.target.value)} rows={4} className="rounded-t-none" />
+                <Textarea value={clientResponsibilities} onChange={e => setClientResponsibilities(e.target.value)} rows={4} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Análise Ergonômica Preliminar</Label>
-              <FormatToolbar field="preliminaryErgonomicAnalysis" />
-              <Textarea value={preliminaryErgonomicAnalysis} onChange={e => setPreliminaryErgonomicAnalysis(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={preliminaryErgonomicAnalysis} onChange={e => setPreliminaryErgonomicAnalysis(e.target.value)} rows={3} />
             </div>
 
             <div className="space-y-2">
               <Label>Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)</Label>
-              <FormatToolbar field="postErgonomicImplementation" />
-              <Textarea value={postErgonomicImplementation} onChange={e => setPostErgonomicImplementation(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={postErgonomicImplementation} onChange={e => setPostErgonomicImplementation(e.target.value)} rows={3} />
             </div>
 
             <Card className="bg-primary/5 border-dashed">
@@ -547,20 +460,17 @@ export default function TemplatesPage() {
 
             <div className="space-y-2">
               <Label>Prazo para Realização dos Serviços</Label>
-              <FormatToolbar field="deadline" />
-              <Textarea value={deadline} onChange={e => setDeadline(e.target.value)} rows={2} className="rounded-t-none" />
+              <Textarea value={deadline} onChange={e => setDeadline(e.target.value)} rows={2} />
             </div>
 
             <div className="space-y-2">
               <Label>Nossa Visão Estratégica</Label>
-              <FormatToolbar field="strategicVision" />
-              <Textarea value={strategicVision} onChange={e => setStrategicVision(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={strategicVision} onChange={e => setStrategicVision(e.target.value)} rows={3} />
             </div>
 
             <div className="space-y-2">
               <Label>Investimento</Label>
-              <FormatToolbar field="investment" />
-              <Textarea value={investment} onChange={e => setInvestment(e.target.value)} rows={3} className="rounded-t-none" placeholder="Digite manualmente os valores e condições..." />
+              <Textarea value={investment} onChange={e => setInvestment(e.target.value)} rows={3} placeholder="Digite manualmente os valores e condições..." />
             </div>
 
             <div className="space-y-4 border-t pt-6">
@@ -984,8 +894,7 @@ export default function TemplatesPage() {
 
             <div className="space-y-2 border-t pt-6">
               <Label>Condições de Pagamento Adicionais</Label>
-              <FormatToolbar field="paymentTerms" />
-              <Textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={3} className="rounded-t-none" />
+              <Textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={3} />
             </div>
           </div>
 
