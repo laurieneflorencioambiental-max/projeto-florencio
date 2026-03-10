@@ -29,7 +29,8 @@ import {
   Coins,
   Table as TableIcon,
   Search,
-  BookMarked
+  BookMarked,
+  Copy
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -198,6 +199,26 @@ export default function TemplatesPage() {
     setDiverseServices(template.diverseServices || []);
     setExams(template.exams || []);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDuplicate = async (template: ProposalTemplate) => {
+    if (!firestore || !isAdmin) return;
+    
+    try {
+      const newDocRef = doc(collection(firestore, 'proposal-templates'));
+      const duplicatedData: ProposalTemplate = {
+        ...template,
+        id: newDocRef.id,
+        name: `${template.name} (Cópia)`,
+      };
+
+      await setDoc(newDocRef, duplicatedData);
+      logClientEvent('Duplicação de Modelo', auth, `Modelo: ${template.name}`);
+      toast({ title: 'Modelo Duplicado', description: `Uma cópia de "${template.name}" foi criada com sucesso.` });
+    } catch (error) {
+      console.error("Error duplicating template:", error);
+      toast({ variant: 'destructive', title: 'Erro ao duplicar', description: 'Não foi possível criar a cópia do modelo.' });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -936,10 +957,11 @@ export default function TemplatesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}><Pencil className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} title="Editar"><Pencil className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDuplicate(t)} title="Duplicar"><Copy className="h-4 w-4"/></Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                          <Button variant="ghost" size="icon" className="text-destructive" title="Excluir"><Trash2 className="h-4 w-4"/></Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
