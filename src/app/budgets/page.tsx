@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile, VersionHistoryEntry } from '@/lib/types';
 import { leadSchema, statuses } from '@/lib/types';
 import {
   Select,
@@ -262,7 +263,21 @@ export default function BudgetsPage() {
     const lead = leads.find(l => l.id === leadId);
     if(lead) {
         const leadRef = doc(firestore, 'budgets', leadId);
-        const updateData = { status: newStatus, previousStatus: lead.status };
+        
+        // Registrar a movimentação no histórico para que o contador de inatividade no Dashboard reflita a última ação
+        const newHistoryEntry: VersionHistoryEntry = {
+            version: lead.proposalVersion || 0,
+            editedBy: userProfile?.displayName || user.displayName || user.email || 'Sistema',
+            editedAt: new Date(),
+        };
+        const newHistory = [...(lead.versionHistory || []), newHistoryEntry];
+
+        const updateData = { 
+            status: newStatus, 
+            previousStatus: lead.status,
+            versionHistory: newHistory // Grava o timestamp da movimentação
+        };
+
         updateDoc(leadRef, updateData).then(() => {
           logClientEvent('Mudança de Status', auth, `'${lead.company}': ${lead.status} -> ${newStatus}`);
         }).catch(serverError => {
