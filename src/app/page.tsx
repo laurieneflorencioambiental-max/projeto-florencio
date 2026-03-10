@@ -71,8 +71,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
-type FilterPeriod = 'today' | 'week' | 'month' | 'year';
+type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'specific_month';
+
+const months = Array.from({ length: 12 }, (_, i) => ({
+  value: i,
+  label: ptBR.localize?.month(i as any, { width: 'wide' }),
+}));
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -80,6 +86,8 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const [isClient, setIsClient] = useState(false);
   const [filter, setFilter] = useState<FilterPeriod>('month');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
@@ -167,33 +175,39 @@ export default function DashboardPage() {
     const now = new Date();
     let interval: { start: Date; end: Date };
 
-    switch (filter) {
-      case 'today':
-        interval = { start: startOfDay(now), end: endOfDay(now) };
-        break;
-      case 'week':
-        interval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
-        break;
-      case 'year':
-        interval = { start: startOfYear(now), end: endOfYear(now) };
-        break;
-      case 'month':
-      default:
-        interval = { start: startOfMonth(now), end: endOfMonth(now) };
-        break;
+    if (filter === 'specific_month') {
+      const baseDate = new Date(selectedYear, selectedMonth, 1);
+      interval = { start: startOfMonth(baseDate), end: endOfMonth(baseDate) };
+    } else {
+      switch (filter) {
+        case 'today':
+          interval = { start: startOfDay(now), end: endOfDay(now) };
+          break;
+        case 'week':
+          interval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+          break;
+        case 'year':
+          interval = { start: startOfYear(now), end: endOfYear(now) };
+          break;
+        case 'month':
+        default:
+          interval = { start: startOfMonth(now), end: endOfMonth(now) };
+          break;
+      }
     }
 
     return leads.filter(lead => {
       let leadDate: Date | null = null;
       if (lead.budgetDate) {
+        // Parsing robusto para YYYY-MM-DD para evitar problemas de fuso horário
         const [year, month, day] = lead.budgetDate.split('-').map(Number);
-        leadDate = new Date(year, month - 1, day);
+        leadDate = new Date(year, month - 1, day, 12, 0, 0); // Meio dia para evitar saltos de fuso
       } else {
         leadDate = toDate(lead.createdAt);
       }
       return leadDate ? isWithinInterval(leadDate, interval) : false;
     });
-  }, [leads, filter, isClient]);
+  }, [leads, filter, isClient, selectedMonth, selectedYear]);
 
   const { conversionRate, averageTicket, approvedCount, totalCount } = useMemo(() => {
     const finishedLeads = filteredLeads.filter(lead =>
@@ -267,6 +281,7 @@ export default function DashboardPage() {
       case 'today': return 'Hoje';
       case 'week': return 'esta Semana';
       case 'year': return 'este Ano';
+      case 'specific_month': return `${months[selectedMonth].label} / ${selectedYear}`;
       case 'month':
       default: return 'este Mês';
     }
@@ -280,20 +295,44 @@ export default function DashboardPage() {
           <p className="text-sm text-muted-foreground">Bem-vindo de volta ao seu resumo comercial.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-card border rounded-lg px-3 py-1.5 shadow-sm">
-            <CalendarIcon className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Filtrar por:</span>
-            <Select value={filter} onValueChange={(v: FilterPeriod) => setFilter(v)}>
-              <SelectTrigger className="w-[140px] h-8 border-none shadow-none focus:ring-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Hoje</SelectItem>
-                <SelectItem value="week">Esta Semana</SelectItem>
-                <SelectItem value="month">Este Mês</SelectItem>
-                <SelectItem value="year">Este Ano</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-3 bg-card border rounded-lg px-3 py-1.5 shadow-sm flex-wrap">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Período:</span>
+              <Select value={filter} onValueChange={(v: FilterPeriod) => setFilter(v)}>
+                <SelectTrigger className="w-[140px] h-8 border-none shadow-none focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="week">Esta Semana</SelectItem>
+                  <SelectItem value="month">Este Mês</SelectItem>
+                  <SelectItem value="specific_month">Mês Específico</SelectItem>
+                  <SelectItem value="year">Este Ano</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filter === 'specific_month' && (
+              <div className="flex items-center gap-2 border-l pl-3">
+                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                  <SelectTrigger className="w-[120px] h-8 border-none shadow-none focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map(m => (
+                      <SelectItem key={m.value} value={m.value.toString()}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input 
+                  type="number" 
+                  className="w-20 h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-sm" 
+                  value={selectedYear} 
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                />
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" asChild>
@@ -384,7 +423,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : isAdmin && (
-         <SalesLeaderboard leads={leads} users={allUsers} isLoading={isLoading} />
+         <SalesLeaderboard preFilteredLeads={filteredLeads} users={allUsers} isLoading={isLoading} />
       )}
       
       <div className={cn("grid md:grid-cols-2 gap-6", isAdmin && !isProfileLoading && "lg:grid-cols-3")}>

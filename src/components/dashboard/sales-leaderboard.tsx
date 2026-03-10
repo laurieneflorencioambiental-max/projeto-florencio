@@ -20,8 +20,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Loader2 } from 'lucide-react';
 import type { Lead, UserProfile } from '@/lib/types';
-import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { toDate } from '@/lib/utils';
 
 const getUserInitials = (name: string) => {
     if (!name) return 'S';
@@ -33,22 +31,14 @@ const getUserInitials = (name: string) => {
 }
 
 
-export default function SalesLeaderboard({ leads, users, isLoading }: { leads: Lead[] | null, users: UserProfile[] | null, isLoading: boolean }) {
+export default function SalesLeaderboard({ preFilteredLeads, users, isLoading }: { preFilteredLeads: Lead[] | null, users: UserProfile[] | null, isLoading: boolean }) {
 
   const leaderboardData = useMemo(() => {
-    if (!users || !leads) return [];
+    if (!users || !preFilteredLeads) return [];
     
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-
-    const monthlyLeads = leads.filter(lead => {
-      const leadDate = toDate(lead.createdAt);
-      return leadDate && isWithinInterval(leadDate, { start, end });
-    });
-
     const performance = users.map(user => {
-      const sellerLeads = monthlyLeads.filter(lead => lead.createdByUid === user.uid);
+      // Usa os leads que já foram filtrados pelo Dashboard para garantir consistência
+      const sellerLeads = preFilteredLeads.filter(lead => lead.createdByUid === user.uid);
       const approvedLeads = sellerLeads.filter(lead => lead.status === 'Aprovado');
       const totalRevenue = approvedLeads.reduce((sum, lead) => sum + (lead.value || 0), 0);
 
@@ -59,19 +49,22 @@ export default function SalesLeaderboard({ leads, users, isLoading }: { leads: L
       };
     });
 
-    return performance.sort((a, b) => b.revenue - a.revenue);
+    // Remove vendedores sem vendas no período e ordena por receita
+    return performance
+      .filter(p => p.approvedCount > 0 || p.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue);
 
-  }, [users, leads]);
+  }, [users, preFilteredLeads]);
 
   return (
     <Card className="col-span-1 md:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="h-6 w-6 text-yellow-500" />
-          Ranking de Vendas do Mês
+          Ranking de Vendas do Período
         </CardTitle>
         <CardDescription>
-          Vendedores com melhor desempenho em receita no mês atual.
+          Desempenho dos vendedores com base no filtro selecionado acima.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -121,7 +114,7 @@ export default function SalesLeaderboard({ leads, users, isLoading }: { leads: L
           </Table>
         ) : (
             <div className="flex h-40 w-full items-center justify-center">
-                <p className="text-muted-foreground">Nenhum dado de vendas aprovado este mês.</p>
+                <p className="text-muted-foreground">Nenhum dado de vendas aprovado para este filtro.</p>
             </div>
         )}
       </CardContent>
