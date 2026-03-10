@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate, AppSettings } from '@/lib/types';
+import type { Lead, ProposalTemplate, AppSettings, VersionHistoryEntry } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -109,7 +109,19 @@ export default function KanbanCard({
   
   const handleSaveObservation = () => {
     if (observationText.trim() !== (lead.observations || '').trim()) {
-      onUpdateLead({ ...lead, observations: observationText.trim() });
+      // Adicionar entrada ao histórico para resetar o contador de inatividade
+      const newHistoryEntry: VersionHistoryEntry = {
+        version: lead.proposalVersion || 0,
+        editedBy: currentSeller || 'Sistema',
+        editedAt: new Date(),
+      };
+      const newHistory = [...(lead.versionHistory || []), newHistoryEntry];
+
+      onUpdateLead({ 
+        ...lead, 
+        observations: observationText.trim(),
+        versionHistory: newHistory
+      });
     }
     setIsEditingObservation(false);
   };
@@ -120,7 +132,19 @@ export default function KanbanCard({
   };
 
   const handleDeleteObservation = () => {
-    onUpdateLead({ ...lead, observations: '' });
+    // Adicionar entrada ao histórico para resetar o contador de inatividade
+    const newHistoryEntry: VersionHistoryEntry = {
+      version: lead.proposalVersion || 0,
+      editedBy: currentSeller || 'Sistema',
+      editedAt: new Date(),
+    };
+    const newHistory = [...(lead.versionHistory || []), newHistoryEntry];
+
+    onUpdateLead({ 
+      ...lead, 
+      observations: '',
+      versionHistory: newHistory
+    });
     setObservationText('');
     setIsEditingObservation(false);
   };
@@ -243,7 +267,7 @@ export default function KanbanCard({
               <AlertDialogHeader>
                 <AlertDialogTitle>Excluir Observação?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação removerá permanentemente esta observação.
+                  Esta ação removerá permanentemente esta observação. O contador de inatividade será reiniciado.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
