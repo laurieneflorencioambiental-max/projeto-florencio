@@ -76,16 +76,20 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
  */
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
   let authObject: FirebaseAuthObject | null = null;
-  try {
-    // Safely attempt to get the current user.
-    const firebaseAuth = getAuth();
-    const currentUser = firebaseAuth.currentUser;
-    if (currentUser) {
-      authObject = buildAuthObject(currentUser);
+  
+  // PROTEÇÃO SSR: O getAuth() lança erro fatal no Node.js se o Firebase App não estiver inicializado.
+  // Só tentamos capturar o contexto de autenticação se estivermos rodando no navegador.
+  if (typeof window !== 'undefined') {
+    try {
+      // Safely attempt to get the current user.
+      const firebaseAuth = getAuth();
+      const currentUser = firebaseAuth.currentUser;
+      if (currentUser) {
+        authObject = buildAuthObject(currentUser);
+      }
+    } catch {
+      // Falha silenciosa se o Firebase não estiver pronto; evita derrubar o servidor no startup.
     }
-  } catch {
-    // This will catch errors if the Firebase app is not yet initialized.
-    // In this case, we'll proceed without auth information.
   }
 
   return {
