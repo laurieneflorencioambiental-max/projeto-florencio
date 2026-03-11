@@ -173,7 +173,7 @@ export default function TemplatesPage() {
 
     try {
       await setDoc(doc(firestore, 'proposal-templates', docId), templateData);
-      logClientEvent(editingId ? 'Edição de Modelo' : 'Criação de Modelo', auth, `Modelo: ${name}`);
+      if (auth) logClientEvent(editingId ? 'Edição de Modelo' : 'Criação de Modelo', auth, `Modelo: ${name}`);
       toast({ title: 'Sucesso', description: 'Modelo de proposta salvo com sucesso.' });
       resetForm();
     } catch (error) {
@@ -220,7 +220,7 @@ export default function TemplatesPage() {
       };
 
       await setDoc(newDocRef, duplicatedData);
-      logClientEvent('Duplicação de Modelo', auth, `Modelo: ${template.name}`);
+      if (auth) logClientEvent('Duplicação de Modelo', auth, `Modelo: ${template.name}`);
       toast({ title: 'Modelo Duplicado', description: `Uma cópia de "${template.name}" foi criada com sucesso.` });
     } catch (error) {
       console.error("Error duplicating template:", error);
@@ -234,7 +234,7 @@ export default function TemplatesPage() {
       await deleteDoc(doc(firestore, 'proposal-templates', id));
       toast({ title: 'Removido', description: 'Modelo excluído com sucesso.' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir o modelo.' });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir the modelo.' });
     }
   };
 

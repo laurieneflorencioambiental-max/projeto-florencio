@@ -135,7 +135,7 @@ export default function PricingPage() {
     };
 
     await setDoc(newDocRef, newTemplate);
-    logClientEvent('Criação de Precificação', auth, `Modelo: ${name}`);
+    if (auth) logClientEvent('Criação de Precificação', auth, `Modelo: ${name}`);
     toast({ title: 'Precificação salva!', description: `"${name}" foi adicionado aos seus modelos.` });
     resetForm();
   };
@@ -154,7 +154,7 @@ export default function PricingPage() {
     if (!firestore) return;
     const templateToDelete = savedTemplates?.find(t => t.id === id);
     await deleteDoc(doc(firestore, 'pricing-templates', id));
-    if (templateToDelete) {
+    if (templateToDelete && auth) {
       logClientEvent('Exclusão de Precificação', auth, `Modelo: ${templateToDelete.name}`);
     }
     toast({ title: 'Modelo removido.' });

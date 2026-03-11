@@ -62,10 +62,12 @@ export default function LoginPage() {
     const fetchSettings = async () => {
       try {
         const { firestore } = initializeFirebase();
-        const settingsRef = doc(firestore, 'app-settings', 'global');
-        const docSnap = await getDoc(settingsRef);
-        if (docSnap.exists()) {
-          setSettings(docSnap.data() as AppSettings);
+        if (firestore) {
+          const settingsRef = doc(firestore, 'app-settings', 'global');
+          const docSnap = await getDoc(settingsRef);
+          if (docSnap.exists()) {
+            setSettings(docSnap.data() as AppSettings);
+          }
         }
       } catch (error) {
         console.error('Failed to load global settings from Firestore:', error);
@@ -75,6 +77,7 @@ export default function LoginPage() {
   }, []);
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (!auth) return;
     setIsSubmitting(true);
     try {
       const userCredential: UserCredential = await signInWithEmailAndPassword(auth, data.email, data.password);

@@ -66,13 +66,13 @@ export default function CatalogPage() {
       const serviceRef = doc(firestore, 'services', editingServiceId);
       const serviceWithId: Service = { id: editingServiceId, ...data };
       await setDoc(serviceRef, serviceWithId, { merge: true });
-      logClientEvent('Edição de Serviço', auth, `Serviço: ${data.service}`);
+      if (auth) logClientEvent('Edição de Serviço', auth, `Serviço: ${data.service}`);
       toast({ title: 'Sucesso', description: 'Serviço atualizado no catálogo.' });
     } else {
       const newDocRef = doc(servicesCollectionRef!);
       const serviceWithId: Service = { id: newDocRef.id, ...data };
       await setDoc(newDocRef, serviceWithId);
-      logClientEvent('Criação de Serviço', auth, `Serviço: ${data.service}`);
+      if (auth) logClientEvent('Criação de Serviço', auth, `Serviço: ${data.service}`);
       toast({ title: 'Sucesso', description: 'Novo serviço adicionado ao catálogo.' });
     }
     resetForm();
@@ -88,7 +88,7 @@ export default function CatalogPage() {
     if (!firestore) return;
     const serviceToDelete = services?.find(s => s.id === id);
     await deleteDoc(doc(firestore, 'services', id));
-    if (serviceToDelete) {
+    if (serviceToDelete && auth) {
         logClientEvent('Exclusão de Serviço', auth, `Serviço: ${serviceToDelete.service}`);
     }
     if (id === editingServiceId) {

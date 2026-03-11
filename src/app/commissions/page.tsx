@@ -145,7 +145,7 @@ export default function CommissionsPage() {
     };
 
     await setDoc(newDocRef, { ...newTemplate, id: newDocRef.id });
-    logClientEvent('Criação de Modelo de Comissão', auth, `Modelo: ${templateName}`);
+    if (auth) logClientEvent('Criação de Modelo de Comissão', auth, `Modelo: ${templateName}`);
     toast({ title: 'Novo Modelo de Comissão salvo!', description: `"${templateName}" foi adicionado.` });
     resetForm();
   };
@@ -183,7 +183,7 @@ export default function CommissionsPage() {
     if (!firestore) return;
     const templateToDelete = savedTemplates?.find(t => t.id === id);
     await deleteDoc(doc(firestore, 'commission-templates', id));
-    if (templateToDelete) {
+    if (templateToDelete && auth) {
       logClientEvent('Exclusão de Modelo de Comissão', auth, `Modelo: ${templateToDelete.name}`);
     }
     toast({ title: 'Modelo removido.' });
