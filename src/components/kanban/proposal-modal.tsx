@@ -80,6 +80,12 @@ type ProposalModalProps = {
 
 const COMMON_EMOJIS = ['✅', '❌', '⚠️', '🛡️', '🚀', '📈', '📊', '💼', '📄', '🤝', '🏢', '🏗️', '👷', '👨‍⚕️', '🩺', '💡', '🔍', '📍', '📞', '📧'];
 
+// Configuração extensível para as áreas de negócio
+const AREA_CONFIG: Record<string, { prefix: string; serviceCode: string }> = {
+  sst: { prefix: 'SST', serviceCode: '001' },
+  ma: { prefix: 'MA', serviceCode: '002' },
+};
+
 export default function ProposalModal({
   lead,
   allLeads,
@@ -186,7 +192,7 @@ export default function ProposalModal({
     if (!isOpen) return;
 
     const area = lead.proposalNumber ? (lead.proposalArea || 'sst') : selectedArea;
-    const prefix = area === 'sst' ? 'SST' : 'MA';
+    const config = AREA_CONFIG[area] || AREA_CONFIG.sst;
     
     let num = lead.proposalNumber;
     
@@ -202,7 +208,8 @@ export default function ProposalModal({
         displayVersion = (lead.proposalVersion ?? 0) + 1;
     }
     
-    const proposalId = `PTC-FLO-${prefix}-${paddedNumber}.${displayVersion}`;
+    // Novo Padrão: PTC-FLO-[AREA]-[SERVICE_CODE]-[NUM].[VERSION]
+    const proposalId = `PTC-FLO-${config.prefix}-${config.serviceCode}-${paddedNumber}.${displayVersion}`;
     setFullProposalNumber(proposalId);
   }, [selectedArea, lead.proposalNumber, lead.proposalArea, lead.proposalVersion, allLeads, isOpen, isDirty]);
 
@@ -242,8 +249,8 @@ export default function ProposalModal({
           newVersion = (lead.proposalVersion ?? 0) + 1;
       }
 
-      const prefix = finalArea === 'sst' ? 'SST' : 'MA';
-      const finalFullCode = `PTC-FLO-${prefix}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
+      const config = AREA_CONFIG[finalArea] || AREA_CONFIG.sst;
+      const finalFullCode = `PTC-FLO-${config.prefix}-${config.serviceCode}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
 
       const { value, ...leadWithoutInternalValue } = lead;
 

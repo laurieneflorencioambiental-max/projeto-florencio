@@ -329,13 +329,15 @@ export default function SettingsPage() {
            const collRef = collection(firestore, name);
            const snapshot = await getDocs(collRef);
            snapshot.forEach(docSnap => {
-              const item = docSnap.data();
-              if (item.createdAt) {
-                const itemDate = toDate(item.createdAt);
-                if (itemDate && itemDate < cutoffDate) {
-                  docRefsToDelete.push(docSnap.ref);
-                }
-              }
+            const item: any = docSnap.data();
+
+if (item?.createdAt) {
+  const itemDate = new Date(item.createdAt);
+
+  if (itemDate && itemDate < cutoffDate) {
+    docRefsToDelete.push(docSnap.ref);
+  }
+}
            });
         }
       }

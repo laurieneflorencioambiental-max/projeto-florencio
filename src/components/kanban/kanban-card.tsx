@@ -77,6 +77,12 @@ type KanbanCardProps = {
   currentSeller: string;
 };
 
+// Configuração extensível para as áreas de negócio
+const AREA_CONFIG: Record<string, { prefix: string; serviceCode: string }> = {
+  sst: { prefix: 'SST', serviceCode: '001' },
+  ma: { prefix: 'MA', serviceCode: '002' },
+};
+
 export default function KanbanCard({
   lead,
   allLeads,
@@ -343,6 +349,18 @@ export default function KanbanCard({
     return <p>Última edição por {lastEdit.editedBy} em {lastEditDate ? format(lastEditDate, 'dd/MM/yy') : '...'}</p>;
   }
 
+  // Gera o código da proposta formatado de acordo com o novo padrão oficial
+  const getFormattedProposalCode = () => {
+    if (!lead.proposalNumber) return 'N/A';
+    
+    const area = lead.proposalArea || 'sst';
+    const config = AREA_CONFIG[area] || AREA_CONFIG.sst;
+    const paddedNum = String(lead.proposalNumber).padStart(3, '0');
+    const version = lead.proposalVersion || 0;
+    
+    return `PTC-FLO-${config.prefix}-${config.serviceCode}-${paddedNum}.${version}`;
+  };
+
   return (
     <>
       <TooltipProvider>
@@ -396,7 +414,7 @@ export default function KanbanCard({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <FileText className="h-3 w-3" />
                   <span>
-                    Proposta nº: PTC-FLO-SST-{String(lead.proposalNumber).padStart(3, '0')}.{lead.proposalVersion || 0}
+                    Proposta nº: {getFormattedProposalCode()}
                   </span>
                 </div>
               )}
