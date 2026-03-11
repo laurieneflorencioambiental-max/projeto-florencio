@@ -69,7 +69,8 @@ export default function CatalogPage() {
       if (auth) logClientEvent('Edição de Serviço', auth, `Serviço: ${data.service}`);
       toast({ title: 'Sucesso', description: 'Serviço atualizado no catálogo.' });
     } else {
-      const newDocRef = doc(servicesCollectionRef!);
+      if (!servicesCollectionRef) return;
+      const newDocRef = doc(servicesCollectionRef);
       const serviceWithId: Service = { id: newDocRef.id, ...data };
       await setDoc(newDocRef, serviceWithId);
       if (auth) logClientEvent('Criação de Serviço', auth, `Serviço: ${data.service}`);

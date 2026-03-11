@@ -139,7 +139,7 @@ export default function SettingsPage() {
     } else if (!firestore && areSettingsLoading) {
       setAreSettingsLoading(false);
     }
-  }, [settingsRef]);
+  }, [settingsRef, firestore, toast]);
 
   const anyUploading = Object.values(isUploading || {}).some(v => v);
 
@@ -256,7 +256,7 @@ export default function SettingsPage() {
 
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
-      await setDoc(settingsRef!, { [imageType]: newUrl }, { merge: true });
+      await setDoc(settingsRef, { [imageType]: newUrl }, { merge: true });
 
       setAppSettings(prev => ({ ...prev, [imageType]: newUrl }));
 

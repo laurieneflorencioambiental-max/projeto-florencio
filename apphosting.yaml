@@ -9,4 +9,4 @@ labels:
   firebase-app-id: 1:815408673372:web:44b8bdab1310fa06b2ec99
 env:
   - variable: NEXT_PUBLIC_DEPLOY_RETRY
-    value: "4"
+    value: "5"

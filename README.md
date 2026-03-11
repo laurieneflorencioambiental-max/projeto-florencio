@@ -8,3 +8,4 @@ To get started, take a look at src/app/page.tsx.
 <!-- Reinício do ambiente de desenvolvimento solicitado para a porta 3000 -->
 <!-- Gatilho para nova tentativa de publicação: correção de erro de rollout do App Hosting -->
 <!-- Nova tentativa de rollout: gatilho de configuração de ambiente aplicado em apphosting.yaml -->
+<!-- Incremento de controle para limpeza de cache de build (v5) -->

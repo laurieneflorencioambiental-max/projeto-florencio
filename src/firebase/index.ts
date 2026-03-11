@@ -1,9 +1,7 @@
-'use client';
+// Barrel file for Firebase functionality.
+// Individual files handle 'use client' directives as needed.
 
-// Implementação e exportação da inicialização do Firebase
 export * from "./init";
-
-// Re-exportação de hooks, provedores e utilitários
 export * from "./provider";
 export * from "./client-provider";
 export * from "./non-blocking-login";

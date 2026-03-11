@@ -46,9 +46,8 @@ export default function ManageSellersModal({
   const [newSellerName, setNewSellerName] = useState('');
   const [editingSeller, setEditingSeller] = useState<{ id: string, name: string } | null>(null);
 
-  const sellersCollection = collection(firestore, 'sellers');
-
   const handleAddSeller = async () => {
+    if (!firestore) return;
     const name = newSellerName.trim();
     if (name === '') {
       toast({ variant: 'destructive', title: 'Erro', description: 'O nome do vendedor não pode ser vazio.' });
@@ -59,13 +58,14 @@ export default function ManageSellersModal({
       return;
     }
     
+    const sellersCollection = collection(firestore, 'sellers');
     await addDoc(sellersCollection, { name });
     setNewSellerName('');
     toast({ title: 'Sucesso', description: `Vendedor "${name}" adicionado.` });
   };
 
   const handleUpdateSeller = async () => {
-    if (!editingSeller) return;
+    if (!firestore || !editingSeller) return;
     
     const updatedName = editingSeller.name.trim();
 
@@ -88,6 +88,7 @@ export default function ManageSellersModal({
   };
 
   const handleDeleteSeller = async (sellerId: string) => {
+    if (!firestore) return;
     await deleteDoc(doc(firestore, 'sellers', sellerId));
     toast({ title: 'Sucesso', description: `Vendedor removido.` });
   };
