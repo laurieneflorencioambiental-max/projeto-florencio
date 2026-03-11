@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Lead, VersionHistoryEntry, ProposalTemplate } from '@/lib/types';
+import type { Lead, VersionHistoryEntry, ProposalTemplate, ProposalArea } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Calendar } from 'lucide-react';
@@ -44,6 +44,7 @@ type EditLeadModalProps = {
   onSave: (lead: Lead) => void;
   currentSeller: string;
   proposalTemplates: ProposalTemplate[];
+  proposalAreas: ProposalArea[];
 };
 
 export default function EditLeadModal({
@@ -53,6 +54,7 @@ export default function EditLeadModal({
   onSave,
   currentSeller,
   proposalTemplates,
+  proposalAreas,
 }: EditLeadModalProps) {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof leadSchema>>({
@@ -72,7 +74,7 @@ export default function EditLeadModal({
         role: lead.role || '',
         value: lead.value === null ? 0 : lead.value,
         paymentMethods: lead.paymentMethods.length > 0 ? lead.paymentMethods : [{ method: 'Boleto' }],
-        createdAt: toDate(lead.createdAt), // Convert timestamp to Date for the form
+        createdAt: toDate(lead.createdAt), 
         versionHistory: processedHistory,
         budgetDate: lead.budgetDate || (toDate(lead.createdAt)?.toISOString().split('T')[0]),
       });
@@ -85,14 +87,12 @@ export default function EditLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof leadSchema>) => {
-    // Só incrementa a versão se o orçamento já possuir uma proposta gerada (proposalNumber existe)
-    // Se ainda não gerou proposta, continua sendo a preparação para a versão .0
     const newVersionNumber = lead.proposalNumber ? (lead.proposalVersion + 1) : 0;
 
     const newHistoryEntry: VersionHistoryEntry = {
         version: newVersionNumber,
         editedBy: currentSeller,
-        editedAt: new Date(), // Use client-side Date, Firestore will convert it
+        editedAt: new Date(), 
     };
 
     const newHistory = [...(values.versionHistory || []), newHistoryEntry];
@@ -112,6 +112,7 @@ export default function EditLeadModal({
   };
 
   const contactSource = form.watch('contactSource.source');
+  const activeAreas = useMemo(() => proposalAreas.filter(a => a.active || a.acronym === lead.proposalArea), [proposalAreas, lead.proposalArea]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -145,18 +146,43 @@ export default function EditLeadModal({
                   />
                   <FormField
                     control={form.control}
-                    name="company"
+                    name="proposalArea"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Empresa</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome da empresa" {...field} />
-                        </FormControl>
+                        <FormLabel>Área e Código do Serviço</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a área" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {activeAreas.map(area => (
+                              <SelectItem key={area.id} value={area.acronym}>
+                                {area.acronym} - {area.serviceCode} ({area.name})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Empresa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome da empresa" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -308,23 +334,6 @@ export default function EditLeadModal({
                             </FormItem>
                           )}
                         />
-                      {form.watch(`paymentMethods.${index}.method`)?.includes('Cartão de Crédito') && (
-                          <FormField
-                            control={form.control}
-                            name={`paymentMethods.${index}.cardFee`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <div className="relative">
-                                    <Input type="number" placeholder="Taxa" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="w-24 pr-6"/>
-                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                      )}
                       <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>

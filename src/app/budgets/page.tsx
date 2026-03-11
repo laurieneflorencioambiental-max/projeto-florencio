@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import KanbanBoard from '@/components/kanban/kanban-board';
-import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile, VersionHistoryEntry } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile, VersionHistoryEntry, ProposalArea } from '@/lib/types';
 import { statuses } from '@/lib/types';
 import {
   Select,
@@ -100,6 +100,9 @@ export default function BudgetsPage() {
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
   const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
 
+  const areasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-areas') : null, [firestore]);
+  const { data: proposalAreas, isLoading: areAreasLoading } = useCollection<ProposalArea>(areasQuery);
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -152,7 +155,7 @@ export default function BudgetsPage() {
     );
   };
   
-  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory' | 'proposalAreaAcronym' | 'proposalServiceCode'>) => {
       if (!user || !firestore || !selectedSeller) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
@@ -170,7 +173,7 @@ export default function BudgetsPage() {
         rejectionReason: values.rejectionReason || null,
         selectedTemplateId: values.selectedTemplateId || null,
         budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
-        proposalArea: values.proposalArea || 'sst',
+        proposalArea: values.proposalArea || null,
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: selectedSeller.name,
@@ -184,6 +187,10 @@ export default function BudgetsPage() {
         observations: null,
         versionHistory: [],
         createdAt: serverTimestamp(),
+        proposalViewed: false,
+        proposalViewedAt: null,
+        proposalViewCount: 0,
+        proposalLastViewedAt: null,
     };
 
       setDoc(newDocRef, newLeadData)
@@ -288,7 +295,7 @@ export default function BudgetsPage() {
     return leadsInPeriod.filter(lead => lead.company.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [leadsInPeriod, searchTerm]);
 
-  if (isUserLoading || !user || areLeadsLoading || areUsersLoading || areTemplatesLoading || areSettingsLoading) {
+  if (isUserLoading || !user || areLeadsLoading || areUsersLoading || areTemplatesLoading || areSettingsLoading || areAreasLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -444,6 +451,7 @@ export default function BudgetsPage() {
         proposalTemplates={proposalTemplates || []}
         settings={settings}
         currentSeller={selectedSeller?.name || ''}
+        proposalAreas={proposalAreas || []}
       />
       <div className='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
         <LeadsStatusChart leads={filteredLeads} />
@@ -457,6 +465,7 @@ export default function BudgetsPage() {
         seller={selectedSeller?.name || ''}
         proposalTemplates={proposalTemplates || []}
         existingLeads={leads || []}
+        proposalAreas={proposalAreas || []}
       />
     </div>
   );

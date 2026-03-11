@@ -45,6 +45,8 @@ import {
   Save,
   X,
   MapPin,
+  PlusCircle,
+  Activity,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -66,18 +68,20 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import type { AppSettings, DocumentReference, UserProfile } from '@/lib/types';
+import type { AppSettings, DocumentReference, UserProfile, ProposalArea } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
   deleteImageByUrl,
   ImageType,
 } from '@/firebase/storage';
-import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { seedSellers, seedServices, seedTemplates, getSeedLeads } from '@/lib/seed-data';
+import { seedSellers, seedServices, seedTemplates, getSeedLeads, seedProposalAreas } from '@/lib/seed-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
@@ -102,6 +106,13 @@ export default function SettingsPage() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [cleanupPeriod, setCleanupPeriod] = useState<'all' | 30 | 60 | 90 | 365>('all');
   const [isSeeding, setIsSeeding] = useState(false);
+
+  // Proposal Areas State
+  const [isAreaModalOpen, setIsAreaModalOpen] = useState(false);
+  const [editingArea, setEditingArea] = useState<ProposalArea | null>(null);
+  const [newAreaName, setNewAreaName] = useState('');
+  const [newAreaAcronym, setNewAreaAcronym] = useState('');
+  const [newAreaCode, setNewAreaCode] = useState('');
   
   const settingsRef = useMemoFirebase(
     () => (firestore ? doc(firestore, 'app-settings', 'global') : null),
@@ -111,6 +122,9 @@ export default function SettingsPage() {
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   const isAdmin = userProfile?.isAdmin === true;
+
+  const areasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-areas') : null, [firestore]);
+  const { data: proposalAreas, isLoading: areAreasLoading } = useCollection<ProposalArea>(areasQuery);
 
   const isLoadingPermissions = isUserLoading || isProfileLoading;
 
@@ -254,7 +268,8 @@ export default function SettingsPage() {
 
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
-      setDoc(settingsRef, { [imageType]: newUrl }, { merge: true })
+      const updateData = { [imageType]: newUrl };
+      setDoc(settingsRef, updateData, { merge: true })
         .then(() => {
           setAppSettings(prev => ({ ...prev, [imageType]: newUrl }));
           if (oldUrl) deleteImageByUrl(oldUrl).catch(console.warn);
@@ -264,7 +279,7 @@ export default function SettingsPage() {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: settingsRef.path,
             operation: 'update',
-            requestResourceData: { [imageType]: newUrl },
+            requestResourceData: updateData,
           }));
         });
 
@@ -282,7 +297,8 @@ export default function SettingsPage() {
 
     const oldUrl = (appSettings as any)?.[imageType];
 
-    setDoc(settingsRef, { [imageType]: null }, { merge: true })
+    const updateData = { [imageType]: null };
+    setDoc(settingsRef, updateData, { merge: true })
       .then(() => {
         setAppSettings(prev => ({ ...prev, [imageType]: null }));
         if (oldUrl) deleteImageByUrl(oldUrl).catch(console.warn);
@@ -292,7 +308,7 @@ export default function SettingsPage() {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: settingsRef.path,
           operation: 'update',
-          requestResourceData: { [imageType]: null },
+          requestResourceData: updateData,
         }));
       });
   };
@@ -330,14 +346,10 @@ export default function SettingsPage() {
            const snapshot = await getDocs(collRef);
            snapshot.forEach(docSnap => {
             const item: any = docSnap.data();
-
-if (item?.createdAt) {
-  const itemDate = new Date(item.createdAt);
-
-  if (itemDate && itemDate < cutoffDate) {
-    docRefsToDelete.push(docSnap.ref);
-  }
-}
+            const itemDate = item?.createdAt ? toDate(item.createdAt) : null;
+            if (itemDate && itemDate < cutoffDate) {
+                docRefsToDelete.push(docSnap.ref);
+            }
            });
         }
       }
@@ -378,6 +390,11 @@ if (item?.createdAt) {
         batch.set(docRef, { name: seller.name });
       });
 
+      seedProposalAreas.forEach(area => {
+        const docRef = doc(collection(firestore, 'proposal-areas'));
+        batch.set(docRef, { ...area, id: docRef.id });
+      });
+
       seedServices.forEach(service => {
         const docRef = doc(collection(firestore, 'services'));
         batch.set(docRef, { ...service, id: docRef.id });
@@ -408,6 +425,75 @@ if (item?.createdAt) {
     switch (cleanupPeriod) {
         case 'all': return 'Esta ação é irreversível e apagará TODOS OS DADOS da aplicação (orçamentos, vendedores, modelos, etc).';
         default: return `Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que ${cleanupPeriod} dias.`;
+    }
+  };
+
+  // Proposal Area Handlers
+  const handleOpenAreaModal = (area?: ProposalArea) => {
+    if (area) {
+      setEditingArea(area);
+      setNewAreaName(area.name);
+      setNewAreaAcronym(area.acronym);
+      setNewAreaCode(area.serviceCode);
+    } else {
+      setEditingArea(null);
+      setNewAreaName('');
+      setNewAreaAcronym('');
+      setNewAreaCode('');
+    }
+    setIsAreaModalOpen(true);
+  };
+
+  const handleSaveArea = async () => {
+    if (!firestore) return;
+    
+    if (!newAreaName || !newAreaAcronym || !newAreaCode) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Todos os campos são obrigatórios.' });
+      return;
+    }
+
+    const areaData: Omit<ProposalArea, 'id'> = {
+      name: newAreaName,
+      acronym: newAreaAcronym.toUpperCase(),
+      serviceCode: newAreaCode,
+      active: editingArea ? editingArea.active : true,
+    };
+
+    try {
+      if (editingArea) {
+        const areaRef = doc(firestore, 'proposal-areas', editingArea.id);
+        await updateDoc(areaRef, areaData);
+        toast({ title: 'Área Atualizada' });
+      } else {
+        const newAreaRef = doc(collection(firestore, 'proposal-areas'));
+        await setDoc(newAreaRef, { ...areaData, id: newAreaRef.id });
+        toast({ title: 'Área Cadastrada' });
+      }
+      setIsAreaModalOpen(false);
+    } catch (error) {
+      console.error('Error saving area:', error);
+      toast({ variant: 'destructive', title: 'Erro ao salvar área' });
+    }
+  };
+
+  const handleToggleAreaStatus = async (area: ProposalArea) => {
+    if (!firestore) return;
+    try {
+      const areaRef = doc(firestore, 'proposal-areas', area.id);
+      await updateDoc(areaRef, { active: !area.active });
+      toast({ title: area.active ? 'Área Inativada' : 'Área Ativada' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao alterar status' });
+    }
+  };
+
+  const handleDeleteArea = async (id: string) => {
+    if (!firestore) return;
+    try {
+      await deleteDoc(doc(firestore, 'proposal-areas', id));
+      toast({ title: 'Área Removida' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao remover área' });
     }
   };
 
@@ -455,6 +541,91 @@ if (item?.createdAt) {
               aria-label="Alternar modo escuro"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-6 w-6" />
+            Configuração de Áreas de Proposta
+          </CardTitle>
+          <CardDescription>
+            Gerencie as áreas de negócio e códigos de serviço para o prefixo das propostas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => handleOpenAreaModal()}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nova Área
+            </Button>
+          </div>
+          
+          {areAreasLoading ? (
+            <Skeleton className="h-40 w-full" />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Sigla</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {proposalAreas && proposalAreas.length > 0 ? (
+                  proposalAreas.map(area => (
+                    <TableRow key={area.id} className={!area.active ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium">{area.name}</TableCell>
+                      <TableCell><Badge variant="secondary">{area.acronym}</Badge></TableCell>
+                      <TableCell><code className="bg-muted px-1.5 py-0.5 rounded text-sm">{area.serviceCode}</code></TableCell>
+                      <TableCell>
+                        <Badge variant={area.active ? 'default' : 'outline'} className={area.active ? 'bg-green-500' : ''}>
+                          {area.active ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenAreaModal(area)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleToggleAreaStatus(area)}>
+                          {area.active ? <X className="h-4 w-4 text-amber-600" /> : <ShieldCheck className="h-4 w-4 text-green-600" />}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir Área?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Você está prestes a excluir a área "{area.name}". Se esta área já foi usada em propostas, recomendamos apenas inativá-la para manter o histórico.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteArea(area.id)}>Sim, excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                      Nenhuma área cadastrada.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -1051,6 +1222,38 @@ if (item?.createdAt) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Proposal Area Modal */}
+      <Dialog open={isAreaModalOpen} onOpenChange={setIsAreaModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingArea ? 'Editar Área' : 'Nova Área de Proposta'}</DialogTitle>
+            <DialogDescription>
+              Cadastre uma nova sigla e código para geração automática de propostas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="area-name">Nome da Área</Label>
+              <Input id="area-name" value={newAreaName} onChange={e => setNewAreaName(e.target.value)} placeholder="Ex: Segurança do Trabalho" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="area-acronym">Sigla (Prefixo)</Label>
+                <Input id="area-acronym" value={newAreaAcronym} onChange={e => setNewAreaAcronym(e.target.value.toUpperCase())} placeholder="Ex: SST" maxLength={5} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="area-code">Código do Serviço</Label>
+                <Input id="area-code" value={newAreaCode} onChange={e => setNewAreaCode(e.target.value)} placeholder="Ex: 001" maxLength={3} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAreaModalOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveArea}>Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

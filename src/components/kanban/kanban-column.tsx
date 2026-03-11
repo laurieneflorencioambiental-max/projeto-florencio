@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
-import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings, ProposalArea } from '@/lib/types';
 import KanbanCard from './kanban-card';
 import { CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -17,6 +16,7 @@ type KanbanColumnProps = {
   proposalTemplates: ProposalTemplate[];
   settings?: Partial<AppSettings> | null;
   currentSeller: string;
+  proposalAreas: ProposalArea[];
 };
 
 export default function KanbanColumn({
@@ -29,6 +29,7 @@ export default function KanbanColumn({
   proposalTemplates,
   settings,
   currentSeller,
+  proposalAreas,
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
 
@@ -88,6 +89,7 @@ export default function KanbanColumn({
             proposalTemplates={proposalTemplates}
             appSettings={settings}
             currentSeller={currentSeller}
+            proposalAreas={proposalAreas}
           />
         ))}
         {leads.length === 0 && isOver && (

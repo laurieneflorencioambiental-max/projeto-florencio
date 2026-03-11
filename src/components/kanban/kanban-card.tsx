@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Lead, ProposalTemplate, AppSettings, VersionHistoryEntry } from '@/lib/types';
+import type { Lead, ProposalTemplate, AppSettings, VersionHistoryEntry, ProposalArea } from '@/lib/types';
 import {
   Card,
   CardHeader,
@@ -75,12 +75,7 @@ type KanbanCardProps = {
   proposalTemplates: ProposalTemplate[];
   appSettings?: Partial<AppSettings> | null;
   currentSeller: string;
-};
-
-// Configuração extensível para as áreas de negócio
-const AREA_CONFIG: Record<string, { prefix: string; serviceCode: string }> = {
-  sst: { prefix: 'SST', serviceCode: '001' },
-  ma: { prefix: 'MA', serviceCode: '002' },
+  proposalAreas: ProposalArea[];
 };
 
 export default function KanbanCard({
@@ -91,6 +86,7 @@ export default function KanbanCard({
   proposalTemplates,
   appSettings,
   currentSeller,
+  proposalAreas,
 }: KanbanCardProps) {
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -99,7 +95,6 @@ export default function KanbanCard({
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // State for observations
   const [isEditingObservation, setIsEditingObservation] = useState(false);
   const [observationText, setObservationText] = useState(lead.observations || '');
   
@@ -116,7 +111,6 @@ export default function KanbanCard({
   
   const handleSaveObservation = () => {
     if (observationText.trim() !== (lead.observations || '').trim()) {
-      // Adicionar entrada ao histórico para resetar o contador de inatividade
       const newHistoryEntry: VersionHistoryEntry = {
         version: lead.proposalVersion || 0,
         editedBy: currentSeller || 'Sistema',
@@ -139,7 +133,6 @@ export default function KanbanCard({
   };
 
   const handleDeleteObservation = () => {
-    // Adicionar entrada ao histórico para resetar o contador de inatividade
     const newHistoryEntry: VersionHistoryEntry = {
       version: lead.proposalVersion || 0,
       editedBy: currentSeller || 'Sistema',
@@ -327,7 +320,6 @@ export default function KanbanCard({
   const FormattedBudgetDate = () => {
     if (!isClient) return <span>...</span>;
     
-    // Prefer explicitly saved budgetDate (YYYY-MM-DD)
     if (lead.budgetDate) {
       const parts = lead.budgetDate.split('-');
       if (parts.length === 3) {
@@ -335,30 +327,19 @@ export default function KanbanCard({
       }
     }
     
-    // Fallback to createdAt if budgetDate is missing
     const date = toDate(lead.createdAt);
     return <span>{date ? format(date, "dd/MM/yyyy") : '...'}</span>;
   };
 
-  const VersionHistoryTooltipContent = () => {
-    if (!isClient || !lead.versionHistory || lead.versionHistory.length === 0) {
-      return <p>{lead.proposalVersion > 0 ? 'Histórico de edição não disponível' : 'Proposta nunca editada'}</p>;
-    }
-    const lastEdit = lead.versionHistory[lead.versionHistory.length - 1];
-    const lastEditDate = toDate(lastEdit.editedAt);
-    return <p>Última edição por {lastEdit.editedBy} em {lastEditDate ? format(lastEditDate, 'dd/MM/yy') : '...'}</p>;
-  }
-
-  // Gera o código da proposta formatado de acordo com o novo padrão oficial
   const getFormattedProposalCode = () => {
     if (!lead.proposalNumber) return 'N/A';
     
-    const area = lead.proposalArea || 'sst';
-    const config = AREA_CONFIG[area] || AREA_CONFIG.sst;
+    const acronym = lead.proposalAreaAcronym || lead.proposalArea || 'SST';
+    const serviceCode = lead.proposalServiceCode || (acronym === 'MA' ? '002' : '001');
     const paddedNum = String(lead.proposalNumber).padStart(3, '0');
     const version = lead.proposalVersion || 0;
     
-    return `PTC-FLO-${config.prefix}-${config.serviceCode}-${paddedNum}.${version}`;
+    return `PTC-FLO-${acronym.toUpperCase()}-${serviceCode}-${paddedNum}.${version}`;
   };
 
   return (
@@ -431,20 +412,6 @@ export default function KanbanCard({
                       )}
                     </span>
                   </div>
-                  {lead.proposalViewCount >= 3 && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-tight">
-                        🔥 Proposta Quente (Alto Interesse)
-                      </div>
-                      {lead.status === 'Pendente/Em negociação' && 
-                       lead.proposalLastViewedAt && 
-                       differenceInDays(new Date(), toDate(lead.proposalLastViewedAt)!) > 2 && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-destructive uppercase tracking-tight">
-                          ⚠️ Sem retorno há mais de 2 dias
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -486,55 +453,7 @@ export default function KanbanCard({
                   {formatCurrency(lead.value)}
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
-                <p className="font-medium text-sm">Formas de Pagamento:</p>
-                <div className="flex flex-wrap gap-2">
-                  {lead.paymentMethods.map(pm => (
-                    <Tooltip key={pm.method}>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="secondary"
-                          className="flex gap-2 items-center"
-                        >
-                          {getPaymentMethodIcon(pm.method)}
-                          <span>
-                            {pm.method
-                              .replace(' (Link)', '')
-                              .replace(' (Maquininha)', '')}
-                          </span>
-                          {pm.method.includes('Crédito') && pm.cardFee && (
-                            <span className="text-xs opacity-75">
-                              ({pm.cardFee}% taxa)
-                            </span>
-                          )}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Forma de Pagamento</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </div>
               <StaleLeadIndicator />
-              {(lead.status === 'Rejeitado' ||
-                lead.status === 'Desistência') &&
-                lead.rejectionReason && (
-                  <div className="flex items-start gap-2 p-2.5 bg-destructive/10 rounded-md border border-dashed border-destructive/30">
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Motivo da perda do lead.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <p className="text-xs text-destructive whitespace-normal">
-                      <span className="font-semibold">Motivo:</span>{' '}
-                      {lead.rejectionReason}
-                    </p>
-                  </div>
-                )}
               <div className="border-t border-border pt-4 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <Tooltip>
@@ -583,8 +502,7 @@ export default function KanbanCard({
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
-                        Notas internas sobre a negociação. Não são visíveis para o
-                        cliente.
+                        Notas internas sobre a negociação.
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -604,18 +522,6 @@ export default function KanbanCard({
                 <FileSignature className="mr-2 h-4 w-4" />
                 Configurador de Proposta
               </Button>
-              {lead.status === 'Rejeitado' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setIsFollowUpModalOpen(true)}
-                  disabled={!lead.rejectionReason}
-                >
-                  <MessageSquarePlus className="mr-2 h-4 w-4" />
-                  Gerar Follow-up com IA
-                </Button>
-              )}
             <div className="w-full pt-4 mt-2 border-t">
               <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <Tooltip>
@@ -635,7 +541,7 @@ export default function KanbanCard({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <VersionHistoryTooltipContent />
+                    <p>Histórico de edições da proposta.</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -647,47 +553,11 @@ export default function KanbanCard({
                     {lead.editCount === 1 ? 'vez' : 'vezes'}
                   </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger className="flex items-center gap-1">
-                    <FileSignature className="h-3 w-3" />{' '}
-                    {lead.proposalGeneratedCount}
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Proposta gerada {lead.proposalGeneratedCount}{' '}
-                    {lead.proposalGeneratedCount === 1 ? 'vez' : 'vezes'}
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger className="flex items-center gap-1">
-                    <Send className="h-3 w-3" /> {lead.whatsappSentCount}
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Enviado por WhatsApp {lead.whatsappSentCount}{' '}
-                    {lead.whatsappSentCount === 1 ? 'vez' : 'vezes'}
-                  </TooltipContent>
-                </Tooltip>
-                {lead.previousStatus && (
-                  <Tooltip>
-                    <TooltipTrigger className="flex items-center gap-1">
-                      <ArrowRightLeft className="h-3 w-3" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Status anterior: {lead.previousStatus}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
               </div>
             </div>
           </CardFooter>
         </Card>
       </TooltipProvider>
-      {lead.status === 'Rejeitado' && (
-        <FollowUpModal
-          lead={lead}
-          isOpen={isFollowUpModalOpen}
-          onOpenChange={setIsFollowUpModalOpen}
-        />
-      )}
       <EditLeadModal
         lead={lead}
         isOpen={isEditModalOpen}
@@ -695,6 +565,7 @@ export default function KanbanCard({
         onSave={onUpdateLead}
         currentSeller={currentSeller}
         proposalTemplates={proposalTemplates}
+        proposalAreas={proposalAreas}
       />
       <ProposalModal
         lead={lead}
@@ -706,6 +577,7 @@ export default function KanbanCard({
         logoUrl={appSettings?.proposalLogoUrl}
         proposalCoverUrl={appSettings?.proposalCoverUrl}
         proposalClosingUrl={appSettings?.proposalClosingUrl}
+        proposalAreas={proposalAreas}
       />
       <VersionHistoryModal
         lead={lead}

@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Lead, ProposalTemplate } from '@/lib/types';
+import type { Lead, ProposalTemplate, ProposalArea } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Calendar, Check, ChevronsUpDown, History, Search } from 'lucide-react';
@@ -52,6 +52,12 @@ const newLeadSchema = leadSchema.omit({
   proposalVersion: true,
   observations: true,
   versionHistory: true,
+  proposalAreaAcronym: true,
+  proposalServiceCode: true,
+  proposalViewed: true,
+  proposalViewedAt: true,
+  proposalViewCount: true,
+  proposalLastViewedAt: true,
 });
 
 type AddLeadModalProps = {
@@ -61,6 +67,7 @@ type AddLeadModalProps = {
   seller: string;
   proposalTemplates: ProposalTemplate[];
   existingLeads?: Lead[];
+  proposalAreas: ProposalArea[];
 };
 
 export default function AddLeadModal({
@@ -70,6 +77,7 @@ export default function AddLeadModal({
   seller,
   proposalTemplates,
   existingLeads = [],
+  proposalAreas,
 }: AddLeadModalProps) {
   const { toast } = useToast();
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -92,7 +100,7 @@ export default function AddLeadModal({
       rejectionReason: undefined,
       selectedTemplateId: null,
       budgetDate: today,
-      proposalArea: 'sst',
+      proposalArea: '',
     },
   });
 
@@ -101,7 +109,6 @@ export default function AddLeadModal({
     name: 'paymentMethods',
   });
 
-  // Memória Inteligente: Agrupar leads por empresa para permitir reuso de dados
   const customerMemory = useMemo(() => {
     const map = new Map<string, any>();
     
@@ -125,7 +132,7 @@ export default function AddLeadModal({
           paymentMethods: lead.paymentMethods,
           contactSource: lead.contactSource,
           selectedTemplateId: lead.selectedTemplateId,
-          proposalArea: lead.proposalArea || 'sst',
+          proposalArea: lead.proposalArea || '',
         });
       }
     });
@@ -133,14 +140,13 @@ export default function AddLeadModal({
     return Array.from(map.values());
   }, [existingLeads]);
 
-  // Lógica de Autocomplete baseada na digitação do campo Empresa
   const companySearchValue = form.watch('company');
   const filteredSuggestions = useMemo(() => {
     if (!companySearchValue || companySearchValue.length < 2) return [];
     return customerMemory.filter(c => 
       c.company.toLowerCase().includes(companySearchValue.toLowerCase()) ||
       (c.cnpj && c.cnpj.includes(companySearchValue))
-    ).slice(0, 5); // Limita a 5 sugestões para não poluir a tela
+    ).slice(0, 5);
   }, [customerMemory, companySearchValue]);
 
   const handleSelectCustomer = (customer: any) => {
@@ -152,7 +158,7 @@ export default function AddLeadModal({
     form.setValue('whatsapp', customer.whatsapp, { shouldValidate: true });
     form.setValue('paymentMethods', customer.paymentMethods, { shouldValidate: true });
     form.setValue('contactSource', customer.contactSource, { shouldValidate: true });
-    form.setValue('proposalArea', customer.proposalArea || 'sst', { shouldValidate: true });
+    form.setValue('proposalArea', customer.proposalArea || '', { shouldValidate: true });
     
     if (customer.selectedTemplateId) {
       form.setValue('selectedTemplateId', customer.selectedTemplateId, { shouldValidate: true });
@@ -177,10 +183,11 @@ export default function AddLeadModal({
 
   const contactSource = form.watch('contactSource.source');
 
-  // Fechar sugestões ao clicar fora (opcional, aqui usamos onBlur com delay)
   const handleBlur = () => {
     setTimeout(() => setShowSuggestions(false), 200);
   };
+
+  const activeAreas = useMemo(() => proposalAreas.filter(a => a.active), [proposalAreas]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -219,16 +226,19 @@ export default function AddLeadModal({
                     name="proposalArea"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Área da Proposta</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || 'sst'}>
+                        <FormLabel>Área e Código do Serviço</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione a área" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="sst">Segurança do Trabalho</SelectItem>
-                            <SelectItem value="ma">Meio Ambiente</SelectItem>
+                            {activeAreas.map(area => (
+                              <SelectItem key={area.id} value={area.acronym}>
+                                {area.acronym} - {area.serviceCode} ({area.name})
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -433,23 +443,6 @@ export default function AddLeadModal({
                             </FormItem>
                           )}
                         />
-                      {form.watch(`paymentMethods.${index}.method`)?.includes('Cartão de Crédito') && (
-                          <FormField
-                            control={form.control}
-                            name={`paymentMethods.${index}.cardFee`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <div className="relative">
-                                    <Input type="number" placeholder="Taxa" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="w-24 pr-6"/>
-                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-                                  </div>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                      )}
                       <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -499,29 +492,6 @@ export default function AddLeadModal({
                     )}
                   />
                 )}
-                 <FormField
-                  control={form.control}
-                  name="rejectionReason"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select onValueChange={value => field.onChange(value === 'none' ? undefined : value)} value={field.value || 'none'}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o motivo da perda" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {rejectionReasons.map(reason => (
-                            <SelectItem key={reason} value={reason}>{reason}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </ScrollArea>
             <DialogFooter className="pt-6">

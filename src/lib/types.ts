@@ -87,7 +87,7 @@ export const planStructureItemSchema = z.object({
 export const investmentOptionItemSchema = z.object({
     id: z.string(),
     service: z.string().default(''),
-    value: z.string().default(''), // String to allow "R$ 120,00 (cada ponto)"
+    value: z.string().default(''), 
 });
 
 export const investmentOptionSchema = z.object({
@@ -126,7 +126,7 @@ export const planSchema = z.object({
 export const versionHistoryEntrySchema = z.object({
   version: z.number(),
   editedBy: z.string(),
-  editedAt: z.any(), // For Firestore Timestamps or Date objects
+  editedAt: z.any(), 
 });
 
 export const auditLogSchema = z.object({
@@ -140,6 +140,14 @@ export const auditLogSchema = z.object({
 });
 export type AuditLog = z.infer<typeof auditLogSchema>;
 
+export const proposalAreaSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  acronym: z.string(),
+  serviceCode: z.string(),
+  active: z.boolean().default(true),
+});
+export type ProposalArea = z.infer<typeof proposalAreaSchema>;
 
 export const leadSchema = z.object({
   id: z.string(),
@@ -168,7 +176,9 @@ export const leadSchema = z.object({
   editCount: z.number().default(0),
   previousStatus: z.enum(statuses as any).optional().nullable(),
   proposalNumber: z.number().nullable().optional(),
-  proposalArea: z.enum(['sst', 'ma']).optional().nullable(),
+  proposalArea: z.string().optional().nullable(),
+  proposalAreaAcronym: z.string().optional().nullable(),
+  proposalServiceCode: z.string().optional().nullable(),
   proposalVersion: z.number().default(0),
   observations: z.string().optional().nullable(),
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
@@ -234,7 +244,7 @@ export type ProposalData = {
   lead: Lead;
   proposalState: ProposalState;
   fullProposalNumber: string;
-  createdAt: any; // Using `any` for Firestore serverTimestamp
+  createdAt: any; 
   logoUrl?: string | null;
   proposalCoverUrl?: string | null;
   proposalLocationUrl?: string | null;
@@ -255,7 +265,6 @@ export const appSettingsSchema = z.object({
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 
 
-// Pricing Page Types
 export const serviceTypes = [
   'Higiene Ocupacional',
   'Laudo Ergonômico',
@@ -307,7 +316,6 @@ export const pricingTemplateSchema = z.object({
 export type PricingTemplate = z.infer<typeof pricingTemplateSchema>;
 
 
-// Marketing Page Types
 export const roiEntrySchema = z.object({
   id: z.string(),
   source: z.string(),
@@ -347,7 +355,6 @@ export const digitalToolSchema = z.object({
 });
 export type DigitalTool = z.infer<typeof digitalToolSchema>;
 
-// Commissions Page Types
 export const commissionTemplateSchema = z.object({
     id: z.string(),
     name: z.string(),

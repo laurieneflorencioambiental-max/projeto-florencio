@@ -1,6 +1,6 @@
 'use client';
 
-import type { Lead, Status, ProposalTemplate, AppSettings } from '@/lib/types';
+import type { Lead, Status, ProposalTemplate, AppSettings, ProposalArea } from '@/lib/types';
 import KanbanColumn from './kanban-column';
 
 type KanbanBoardProps = {
@@ -13,6 +13,7 @@ type KanbanBoardProps = {
   proposalTemplates: ProposalTemplate[];
   settings?: Partial<AppSettings> | null;
   currentSeller: string;
+  proposalAreas: ProposalArea[];
 };
 
 export default function KanbanBoard({
@@ -25,6 +26,7 @@ export default function KanbanBoard({
   proposalTemplates,
   settings,
   currentSeller,
+  proposalAreas,
 }: KanbanBoardProps) {
   const handleDrop = (
     e: React.DragEvent<HTMLDivElement>,
@@ -52,6 +54,7 @@ export default function KanbanBoard({
             proposalTemplates={proposalTemplates}
             settings={settings}
             currentSeller={currentSeller}
+            proposalAreas={proposalAreas}
           />
         </div>
       ))}

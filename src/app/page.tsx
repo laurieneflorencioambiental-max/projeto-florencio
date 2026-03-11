@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import type { Lead, AppSettings, Status, UserProfile } from '@/lib/types';
+import type { Lead, AppSettings, Status, UserProfile, ProposalArea } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -116,6 +116,9 @@ export default function DashboardPage() {
 
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
   const { data: settings } = useDoc<AppSettings>(settingsRef);
+
+  const areasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-areas') : null, [firestore]);
+  const { data: proposalAreas, isLoading: areAreasLoading } = useCollection<ProposalArea>(areasQuery);
   
   useEffect(() => {
     setIsClient(true);
@@ -124,7 +127,7 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory' | 'proposalAreaAcronym' | 'proposalServiceCode'>) => {
       if (!user || !firestore || !userProfile) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
@@ -141,7 +144,7 @@ export default function DashboardPage() {
         whatsapp: values.whatsapp,
         rejectionReason: values.rejectionReason || null,
         budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
-        proposalArea: values.proposalArea || 'sst',
+        proposalArea: values.proposalArea || null,
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: userProfile.displayName || user.email!,
@@ -155,6 +158,10 @@ export default function DashboardPage() {
         observations: null,
         versionHistory: [],
         createdAt: serverTimestamp(),
+        proposalViewed: false,
+        proposalViewedAt: null,
+        proposalViewCount: 0,
+        proposalLastViewedAt: null,
     };
 
       setDoc(newDocRef, newLeadData)
@@ -206,30 +213,16 @@ export default function DashboardPage() {
     });
   }, [leads, filter, isClient, selectedMonth, selectedYear]);
 
-  const { conversionRate, averageTicket, approvedCount, totalCount } = useMemo(() => {
-    const finishedLeads = filteredLeads.filter(lead =>
-      ['Aprovado', 'Desistência', 'Rejeitado'].includes(lead.status)
-    );
-    const approvedLeads = filteredLeads.filter(
-      lead => lead.status === 'Aprovado'
-    );
+  const { approvedCount, totalCount, conversionRate, averageTicket } = useMemo(() => {
+    const approvedLeads = filteredLeads.filter(l => l.status === 'Aprovado');
+    const totalRevenue = approvedLeads.reduce((sum, l) => sum + (l.value || 0), 0);
+    const finishedLeads = filteredLeads.filter(l => ['Aprovado', 'Rejeitado', 'Desistência'].includes(l.status));
     
-    const conversionRate =
-      finishedLeads.length > 0
-        ? (approvedLeads.length / finishedLeads.length) * 100
-        : 0;
-        
-    const averageTicket =
-      approvedLeads.length > 0
-        ? approvedLeads.reduce((acc, lead) => acc + (lead.value || 0), 0) /
-          approvedLeads.length
-        : 0;
-
-    return { 
-      conversionRate, 
-      averageTicket, 
+    return {
       approvedCount: approvedLeads.length,
-      totalCount: filteredLeads.length
+      totalCount: filteredLeads.length,
+      conversionRate: finishedLeads.length > 0 ? (approvedLeads.length / finishedLeads.length) * 100 : 0,
+      averageTicket: approvedLeads.length > 0 ? totalRevenue / approvedLeads.length : 0,
     };
   }, [filteredLeads]);
 
@@ -263,7 +256,7 @@ export default function DashboardPage() {
   const goalMet = approvedCount >= monthlyGoal;
   const progressPercentage = monthlyGoal > 0 ? Math.min((approvedCount / monthlyGoal) * 100, 100) : 0;
   
-  const isLoading = isUserLoading || areLeadsLoading || areUsersLoading || isProfileLoading;
+  const isLoading = isUserLoading || areLeadsLoading || areUsersLoading || isProfileLoading || areAreasLoading;
 
   if (isLoading) {
     return (
@@ -485,7 +478,7 @@ export default function DashboardPage() {
                           const lastDate = history.length > 0 
                             ? toDate(history[history.length - 1].editedAt) 
                             : toDate(lead.createdAt);
-                          const diff = lastDate ? differenceInDays(new Date(), lastDate) : 0;
+                          const diff = lastDate ? differenceInDays(new Date(), lastActivityDate) : 0;
                           return diff;
                         })() : '...'}
                       </TableCell>
@@ -530,6 +523,7 @@ export default function DashboardPage() {
         onSave={handleAddLead}
         seller={userProfile?.displayName || user?.email || ''}
         existingLeads={leads || []}
+        proposalAreas={proposalAreas || []}
       />
     </div>
   );

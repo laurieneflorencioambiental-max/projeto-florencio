@@ -28,12 +28,6 @@ type VersionHistoryModalProps = {
   onOpenChange: (isOpen: boolean) => void;
 };
 
-// Configuração extensível para as áreas de negócio
-const AREA_CONFIG: Record<string, { prefix: string; serviceCode: string }> = {
-  sst: { prefix: 'SST', serviceCode: '001' },
-  ma: { prefix: 'MA', serviceCode: '002' },
-};
-
 export default function VersionHistoryModal({
   lead,
   isOpen,
@@ -41,15 +35,14 @@ export default function VersionHistoryModal({
 }: VersionHistoryModalProps) {
   const history = lead.versionHistory || [];
 
-  // Gera o código raiz da proposta (sem a versão) de acordo com o novo padrão oficial
   const getProposalCodeRoot = () => {
     if (!lead.proposalNumber) return 'N/A';
     
-    const area = lead.proposalArea || 'sst';
-    const config = AREA_CONFIG[area] || AREA_CONFIG.sst;
+    const acronym = lead.proposalAreaAcronym || lead.proposalArea || 'SST';
+    const serviceCode = lead.proposalServiceCode || (acronym === 'MA' ? '002' : '001');
     const paddedNum = String(lead.proposalNumber).padStart(3, '0');
     
-    return `PTC-FLO-${config.prefix}-${config.serviceCode}-${paddedNum}`;
+    return `PTC-FLO-${acronym.toUpperCase()}-${serviceCode}-${paddedNum}`;
   };
 
   const fullProposalNumberRoot = getProposalCodeRoot();
