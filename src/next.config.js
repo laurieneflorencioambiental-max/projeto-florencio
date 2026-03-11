@@ -1,3 +1,2 @@
-// Este arquivo foi neutralizado para evitar conflitos com o next.config.js da raiz,
-// garantindo que a configuração 'standalone' seja aplicada corretamente no App Hosting.
-module.exports = {};
+// Arquivo neutralizado para evitar conflitos de prioridade no build.
+// O Next.js deve utilizar exclusivamente o arquivo de configuração localizado na raiz do projeto.
