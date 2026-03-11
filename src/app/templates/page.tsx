@@ -525,9 +525,9 @@ export default function TemplatesPage() {
                           >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="unique">Único</SelectItem>
-                              <SelectItem value="monthly">Mensal</SelectItem>
-                              <SelectItem value="active_contract_monthly">Por Contrato ativo, mensal.</SelectItem>
+                              <SelectItem value="unique">Pagamento Único</SelectItem>
+                              <SelectItem value="monthly">Pagamento Mensal</SelectItem>
+                              <SelectItem value="active_contract_monthly">Pagamento Por Contrato ativo, mensal</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

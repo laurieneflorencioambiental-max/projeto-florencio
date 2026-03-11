@@ -1,34 +1,3 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  /* config options here */
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
-        port: '',
-        pathname: '/**',
-      },
-    ],
-  },
-};
-
-module.exports = nextConfig;
+// Este arquivo foi neutralizado para evitar conflitos com o next.config.js da raiz,
+// garantindo que a configuração 'standalone' seja aplicada corretamente no App Hosting.
+module.exports = {};
