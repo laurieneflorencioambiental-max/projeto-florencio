@@ -100,6 +100,9 @@ export default function ProposalModal({
   const firestore = useFirestore();
   const [isClient, setIsClient] = useState(false);
 
+  // Estado para a Área da Proposta (Obrigatório)
+  const [selectedArea, setSelectedArea] = useState<'sst' | 'ma'>(lead.proposalArea || 'sst');
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -175,31 +178,39 @@ export default function ProposalModal({
     }
   };
 
+  // Lógica para calcular o código da proposta com base na área selecionada e sequência separada
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Determinamos a área: usamos a já gravada no lead ou a selecionada no momento
+    const area = lead.proposalNumber ? (lead.proposalArea || 'sst') : selectedArea;
+    const prefix = area === 'sst' ? 'SST' : 'MA';
+    
+    let num = lead.proposalNumber;
+    
+    // Se o orçamento ainda não tem um número de proposta "travado"
+    if (!num) {
+        // Filtramos leads da mesma área para encontrar o próximo número da sequência
+        // Importante: tratamos leads antigos sem área definida como 'sst'
+        const areaLeads = allLeads.filter(l => (l.proposalArea || 'sst') === area);
+        const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
+        num = maxNum + 1;
+    }
+
+    const paddedNumber = String(num).padStart(3, '0');
+    
+    // Versionamento: se nunca gerou (versão 0), mostramos .1 como sugestão da primeira
+    // Se já tem versão, mostramos a versão atual para visualização.
+    const displayVersion = lead.proposalVersion || 1;
+    
+    const proposalId = `PTC-FLO-${prefix}-${paddedNumber}.${displayVersion}`;
+    setFullProposalNumber(proposalId);
+  }, [selectedArea, lead.proposalNumber, lead.proposalArea, lead.proposalVersion, allLeads, isOpen]);
+
   const resetState = () => {
     const defaultTemplateId = lead.selectedTemplateId || 'none';
     handleTemplateChange(defaultTemplateId);
-
-    let currentProposalNumber = lead.proposalNumber;
-
-    if (!currentProposalNumber) {
-      const highestProposalNumber = Math.max(
-        0,
-        ...allLeads.map(l => l.proposalNumber || 0)
-      );
-      currentProposalNumber = highestProposalNumber + 1;
-    }
-
-    const paddedNumber = String(currentProposalNumber).padStart(3, '0');
-    const version = lead.proposalVersion || 0;
-    const proposalId = `PTC-FLO-SST-${paddedNumber}.${version}`;
-    setFullProposalNumber(proposalId);
-
-    if (!lead.proposalNumber) {
-      onUpdateLead({
-        ...lead,
-        proposalNumber: currentProposalNumber,
-      });
-    }
+    setSelectedArea(lead.proposalArea || 'sst');
     setIsGenerating(false);
   };
 
@@ -225,13 +236,33 @@ export default function ProposalModal({
 
     try {
       const proposalGeneration = async () => {
-        // Removemos o lead.value dos dados enviados para a proposta pública por segurança extra
+        // Calcular número final e área para travar no lead
+        let finalArea = lead.proposalArea || selectedArea;
+        let finalNum = lead.proposalNumber;
+
+        if (!finalNum) {
+            const areaLeads = allLeads.filter(l => (l.proposalArea || 'sst') === finalArea);
+            const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
+            finalNum = maxNum + 1;
+        }
+
+        // Incrementar a versão da proposta (Gen 1 = .1, Gen 2 = .2, etc)
+        const newVersion = (lead.proposalVersion || 0) + 1;
+        const prefix = finalArea === 'sst' ? 'SST' : 'MA';
+        const finalFullCode = `PTC-FLO-${prefix}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
+
+        // Remove lead.value for public proposal for extra security
         const { value, ...leadWithoutInternalValue } = lead;
 
         const proposalData: Omit<ProposalData, 'id'> = {
-          lead: leadWithoutInternalValue as Lead,
+          lead: {
+              ...leadWithoutInternalValue,
+              proposalNumber: finalNum,
+              proposalArea: finalArea,
+              proposalVersion: newVersion,
+          } as Lead,
           proposalState: proposalState,
-          fullProposalNumber: fullProposalNumber,
+          fullProposalNumber: finalFullCode,
           createdAt: serverTimestamp(),
           logoUrl: logoUrl ?? null,
           proposalCoverUrl: proposalCoverUrl ?? null,
@@ -249,9 +280,13 @@ export default function ProposalModal({
         );
         const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
 
+        // Atualizar o lead com o número travado e a nova versão
         onUpdateLead({
           ...lead,
           proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
+          proposalNumber: finalNum,
+          proposalArea: finalArea,
+          proposalVersion: newVersion,
         });
 
         toast({
@@ -657,42 +692,60 @@ Grupo Florencio`;
           </div>
         </DialogHeader>
 
-        <div className="mb-4 space-y-2 px-6">
-          <Label htmlFor="proposal-template">
-            Selecione um Modelo de Serviço
-          </Label>
-          <div className="flex items-end gap-2">
-            <div className="flex-1">
-              <Select
-                value={selectedTemplateId || 'none'}
-                onValueChange={handleTemplateChange}
-                disabled={isGenerating}
-              >
-                <SelectTrigger id="proposal-template">
-                  <SelectValue placeholder="Escolha um modelo para o objeto da proposta" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum (usará proposta padrão)</SelectItem>
-                  {proposalTemplates.map(template => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSetDefaultTemplate}
-              disabled={
-                isGenerating ||
-                (selectedTemplateId || null) === (lead.selectedTemplateId || null)
-              }
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 mb-4">
+          <div className="space-y-2">
+            <Label htmlFor="proposal-area">Área da Proposta</Label>
+            <Select 
+              value={selectedArea} 
+              onValueChange={(v: 'sst' | 'ma') => setSelectedArea(v)}
+              disabled={isGenerating || !!lead.proposalNumber}
             >
-              <Save className="mr-2 h-4 w-4" />
-              Definir como Padrão
-            </Button>
+              <SelectTrigger id="proposal-area">
+                <SelectValue placeholder="Selecione a área" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sst">Segurança do Trabalho</SelectItem>
+                <SelectItem value="ma">Meio Ambiente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="proposal-template">
+              Modelo de Serviço
+            </Label>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Select
+                  value={selectedTemplateId || 'none'}
+                  onValueChange={handleTemplateChange}
+                  disabled={isGenerating}
+                >
+                  <SelectTrigger id="proposal-template">
+                    <SelectValue placeholder="Escolha um modelo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum (padrão)</SelectItem>
+                    {proposalTemplates.map(template => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSetDefaultTemplate}
+                disabled={
+                  isGenerating ||
+                  (selectedTemplateId || null) === (lead.selectedTemplateId || null)
+                }
+              >
+                <Save className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -897,7 +950,7 @@ Grupo Florencio`;
                   Negociação para o atendimento da Prestação de Serviços de QSMS
                   - Qualidade, Segurança, Meio Ambiente e Saúde. Gostaríamos de
                   salientar o grande interesse que temos em trabalhar em parceria
-                  com a sua empresa, pois a nossa missão é oferecer serviços em
+                  with a sua empresa, pois a nossa missão é oferecer serviços em
                   gestão através de uma visão estratégica buscando a satisfação
                   do cliente e melhorias para a sociedade.
                 </p>

@@ -13,7 +13,7 @@ export type Status =
 
 export const statuses: Status[] = [
   'Novos',
-  'Pendente/Em negociação' as any,
+  'Pendente/Em negociação',
   'Aprovado',
   'Desistência',
   'Rejeitado',
@@ -168,6 +168,7 @@ export const leadSchema = z.object({
   editCount: z.number().default(0),
   previousStatus: z.enum(statuses as any).optional().nullable(),
   proposalNumber: z.number().nullable().optional(),
+  proposalArea: z.enum(['sst', 'ma']).optional().nullable(),
   proposalVersion: z.number().default(0),
   observations: z.string().optional().nullable(),
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
