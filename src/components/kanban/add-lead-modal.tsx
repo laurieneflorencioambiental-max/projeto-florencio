@@ -92,6 +92,7 @@ export default function AddLeadModal({
       rejectionReason: undefined,
       selectedTemplateId: null,
       budgetDate: today,
+      proposalArea: 'sst',
     },
   });
 
@@ -124,6 +125,7 @@ export default function AddLeadModal({
           paymentMethods: lead.paymentMethods,
           contactSource: lead.contactSource,
           selectedTemplateId: lead.selectedTemplateId,
+          proposalArea: lead.proposalArea || 'sst',
         });
       }
     });
@@ -150,6 +152,7 @@ export default function AddLeadModal({
     form.setValue('whatsapp', customer.whatsapp, { shouldValidate: true });
     form.setValue('paymentMethods', customer.paymentMethods, { shouldValidate: true });
     form.setValue('contactSource', customer.contactSource, { shouldValidate: true });
+    form.setValue('proposalArea', customer.proposalArea || 'sst', { shouldValidate: true });
     
     if (customer.selectedTemplateId) {
       form.setValue('selectedTemplateId', customer.selectedTemplateId, { shouldValidate: true });
@@ -210,53 +213,75 @@ export default function AddLeadModal({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
-                    name="company"
+                    name="proposalArea"
                     render={({ field }) => (
-                      <FormItem className="relative">
-                        <FormLabel>Empresa</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input 
-                              placeholder="Nome da empresa..." 
-                              {...field} 
-                              autoComplete="off"
-                              onFocus={() => setShowSuggestions(true)}
-                              onBlur={handleBlur}
-                            />
-                            {companySearchValue && (
-                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                            )}
-                          </div>
-                        </FormControl>
-                        {showSuggestions && filteredSuggestions.length > 0 && (
-                          <div className="absolute z-50 w-full mt-1 bg-card border rounded-md shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                            <div className="bg-muted/50 px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                              Empresas encontradas na memória
-                            </div>
-                            <ul className="max-h-[200px] overflow-y-auto">
-                              {filteredSuggestions.map((customer) => (
-                                <li 
-                                  key={customer.cnpj || customer.company}
-                                  className="px-3 py-2 text-sm hover:bg-primary/10 cursor-pointer flex flex-col border-b last:border-0 transition-colors"
-                                  onMouseDown={() => handleSelectCustomer(customer)}
-                                >
-                                  <span className="font-bold text-primary">{customer.company}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {customer.name} {customer.cnpj ? `• ${customer.cnpj}` : ''}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                      <FormItem>
+                        <FormLabel>Área da Proposta</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'sst'}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a área" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="sst">Segurança do Trabalho</SelectItem>
+                            <SelectItem value="ma">Meio Ambiente</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem className="relative">
+                      <FormLabel>Empresa</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="Nome da empresa..." 
+                            {...field} 
+                            autoComplete="off"
+                            onFocus={() => setShowSuggestions(true)}
+                            onBlur={handleBlur}
+                          />
+                          {companySearchValue && (
+                              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                          )}
+                        </div>
+                      </FormControl>
+                      {showSuggestions && filteredSuggestions.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-card border rounded-md shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                          <div className="bg-muted/50 px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            Empresas encontradas na memória
+                          </div>
+                          <ul className="max-h-[200px] overflow-y-auto">
+                            {filteredSuggestions.map((customer) => (
+                              <li 
+                                key={customer.cnpj || customer.company}
+                                className="px-3 py-2 text-sm hover:bg-primary/10 cursor-pointer flex flex-col border-b last:border-0 transition-colors"
+                                onMouseDown={() => handleSelectCustomer(customer)}
+                              >
+                                <span className="font-bold text-primary">{customer.company}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {customer.name} {customer.cnpj ? `• ${customer.cnpj}` : ''}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField

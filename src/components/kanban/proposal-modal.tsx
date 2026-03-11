@@ -237,7 +237,7 @@ export default function ProposalModal({
     try {
       const proposalGeneration = async () => {
         // Calcular número final e área para travar no lead
-        let finalArea = lead.proposalArea || selectedArea;
+        let finalArea = selectedArea;
         let finalNum = lead.proposalNumber;
 
         if (!finalNum) {

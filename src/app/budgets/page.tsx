@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -193,6 +192,7 @@ export default function BudgetsPage() {
         rejectionReason: values.rejectionReason || null,
         selectedTemplateId: values.selectedTemplateId || null,
         budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
+        proposalArea: values.proposalArea || 'sst',
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: selectedSeller.name,

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -143,6 +142,7 @@ export default function DashboardPage() {
         whatsapp: values.whatsapp,
         rejectionReason: values.rejectionReason || null,
         budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
+        proposalArea: values.proposalArea || 'sst',
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: userProfile.displayName || user.email!,
