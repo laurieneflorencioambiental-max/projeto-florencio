@@ -37,6 +37,7 @@ import {
   X,
   History,
   Clock,
+  Eye,
 } from 'lucide-react';
 import FollowUpModal from './follow-up-modal';
 import EditLeadModal from './edit-lead-modal';
@@ -396,6 +397,19 @@ export default function KanbanCard({
                   <FileText className="h-3 w-3" />
                   <span>
                     Proposta nº: PTC-FLO-SST-{String(lead.proposalNumber).padStart(3, '0')}.{lead.proposalVersion || 0}
+                  </span>
+                </div>
+              )}
+              {isClient && lead.proposalViewCount > 0 && (
+                <div className="flex items-center gap-2 text-xs text-primary font-medium mt-1">
+                  <Eye className="h-3 w-3" />
+                  <span>
+                    Visualizada {lead.proposalViewCount} {lead.proposalViewCount === 1 ? 'vez' : 'vezes'}
+                    {lead.proposalLastViewedAt && (
+                      <>
+                        {' '}(Última: {format(toDate(lead.proposalLastViewedAt)!, "dd/MM 'às' HH:mm")})
+                      </>
+                    )}
                   </span>
                 </div>
               )}

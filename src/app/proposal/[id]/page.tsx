@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { initializeFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { initializeFirebase, useUser, useFirestore } from '@/firebase';
+import { doc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import type { PartnershipDocument, AppSettings, ProposalData } from '@/lib/types';
 import {
@@ -48,9 +48,33 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
   const [approvalDate, setApprovalDate] = useState<Date>();
   const [isClient, setIsClient] = useState(false);
 
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const [hasTracked, setHasTracked] = useState(false);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Tracking effect: Registers view only for external (unauthenticated) users
+  useEffect(() => {
+    if (isClient && !isUserLoading && !user && !hasTracked && firestore && lead.id) {
+      setHasTracked(true);
+      
+      const budgetRef = doc(firestore, 'budgets', lead.id);
+      
+      updateDoc(budgetRef, {
+        proposalViewCount: increment(1),
+        proposalLastViewedAt: serverTimestamp(),
+        proposalViewed: true,
+        // Only set the initial viewed timestamp if it's the very first view reported by this lead object
+        ...(lead.proposalViewed ? {} : { proposalViewedAt: serverTimestamp() })
+      }).catch(err => {
+        // Silently fail or log to console, but don't disrupt user experience
+        console.error("Failed to track external view:", err);
+      });
+    }
+  }, [isClient, isUserLoading, user, hasTracked, firestore, lead.id, lead.proposalViewed]);
 
   const formatCurrency = (value: number) => {
     if (!value) return 'R$ 0,00';
@@ -261,7 +285,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           <p className="text-sm leading-relaxed mt-4">
             Temos por objetivo o compromisso em oferecer serviços de Saúde
             Ocupacional e Segurança do Trabalho com excelência e em conformidade
-            com a legislação, promovendo ambientes corporativos seguros,
+            with a legislação, promovendo ambientes corporativos seguros,
             saudáveis e produtivos.
           </p>
           <div className="border-b my-6"></div>

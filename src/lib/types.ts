@@ -172,6 +172,10 @@ export const leadSchema = z.object({
   proposalVersion: z.number().default(0),
   observations: z.string().optional().nullable(),
   versionHistory: z.array(versionHistoryEntrySchema).optional().nullable(),
+  proposalViewed: z.boolean().default(false),
+  proposalViewedAt: z.any().optional().nullable(),
+  proposalViewCount: z.number().default(0),
+  proposalLastViewedAt: z.any().optional().nullable(),
 });
 
 export const userProfileSchema = z.object({
