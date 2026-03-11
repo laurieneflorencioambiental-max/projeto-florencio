@@ -346,6 +346,7 @@ export default function ProposalModal({
 
     if (platform === 'copy') {
       navigator.clipboard.writeText(proposalLink);
+      window.open(proposalLink, '_blank');
       toast({
         title: 'Sucesso',
         description: 'Link copiado para a área de transferência!',
@@ -1474,7 +1475,7 @@ Grupo Florencio`;
                     <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Condições de Pagamento Adicionais
                     </h3>
-                    <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <div className="prose dark:prose-invert max-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
                         <EditableDiv field="paymentTerms" />
                     </div>
                 </section>
