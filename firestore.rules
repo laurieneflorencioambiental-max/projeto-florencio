@@ -104,5 +104,10 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false; // Written by Cloud Function only.
     }
+
+    // Proposal Areas Configuration
+    match /proposal-areas/{areaId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }
