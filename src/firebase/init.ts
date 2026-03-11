@@ -7,16 +7,26 @@ import { firebaseConfig } from "./config";
 
 /**
  * Inicializa a instância do Firebase Client App com serviços de produção.
- * Esta função garante que a mesma instância seja compartilhada em toda a aplicação cliente.
+ * Adicionada verificação de ambiente para segurança em SSR.
  */
 export function initializeFirebase(): {
-  firebaseApp: FirebaseApp;
-  auth: Auth;
-  firestore: Firestore;
+  firebaseApp: FirebaseApp | null;
+  auth: Auth | null;
+  firestore: Firestore | null;
 } {
-  const firebaseApp =
-    getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(firebaseApp);
-  const firestore = getFirestore(firebaseApp);
-  return { firebaseApp, auth, firestore };
+  // Proteção contra execução no lado do servidor (Node.js)
+  if (typeof window === 'undefined') {
+    return { firebaseApp: null, auth: null, firestore: null };
+  }
+
+  try {
+    const firebaseApp =
+      getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(firebaseApp);
+    const firestore = getFirestore(firebaseApp);
+    return { firebaseApp, auth, firestore };
+  } catch (error) {
+    console.error("Erro ao inicializar Firebase no cliente:", error);
+    return { firebaseApp: null, auth: null, firestore: null };
+  }
 }
