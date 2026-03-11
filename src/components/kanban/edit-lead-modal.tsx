@@ -85,7 +85,9 @@ export default function EditLeadModal({
   });
 
   const onSubmit = (values: z.infer<typeof leadSchema>) => {
-    const newVersionNumber = (lead.proposalVersion || 0) + 1;
+    // Só incrementa a versão se o orçamento já possuir uma proposta gerada (proposalNumber existe)
+    // Se ainda não gerou proposta, continua sendo a preparação para a versão .0
+    const newVersionNumber = lead.proposalNumber ? (lead.proposalVersion + 1) : 0;
 
     const newHistoryEntry: VersionHistoryEntry = {
         version: newVersionNumber,

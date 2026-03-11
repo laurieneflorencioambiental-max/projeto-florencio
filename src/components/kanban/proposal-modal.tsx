@@ -100,6 +100,9 @@ export default function ProposalModal({
   const firestore = useFirestore();
   const [isClient, setIsClient] = useState(false);
 
+  // Cache do link gerado nesta sessão para evitar múltiplas gerações e incrementos indevidos
+  const [currentLink, setCurrentLink] = useState<string | null>(null);
+
   // Estado para a Área da Proposta (Obrigatório)
   const [selectedArea, setSelectedArea] = useState<'sst' | 'ma'>(lead.proposalArea || 'sst');
 
@@ -164,6 +167,9 @@ export default function ProposalModal({
       investmentOptions: template?.investmentOptions || [],
       diverseServices: template?.diverseServices || [],
     });
+    
+    // Limpar cache do link pois o estado da proposta mudou
+    setCurrentLink(null);
   };
 
   const handleSetDefaultTemplate = () => {
@@ -178,20 +184,15 @@ export default function ProposalModal({
     }
   };
 
-  // Lógica para calcular o código da proposta com base na área selecionada e sequência separada
   useEffect(() => {
     if (!isOpen) return;
 
-    // Determinamos a área: usamos a já gravada no lead ou a selecionada no momento
     const area = lead.proposalNumber ? (lead.proposalArea || 'sst') : selectedArea;
     const prefix = area === 'sst' ? 'SST' : 'MA';
     
     let num = lead.proposalNumber;
     
-    // Se o orçamento ainda não tem um número de proposta "travado"
     if (!num) {
-        // Filtramos leads da mesma área para encontrar o próximo número da sequência
-        // Importante: tratamos leads antigos sem área definida como 'sst'
         const areaLeads = allLeads.filter(l => (l.proposalArea || 'sst') === area);
         const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
         num = maxNum + 1;
@@ -199,9 +200,8 @@ export default function ProposalModal({
 
     const paddedNumber = String(num).padStart(3, '0');
     
-    // Versionamento: se nunca gerou (versão 0), mostramos .1 como sugestão da primeira
-    // Se já tem versão, mostramos a versão atual para visualização.
-    const displayVersion = lead.proposalVersion || 1;
+    // Versionamento: usa a versão atual definida no lead (inicia em 0)
+    const displayVersion = lead.proposalVersion ?? 0;
     
     const proposalId = `PTC-FLO-${prefix}-${paddedNumber}.${displayVersion}`;
     setFullProposalNumber(proposalId);
@@ -212,6 +212,7 @@ export default function ProposalModal({
     handleTemplateChange(defaultTemplateId);
     setSelectedArea(lead.proposalArea || 'sst');
     setIsGenerating(false);
+    setCurrentLink(null);
   };
 
   useEffect(() => {
@@ -236,7 +237,6 @@ export default function ProposalModal({
 
     try {
       const proposalGeneration = async () => {
-        // Calcular número final e área para travar no lead
         let finalArea = selectedArea;
         let finalNum = lead.proposalNumber;
 
@@ -246,12 +246,11 @@ export default function ProposalModal({
             finalNum = maxNum + 1;
         }
 
-        // Incrementar a versão da proposta (Gen 1 = .1, Gen 2 = .2, etc)
-        const newVersion = (lead.proposalVersion || 0) + 1;
+        // A versão usada na geração é a versão atual do lead (gerenciada pelo EditLeadModal)
+        const newVersion = lead.proposalVersion ?? 0;
         const prefix = finalArea === 'sst' ? 'SST' : 'MA';
         const finalFullCode = `PTC-FLO-${prefix}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
 
-        // Remove lead.value for public proposal for extra security
         const { value, ...leadWithoutInternalValue } = lead;
 
         const proposalData: Omit<ProposalData, 'id'> = {
@@ -280,7 +279,7 @@ export default function ProposalModal({
         );
         const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
 
-        // Atualizar o lead com o número travado e a nova versão
+        // Atualizar o lead com o número e área (travando-os) caso seja a primeira vez
         onUpdateLead({
           ...lead,
           proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -319,7 +318,13 @@ export default function ProposalModal({
   const handleShare = async (
     platform: 'whatsapp' | 'email' | 'copy' | 'open'
   ) => {
-    const proposalLink = await createAndShareProposalLink();
+    // Tenta usar o link gerado nesta sessão antes de criar um novo documento no Firestore
+    let proposalLink = currentLink;
+    if (!proposalLink) {
+        proposalLink = await createAndShareProposalLink();
+        if (proposalLink) setCurrentLink(proposalLink);
+    }
+    
     if (!proposalLink) return;
 
     if (platform === 'copy') {
@@ -448,6 +453,7 @@ Grupo Florencio`;
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
+      setCurrentLink(null);
   };
 
   const handleAddOptionItem = (optIndex: number) => {
@@ -457,6 +463,7 @@ Grupo Florencio`;
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
+      setCurrentLink(null);
   };
 
   const handleRemoveOptionItem = (optIndex: number, itemIndex: number) => {
@@ -466,6 +473,7 @@ Grupo Florencio`;
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
+      setCurrentLink(null);
   };
 
   const handleUpdateDiverseService = (index: number, field: keyof DiverseServiceItem, value: string) => {
@@ -474,6 +482,7 @@ Grupo Florencio`;
       newDiverse[index] = { ...newDiverse[index], [field]: value };
       return { ...prev, diverseServices: newDiverse };
     });
+    setCurrentLink(null);
   };
 
   const handleAddDiverseService = () => {
@@ -484,6 +493,7 @@ Grupo Florencio`;
         { id: `ds-${Date.now()}`, item: ((prev.diverseServices?.length || 0) + 1).toString(), employeeRange: '', servicesIncluded: '', investment: '', onDemand: '' }
       ]
     }));
+    setCurrentLink(null);
   };
 
   const handleRemoveDiverseService = (index: number) => {
@@ -491,6 +501,7 @@ Grupo Florencio`;
       ...prev,
       diverseServices: (prev.diverseServices || []).filter((_, i) => i !== index)
     }));
+    setCurrentLink(null);
   };
 
   const EditableDiv = ({
@@ -545,6 +556,7 @@ Grupo Florencio`;
             [field]: content,
           }));
       }
+      setCurrentLink(null);
     };
 
     const execCommand = (cmd: string, val?: string) => {
@@ -697,7 +709,10 @@ Grupo Florencio`;
             <Label htmlFor="proposal-area">Área da Proposta</Label>
             <Select 
               value={selectedArea} 
-              onValueChange={(v: 'sst' | 'ma') => setSelectedArea(v)}
+              onValueChange={(v: 'sst' | 'ma') => {
+                  setSelectedArea(v);
+                  setCurrentLink(null);
+              }}
               disabled={isGenerating || !!lead.proposalNumber}
             >
               <SelectTrigger id="proposal-area">
