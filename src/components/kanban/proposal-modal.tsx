@@ -1004,7 +1004,7 @@ Grupo Florencio`;
               </section>
 
               <section className="my-8 space-y-6">
-                {proposalState.proposalObject && (
+                {proposalState.proposalObject?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Objeto da Proposta
@@ -1015,7 +1015,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.serviceScope && (
+                {proposalState.serviceScope?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Escopo do Serviço
@@ -1026,7 +1026,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.methodology && (
+                {proposalState.methodology?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Metodologia
@@ -1037,7 +1037,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.psychosocialTools && (
+                {proposalState.psychosocialTools?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Ferramentas de avaliação dos Fatores psicossociais
@@ -1048,7 +1048,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.lgpdSecurity && (
+                {proposalState.lgpdSecurity?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Segurança LGPD
@@ -1059,7 +1059,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.contractorResponsibilities && (
+                {proposalState.contractorResponsibilities?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Da Contratada
@@ -1070,7 +1070,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.clientResponsibilities && (
+                {proposalState.clientResponsibilities?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Da Contratante
@@ -1081,7 +1081,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.preliminaryErgonomicAnalysis && (
+                {proposalState.preliminaryErgonomicAnalysis?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Análise Ergonômica Preliminar
@@ -1092,7 +1092,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.postErgonomicImplementation && (
+                {proposalState.postErgonomicImplementation?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)
@@ -1161,7 +1161,7 @@ Grupo Florencio`;
                     </div>
                 )}
 
-                {proposalState.deadline && (
+                {proposalState.deadline?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Prazo para Realização dos Serviços
@@ -1172,7 +1172,7 @@ Grupo Florencio`;
                     </>
                 )}
 
-                {proposalState.strategicVision && (
+                {proposalState.strategicVision?.trim() && (
                     <>
                         <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Nossa Visão Estratégica
@@ -1210,25 +1210,25 @@ Grupo Florencio`;
                         </div>
                         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                           <div className="space-y-4">
-                            {plan.purpose && (
+                            {plan.purpose?.trim() && (
                               <div className="space-y-1">
                                 <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p>
                                 <EditableDiv field="dummy" path={`plans.${index}.purpose`} className="text-sm leading-tight bg-white/50" />
                               </div>
                             )}
-                            {plan.differentiator && (
+                            {plan.differentiator?.trim() && (
                               <div className="space-y-1 border-t border-primary/10 pt-3">
                                 <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p>
                                 <EditableDiv field="dummy" path={`plans.${index}.differentiator`} className="text-sm leading-relaxed bg-white/50" />
                               </div>
                             )}
-                            {plan.focus && (
+                            {plan.focus?.trim() && (
                               <div className="space-y-1 border-t border-primary/10 pt-3">
                                 <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p>
                                 <p className="text-sm">{plan.focus}</p>
                               </div>
                             )}
-                            {plan.employeeRange && (
+                            {plan.employeeRange?.trim() && (
                               <div className="space-y-1 border-t border-primary/10 pt-3">
                                 <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p>
                                 <p className="text-sm">{plan.employeeRange}</p>
@@ -1236,25 +1236,25 @@ Grupo Florencio`;
                             )}
                           </div>
                           <div className="space-y-4">
-                            {plan.servicesIncluded && (
+                            {plan.servicesIncluded?.trim() && (
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.servicesIncluded`} className="text-sm leading-relaxed bg-white/50" />
                                 </div>
                             )}
-                            {plan.auditSupport && (
+                            {plan.auditSupport?.trim() && (
                                 <div className="space-y-1 border-t border-primary/10 pt-3">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.auditSupport`} className="text-sm leading-relaxed bg-white/50" />
                                 </div>
                             )}
-                            {plan.strategicManagement && (
+                            {plan.strategicManagement?.trim() && (
                                 <div className="space-y-1 border-t border-primary/10 pt-3">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.strategicManagement`} className="text-sm leading-relaxed bg-white/50" />
                                 </div>
                             )}
-                            {plan.specificManagement && (
+                            {plan.specificManagement?.trim() && (
                                 <div className="space-y-1 border-t border-primary/10 pt-3">
                                     <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
                                     <EditableDiv field="dummy" path={`plans.${index}.specificManagement`} className="text-sm leading-relaxed bg-white/50" />
@@ -1470,7 +1470,7 @@ Grupo Florencio`;
                 </ul>
               </section>
 
-              {proposalState.paymentTerms && (
+              {proposalState.paymentTerms?.trim() && (
                  <section className="my-8">
                     <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                         Condições de Pagamento Adicionais

@@ -283,7 +283,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
 
         {/* Dynamic content sections */}
         <section className="my-8 space-y-6">
-          {proposalState.proposalObject && (
+          {proposalState.proposalObject?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Objeto da Proposta
@@ -297,7 +297,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.serviceScope && (
+          {proposalState.serviceScope?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Escopo do Serviço
@@ -311,7 +311,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.methodology && (
+          {proposalState.methodology?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Metodologia
@@ -325,7 +325,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.psychosocialTools && (
+          {proposalState.psychosocialTools?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Ferramentas de avaliação dos Fatores psicossociais
@@ -339,7 +339,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.lgpdSecurity && (
+          {proposalState.lgpdSecurity?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Segurança LGPD
@@ -353,7 +353,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.contractorResponsibilities && (
+          {proposalState.contractorResponsibilities?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Da Contratada
@@ -370,7 +370,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.clientResponsibilities && (
+          {proposalState.clientResponsibilities?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Da Contratante
@@ -387,7 +387,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.preliminaryErgonomicAnalysis && (
+          {proposalState.preliminaryErgonomicAnalysis?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Análise Ergonômica Preliminar
@@ -404,7 +404,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.postErgonomicImplementation && (
+          {proposalState.postErgonomicImplementation?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)
@@ -478,7 +478,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </div>
           )}
 
-          {proposalState.deadline && (
+          {proposalState.deadline?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Prazo para Realização dos Serviços
@@ -492,7 +492,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
               </>
           )}
 
-          {proposalState.strategicVision && (
+          {proposalState.strategicVision?.trim() && (
               <>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Nossa Visão Estratégica
@@ -513,7 +513,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
             Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
           </h3>
           
-          {proposalState.investment && (
+          {proposalState.investment?.trim() && (
             <div
               className="prose dark:prose-invert max-w-none p-2 mt-8"
               dangerouslySetInnerHTML={{ __html: proposalState.investment }}
@@ -537,25 +537,25 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                   </div>
                   <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
                     <div className="space-y-4">
-                      {plan.purpose && (
+                      {plan.purpose?.trim() && (
                         <div className="space-y-1">
                           <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p>
                           <div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.purpose }} />
                         </div>
                       )}
-                      {plan.differentiator && (
+                      {plan.differentiator?.trim() && (
                         <div className="space-y-1 border-t border-primary/10 pt-3">
                           <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p>
                           <div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.differentiator }} />
                         </div>
                       )}
-                      {plan.focus && (
+                      {plan.focus?.trim() && (
                         <div className="space-y-1 border-t border-primary/10 pt-3">
                           <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p>
                           <p className="text-sm leading-tight">{plan.focus}</p>
                         </div>
                       )}
-                      {plan.employeeRange && (
+                      {plan.employeeRange?.trim() && (
                         <div className="space-y-1 border-t border-primary/10 pt-3">
                           <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p>
                           <p className="text-sm leading-tight">{plan.employeeRange}</p>
@@ -563,25 +563,25 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                       )}
                     </div>
                     <div className="space-y-4">
-                      {plan.servicesIncluded && (
+                      {plan.servicesIncluded?.trim() && (
                           <div className="space-y-1">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.servicesIncluded }} />
                           </div>
                       )}
-                      {plan.auditSupport && (
+                      {plan.auditSupport?.trim() && (
                           <div className="space-y-1 border-t border-primary/10 pt-3">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.auditSupport }} />
                           </div>
                       )}
-                      {plan.strategicManagement && (
+                      {plan.strategicManagement?.trim() && (
                           <div className="space-y-1 border-t border-primary/10 pt-3">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.strategicManagement }} />
                           </div>
                       )}
-                      {plan.specificManagement && (
+                      {plan.specificManagement?.trim() && (
                           <div className="space-y-1 border-t border-primary/10 pt-3">
                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
                             <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.specificManagement }} />
@@ -662,7 +662,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
                                   </tbody>
                               </table>
                           </div>
-                          {opt.observations && (
+                          {opt.observations?.trim() && (
                               <div className="p-3 bg-gray-50 border border-[#8ec7d1] rounded-lg">
                                   <div className="text-xs italic leading-relaxed" dangerouslySetInnerHTML={{ __html: opt.observations }} />
                               </div>
@@ -758,7 +758,7 @@ function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
           </ul>
         </section>
 
-        {proposalState.paymentTerms && (
+        {proposalState.paymentTerms?.trim() && (
             <section className="my-8">
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                     Condições de Pagamento Adicionais
