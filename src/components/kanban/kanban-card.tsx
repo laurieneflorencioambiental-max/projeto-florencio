@@ -414,8 +414,17 @@ export default function KanbanCard({
                     </span>
                   </div>
                   {lead.proposalViewCount >= 3 && (
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-tight">
-                      🔥 Proposta Quente (Alto Interesse)
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-tight">
+                        🔥 Proposta Quente (Alto Interesse)
+                      </div>
+                      {lead.status === 'Pendente/Em negociação' && 
+                       lead.proposalLastViewedAt && 
+                       differenceInDays(new Date(), toDate(lead.proposalLastViewedAt)!) > 2 && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-destructive uppercase tracking-tight">
+                          ⚠️ Sem retorno há mais de 2 dias
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
