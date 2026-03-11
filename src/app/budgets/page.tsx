@@ -209,7 +209,7 @@ export default function BudgetsPage() {
     };
 
       setDoc(newDocRef, newLeadData).then(() => {
-        logClientEvent('Criação de Orçamento', auth, `Empresa: ${newLeadData.company}`);
+        if (auth) logClientEvent('Criação de Orçamento', auth, `Empresa: ${newLeadData.company}`);
       }).catch(serverError => {
           const { createdAt, ...serializableData } = newLeadData;
           const errorData = { ...serializableData, createdAt: new Date().toISOString() };
@@ -232,7 +232,7 @@ export default function BudgetsPage() {
       };
 
       setDoc(leadRef, updatedLead, { merge: true }).then(() => {
-        logClientEvent('Edição de Orçamento', auth, `Empresa: ${updatedLead.company} (Versão: v${updatedLead.proposalVersion})`);
+        if (auth) logClientEvent('Edição de Orçamento', auth, `Empresa: ${updatedLead.company} (Versão: v${updatedLead.proposalVersion})`);
       }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
             path: leadRef.path,
@@ -248,7 +248,7 @@ export default function BudgetsPage() {
       const leadToDelete = leads?.find(l => l.id === leadId);
       const leadRef = doc(firestore, 'budgets', leadId);
       deleteDoc(leadRef).then(() => {
-        logClientEvent('Exclusão de Orçamento', auth, `Empresa: ${leadToDelete?.company || leadId}`);
+        if (auth) logClientEvent('Exclusão de Orçamento', auth, `Empresa: ${leadToDelete?.company || leadId}`);
       }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
             path: leadRef.path,
@@ -279,7 +279,7 @@ export default function BudgetsPage() {
         };
 
         updateDoc(leadRef, updateData).then(() => {
-          logClientEvent('Mudança de Status', auth, `'${lead.company}': ${lead.status} -> ${newStatus}`);
+          if (auth) logClientEvent('Mudança de Status', auth, `'${lead.company}': ${lead.status} -> ${newStatus}`);
         }).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: leadRef.path,
