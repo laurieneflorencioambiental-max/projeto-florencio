@@ -9,6 +9,7 @@ const getStorageInstance = (): any => {
     if (!storageInstance) {
         try {
             const { firebaseApp } = initializeFirebase();
+            if (!firebaseApp) return null;
             storageInstance = getStorage(firebaseApp, `gs://${firebaseConfig.storageBucket}`);
         } catch (e) {
             console.error("Firebase Storage could not be initialized:", e);

@@ -958,6 +958,10 @@ export default function ProposalViewerPage() {
           setIsLoading(true);
           try {
             const { firestore } = initializeFirebase();
+            if (!firestore) {
+              setIsLoading(false);
+              return;
+            }
 
             const proposalRef = doc(firestore, 'proposals', id);
             const proposalSnap = await getDoc(proposalRef);

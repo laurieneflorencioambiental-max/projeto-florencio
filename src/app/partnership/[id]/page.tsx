@@ -141,6 +141,10 @@ export default function PartnershipViewerPage() {
           setIsLoading(true);
           try {
             const { firestore } = initializeFirebase();
+            if (!firestore) {
+              setIsLoading(false);
+              return;
+            }
 
             const partnershipRef = doc(firestore, 'partnerships', id);
             const partnershipSnap = await getDoc(partnershipRef);

@@ -12,6 +12,8 @@ export const logClientEvent = (action: string, auth: Auth, details?: string) => 
 
   try {
     const { firebaseApp } = initializeFirebase();
+    if (!firebaseApp) return;
+    
     // Ensure you specify the same region as your function
     const functions = getFunctions(firebaseApp, 'us-central1'); 
     const logAuditEvent = httpsCallable(functions, 'logAuditEvent');
