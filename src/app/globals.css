@@ -97,6 +97,28 @@ body {
   }
 }
 
+/* Estilos básicos para renderização de HTML rico (TipTap) sem quebrar o layout */
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
+.prose p {
+  margin-bottom: 0.5rem;
+}
+.prose strong {
+  font-weight: bold;
+}
+.prose em {
+  font-style: italic;
+}
+.prose u {
+  text-decoration: underline;
+}
+
 @media print {
   body {
     -webkit-print-color-adjust: exact;

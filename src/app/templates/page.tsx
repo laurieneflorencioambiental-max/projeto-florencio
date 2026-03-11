@@ -39,11 +39,18 @@ import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { logClientEvent } from '@/lib/audit-client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Carregamento dinâmico do editor rico apenas no cliente (SSR: false)
+const RichTextEditor = dynamic(() => import('@/components/ui/rich-text-editor'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-32 w-full" />,
+});
 
 export default function TemplatesPage() {
   const { user, isUserLoading } = useUser();
@@ -341,48 +348,48 @@ export default function TemplatesPage() {
 
             <div className="space-y-2">
               <Label>Objeto da Proposta</Label>
-              <Textarea value={proposalObject} onChange={e => setProposalObject(e.target.value)} rows={3} />
+              <RichTextEditor value={proposalObject} onChange={setProposalObject} minHeight="min-h-[80px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Escopo do Serviço</Label>
-              <Textarea value={serviceScope} onChange={e => setServiceScope(e.target.value)} rows={4} />
+              <RichTextEditor value={serviceScope} onChange={setServiceScope} minHeight="min-h-[120px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Metodologia</Label>
-              <Textarea value={methodology} onChange={e => setMethodology(e.target.value)} rows={3} />
+              <RichTextEditor value={methodology} onChange={setMethodology} minHeight="min-h-[80px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Ferramentas de avaliação dos Fatores psicossociais</Label>
-              <Textarea value={psychosocialTools} onChange={e => setPsychosocialTools(e.target.value)} rows={3} />
+              <RichTextEditor value={psychosocialTools} onChange={setPsychosocialTools} minHeight="min-h-[80px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Segurança LGPD</Label>
-              <Textarea value={lgpdSecurity} onChange={e => setLgpdSecurity(e.target.value)} rows={3} />
+              <RichTextEditor value={lgpdSecurity} onChange={setLgpdSecurity} minHeight="min-h-[80px]" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-y py-6 bg-muted/10 px-4 rounded-lg">
               <div className="space-y-2">
                 <Label className="text-primary font-bold">Da Contratada (Responsabilidades)</Label>
-                <Textarea value={contractorResponsibilities} onChange={e => setContractorResponsibilities(e.target.value)} rows={4} />
+                <RichTextEditor value={contractorResponsibilities} onChange={setContractorResponsibilities} minHeight="min-h-[120px]" />
               </div>
               <div className="space-y-2">
                 <Label className="text-primary font-bold">Da Contratante (Responsabilidades)</Label>
-                <Textarea value={clientResponsibilities} onChange={e => setClientResponsibilities(e.target.value)} rows={4} />
+                <RichTextEditor value={clientResponsibilities} onChange={setClientResponsibilities} minHeight="min-h-[120px]" />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Análise Ergonômica Preliminar</Label>
-              <Textarea value={preliminaryErgonomicAnalysis} onChange={e => setPreliminaryErgonomicAnalysis(e.target.value)} rows={3} />
+              <RichTextEditor value={preliminaryErgonomicAnalysis} onChange={setPreliminaryErgonomicAnalysis} minHeight="min-h-[80px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)</Label>
-              <Textarea value={postErgonomicImplementation} onChange={e => setPostErgonomicImplementation(e.target.value)} rows={3} />
+              <RichTextEditor value={postErgonomicImplementation} onChange={setPostErgonomicImplementation} minHeight="min-h-[80px]" />
             </div>
 
             <Card className="bg-primary/5 border-dashed">
@@ -408,15 +415,14 @@ export default function TemplatesPage() {
                         }}
                         className="mb-2 font-bold"
                       />
-                      <Textarea 
-                        placeholder="Descrição técnica..."
+                      <RichTextEditor 
                         value={def.description}
-                        onChange={e => {
+                        onChange={val => {
                           const newDefs = [...complexityDefinitions];
-                          newDefs[idx].description = e.target.value;
+                          newDefs[idx].description = val;
                           setComplexityDefinitions(newDefs);
                         }}
-                        rows={2}
+                        minHeight="min-h-[60px]"
                       />
                       <Button 
                         variant="destructive" 
@@ -481,17 +487,17 @@ export default function TemplatesPage() {
 
             <div className="space-y-2">
               <Label>Prazo para Realização dos Serviços</Label>
-              <Textarea value={deadline} onChange={e => setDeadline(e.target.value)} rows={2} />
+              <RichTextEditor value={deadline} onChange={setDeadline} minHeight="min-h-[60px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Nossa Visão Estratégica</Label>
-              <Textarea value={strategicVision} onChange={e => setStrategicVision(e.target.value)} rows={3} />
+              <RichTextEditor value={strategicVision} onChange={setStrategicVision} minHeight="min-h-[80px]" />
             </div>
 
             <div className="space-y-2">
               <Label>Investimento</Label>
-              <Textarea value={investment} onChange={e => setInvestment(e.target.value)} rows={3} placeholder="Digite manualmente os valores e condições..." />
+              <RichTextEditor value={investment} onChange={setInvestment} minHeight="min-h-[80px]" placeholder="Digite manualmente os valores e condições..." />
             </div>
 
             <div className="space-y-4 border-t pt-6">
@@ -538,19 +544,19 @@ export default function TemplatesPage() {
                       <div className="space-y-3">
                         <div className="space-y-1">
                           <Label className="text-xs">Finalidade</Label>
-                          <Textarea value={plan.purpose} onChange={e => {
+                          <RichTextEditor value={plan.purpose} onChange={val => {
                             const newP = [...plans];
-                            newP[pIdx].purpose = e.target.value;
+                            newP[pIdx].purpose = val;
                             setPlans(newP);
-                          }} className="text-xs min-h-[60px]" />
+                          }} minHeight="min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Diferencial</Label>
-                          <Textarea value={plan.differentiator} onChange={e => {
+                          <RichTextEditor value={plan.differentiator} onChange={val => {
                             const newP = [...plans];
-                            newP[pIdx].differentiator = e.target.value;
+                            newP[pIdx].differentiator = val;
                             setPlans(newP);
-                          }} className="text-xs min-h-[60px]" />
+                          }} minHeight="min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Foco</Label>
@@ -572,35 +578,35 @@ export default function TemplatesPage() {
                       <div className="space-y-3">
                         <div className="space-y-1">
                           <Label className="text-xs">Serviços Inclusos</Label>
-                          <Textarea value={plan.servicesIncluded} onChange={e => {
+                          <RichTextEditor value={plan.servicesIncluded} onChange={val => {
                             const newP = [...plans];
-                            newP[pIdx].servicesIncluded = e.target.value;
+                            newP[pIdx].servicesIncluded = val;
                             setPlans(newP);
-                          }} className="text-xs min-h-[60px]" />
+                          }} minHeight="min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Suporte em auditorias e fiscalizações</Label>
-                          <Textarea value={plan.auditSupport} onChange={e => {
+                          <RichTextEditor value={plan.auditSupport} onChange={val => {
                             const newP = [...plans];
-                            newP[pIdx].auditSupport = e.target.value;
+                            newP[pIdx].auditSupport = val;
                             setPlans(newP);
-                          }} className="text-xs min-h-[60px]" />
+                          }} minHeight="min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Gestão Estratégica</Label>
-                          <Textarea value={plan.strategicManagement} onChange={e => {
+                          <RichTextEditor value={plan.strategicManagement} onChange={val => {
                             const newP = [...plans];
-                            newP[pIdx].strategicManagement = e.target.value;
+                            newP[pIdx].strategicManagement = val;
                             setPlans(newP);
-                          }} className="text-xs min-h-[60px]" />
+                          }} minHeight="min-h-[60px]" />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Gestão específica por contrato</Label>
-                          <Textarea value={plan.specificManagement} onChange={e => {
+                          <RichTextEditor value={plan.specificManagement} onChange={val => {
                             const newP = [...plans];
-                            newP[pIdx].specificManagement = e.target.value;
+                            newP[pIdx].specificManagement = val;
                             setPlans(newP);
-                          }} className="text-xs min-h-[60px]" />
+                          }} minHeight="min-h-[60px]" />
                         </div>
                       </div>
                       
@@ -713,11 +719,11 @@ export default function TemplatesPage() {
                         <TableBody>
                           {opt.items.map((item, itemIdx) => (
                             <TableRow key={item.id} className="bg-white">
-                              <TableCell><Textarea value={item.service} onChange={e => {
+                              <TableCell><RichTextEditor value={item.service} onChange={val => {
                                 const newO = [...investmentOptions];
-                                newO[optIdx].items[itemIdx].service = e.target.value;
+                                newO[optIdx].items[itemIdx].service = val;
                                 setInvestmentOptions(newO);
-                              }} className="min-h-[40px] resize-none border-none shadow-none focus-visible:ring-0"/></TableCell>
+                              }} minHeight="min-h-[40px]" /></TableCell>
                               <TableCell><Input value={item.value} onChange={e => {
                                 const newO = [...investmentOptions];
                                 newO[optIdx].items[itemIdx].value = e.target.value;
@@ -739,11 +745,11 @@ export default function TemplatesPage() {
                       }}>+ Adicionar Linha</Button>
                       <div className="space-y-1">
                         <Label className="text-xs">Observações da Tabela</Label>
-                        <Textarea value={opt.observations} onChange={e => {
+                        <RichTextEditor value={opt.observations || ''} onChange={val => {
                           const newO = [...investmentOptions];
-                          newO[optIdx].observations = e.target.value;
+                          newO[optIdx].observations = val;
                           setInvestmentOptions(newO);
-                        }} className="text-xs" placeholder="Ex: Valores válidos por 30 dias..." />
+                        }} minHeight="min-h-[60px]" placeholder="Ex: Valores válidos por 30 dias..." />
                       </div>
                     </CardContent>
                   </Card>
@@ -794,11 +800,11 @@ export default function TemplatesPage() {
                               }} className="border-none bg-transparent shadow-none h-full p-1" placeholder="Ex: 1 a 5" />
                             </TableCell>
                             <TableCell className="border-r border-[#1b7689]">
-                              <Textarea value={ds.servicesIncluded} onChange={e => {
+                              <RichTextEditor value={ds.servicesIncluded} onChange={val => {
                                 const newDS = [...diverseServices];
-                                newDS[dsIdx].servicesIncluded = e.target.value;
+                                newDS[dsIdx].servicesIncluded = val;
                                 setDiverseServices(newDS);
-                              }} className="border-none bg-transparent shadow-none min-h-[60px] resize-none p-1 text-xs" placeholder="Descrição do serviço..." />
+                              }} minHeight="min-h-[60px]" />
                             </TableCell>
                             <TableCell className="text-center border-r border-[#1b7689]">
                               <Input value={ds.investment} onChange={e => {
@@ -915,7 +921,7 @@ export default function TemplatesPage() {
 
             <div className="space-y-2 border-t pt-6">
               <Label>Condições de Pagamento Adicionais</Label>
-              <Textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={3} />
+              <RichTextEditor value={paymentTerms || ''} onChange={setPaymentTerms} minHeight="min-h-[80px]" />
             </div>
           </div>
 
