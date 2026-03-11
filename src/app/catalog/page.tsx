@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -59,22 +59,40 @@ export default function CatalogPage() {
     setEditingServiceId(null);
   };
 
-  const handleSaveService = async (data: z.infer<typeof catalogFormSchema>) => {
+  const handleSaveService = (data: z.infer<typeof catalogFormSchema>) => {
     if (!firestore) return;
 
     if (editingServiceId) {
       const serviceRef = doc(firestore, 'services', editingServiceId);
       const serviceWithId: Service = { id: editingServiceId, ...data };
-      await setDoc(serviceRef, serviceWithId, { merge: true });
-      if (auth) logClientEvent('Edição de Serviço', auth, `Serviço: ${data.service}`);
-      toast({ title: 'Sucesso', description: 'Serviço atualizado no catálogo.' });
+      setDoc(serviceRef, serviceWithId, { merge: true })
+        .then(() => {
+          if (auth) logClientEvent('Edição de Serviço', auth, `Serviço: ${data.service}`);
+          toast({ title: 'Sucesso', description: 'Serviço atualizado no catálogo.' });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: serviceRef.path,
+            operation: 'update',
+            requestResourceData: serviceWithId,
+          }));
+        });
     } else {
       if (!servicesCollectionRef) return;
       const newDocRef = doc(servicesCollectionRef);
       const serviceWithId: Service = { id: newDocRef.id, ...data };
-      await setDoc(newDocRef, serviceWithId);
-      if (auth) logClientEvent('Criação de Serviço', auth, `Serviço: ${data.service}`);
-      toast({ title: 'Sucesso', description: 'Novo serviço adicionado ao catálogo.' });
+      setDoc(newDocRef, serviceWithId)
+        .then(() => {
+          if (auth) logClientEvent('Criação de Serviço', auth, `Serviço: ${data.service}`);
+          toast({ title: 'Sucesso', description: 'Novo serviço adicionado ao catálogo.' });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: newDocRef.path,
+            operation: 'create',
+            requestResourceData: serviceWithId,
+          }));
+        });
     }
     resetForm();
   };
@@ -85,17 +103,28 @@ export default function CatalogPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteService = async (id: string) => {
+  const handleDeleteService = (id: string) => {
     if (!firestore) return;
     const serviceToDelete = services?.find(s => s.id === id);
-    await deleteDoc(doc(firestore, 'services', id));
-    if (serviceToDelete && auth) {
-        logClientEvent('Exclusão de Serviço', auth, `Serviço: ${serviceToDelete.service}`);
-    }
+    const serviceRef = doc(firestore, 'services', id);
+    
+    deleteDoc(serviceRef)
+      .then(() => {
+        if (serviceToDelete && auth) {
+          logClientEvent('Exclusão de Serviço', auth, `Serviço: ${serviceToDelete.service}`);
+        }
+        toast({ title: 'Sucesso', description: 'Serviço removido do catálogo.' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: serviceRef.path,
+          operation: 'delete',
+        }));
+      });
+
     if (id === editingServiceId) {
       resetForm();
     }
-    toast({ title: 'Sucesso', description: 'Serviço removido do catálogo.' });
   };
 
   const formatCurrency = (value: number) => {

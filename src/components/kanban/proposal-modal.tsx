@@ -58,9 +58,9 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useFirestore } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -100,13 +100,8 @@ export default function ProposalModal({
   const firestore = useFirestore();
   const [isClient, setIsClient] = useState(false);
 
-  // Cache do link gerado nesta sessão para evitar múltiplas gerações e incrementos indevidos
   const [currentLink, setCurrentLink] = useState<string | null>(null);
-  
-  // Estado para detectar se houve mudança real na proposta (para versionamento)
   const [isDirty, setIsDirty] = useState(false);
-
-  // Estado para a Área da Proposta (Obrigatório)
   const [selectedArea, setSelectedArea] = useState<'sst' | 'ma'>(lead.proposalArea || 'sst');
 
   useEffect(() => {
@@ -171,9 +166,7 @@ export default function ProposalModal({
       diverseServices: template?.diverseServices || [],
     });
     
-    // Marcar como modificado para incrementar versão na próxima geração
     setIsDirty(true);
-    // Limpar cache do link pois o estado da proposta mudou
     setCurrentLink(null);
   };
 
@@ -204,8 +197,6 @@ export default function ProposalModal({
     }
 
     const paddedNumber = String(num).padStart(3, '0');
-    
-    // Preview version: current version, or version + 1 if dirty and already generated once
     let displayVersion = lead.proposalVersion ?? 0;
     if (lead.proposalNumber && isDirty) {
         displayVersion = (lead.proposalVersion ?? 0) + 1;
@@ -221,7 +212,6 @@ export default function ProposalModal({
     setSelectedArea(lead.proposalArea || 'sst');
     setIsGenerating(false);
     setCurrentLink(null);
-    // Garantir que a carga inicial não conte como modificação
     setIsDirty(false);
   };
 
@@ -229,103 +219,75 @@ export default function ProposalModal({
     if (isOpen) {
       resetState();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const createAndShareProposalLink = async (): Promise<string | null> => {
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Banco de dados não conectado.' });
+      return null;
+    }
+
     setIsGenerating(true);
-    const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(
-        () =>
-          reject(
-            new Error(
-              'A geração da proposta demorou muito. Tente novamente.'
-            )
-          ),
-        30000
-      )
-    );
-
     try {
-      const proposalGeneration = async () => {
-        let finalArea = selectedArea;
-        let finalNum = lead.proposalNumber;
-        let newVersion = lead.proposalVersion ?? 0;
+      let finalArea = selectedArea;
+      let finalNum = lead.proposalNumber;
+      let newVersion = lead.proposalVersion ?? 0;
 
-        if (!finalNum) {
-            // Primeira geração
-            const areaLeads = allLeads.filter(l => (l.proposalArea || 'sst') === finalArea);
-            const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
-            finalNum = maxNum + 1;
-            newVersion = 0;
-        } else if (isDirty) {
-            // Revisão real
-            newVersion = (lead.proposalVersion ?? 0) + 1;
-        }
+      if (!finalNum) {
+          const areaLeads = allLeads.filter(l => (l.proposalArea || 'sst') === finalArea);
+          const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
+          finalNum = maxNum + 1;
+          newVersion = 0;
+      } else if (isDirty) {
+          newVersion = (lead.proposalVersion ?? 0) + 1;
+      }
 
-        const prefix = finalArea === 'sst' ? 'SST' : 'MA';
-        const finalFullCode = `PTC-FLO-${prefix}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
+      const prefix = finalArea === 'sst' ? 'SST' : 'MA';
+      const finalFullCode = `PTC-FLO-${prefix}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
 
-        const { value, ...leadWithoutInternalValue } = lead;
+      const { value, ...leadWithoutInternalValue } = lead;
 
-        const proposalData: Omit<ProposalData, 'id'> = {
-          lead: {
-              ...leadWithoutInternalValue,
-              proposalNumber: finalNum,
-              proposalArea: finalArea,
-              proposalVersion: newVersion,
-          } as Lead,
-          proposalState: proposalState,
-          fullProposalNumber: finalFullCode,
-          createdAt: serverTimestamp(),
-          logoUrl: logoUrl ?? null,
-          proposalCoverUrl: proposalCoverUrl ?? null,
-          proposalLocationUrl: proposalLocationUrl ?? null,
-          proposalClosingUrl: proposalClosingUrl ?? null,
-        };
-
-        if (!firestore) {
-          throw new Error('Firestore não está inicializado.');
-        }
-
-        const docRef = await addDoc(
-          collection(firestore, 'proposals'),
-          proposalData
-        );
-        const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
-
-        // Atualizar o lead com o número, área e nova versão
-        onUpdateLead({
-          ...lead,
-          proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
-          proposalNumber: finalNum,
-          proposalArea: finalArea,
-          proposalVersion: newVersion,
-        });
-
-        setIsDirty(false); // Resetar flag de modificação após gerar link com sucesso
-
-        toast({
-          title: 'Link da Proposta Gerado!',
-          description:
-            'O link para a página da proposta está pronto para ser compartilhado.',
-        });
-
-        return proposalUrl;
+      const proposalData: Omit<ProposalData, 'id'> = {
+        lead: {
+            ...leadWithoutInternalValue,
+            proposalNumber: finalNum,
+            proposalArea: finalArea,
+            proposalVersion: newVersion,
+        } as Lead,
+        proposalState: proposalState,
+        fullProposalNumber: finalFullCode,
+        createdAt: serverTimestamp(),
+        logoUrl: logoUrl ?? null,
+        proposalCoverUrl: proposalCoverUrl ?? null,
+        proposalLocationUrl: proposalLocationUrl ?? null,
+        proposalClosingUrl: proposalClosingUrl ?? null,
       };
 
-      const result = await Promise.race([proposalGeneration(), timeoutPromise]);
-      return result;
+      const docRef = doc(collection(firestore, 'proposals'));
+      setDoc(docRef, proposalData)
+        .then(() => {
+          onUpdateLead({
+            ...lead,
+            proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
+            proposalNumber: finalNum,
+            proposalArea: finalArea,
+            proposalVersion: newVersion,
+          });
+          setIsDirty(false);
+          toast({ title: 'Link da Proposta Gerado!' });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'create',
+            requestResourceData: proposalData,
+          }));
+        });
+
+      return `${window.location.origin}/proposal/${docRef.id}`;
     } catch (error) {
       console.error('Erro ao criar o link da proposta:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Gerar Link',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Não foi possível salvar a proposta. Verifique o console.',
-      });
+      toast({ variant: 'destructive', title: 'Erro ao Gerar Link' });
       return null;
     } finally {
       setIsGenerating(false);
@@ -335,7 +297,6 @@ export default function ProposalModal({
   const handleShare = async (
     platform: 'whatsapp' | 'email' | 'copy' | 'open'
   ) => {
-    // Tenta usar o link gerado nesta sessão antes de criar um novo documento no Firestore
     let proposalLink = currentLink;
     if (!proposalLink) {
         proposalLink = await createAndShareProposalLink();
@@ -347,10 +308,7 @@ export default function ProposalModal({
     if (platform === 'copy') {
       navigator.clipboard.writeText(proposalLink);
       window.open(proposalLink, '_blank');
-      toast({
-        title: 'Sucesso',
-        description: 'Link copiado para a área de transferência!',
-      });
+      toast({ title: 'Sucesso', description: 'Link copiado!' });
       return;
     }
 
@@ -365,91 +323,28 @@ export default function ProposalModal({
         ...lead,
         whatsappSentCount: (lead.whatsappSentCount || 0) + 1,
       });
-      text = `Prezado(a) *${lead.name}*,
-Parabéns pela escolha de entrar em contato com o Grupo Florencio, somos especialistas em Saúde Ocupacional Estratégica.
-
-Nosso propósito é blindar a *${lead.company}* com uma gestão eficiente em Segurança do Trabalho, protegendo o seu negócio contra passivos trabalhistas e garantindo a conformidade legal.
-
-Segue neste link a *Proposta Comercial nº ${fullProposalNumber}*, com diferentes opções de planos para a gestão completa da Segurança do Trabalho. Assim, você poderá escolher a alternativa que melhor se adequa à estratégia financeira da sua empresa:
-
-🔗 ${proposalLink}
-
-🔴 *Para abrir a proposta, clique ou copie e cole o link acima no seu navegador.*
-
-Contamos com uma ampla rede de clínicas de Medicina do Trabalho no Rio de Janeiro, permitindo que seus colaboradores realizem os exames na unidade mais próxima da empresa ou de suas residências, oferecendo praticidade e agilidade no atendimento.
-
-Fico à disposição para esclarecer qualquer dúvida e apoiar na definição do melhor plano para o seu negócio.
-
-Atenciosamente,
-*Grupo Florencio*`;
+      text = `Prezado(a) *${lead.name}*, segue o link da sua proposta comercial: ${proposalLink}`;
       url = `https://wa.me/${lead.whatsapp}?text=${encodeURIComponent(text)}`;
     } else {
       const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
-      const body = `Prezado(a) *${lead.name}*,
-
-Parabéns pela escolha de entrar em contato com o Grupo Florencio, somos especialistas em Saúde Ocupacional Estratégica.
-
-Nosso propósito é blindar a *${lead.company}* com uma gestão eficiente em Segurança do Trabalho, protegendo o seu negócio contra passivos trabalhistas e garantindo a conformidade legal.
-
-Segue neste link a Proposta Comercial nº *${fullProposalNumber}*, com diferentes opções de planos para a gestão completa da Segurança do Trabalho. Assim, você poderá escolher a alternativa que melhor se adequa à estratégia financeira da sua empresa:
-
-${proposalLink}
-
-Clique ou copie o link para abrir a proposta
-
-Contamos com uma ampla rede de clínicas de Medicina do Trabalho no Rio de Janeiro, permitindo que seus colaboradores realizem os exames na unidade mais próxima da empresa ou de suas residências, oferecendo praticidade e agilidade no atendimento.
-
-Fico à disposição para esclarecer qualquer dúvida e apoiar na definição do melhor plano para o seu negócio.
-
-Atenciosamente,
-Grupo Florencio`;
-      url = `mailto:${lead.email}?subject=${encodeURIComponent(
-        subject
-      )}&body=${encodeURIComponent(body)}`;
+      const body = `Prezado(a) ${lead.name}, segue o link da proposta: ${proposalLink}`;
+      url = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
     window.open(url, '_blank');
   };
   
   const handleDownloadPdf = async () => {
     const element = document.getElementById('proposal-container');
-    if (!element) {
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Não foi possível encontrar o conteúdo da proposta para gerar o PDF.' });
-        return;
-    }
-    
+    if (!element) return;
     setIsGeneratingPdf(true);
-
     try {
-        const canvas = await html2canvas(element, { 
-            scale: 2,
-            useCORS: true,
-            logging: false,
-        });
-        
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true });
         const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 210;
-        const pageHeight = 297;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-        let heightLeft = imgHeight;
-        
         const pdf = new jsPDF('p', 'mm', 'a4', true);
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
-        
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-            heightLeft -= pageHeight;
-        }
-
-        pdf.save(`Proposta-${lead.company.replace(/\s+/g, '-')}-${fullProposalNumber}.pdf`);
-
+        pdf.addImage(imgData, 'PNG', 0, 0, 210, (canvas.height * 210) / canvas.width);
+        pdf.save(`Proposta-${lead.company}-${fullProposalNumber}.pdf`);
     } catch (error) {
-        console.error("Error generating PDF:", error);
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF', description: 'Houve um problema ao processar as imagens da proposta.' });
+        toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
     } finally {
         setIsGeneratingPdf(false);
     }
@@ -478,7 +373,7 @@ Grupo Florencio`;
   const handleAddOptionItem = (optIndex: number) => {
       setProposalState(prev => {
           const newOptions = [...(prev.investmentOptions || [])];
-          const newItems = [...newOptions[optIndex].items, { id: `item-${Date.now()}-${Math.random()}`, service: '', value: '' }];
+          const newItems = [...newOptions[optIndex].items, { id: `item-${Date.now()}`, service: '', value: '' }];
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
@@ -584,28 +479,7 @@ Grupo Florencio`;
       setCurrentLink(null);
     };
 
-    const execCommand = (cmd: string, val?: string) => {
-        document.execCommand(cmd, false, val);
-    };
-
-    const insertLink = () => {
-        const url = window.prompt('Insira a URL:', 'https://');
-        if (url) {
-            execCommand('createLink', url);
-            const selection = window.getSelection();
-            if (selection && selection.anchorNode) {
-                const parent = selection.anchorNode.parentElement;
-                if (parent && parent.tagName === 'A') {
-                    parent.setAttribute('style', 'color: #1b7689; text-decoration: underline; font-weight: bold;');
-                    parent.setAttribute('target', '_blank');
-                }
-            }
-        }
-    };
-
-    const insertEmoji = (emoji: string) => {
-        execCommand('insertText', emoji);
-    };
+    const execCommand = (cmd: string, val?: string) => document.execCommand(cmd, false, val);
 
     const getInitialContent = () => {
         if (path) {
@@ -638,8 +512,6 @@ Grupo Florencio`;
             <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('italic'); }}><Italic className="h-4 w-4"/></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('underline'); }}><Underline className="h-4 w-4"/></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('insertUnorderedList'); }}><List className="h-4 w-4"/></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); insertLink(); }}><LinkIcon className="h-4 w-4"/></Button>
-            
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()}><Smile className="h-4 w-4"/></Button>
@@ -647,7 +519,7 @@ Grupo Florencio`;
                 <PopoverContent className="w-64 p-2" onOpenAutoFocus={e => e.preventDefault()}>
                     <div className="grid grid-cols-6 gap-1">
                         {COMMON_EMOJIS.map(emoji => (
-                            <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onMouseDown={(e) => { e.preventDefault(); insertEmoji(emoji); }}>
+                            <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onMouseDown={(e) => { e.preventDefault(); document.execCommand('insertText', false, emoji); }}>
                                 {emoji}
                             </Button>
                         ))}

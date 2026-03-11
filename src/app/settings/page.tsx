@@ -182,23 +182,21 @@ export default function SettingsPage() {
     );
   };
   
-  const handleSettingChange = async (key: keyof AppSettings, value: any) => {
+  const handleSettingChange = (key: keyof AppSettings, value: any) => {
     if (!settingsRef) return;
-    try {
-        const newSettings = {...appSettings, [key]: value};
-        await setDoc(settingsRef, { [key]: value }, { merge: true });
-        setAppSettings(newSettings);
-        toast({
-            title: 'Configuração salva!',
-        });
-    } catch (error) {
-        console.error('Failed to save setting:', error);
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao salvar',
-            description: 'Não foi possível salvar a configuração.'
-        });
-    }
+    const updateData = { [key]: value };
+    setDoc(settingsRef, updateData, { merge: true })
+      .then(() => {
+        setAppSettings(prev => ({ ...prev, [key]: value }));
+        toast({ title: 'Configuração salva!' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: settingsRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        }));
+      });
   }
 
   const handleImageUpload = async (
@@ -256,83 +254,51 @@ export default function SettingsPage() {
 
       const newUrl = await uploadImageAndGetUrl(file, imageType);
 
-      await setDoc(settingsRef, { [imageType]: newUrl }, { merge: true });
+      setDoc(settingsRef, { [imageType]: newUrl }, { merge: true })
+        .then(() => {
+          setAppSettings(prev => ({ ...prev, [imageType]: newUrl }));
+          if (oldUrl) deleteImageByUrl(oldUrl).catch(console.warn);
+          toast({ title: `${config.name} atualizado(a)!`, description: 'Sua nova imagem foi salva com sucesso na nuvem.' });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: settingsRef.path,
+            operation: 'update',
+            requestResourceData: { [imageType]: newUrl },
+          }));
+        });
 
-      setAppSettings(prev => ({ ...prev, [imageType]: newUrl }));
-
-      if (oldUrl) {
-        await deleteImageByUrl(oldUrl);
-      }
-
-      toast({
-        title: `${config.name} atualizado(a)!`,
-        description: 'Sua nova imagem foi salva com sucesso na nuvem.',
-      });
     } catch (error) {
       console.error(`Failed to upload ${imageType}:`, error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível completar o upload.';
-      toast({
-        variant: 'destructive',
-        title: 'Erro no Upload',
-        description: errorMessage,
-      });
+      toast({ variant: 'destructive', title: 'Erro no Upload', description: 'Não foi possível completar o upload.' });
     } finally {
       setIsUploading(prev => ({ ...prev, [imageType]: false }));
       if (event.target) event.target.value = '';
     }
   };
 
-  const handleRemoveImage = async (imageType: ImageType) => {
+  const handleRemoveImage = (imageType: ImageType) => {
     if (!firestore || !settingsRef) return;
 
-    const configMap = {
-      proposalLogoUrl: { name: 'Logo da proposta' },
-      sidebarLogoUrl: { name: 'Ícone (Barra Lateral e Login)' },
-      loginBackgroundUrl: { name: 'Imagem de fundo' },
-      proposalCoverUrl: { name: 'Capa da proposta' },
-      proposalLocationUrl: { name: 'Nossa localização estratégica' },
-      proposalClosingUrl: { name: 'Página de encerramento' },
-      profilePicture: { name: 'Foto de Perfil' }
-    };
-    const config = configMap[imageType];
+    const oldUrl = (appSettings as any)?.[imageType];
 
-    try {
-      const oldUrl = (appSettings as any)?.[imageType];
-
-      await setDoc(settingsRef, { [imageType]: null }, { merge: true });
-
-      setAppSettings(prev => ({ ...prev, [imageType]: null }));
-
-      if (oldUrl) {
-        await deleteImageByUrl(oldUrl);
-      }
-
-      toast({
-        title: 'Imagem removida',
-        description: `O(a) ${config.name} foi removido(a).`,
+    setDoc(settingsRef, { [imageType]: null }, { merge: true })
+      .then(() => {
+        setAppSettings(prev => ({ ...prev, [imageType]: null }));
+        if (oldUrl) deleteImageByUrl(oldUrl).catch(console.warn);
+        toast({ title: 'Imagem removida' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: settingsRef.path,
+          operation: 'update',
+          requestResourceData: { [imageType]: null },
+        }));
       });
-    } catch (error) {
-      console.error(`Failed to remove ${imageType}:`, error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao remover',
-        description: `Não foi possível remover o(a) ${config.name}.`,
-      });
-    }
   };
 
   const handleCleanData = async () => {
-    if (!firestore || !user) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível conectar ao banco de dados.',
-      });
-      return;
-    }
+    if (!firestore || !user) return;
     setIsCleaning(true);
 
     try {
@@ -365,8 +331,8 @@ export default function SettingsPage() {
            snapshot.forEach(docSnap => {
               const item = docSnap.data();
               if (item.createdAt) {
-                const itemDate = item.createdAt?.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
-                if (itemDate < cutoffDate) {
+                const itemDate = toDate(item.createdAt);
+                if (itemDate && itemDate < cutoffDate) {
                   docRefsToDelete.push(docSnap.ref);
                 }
               }
@@ -377,10 +343,7 @@ export default function SettingsPage() {
       const deletedCount = docRefsToDelete.length;
 
       if (deletedCount === 0) {
-        toast({
-          title: 'Nenhum dado para limpar',
-          description: `Nenhum registro corresponde ao período selecionado.`,
-        });
+        toast({ title: 'Nenhum dado para limpar' });
         setIsCleaning(false);
         return;
       }
@@ -388,80 +351,52 @@ export default function SettingsPage() {
       for (let i = 0; i < deletedCount; i += BATCH_LIMIT) {
         const batch = writeBatch(firestore);
         const chunk = docRefsToDelete.slice(i, i + BATCH_LIMIT);
-        for (const docRef of chunk) {
-          batch.delete(docRef);
-        }
+        for (const docRef of chunk) batch.delete(docRef);
         await batch.commit();
       }
 
-      toast({
-        title: 'Limpeza Concluída!',
-        description: `${deletedCount} registro(s) foram removidos com sucesso.`,
-      });
+      toast({ title: 'Limpeza Concluída!', description: `${deletedCount} registro(s) foram removidos.` });
     } catch (error) {
       console.error('Error cleaning data:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro na Limpeza',
-        description: 'Não foi possível remover os dados. Verifique as permissões do Firestore e tente novamente.',
-      });
+      toast({ variant: 'destructive', title: 'Erro na Limpeza' });
     } finally {
       setIsCleaning(false);
     }
   };
   
   const handleSeedData = async () => {
-    if (!firestore || !user) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Usuário não autenticado ou banco de dados não conectado.' });
-      return;
-    }
+    if (!firestore || !user) return;
     setIsSeeding(true);
 
     try {
       const batch = writeBatch(firestore);
 
-      // Seed Sellers
-      const sellersCollectionRef = collection(firestore, 'sellers');
       seedSellers.forEach(seller => {
-        const docRef = doc(sellersCollectionRef, seller.id);
+        const docRef = doc(collection(firestore, 'sellers'), seller.id);
         batch.set(docRef, { name: seller.name });
       });
 
-      // Seed Services
-      const servicesCollectionRef = collection(firestore, 'services');
       seedServices.forEach(service => {
-        const docRef = doc(servicesCollectionRef);
+        const docRef = doc(collection(firestore, 'services'));
         batch.set(docRef, { ...service, id: docRef.id });
       });
 
-      // Seed Templates
-      const templatesCollectionRef = collection(firestore, 'proposal-templates');
       seedTemplates.forEach(template => {
-        const newDocRef = doc(templatesCollectionRef);
+        const newDocRef = doc(collection(firestore, 'proposal-templates'));
         batch.set(newDocRef, { ...template, id: newDocRef.id });
       });
 
-      // Seed Leads
-      const leadsCollectionRef = collection(firestore, 'budgets');
       const leadsToSeed = getSeedLeads(seedSellers, user.uid);
       leadsToSeed.forEach(lead => {
-        const docRef = doc(leadsCollectionRef);
+        const docRef = doc(collection(firestore, 'budgets'));
         batch.set(docRef, { ...lead, id: docRef.id, createdAt: serverTimestamp() });
       });
 
       await batch.commit();
-
-      toast({
-        title: 'Sistema Populado!',
-        description: 'Dados de demonstração foram adicionados com sucesso.',
-      });
+      toast({ title: 'Sistema Populado!', description: 'Dados de demonstração adicionados.' });
     } catch (error) {
       console.error('Error seeding data:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao popular dados',
-        description: 'Não foi possível adicionar os dados de teste. Verifique o console para mais detalhes.',
-      });
+      toast({ variant: 'destructive', title: 'Erro ao popular dados' });
     } finally {
       setIsSeeding(false);
     }
@@ -469,16 +404,8 @@ export default function SettingsPage() {
 
   const getCleanupDescription = () => {
     switch (cleanupPeriod) {
-        case 'all':
-            return 'Esta ação é irreversível e apagará TODOS OS DADOS da aplicação (orçamentos, vendedores, modelos, etc).';
-        case 30:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 30 dias.';
-        case 60:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 60 dias.';
-        case 90:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 90 dias.';
-        case 365:
-            return 'Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que 1 ano.';
+        case 'all': return 'Esta ação é irreversível e apagará TODOS OS DADOS da aplicação (orçamentos, vendedores, modelos, etc).';
+        default: return `Esta ação é irreversível e apagará todos os orçamentos e propostas mais antigos que ${cleanupPeriod} dias.`;
     }
   };
 

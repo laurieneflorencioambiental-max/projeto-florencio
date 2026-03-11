@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -138,7 +138,7 @@ export default function TemplatesPage() {
     setEditingId(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!firestore || !isAdmin) return;
     if (!name.trim()) {
       toast({ variant: 'destructive', title: 'Erro', description: 'O nome do modelo é obrigatório.' });
@@ -147,6 +147,7 @@ export default function TemplatesPage() {
 
     setIsSaving(true);
     const docId = editingId || doc(collection(firestore, 'proposal-templates')).id;
+    const templateRef = doc(firestore, 'proposal-templates', docId);
     const templateData: ProposalTemplate = {
       id: docId,
       name,
@@ -171,16 +172,22 @@ export default function TemplatesPage() {
       exams,
     };
 
-    try {
-      await setDoc(doc(firestore, 'proposal-templates', docId), templateData);
-      if (auth) logClientEvent(editingId ? 'Edição de Modelo' : 'Criação de Modelo', auth, `Modelo: ${name}`);
-      toast({ title: 'Sucesso', description: 'Modelo de proposta salvo com sucesso.' });
-      resetForm();
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao salvar', description: 'Ocorreu um problema ao salvar no banco de dados.' });
-    } finally {
-      setIsSaving(false);
-    }
+    setDoc(templateRef, templateData)
+      .then(() => {
+        if (auth) logClientEvent(editingId ? 'Edição de Modelo' : 'Criação de Modelo', auth, `Modelo: ${name}`);
+        toast({ title: 'Sucesso', description: 'Modelo de proposta salvo com sucesso.' });
+        resetForm();
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: templateRef.path,
+          operation: editingId ? 'update' : 'create',
+          requestResourceData: templateData,
+        }));
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
 
   const handleEdit = (template: ProposalTemplate) => {
@@ -208,34 +215,44 @@ export default function TemplatesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDuplicate = async (template: ProposalTemplate) => {
+  const handleDuplicate = (template: ProposalTemplate) => {
     if (!firestore || !isAdmin) return;
     
-    try {
-      const newDocRef = doc(collection(firestore, 'proposal-templates'));
-      const duplicatedData: ProposalTemplate = {
-        ...template,
-        id: newDocRef.id,
-        name: `${template.name} (Cópia)`,
-      };
+    const newDocRef = doc(collection(firestore, 'proposal-templates'));
+    const duplicatedData: ProposalTemplate = {
+      ...template,
+      id: newDocRef.id,
+      name: `${template.name} (Cópia)`,
+    };
 
-      await setDoc(newDocRef, duplicatedData);
-      if (auth) logClientEvent('Duplicação de Modelo', auth, `Modelo: ${template.name}`);
-      toast({ title: 'Modelo Duplicado', description: `Uma cópia de "${template.name}" foi criada com sucesso.` });
-    } catch (error) {
-      console.error("Error duplicating template:", error);
-      toast({ variant: 'destructive', title: 'Erro ao duplicar', description: 'Não foi possível criar a cópia do modelo.' });
-    }
+    setDoc(newDocRef, duplicatedData)
+      .then(() => {
+        if (auth) logClientEvent('Duplicação de Modelo', auth, `Modelo: ${template.name}`);
+        toast({ title: 'Modelo Duplicado', description: `Uma cópia de "${template.name}" foi criada com sucesso.` });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: newDocRef.path,
+          operation: 'create',
+          requestResourceData: duplicatedData,
+        }));
+      });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!firestore || !isAdmin) return;
-    try {
-      await deleteDoc(doc(firestore, 'proposal-templates', id));
-      toast({ title: 'Removido', description: 'Modelo excluído com sucesso.' });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível excluir the modelo.' });
-    }
+    const templateRef = doc(firestore, 'proposal-templates', id);
+    
+    deleteDoc(templateRef)
+      .then(() => {
+        toast({ title: 'Removido', description: 'Modelo excluído com sucesso.' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: templateRef.path,
+          operation: 'delete',
+        }));
+      });
   };
 
   // List Management Helpers

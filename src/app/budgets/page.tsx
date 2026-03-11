@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
 import KanbanBoard from '@/components/kanban/kanban-board';
 import type { Lead, Status, ProposalTemplate, AppSettings, UserProfile, VersionHistoryEntry } from '@/lib/types';
-import { leadSchema, statuses } from '@/lib/types';
+import { statuses } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -81,34 +80,23 @@ export default function BudgetsPage() {
     setSelectedYear(now.getFullYear());
   }, []);
 
-  // Fetch user profile to check for admin role
   const userProfileRef = useMemoFirebase(() => (firestore && user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
   const isAdmin = userProfile?.isAdmin === true;
 
-  // Fetch leads from Firestore
   const leadsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    if (isAdmin) {
-      return collection(firestore, 'budgets');
-    }
-    // For non-admins, fetch only their leads
+    if (isAdmin) return collection(firestore, 'budgets');
     return query(collection(firestore, 'budgets'), where('createdByUid', '==', user.uid));
   }, [firestore, user, isAdmin]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
 
-  // Fetch all users to populate seller dropdown
   const allUsersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<UserProfile>(allUsersQuery);
   
-  // Fetch proposal templates from Firestore
-  const templatesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, 'proposal-templates');
-  }, [firestore, user]);
+  const templatesQuery = useMemoFirebase(() => (firestore && user ? collection(firestore, 'proposal-templates') : null), [firestore, user]);
   const { data: proposalTemplates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesQuery);
 
-  // Fetch global app settings from Firestore
   const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
   const { data: settings, isLoading: areSettingsLoading } = useDoc<AppSettings>(settingsRef);
 
@@ -119,44 +107,34 @@ export default function BudgetsPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Set the selected seller, defaulting to the logged-in user
   useEffect(() => {
     if (isUserLoading || !user || !userProfile) return;
-
     const self = { uid: user.uid, name: userProfile.displayName || user.email! };
-
     if (!isAdmin) {
       setSelectedSeller(self);
       return;
     }
-    
     if (!allUsers) return;
-
     try {
         const savedSellerId = localStorage.getItem('selectedSellerId');
         const savedSeller = allUsers.find(u => u.uid === savedSellerId);
-
         if (savedSeller) {
             setSelectedSeller({ uid: savedSeller.uid, name: savedSeller.displayName || savedSeller.email! });
         } else {
-            setSelectedSeller(self); // Default to self if nothing is saved or saved user doesn't exist
+            setSelectedSeller(self);
         }
     } catch (error) {
-        console.error("Failed to access localStorage:", error);
         setSelectedSeller(self);
     }
   }, [user, userProfile, allUsers, isAdmin, isUserLoading]);
   
-  // Persist selectedSeller to localStorage for admins
   useEffect(() => {
     if (!isAdmin) return;
     try {
       if (selectedSeller) {
         localStorage.setItem('selectedSellerId', selectedSeller.uid);
       }
-    } catch (error) {
-      console.error("Failed to save selected seller to localStorage:", error);
-    }
+    } catch (error) {}
   }, [selectedSeller, isAdmin]);
 
   const handleSellerChange = (sellerId: string) => {
@@ -208,54 +186,49 @@ export default function BudgetsPage() {
         createdAt: serverTimestamp(),
     };
 
-      setDoc(newDocRef, newLeadData).then(() => {
-        if (auth) logClientEvent('Criação de Orçamento', auth, `Empresa: ${newLeadData.company}`);
-      }).catch(serverError => {
-          const { createdAt, ...serializableData } = newLeadData;
-          const errorData = { ...serializableData, createdAt: new Date().toISOString() };
-          const permissionError = new FirestorePermissionError({
-              path: newDocRef.path,
-              operation: 'create',
-              requestResourceData: errorData,
-            });
-          errorEmitter.emit('permission-error', permissionError);
-      });
+      setDoc(newDocRef, newLeadData)
+        .then(() => {
+          if (auth) logClientEvent('Criação de Orçamento', auth, `Empresa: ${newLeadData.company}`);
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: newDocRef.path,
+            operation: 'create',
+            requestResourceData: newLeadData,
+          }));
+        });
   };
 
   const handleUpdateLead = (updatedLead: Lead) => {
       if (!user || !firestore) return;
       const leadRef = doc(firestore, 'budgets', updatedLead.id);
-      
-      const serializableLead = {
-        ...updatedLead,
-        createdAt: updatedLead.createdAt?.toDate ? updatedLead.createdAt.toDate().toISOString() : updatedLead.createdAt
-      };
-
-      setDoc(leadRef, updatedLead, { merge: true }).then(() => {
-        if (auth) logClientEvent('Edição de Orçamento', auth, `Empresa: ${updatedLead.company} (Versão: v${updatedLead.proposalVersion})`);
-      }).catch(serverError => {
-        const permissionError = new FirestorePermissionError({
+      setDoc(leadRef, updatedLead, { merge: true })
+        .then(() => {
+          if (auth) logClientEvent('Edição de Orçamento', auth, `Empresa: ${updatedLead.company}`);
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: leadRef.path,
             operation: 'update',
-            requestResourceData: serializableLead,
-          });
-        errorEmitter.emit('permission-error', permissionError);
-    });
+            requestResourceData: updatedLead,
+          }));
+        });
   };
   
   const handleDeleteLead = (leadId: string) => {
       if (!user || !firestore) return;
       const leadToDelete = leads?.find(l => l.id === leadId);
       const leadRef = doc(firestore, 'budgets', leadId);
-      deleteDoc(leadRef).then(() => {
-        if (auth) logClientEvent('Exclusão de Orçamento', auth, `Empresa: ${leadToDelete?.company || leadId}`);
-      }).catch(serverError => {
-        const permissionError = new FirestorePermissionError({
+      deleteDoc(leadRef)
+        .then(() => {
+          if (auth) logClientEvent('Exclusão de Orçamento', auth, `Empresa: ${leadToDelete?.company || leadId}`);
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: leadRef.path,
             operation: 'delete',
-          });
-        errorEmitter.emit('permission-error', permissionError);
-    });
+          }));
+        });
   }
 
   const handleLeadStatusChange = (leadId: string, newStatus: Status) => {
@@ -263,31 +236,28 @@ export default function BudgetsPage() {
     const lead = leads.find(l => l.id === leadId);
     if(lead) {
         const leadRef = doc(firestore, 'budgets', leadId);
-        
-        // Registrar a movimentação no histórico para que o contador de inatividade no Dashboard reflita a última ação
         const newHistoryEntry: VersionHistoryEntry = {
             version: lead.proposalVersion || 0,
             editedBy: userProfile?.displayName || user.displayName || user.email || 'Sistema',
             editedAt: new Date(),
         };
         const newHistory = [...(lead.versionHistory || []), newHistoryEntry];
-
         const updateData = { 
             status: newStatus, 
             previousStatus: lead.status,
-            versionHistory: newHistory // Grava o timestamp da movimentação
+            versionHistory: newHistory
         };
-
-        updateDoc(leadRef, updateData).then(() => {
-          if (auth) logClientEvent('Mudança de Status', auth, `'${lead.company}': ${lead.status} -> ${newStatus}`);
-        }).catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: leadRef.path,
-                operation: 'update',
-                requestResourceData: updateData,
-              });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+        updateDoc(leadRef, updateData)
+          .then(() => {
+            if (auth) logClientEvent('Mudança de Status', auth, `'${lead.company}': ${lead.status} -> ${newStatus}`);
+          })
+          .catch(async () => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: leadRef.path,
+              operation: 'update',
+              requestResourceData: updateData,
+            }));
+          });
     }
   };
 
@@ -295,57 +265,27 @@ export default function BudgetsPage() {
   const leadsInPeriod = useMemo(() => {
     const leadsData = leads || [];
     if (selectedMonth === null || selectedYear === null) return [];
-    
-    if (!isClient && (filter === 'today' || filter === 'week')) {
-      return [];
-    }
-    
-    if (filter === 'all') {
-      return leadsData;
-    }
-
+    if (!isClient && (filter === 'today' || filter === 'week')) return [];
+    if (filter === 'all') return leadsData;
     const now = new Date();
     return leadsData.filter(lead => {
-      // Prioritize budgetDate, fallback to createdAt
       let leadDate: Date | null = null;
-      if (lead.budgetDate) {
-        leadDate = toDate(`${lead.budgetDate}T12:00:00`);
-      } else if (lead.createdAt) {
-        leadDate = toDate(lead.createdAt);
-      }
-      
+      if (lead.budgetDate) leadDate = toDate(`${lead.budgetDate}T12:00:00`);
+      else if (lead.createdAt) leadDate = toDate(lead.createdAt);
       if (!leadDate) return false;
-
       switch (filter) {
-        case 'today':
-          return isWithinInterval(leadDate, {
-            start: startOfDay(now),
-            end: endOfDay(now),
-          });
-        case 'week':
-          return isWithinInterval(leadDate, {
-            start: startOfWeek(now),
-            end: endOfWeek(now),
-          });
-        case 'month':
-           return getMonth(leadDate) === selectedMonth && getYear(leadDate) === selectedYear;
-        case 'year':
-          return getYear(leadDate) === selectedYear;
-        default:
-          return true;
+        case 'today': return isWithinInterval(leadDate, { start: startOfDay(now), end: endOfDay(now) });
+        case 'week': return isWithinInterval(leadDate, { start: startOfWeek(now), end: endOfWeek(now) });
+        case 'month': return getMonth(leadDate) === selectedMonth && getYear(leadDate) === selectedYear;
+        case 'year': return getYear(leadDate) === selectedYear;
+        default: return true;
       }
     });
   }, [filter, selectedMonth, selectedYear, leads, isClient]);
 
   const filteredLeads = useMemo(() => {
-    if (!searchTerm) {
-      return leadsInPeriod;
-    }
-
-    return leadsInPeriod.filter(lead => 
-      lead.company.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
+    if (!searchTerm) return leadsInPeriod;
+    return leadsInPeriod.filter(lead => lead.company.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [leadsInPeriod, searchTerm]);
 
   if (isUserLoading || !user || areLeadsLoading || areUsersLoading || areTemplatesLoading || areSettingsLoading) {
@@ -360,7 +300,6 @@ export default function BudgetsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Top Header Controls: Seller and Counter */}
       <div className="flex flex-col gap-3 bg-card p-4 rounded-lg border shadow-sm">
         <div className="flex flex-wrap justify-between items-center gap-4">
           <div className="flex justify-start items-center gap-2">

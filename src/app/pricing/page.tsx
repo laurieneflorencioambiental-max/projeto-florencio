@@ -28,7 +28,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import type { CostFactors, PricingTemplate, ServiceType } from '@/lib/types';
 import { serviceTypes } from '@/lib/types';
@@ -111,7 +111,7 @@ export default function PricingPage() {
     setTaxes(15);
   }
 
-  const handleSaveTemplate = async () => {
+  const handleSaveTemplate = () => {
     if (!firestore) return;
     if (!name.trim()) {
         toast({
@@ -134,10 +134,19 @@ export default function PricingPage() {
         finalPrice: calculation.finalPrice
     };
 
-    await setDoc(newDocRef, newTemplate);
-    if (auth) logClientEvent('Criação de Precificação', auth, `Modelo: ${name}`);
-    toast({ title: 'Precificação salva!', description: `"${name}" foi adicionado aos seus modelos.` });
-    resetForm();
+    setDoc(newDocRef, newTemplate)
+      .then(() => {
+        if (auth) logClientEvent('Criação de Precificação', auth, `Modelo: ${name}`);
+        toast({ title: 'Precificação salva!', description: `"${name}" foi adicionado aos seus modelos.` });
+        resetForm();
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: newDocRef.path,
+          operation: 'create',
+          requestResourceData: newTemplate,
+        }));
+      });
   };
   
   const loadTemplate = (template: PricingTemplate) => {
@@ -150,14 +159,24 @@ export default function PricingPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const deleteTemplate = async (id: string) => {
+  const deleteTemplate = (id: string) => {
     if (!firestore) return;
     const templateToDelete = savedTemplates?.find(t => t.id === id);
-    await deleteDoc(doc(firestore, 'pricing-templates', id));
-    if (templateToDelete && auth) {
-      logClientEvent('Exclusão de Precificação', auth, `Modelo: ${templateToDelete.name}`);
-    }
-    toast({ title: 'Modelo removido.' });
+    const templateRef = doc(firestore, 'pricing-templates', id);
+    
+    deleteDoc(templateRef)
+      .then(() => {
+        if (templateToDelete && auth) {
+          logClientEvent('Exclusão de Precificação', auth, `Modelo: ${templateToDelete.name}`);
+        }
+        toast({ title: 'Modelo removido.' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: templateRef.path,
+          operation: 'delete',
+        }));
+      });
   }
 
   if (isUserLoading || !user || areTemplatesLoading) {

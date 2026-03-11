@@ -77,28 +77,21 @@ import {
   endOfWeek,
   getYear,
   getMonth,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-// import {
-//   suggestCampaignGoalAction,
-//   analyzeCampaignPerformanceAction,
-// } from '@/app/actions';
 import {
   useUser,
   useFirestore,
   useCollection,
   useMemoFirebase,
   useAuth,
+  errorEmitter,
+  FirestorePermissionError,
 } from '@/firebase';
 import {
   collection,
   doc,
-  addDoc,
   deleteDoc,
   setDoc,
   serverTimestamp,
@@ -200,7 +193,7 @@ export default function MarketingPage() {
     const data = actions || [];
     if (filter === 'all') return data;
     
-    if (!isClient) return []; // Defer date-sensitive logic to client
+    if (!isClient) return [];
 
     if (selectedMonth === null || selectedYear === null) return [];
     
@@ -236,7 +229,7 @@ export default function MarketingPage() {
     const data = entries || [];
     if (filter === 'all') return data;
 
-    if (!isClient) return []; // Defer date-sensitive logic to client
+    if (!isClient) return [];
 
     if (selectedMonth === null || selectedYear === null) return [];
     
@@ -272,7 +265,7 @@ export default function MarketingPage() {
     const data = tools || [];
     if (filter === 'all') return data;
 
-    if (!isClient) return []; // Defer date-sensitive logic to client
+    if (!isClient) return [];
 
     if (selectedMonth === null || selectedYear === null) return [];
     
@@ -305,7 +298,7 @@ export default function MarketingPage() {
   }, [tools, filter, selectedMonth, selectedYear, isClient]);
 
   // ROI Handlers
-  const handleAddEntry = async (e: React.FormEvent) => {
+  const handleAddEntry = (e: React.FormEvent) => {
     e.preventDefault();
     if (!roiEntriesRef) return;
     const investmentValue = parseFloat(newInvestment);
@@ -338,27 +331,41 @@ export default function MarketingPage() {
       createdAt: serverTimestamp(),
     };
 
-    await setDoc(newDocRef, { ...newEntry, id: newDocRef.id });
-    if (auth) logClientEvent('Criação de ROI', auth, `Fonte: ${newSource}, Investimento: ${investmentValue}`);
+    setDoc(newDocRef, { ...newEntry, id: newDocRef.id })
+      .then(() => {
+        if (auth) logClientEvent('Criação de ROI', auth, `Fonte: ${newSource}, Investimento: ${investmentValue}`);
+        toast({ title: 'Cálculo Adicionado', description: `ROI para ${newSource} foi adicionado à lista.` });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: newDocRef.path,
+          operation: 'create',
+          requestResourceData: newEntry,
+        }));
+      });
 
-    // Reset form
     setNewInvestment('');
     setNewRevenue('');
     setNewSource('');
-
-    toast({
-      title: 'Cálculo Adicionado',
-      description: `ROI para ${newSource} foi adicionado à lista.`,
-    });
   };
 
-  const handleDeleteEntry = async (id: string) => {
+  const handleDeleteEntry = (id: string) => {
     if (!firestore) return;
     const entryToDelete = entries?.find(e => e.id === id);
-    await deleteDoc(doc(firestore, 'marketing-roi-entries', id));
-    if(entryToDelete && auth) {
-        logClientEvent('Exclusão de ROI', auth, `Fonte: ${entryToDelete.source}, Investimento: ${entryToDelete.investment}`);
-    }
+    const entryRef = doc(firestore, 'marketing-roi-entries', id);
+    
+    deleteDoc(entryRef)
+      .then(() => {
+        if(entryToDelete && auth) {
+          logClientEvent('Exclusão de ROI', auth, `Fonte: ${entryToDelete.source}, Investimento: ${entryToDelete.investment}`);
+        }
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: entryRef.path,
+          operation: 'delete',
+        }));
+      });
   };
 
   const totals = useMemo(() => {
@@ -404,7 +411,7 @@ export default function MarketingPage() {
     setGoalSuggestion(null);
   };
 
-  const handleActionFormSubmit = async (e: React.FormEvent) => {
+  const handleActionFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionsRef) return;
     if (!newActionName || !newActionGoal || !newActionDeadline) {
@@ -430,12 +437,18 @@ export default function MarketingPage() {
         percentageGoal: percentageGoalValue,
         status: newActionStatus,
       };
-      await setDoc(actionRef, updatedAction, { merge: true });
-      if (auth) logClientEvent('Edição de Ação de Marketing', auth, `Ação: ${newActionName}`);
-      toast({
-        title: 'Ação Atualizada!',
-        description: `A campanha "${newActionName}" foi atualizada.`,
-      });
+      setDoc(actionRef, updatedAction, { merge: true })
+        .then(() => {
+          if (auth) logClientEvent('Edição de Ação de Marketing', auth, `Ação: ${newActionName}`);
+          toast({ title: 'Ação Atualizada!', description: `A campanha "${newActionName}" foi atualizada.` });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: actionRef.path,
+            operation: 'update',
+            requestResourceData: updatedAction,
+          }));
+        });
     } else {
       const newDocRef = doc(actionsRef);
       const newAction: Omit<MarketingAction, 'id'> = {
@@ -447,44 +460,41 @@ export default function MarketingPage() {
         percentageGoal: percentageGoalValue,
         createdAt: serverTimestamp(),
       };
-      await setDoc(newDocRef, { ...newAction, id: newDocRef.id });
-      if (auth) logClientEvent('Criação de Ação de Marketing', auth, `Ação: ${newActionName}`);
-      toast({
-        title: 'Ação Adicionada!',
-        description: `A campanha "${newActionName}" foi adicionada ao seu plano.`,
-      });
+      setDoc(newDocRef, { ...newAction, id: newDocRef.id })
+        .then(() => {
+          if (auth) logClientEvent('Criação de Ação de Marketing', auth, `Ação: ${newActionName}`);
+          toast({ title: 'Ação Adicionada!', description: `A campanha "${newActionName}" foi adicionada ao seu plano.` });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: newDocRef.path,
+            operation: 'create',
+            requestResourceData: newAction,
+          }));
+        });
     }
 
     handleCancelEditing();
   };
 
-  const handleDeleteAction = async (id: string) => {
+  const handleDeleteAction = (id: string) => {
     if (!firestore) return;
     const actionToDelete = actions?.find(a => a.id === id);
-    await deleteDoc(doc(firestore, 'marketing-actions', id));
-    if(actionToDelete && auth) {
-        logClientEvent('Exclusão de Ação de Marketing', auth, `Ação: ${actionToDelete.name}`);
-    }
-    toast({
-      title: 'Ação Removida',
-      description: `A ação foi removida do seu plano.`,
-    });
-  };
-
-  const handleSuggestGoal = async () => {
-    toast({
-      variant: 'destructive',
-      title: 'Funcionalidade desativada',
-      description: 'A sugestão por IA está temporariamente desativada.',
-    });
-  };
-
-  const handleAnalyzePerformance = async () => {
-    toast({
-      variant: 'destructive',
-      title: 'Funcionalidade desativada',
-      description: 'A análise por IA está temporariamente desativada.',
-    });
+    const actionRef = doc(firestore, 'marketing-actions', id);
+    
+    deleteDoc(actionRef)
+      .then(() => {
+        if(actionToDelete && auth) {
+          logClientEvent('Exclusão de Ação de Marketing', auth, `Ação: ${actionToDelete.name}`);
+        }
+        toast({ title: 'Ação Removida', description: `A ação foi removida do seu plano.` });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: actionRef.path,
+          operation: 'delete',
+        }));
+      });
   };
 
   const sortedActions = useMemo(() => {
@@ -530,7 +540,7 @@ export default function MarketingPage() {
   };
 
   // Tool Handlers
-  const handleToolFormSubmit = async (e: React.FormEvent) => {
+  const handleToolFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!toolsRef) return;
     const value = parseFloat(newToolValue);
@@ -553,12 +563,18 @@ export default function MarketingPage() {
         dueDate: newToolDueDate,
         observation: newToolObservation,
       };
-      await setDoc(toolRef, updatedTool, { merge: true });
-      if (auth) logClientEvent('Edição de Ferramenta Digital', auth, `Ferramenta: ${newToolName}`);
-      toast({
-        title: 'Ferramenta Atualizada!',
-        description: `A assinatura de "${newToolName}" foi atualizada.`,
-      });
+      setDoc(toolRef, updatedTool, { merge: true })
+        .then(() => {
+          if (auth) logClientEvent('Edição de Ferramenta Digital', auth, `Ferramenta: ${newToolName}`);
+          toast({ title: 'Ferramenta Atualizada!', description: `A assinatura de "${newToolName}" foi atualizada.` });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: toolRef.path,
+            operation: 'update',
+            requestResourceData: updatedTool,
+          }));
+        });
     } else {
       const newDocRef = doc(toolsRef);
       const newTool: Omit<DigitalTool, 'id'> = {
@@ -569,12 +585,18 @@ export default function MarketingPage() {
         observation: newToolObservation,
         createdAt: serverTimestamp(),
       };
-      await setDoc(newDocRef, { ...newTool, id: newDocRef.id });
-      if (auth) logClientEvent('Criação de Ferramenta Digital', auth, `Ferramenta: ${newToolName}`);
-      toast({
-        title: 'Ferramenta Adicionada!',
-        description: `"${newToolName}" foi adicionada à sua lista de investimentos.`,
-      });
+      setDoc(newDocRef, { ...newTool, id: newDocRef.id })
+        .then(() => {
+          if (auth) logClientEvent('Criação de Ferramenta Digital', auth, `Ferramenta: ${newToolName}`);
+          toast({ title: 'Ferramenta Adicionada!', description: `"${newToolName}" foi adicionada à sua lista de investimentos.` });
+        })
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: newDocRef.path,
+            operation: 'create',
+            requestResourceData: newTool,
+          }));
+        });
     }
     handleCancelEditingTool();
   };
@@ -597,17 +619,24 @@ export default function MarketingPage() {
     setNewToolObservation('');
   };
 
-  const handleDeleteTool = async (id: string) => {
+  const handleDeleteTool = (id: string) => {
     if (!firestore) return;
     const toolToDelete = tools?.find(t => t.id === id);
-    await deleteDoc(doc(firestore, 'marketing-tools', id));
-    if(toolToDelete && auth) {
-        logClientEvent('Exclusão de Ferramenta Digital', auth, `Ferramenta: ${toolToDelete.name}`);
-    }
-    toast({
-      title: 'Ferramenta Removida',
-      description: 'A ferramenta foi removida da sua lista de investimentos.',
-    });
+    const toolRef = doc(firestore, 'marketing-tools', id);
+    
+    deleteDoc(toolRef)
+      .then(() => {
+        if(toolToDelete && auth) {
+          logClientEvent('Exclusão de Ferramenta Digital', auth, `Ferramenta: ${toolToDelete.name}`);
+        }
+        toast({ title: 'Ferramenta Removida', description: 'A ferramenta foi removida da sua lista de investimentos.' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: toolRef.path,
+          operation: 'delete',
+        }));
+      });
   };
 
   const isLoading = areEntriesLoading || areActionsLoading || areToolsLoading;
@@ -745,14 +774,9 @@ export default function MarketingPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={handleSuggestGoal}
                     disabled={true}
                   >
-                    {isSuggestingGoal ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="mr-2 h-4 w-4 text-primary" />
-                    )}
+                    <Sparkles className="mr-2 h-4 w-4 text-primary" />
                     Sugerir Meta (IA)
                   </Button>
                 </div>
@@ -1356,15 +1380,10 @@ export default function MarketingPage() {
         <CardContent>
           <div className="flex flex-col items-center justify-center gap-4">
             <Button
-              onClick={handleAnalyzePerformance}
               disabled={true}
             >
-              {isAnalyzing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              {isAnalyzing ? 'Analisando...' : 'Gerar Análise (IA)'}
+              <Sparkles className="mr-2 h-4 w-4" />
+              Gerar Análise (IA)
             </Button>
             <p className="text-sm text-muted-foreground">
                 (Funcionalidade de IA temporariamente desativada)

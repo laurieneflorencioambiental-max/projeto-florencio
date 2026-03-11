@@ -26,7 +26,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useAuth, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import type { CommissionTemplate, UserProfile, Service } from '@/lib/types';
 import { collection, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
@@ -120,7 +120,7 @@ export default function CommissionsPage() {
     setTemplateName('');
   }
 
-  const handleSaveNewTemplate = async () => {
+  const handleSaveNewTemplate = () => {
     if (!firestore) return;
     if (!templateName.trim()) {
         toast({
@@ -144,10 +144,19 @@ export default function CommissionsPage() {
         partnerCommissionValue: calculation.commissionValue,
     };
 
-    await setDoc(newDocRef, { ...newTemplate, id: newDocRef.id });
-    if (auth) logClientEvent('Criação de Modelo de Comissão', auth, `Modelo: ${templateName}`);
-    toast({ title: 'Novo Modelo de Comissão salvo!', description: `"${templateName}" foi adicionado.` });
-    resetForm();
+    setDoc(newDocRef, { ...newTemplate, id: newDocRef.id })
+      .then(() => {
+        if (auth) logClientEvent('Criação de Modelo de Comissão', auth, `Modelo: ${templateName}`);
+        toast({ title: 'Novo Modelo de Comissão salvo!', description: `"${templateName}" foi adicionado.` });
+        resetForm();
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: newDocRef.path,
+          operation: 'create',
+          requestResourceData: newTemplate,
+        }));
+      });
   };
   
   const loadTemplate = (template: CommissionTemplate) => {
@@ -179,14 +188,24 @@ export default function CommissionsPage() {
     }
   };
 
-  const deleteTemplate = async (id: string) => {
+  const deleteTemplate = (id: string) => {
     if (!firestore) return;
     const templateToDelete = savedTemplates?.find(t => t.id === id);
-    await deleteDoc(doc(firestore, 'commission-templates', id));
-    if (templateToDelete && auth) {
-      logClientEvent('Exclusão de Modelo de Comissão', auth, `Modelo: ${templateToDelete.name}`);
-    }
-    toast({ title: 'Modelo removido.' });
+    const templateRef = doc(firestore, 'commission-templates', id);
+    
+    deleteDoc(templateRef)
+      .then(() => {
+        if (templateToDelete && auth) {
+          logClientEvent('Exclusão de Modelo de Comissão', auth, `Modelo: ${templateToDelete.name}`);
+        }
+        toast({ title: 'Modelo removido.' });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: templateRef.path,
+          operation: 'delete',
+        }));
+      });
   }
 
   const groupedTemplates = useMemo(() => {

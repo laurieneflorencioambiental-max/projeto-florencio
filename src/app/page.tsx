@@ -57,7 +57,6 @@ import {
   startOfYear,
   endOfYear,
   differenceInDays,
-  format,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
@@ -158,16 +157,14 @@ export default function DashboardPage() {
         createdAt: serverTimestamp(),
     };
 
-      setDoc(newDocRef, newLeadData).catch(serverError => {
-          const { createdAt, ...serializableData } = newLeadData;
-          const errorData = { ...serializableData, createdAt: new Date().toISOString() };
-          const permissionError = new FirestorePermissionError({
-              path: newDocRef.path,
-              operation: 'create',
-              requestResourceData: errorData,
-            });
-          errorEmitter.emit('permission-error', permissionError);
-      });
+      setDoc(newDocRef, newLeadData)
+        .catch(async () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: newDocRef.path,
+            operation: 'create',
+            requestResourceData: newLeadData,
+          }));
+        });
   };
 
   const filteredLeads = useMemo(() => {
@@ -200,9 +197,8 @@ export default function DashboardPage() {
     return leads.filter(lead => {
       let leadDate: Date | null = null;
       if (lead.budgetDate) {
-        // Parsing robusto para YYYY-MM-DD para evitar problemas de fuso horário
         const [year, month, day] = lead.budgetDate.split('-').map(Number);
-        leadDate = new Date(year, month - 1, day, 12, 0, 0); // Meio dia para evitar saltos de fuso
+        leadDate = new Date(year, month - 1, day, 12, 0, 0);
       } else {
         leadDate = toDate(lead.createdAt);
       }
@@ -242,13 +238,10 @@ export default function DashboardPage() {
     const staleDays = settings?.staleLeadDays || 7;
     return leads.filter(lead => {
       if (lead.status !== 'Pendente/Em negociação') return false;
-      
-      // O contador de inatividade agora prioriza a última movimentação registrada no histórico
       const history = lead.versionHistory || [];
       const lastActivityDate = history.length > 0
           ? toDate(history[history.length - 1].editedAt)
           : toDate(lead.createdAt);
-          
       if (!lastActivityDate) return false;
       return differenceInDays(new Date(), lastActivityDate) > staleDays;
     });
@@ -286,7 +279,6 @@ export default function DashboardPage() {
       case 'week': return 'esta Semana';
       case 'year': return 'este Ano';
       case 'specific_month': return `${months[selectedMonth].label} / ${selectedYear}`;
-      case 'month':
       default: return 'este Mês';
     }
   };
@@ -493,7 +485,8 @@ export default function DashboardPage() {
                           const lastDate = history.length > 0 
                             ? toDate(history[history.length - 1].editedAt) 
                             : toDate(lead.createdAt);
-                          return lastDate ? differenceInDays(new Date(), lastDate) : '...';
+                          const diff = lastDate ? differenceInDays(new Date(), lastDate) : 0;
+                          return diff;
                         })() : '...'}
                       </TableCell>
                     </TableRow>
