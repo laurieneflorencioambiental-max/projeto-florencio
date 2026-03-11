@@ -102,6 +102,9 @@ export default function ProposalModal({
 
   // Cache do link gerado nesta sessão para evitar múltiplas gerações e incrementos indevidos
   const [currentLink, setCurrentLink] = useState<string | null>(null);
+  
+  // Estado para detectar se houve mudança real na proposta (para versionamento)
+  const [isDirty, setIsDirty] = useState(false);
 
   // Estado para a Área da Proposta (Obrigatório)
   const [selectedArea, setSelectedArea] = useState<'sst' | 'ma'>(lead.proposalArea || 'sst');
@@ -168,6 +171,8 @@ export default function ProposalModal({
       diverseServices: template?.diverseServices || [],
     });
     
+    // Marcar como modificado para incrementar versão na próxima geração
+    setIsDirty(true);
     // Limpar cache do link pois o estado da proposta mudou
     setCurrentLink(null);
   };
@@ -200,12 +205,15 @@ export default function ProposalModal({
 
     const paddedNumber = String(num).padStart(3, '0');
     
-    // Versionamento: usa a versão atual definida no lead (inicia em 0)
-    const displayVersion = lead.proposalVersion ?? 0;
+    // Preview version: current version, or version + 1 if dirty and already generated once
+    let displayVersion = lead.proposalVersion ?? 0;
+    if (lead.proposalNumber && isDirty) {
+        displayVersion = (lead.proposalVersion ?? 0) + 1;
+    }
     
     const proposalId = `PTC-FLO-${prefix}-${paddedNumber}.${displayVersion}`;
     setFullProposalNumber(proposalId);
-  }, [selectedArea, lead.proposalNumber, lead.proposalArea, lead.proposalVersion, allLeads, isOpen]);
+  }, [selectedArea, lead.proposalNumber, lead.proposalArea, lead.proposalVersion, allLeads, isOpen, isDirty]);
 
   const resetState = () => {
     const defaultTemplateId = lead.selectedTemplateId || 'none';
@@ -213,13 +221,16 @@ export default function ProposalModal({
     setSelectedArea(lead.proposalArea || 'sst');
     setIsGenerating(false);
     setCurrentLink(null);
+    // Garantir que a carga inicial não conte como modificação
+    setIsDirty(false);
   };
 
   useEffect(() => {
     if (isOpen) {
       resetState();
     }
-  }, [isOpen, lead, allLeads, proposalTemplates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const createAndShareProposalLink = async (): Promise<string | null> => {
     setIsGenerating(true);
@@ -239,15 +250,19 @@ export default function ProposalModal({
       const proposalGeneration = async () => {
         let finalArea = selectedArea;
         let finalNum = lead.proposalNumber;
+        let newVersion = lead.proposalVersion ?? 0;
 
         if (!finalNum) {
+            // Primeira geração
             const areaLeads = allLeads.filter(l => (l.proposalArea || 'sst') === finalArea);
             const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
             finalNum = maxNum + 1;
+            newVersion = 0;
+        } else if (isDirty) {
+            // Revisão real
+            newVersion = (lead.proposalVersion ?? 0) + 1;
         }
 
-        // A versão usada na geração é a versão atual do lead (gerenciada pelo EditLeadModal)
-        const newVersion = lead.proposalVersion ?? 0;
         const prefix = finalArea === 'sst' ? 'SST' : 'MA';
         const finalFullCode = `PTC-FLO-${prefix}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
 
@@ -279,7 +294,7 @@ export default function ProposalModal({
         );
         const proposalUrl = `${window.location.origin}/proposal/${docRef.id}`;
 
-        // Atualizar o lead com o número e área (travando-os) caso seja a primeira vez
+        // Atualizar o lead com o número, área e nova versão
         onUpdateLead({
           ...lead,
           proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -287,6 +302,8 @@ export default function ProposalModal({
           proposalArea: finalArea,
           proposalVersion: newVersion,
         });
+
+        setIsDirty(false); // Resetar flag de modificação após gerar link com sucesso
 
         toast({
           title: 'Link da Proposta Gerado!',
@@ -453,6 +470,7 @@ Grupo Florencio`;
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
+      setIsDirty(true);
       setCurrentLink(null);
   };
 
@@ -463,6 +481,7 @@ Grupo Florencio`;
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
+      setIsDirty(true);
       setCurrentLink(null);
   };
 
@@ -473,6 +492,7 @@ Grupo Florencio`;
           newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
           return { ...prev, investmentOptions: newOptions };
       });
+      setIsDirty(true);
       setCurrentLink(null);
   };
 
@@ -482,6 +502,7 @@ Grupo Florencio`;
       newDiverse[index] = { ...newDiverse[index], [field]: value };
       return { ...prev, diverseServices: newDiverse };
     });
+    setIsDirty(true);
     setCurrentLink(null);
   };
 
@@ -493,6 +514,7 @@ Grupo Florencio`;
         { id: `ds-${Date.now()}`, item: ((prev.diverseServices?.length || 0) + 1).toString(), employeeRange: '', servicesIncluded: '', investment: '', onDemand: '' }
       ]
     }));
+    setIsDirty(true);
     setCurrentLink(null);
   };
 
@@ -501,6 +523,7 @@ Grupo Florencio`;
       ...prev,
       diverseServices: (prev.diverseServices || []).filter((_, i) => i !== index)
     }));
+    setIsDirty(true);
     setCurrentLink(null);
   };
 
@@ -556,6 +579,7 @@ Grupo Florencio`;
             [field]: content,
           }));
       }
+      setIsDirty(true);
       setCurrentLink(null);
     };
 
@@ -711,6 +735,7 @@ Grupo Florencio`;
               value={selectedArea} 
               onValueChange={(v: 'sst' | 'ma') => {
                   setSelectedArea(v);
+                  setIsDirty(true);
                   setCurrentLink(null);
               }}
               disabled={isGenerating || !!lead.proposalNumber}
