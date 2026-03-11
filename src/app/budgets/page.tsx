@@ -155,7 +155,7 @@ export default function BudgetsPage() {
     );
   };
   
-  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory' | 'proposalAreaAcronym' | 'proposalServiceCode'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory' | 'proposalAreaAcronym' | 'proposalServiceCode' | 'proposalViewed' | 'proposalViewedAt' | 'proposalViewCount' | 'proposalLastViewedAt'>) => {
       if (!user || !firestore || !selectedSeller) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       

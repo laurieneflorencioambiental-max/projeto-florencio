@@ -127,7 +127,7 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory' | 'proposalAreaAcronym' | 'proposalServiceCode'>) => {
+  const handleAddLead = (values: Omit<Lead, 'id' | 'createdAt' | 'status' | 'createdBy' | 'createdByUid' | 'proposalGeneratedCount' | 'whatsappSentCount' | 'editCount' | 'previousStatus' | 'proposalNumber' | 'proposalVersion' | 'observations' | 'versionHistory' | 'proposalAreaAcronym' | 'proposalServiceCode' | 'proposalViewed' | 'proposalViewedAt' | 'proposalViewCount' | 'proposalLastViewedAt'>) => {
       if (!user || !firestore || !userProfile) return;
       const newDocRef = doc(collection(firestore, 'budgets'));
       
@@ -478,7 +478,7 @@ export default function DashboardPage() {
                           const lastDate = history.length > 0 
                             ? toDate(history[history.length - 1].editedAt) 
                             : toDate(lead.createdAt);
-                          const diff = lastDate ? differenceInDays(new Date(), lastActivityDate) : 0;
+                          const diff = lastDate ? differenceInDays(new Date(), lastDate) : 0;
                           return diff;
                         })() : '...'}
                       </TableCell>
