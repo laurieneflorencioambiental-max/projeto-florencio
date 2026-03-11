@@ -4,12 +4,17 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/toast';
 import AppLayout from '@/components/layout/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
 import MaintenancePage from '@/components/maintenance-page';
 import { DynamicFavicon } from '@/components/dynamic-favicon';
 
+/**
+ * Root Layout principal da aplicação Comercial Florencio.
+ * Gerencia o tema global, provedores do Firebase e layout condicional.
+ * V-Trigger: 0.1.9 (Forcing clean build)
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -63,7 +68,7 @@ export default function RootLayout({
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1b7689" />
-        {/* Forçamos o ícone no head para o carregamento inicial SSR */}
+        {/* Ícone no head para o carregamento inicial SSR */}
         <link rel="icon" type="image/svg+xml" href={defaultFavicon} />
         <link rel="shortcut icon" href={defaultFavicon} />
         <link rel="apple-touch-icon" href={defaultFavicon} />

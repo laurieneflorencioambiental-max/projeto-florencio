@@ -346,7 +346,7 @@ export default function SettingsPage() {
            const snapshot = await getDocs(collRef);
            snapshot.forEach(docSnap => {
             const item: any = docSnap.data();
-            const itemDate = item?.createdAt ? toDate(item.createdAt) : null;
+            const itemDate = item?.createdAt?.toDate?.() ?? null;
             if (itemDate && itemDate < cutoffDate) {
                 docRefsToDelete.push(docSnap.ref);
             }
