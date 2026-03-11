@@ -401,16 +401,23 @@ export default function KanbanCard({
                 </div>
               )}
               {isClient && lead.proposalViewCount > 0 && (
-                <div className="flex items-center gap-2 text-xs text-primary font-medium mt-1">
-                  <Eye className="h-3 w-3" />
-                  <span>
-                    Visualizada {lead.proposalViewCount} {lead.proposalViewCount === 1 ? 'vez' : 'vezes'}
-                    {lead.proposalLastViewedAt && (
-                      <>
-                        {' '}(Última: {format(toDate(lead.proposalLastViewedAt)!, "dd/MM 'às' HH:mm")})
-                      </>
-                    )}
-                  </span>
+                <div className="mt-1 space-y-1">
+                  <div className="flex items-center gap-2 text-xs text-primary font-medium">
+                    <Eye className="h-3 w-3" />
+                    <span>
+                      Visualizada {lead.proposalViewCount} {lead.proposalViewCount === 1 ? 'vez' : 'vezes'}
+                      {lead.proposalLastViewedAt && (
+                        <>
+                          {' '}(Última: {format(toDate(lead.proposalLastViewedAt)!, "dd/MM 'às' HH:mm")})
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {lead.proposalViewCount >= 3 && (
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-tight">
+                      🔥 Proposta Quente (Alto Interesse)
+                    </div>
+                  )}
                 </div>
               )}
             </div>
