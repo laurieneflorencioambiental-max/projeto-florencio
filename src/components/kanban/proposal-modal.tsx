@@ -709,7 +709,7 @@ Grupo Florencio`;
               disabled={isGenerating}
             >
               <Copy className="mr-2 h-4 w-4" />
-              Copiar Link
+              Copiar/Abrir Link
             </Button>
             <Button
               variant="outline"
