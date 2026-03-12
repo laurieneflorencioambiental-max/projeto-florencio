@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import './globals.css';
-import { Toaster } from '@/components/ui/toast';
+import { Toaster } from "@/components/ui/toaster";
 import AppLayout from '@/components/layout/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
 import MaintenancePage from '@/components/maintenance-page';

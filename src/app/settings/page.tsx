@@ -30,23 +30,13 @@ import {
   Bot,
   Users,
   ShieldCheck,
-  Shield,
   Target,
-  HelpCircle,
-  TrendingUp,
-  BarChartHorizontal,
-  LayoutDashboard,
-  KanbanSquare,
-  FileText,
-  BookMarked,
-  Calculator,
-  Calendar,
   Pencil,
-  Save,
-  X,
-  MapPin,
   PlusCircle,
   Activity,
+  MessageSquare,
+  Mail,
+  Info,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -75,13 +65,11 @@ import {
   ImageType,
 } from '@/firebase/storage';
 import { doc, setDoc, getDoc, collection, writeBatch, getDocs, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { seedSellers, seedServices, seedTemplates, getSeedLeads, seedProposalAreas } from '@/lib/seed-data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
@@ -125,9 +113,6 @@ export default function SettingsPage() {
 
   const areasQuery = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-areas') : null, [firestore]);
   const { data: proposalAreas, isLoading: areAreasLoading } = useCollection<ProposalArea>(areasQuery);
-
-  const isLoadingPermissions = isUserLoading || isProfileLoading;
-
 
   useEffect(() => {
     if (settingsRef) {
@@ -505,8 +490,17 @@ export default function SettingsPage() {
     );
   }
 
+  const availableVariables = [
+    { key: '{{name}}', description: 'Nome do contato' },
+    { key: '{{company}}', description: 'Nome da empresa' },
+    { key: '{{fullProposalNumber}}', description: 'Código oficial da proposta' },
+    { key: '{{value}}', description: 'Valor formatado (R$)' },
+    { key: '{{proposalLink}}', description: 'Link para visualização' },
+    { key: '{{createdBy}}', description: 'Nome do vendedor' },
+  ];
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 pb-20">
       <Card>
         <CardHeader>
           <CardTitle>Tema de Aparência</CardTitle>
@@ -626,6 +620,78 @@ export default function SettingsPage() {
               </TableBody>
             </Table>
           )}
+        </CardContent>
+      </Card>
+
+      <Card id="message-templates">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-6 w-6" />
+            Modelos de Mensagem de Proposta
+          </CardTitle>
+          <CardDescription>
+            Personalize as mensagens automáticas enviadas para os clientes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <div className="grid gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="wa-template" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-green-600" />
+                Texto Padrão WhatsApp
+              </Label>
+              <Textarea
+                id="wa-template"
+                placeholder="Prezado(a) {{name}}, segue o link da sua proposta..."
+                className="min-h-[120px]"
+                value={appSettings.whatsappTemplate || ''}
+                onChange={e => handleSettingChange('whatsappTemplate', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-2">
+                <Label htmlFor="email-subject" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  Assunto Padrão de E-mail
+                </Label>
+                <Input
+                  id="email-subject"
+                  placeholder="Proposta Comercial {{fullProposalNumber}} - {{company}}"
+                  value={appSettings.emailSubjectTemplate || ''}
+                  onChange={e => handleSettingChange('emailSubjectTemplate', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-body">Corpo Padrão de E-mail</Label>
+                <Textarea
+                  id="email-body"
+                  placeholder="Prezado(a) {{name}}, encaminhamos o link da sua proposta..."
+                  className="min-h-[150px]"
+                  value={appSettings.emailBodyTemplate || ''}
+                  onChange={e => handleSettingChange('emailBodyTemplate', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-primary/5 rounded-lg border p-4">
+            <div className="flex items-center gap-2 mb-3 text-primary font-bold">
+              <Info className="h-4 w-4" />
+              Variáveis Disponíveis
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {availableVariables.map((v) => (
+                <div key={v.key} className="text-xs">
+                  <code className="bg-muted px-1 rounded font-bold text-primary">{v.key}</code>
+                  <p className="text-muted-foreground mt-0.5">{v.description}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-4 italic">
+              * O sistema substituirá automaticamente os textos entre chaves pelos dados reais do orçamento.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

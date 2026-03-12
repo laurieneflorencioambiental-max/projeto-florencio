@@ -15,6 +15,7 @@ import type {
   InvestmentOptionItem,
   DiverseServiceItem,
   ProposalArea,
+  AppSettings,
 } from '@/lib/types';
 import {
   Dialog,
@@ -43,11 +44,8 @@ import {
   Italic,
   Underline,
   List,
-  Link as LinkIcon,
   Smile,
   ShieldCheck,
-  Plus,
-  Trash2,
   Table as TableIcon
 } from 'lucide-react';
 import {
@@ -59,7 +57,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import jsPDF from 'jspdf';
@@ -110,6 +108,9 @@ export default function ProposalModal({
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const settingsRef = useMemoFirebase(() => firestore ? doc(firestore, 'app-settings', 'global') : null, [firestore]);
+  const { data: appSettings } = useDoc<AppSettings>(settingsRef);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [proposalState, setProposalState] = useState<ProposalState>({
@@ -280,27 +281,19 @@ export default function ProposalModal({
       };
 
       const docRef = doc(collection(firestore, 'proposals'));
-      setDoc(docRef, proposalData)
-        .then(() => {
-          onUpdateLead({
-            ...lead,
-            proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
-            proposalNumber: finalNum,
-            proposalArea: finalAcronym,
-            proposalAreaAcronym: finalAcronym,
-            proposalServiceCode: finalServiceCode,
-            proposalVersion: newVersion,
-          });
-          setIsDirty(false);
-          toast({ title: 'Link da Proposta Gerado!' });
-        })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'create',
-            requestResourceData: proposalData,
-          }));
-        });
+      await setDoc(docRef, proposalData);
+      
+      onUpdateLead({
+        ...lead,
+        proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
+        proposalNumber: finalNum,
+        proposalArea: finalAcronym,
+        proposalAreaAcronym: finalAcronym,
+        proposalServiceCode: finalServiceCode,
+        proposalVersion: newVersion,
+      });
+      setIsDirty(false);
+      toast({ title: 'Link da Proposta Gerado!' });
 
       return `${window.location.origin}/proposal/${docRef.id}`;
     } catch (error) {
@@ -310,6 +303,33 @@ export default function ProposalModal({
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const replaceVariables = (template: string, link: string) => {
+    if (!template) return '';
+    
+    const formattedValue = formatCurrency(lead.value);
+    const formattedDate = lead.budgetDate ? lead.budgetDate.split('-').reverse().join('/') : (isClient ? new Date().toLocaleDateString('pt-BR') : '');
+    const formattedPayments = lead.paymentMethods.map(m => m.method.split(' (')[0]).join(', ');
+
+    return template
+      .replace(/{{name}}/g, lead.name)
+      .replace(/{{role}}/g, lead.role || '')
+      .replace(/{{company}}/g, lead.company)
+      .replace(/{{cnpj}}/g, lead.cnpj)
+      .replace(/{{email}}/g, lead.email)
+      .replace(/{{whatsapp}}/g, lead.whatsapp)
+      .replace(/{{proposalSummary}}/g, lead.proposalSummary)
+      .replace(/{{value}}/g, formattedValue)
+      .replace(/{{budgetDate}}/g, formattedDate)
+      .replace(/{{paymentMethods}}/g, formattedPayments)
+      .replace(/{{proposalNumber}}/g, String(lead.proposalNumber || ''))
+      .replace(/{{proposalAreaAcronym}}/g, lead.proposalAreaAcronym || '')
+      .replace(/{{proposalServiceCode}}/g, lead.proposalServiceCode || '')
+      .replace(/{{proposalVersion}}/g, String(lead.proposalVersion || 0))
+      .replace(/{{fullProposalNumber}}/g, fullProposalNumber)
+      .replace(/{{createdBy}}/g, lead.createdBy)
+      .replace(/{{proposalLink}}/g, link);
   };
 
   const handleShare = async (
@@ -335,20 +355,31 @@ export default function ProposalModal({
       return;
     }
 
-    let text, url;
     if (platform === 'whatsapp') {
       onUpdateLead({
         ...lead,
         whatsappSentCount: (lead.whatsappSentCount || 0) + 1,
       });
-      text = `Prezado(a) *${lead.name}*, segue o link da sua proposta comercial: ${proposalLink}`;
-      url = `https://wa.me/${lead.whatsapp}?text=${encodeURIComponent(text)}`;
-    } else {
-      const subject = `Proposta Comercial - Grupo Florencio para ${lead.company}`;
-      const body = `Prezado(a) ${lead.name}, segue o link da proposta: ${proposalLink}`;
-      url = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+      const defaultWATemplate = `Prezado(a) {{name}},\n\nSegue o link da sua proposta comercial nº {{fullProposalNumber}} referente à empresa {{company}}.\n\n{{proposalLink}}\n\nPermaneço à disposição para quaisquer esclarecimentos.\n\nAtenciosamente,\n{{createdBy}}\nGrupo Florêncio`;
+      const template = appSettings?.whatsappTemplate || defaultWATemplate;
+      const message = replaceVariables(template, proposalLink);
+      
+      const url = `https://wa.me/${lead.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    } else if (platform === 'email') {
+      const defaultSubject = `Proposta Comercial {{fullProposalNumber}} - {{company}}`;
+      const defaultBody = `Prezado(a) {{name}},\n\nEncaminhamos o link da sua proposta comercial nº {{fullProposalNumber}}, elaborada para a empresa {{company}}.\n\nAcesse pelo link abaixo:\n{{proposalLink}}\n\nEm caso de dúvidas, permanecemos à disposição.\n\nAtenciosamente,\n{{createdBy}}\nGrupo Florêncio`;
+      
+      const subjectTemplate = appSettings?.emailSubjectTemplate || defaultSubject;
+      const bodyTemplate = appSettings?.emailBodyTemplate || defaultBody;
+      
+      const subject = replaceVariables(subjectTemplate, proposalLink);
+      const body = replaceVariables(bodyTemplate, proposalLink);
+      
+      const url = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(url, '_blank');
     }
-    window.open(url, '_blank');
   };
   
   const handleDownloadPdf = async () => {
@@ -375,71 +406,6 @@ export default function ProposalModal({
     { label: 'eSocial SST', icon: Settings },
     { label: 'Auditorias e Inspeções', icon: Eye },
   ];
-
-  const handleUpdateOptionItem = (optIndex: number, itemIndex: number, fieldKey: keyof InvestmentOptionItem, newValue: string) => {
-      setProposalState(prev => {
-          const newOptions = [...(prev.investmentOptions || [])];
-          const newItems = [...newOptions[optIndex].items];
-          newItems[itemIndex] = { ...newItems[itemIndex], [fieldKey]: newValue };
-          newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
-          return { ...prev, investmentOptions: newOptions };
-      });
-      setIsDirty(true);
-      setCurrentLink(null);
-  };
-
-  const handleAddOptionItem = (optIndex: number) => {
-      setProposalState(prev => {
-          const newOptions = [...(prev.investmentOptions || [])];
-          const newItems = [...newOptions[optIndex].items, { id: `item-${Date.now()}`, service: '', value: '' }];
-          newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
-          return { ...prev, investmentOptions: newOptions };
-      });
-      setIsDirty(true);
-      setCurrentLink(null);
-  };
-
-  const handleRemoveOptionItem = (optIndex: number, itemIndex: number) => {
-      setProposalState(prev => {
-          const newOptions = [...(prev.investmentOptions || [])];
-          const newItems = newOptions[optIndex].items.filter((_, idx) => idx !== itemIndex);
-          newOptions[optIndex] = { ...newOptions[optIndex], items: newItems };
-          return { ...prev, investmentOptions: newOptions };
-      });
-      setIsDirty(true);
-      setCurrentLink(null);
-  };
-
-  const handleUpdateDiverseService = (index: number, field: keyof DiverseServiceItem, value: string) => {
-    setProposalState(prev => {
-      const newDiverse = [...(prev.diverseServices || [])];
-      newDiverse[index] = { ...newDiverse[index], [field]: value };
-      return { ...prev, diverseServices: newDiverse };
-    });
-    setIsDirty(true);
-    setCurrentLink(null);
-  };
-
-  const handleAddDiverseService = () => {
-    setProposalState(prev => ({
-      ...prev,
-      diverseServices: [
-        ...(prev.diverseServices || []),
-        { id: `ds-${Date.now()}`, item: ((prev.diverseServices?.length || 0) + 1).toString(), employeeRange: '', servicesIncluded: '', investment: '', onDemand: '' }
-      ]
-    }));
-    setIsDirty(true);
-    setCurrentLink(null);
-  };
-
-  const handleRemoveDiverseService = (index: number) => {
-    setProposalState(prev => ({
-      ...prev,
-      diverseServices: (prev.diverseServices || []).filter((_, i) => i !== index)
-    }));
-    setIsDirty(true);
-    setCurrentLink(null);
-  };
 
   const EditableDiv = ({
     field,

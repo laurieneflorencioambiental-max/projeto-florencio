@@ -13,10 +13,10 @@ export type Status =
 
 export const statuses: Status[] = [
   'Novos',
-  'Pendente/Em negociação',
-  'Aprovado',
-  'Desistência',
-  'Rejeitado',
+  'Pendente/Em negociação' as Status,
+  'Aprovado' as Status,
+  'Desistência' as Status,
+  'Rejeitado' as Status,
 ];
 
 export const paymentMethods = [
@@ -260,6 +260,9 @@ export const appSettingsSchema = z.object({
   proposalClosingUrl: z.string().url().optional().nullable(),
   staleLeadDays: z.number().optional().nullable(),
   monthlyGoal: z.number().optional().nullable(),
+  whatsappTemplate: z.string().optional().nullable(),
+  emailSubjectTemplate: z.string().optional().nullable(),
+  emailBodyTemplate: z.string().optional().nullable(),
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
