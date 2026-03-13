@@ -46,6 +46,7 @@ import {
   List,
   Smile,
   ShieldCheck,
+  X,
   Table as TableIcon
 } from 'lucide-react';
 import {

@@ -37,6 +37,8 @@ import {
   MessageSquare,
   Mail,
   Info,
+  X,
+  MapPin,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -236,7 +238,7 @@ export default function SettingsPage() {
         name: "Foto de Perfil"
       }
     };
-    const config = configMap[imageType];
+    const config = configMap[imageType as keyof typeof configMap];
 
     if (file.size > config.maxSize * 1024) {
       toast({
