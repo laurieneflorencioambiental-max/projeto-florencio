@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -60,6 +61,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { AppSettings, DocumentReference, UserProfile, ProposalArea } from '@/lib/types';
 import {
   uploadImageAndGetUrl,
@@ -72,7 +80,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-
 
 const MAX_PROPOSAL_LOGO_SIZE_KB = 50;
 const MAX_SIDEBAR_LOGO_SIZE_KB = 20;
@@ -526,7 +533,7 @@ export default function SettingsPage() {
               </Label>
               <p className="text-sm text-muted-foreground">
                 {theme === 'dark'
-                  ? 'Desative para uma experiência com cores claras.'
+                  ? 'Desative para uma experiênca com cores claras.'
                   : 'Ative para uma experiência com cores escuras.'}
               </p>
             </div>
