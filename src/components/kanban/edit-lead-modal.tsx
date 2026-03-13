@@ -97,9 +97,11 @@ export default function EditLeadModal({
 
     const newHistory = [...(values.versionHistory || []), newHistoryEntry];
     
+    // Assegura que o rejectionReason seja enviado (mesmo que null) para persistência correta
     onSave({ 
       ...lead, 
       ...values, 
+      rejectionReason: values.rejectionReason || null,
       editCount: (lead.editCount || 0) + 1,
       proposalVersion: newVersionNumber,
       versionHistory: newHistory,
@@ -389,7 +391,10 @@ export default function EditLeadModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select onValueChange={value => field.onChange(value === 'none' ? undefined : value)} value={field.value || 'none'}>
+                       <Select 
+                        onValueChange={value => field.onChange(value === 'none' ? null : value)} 
+                        value={field.value || 'none'}
+                       >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o motivo da perda" />

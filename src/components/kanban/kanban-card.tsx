@@ -453,6 +453,17 @@ export default function KanbanCard({
                   {formatCurrency(lead.value)}
                 </p>
               </div>
+              
+              {(lead.status === 'Rejeitado' || lead.status === 'Desistência') && lead.rejectionReason && (
+                <div className="flex items-start gap-2 p-2 bg-destructive/5 rounded-md border border-destructive/10 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">Motivo da Perda</p>
+                    <p className="text-xs text-destructive/90 font-medium">{lead.rejectionReason}</p>
+                  </div>
+                </div>
+              )}
+
               <StaleLeadIndicator />
               <div className="border-t border-border pt-4 flex flex-col gap-3">
                 <div className="flex items-center gap-2">

@@ -33,10 +33,12 @@ const chartConfig = {
 
 export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
   const chartData = useMemo(() => {
+    // Filtra leads que estão em status de perda e que possuem um motivo válido (string não vazia)
     const lostLeads = leads.filter(
       lead =>
         (lead.status === 'Desistência' || lead.status === 'Rejeitado') &&
-        lead.rejectionReason
+        typeof lead.rejectionReason === 'string' &&
+        lead.rejectionReason.trim().length > 0
     );
 
     const reasonCounts = lostLeads.reduce(
@@ -79,7 +81,7 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[300px]">
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-center">
             Nenhum dado de orçamento perdido com motivo para exibir.
           </p>
         </CardContent>

@@ -97,7 +97,7 @@ export default function AddLeadModal({
       value: 0,
       paymentMethods: [{ method: 'Boleto' }],
       contactSource: { source: 'Google', indicatedBy: '' },
-      rejectionReason: undefined,
+      rejectionReason: null,
       selectedTemplateId: null,
       budgetDate: today,
       proposalArea: '',
