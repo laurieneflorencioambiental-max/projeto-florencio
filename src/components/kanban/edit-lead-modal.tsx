@@ -98,15 +98,17 @@ export default function EditLeadModal({
 
     const newHistory = [...(values.versionHistory || []), newHistoryEntry];
     
-    // Força o envio do motivo da perda de forma limpa para garantir atualização imediata no card/gráfico
-    const finalRejectionReason = (values.status === 'Rejeitado' || values.status === 'Desistência') 
-      ? (values.rejectionReason || null) 
-      : null;
+    // Garante que o motivo da perda seja tratado corretamente
+    let finalRejectionReason = null;
+    if (values.status === 'Rejeitado' || values.status === 'Desistência') {
+      // Se o valor for 'none' (do Select), vira null. Caso contrário, mantém o valor ou null se vazio.
+      finalRejectionReason = (values.rejectionReason as string) === 'none' ? null : (values.rejectionReason || null);
+    }
 
     onSave({ 
       ...lead, 
       ...values, 
-      rejectionReason: finalRejectionReason,
+      rejectionReason: finalRejectionReason as any,
       editCount: (lead.editCount || 0) + 1,
       proposalVersion: newVersionNumber,
       versionHistory: newHistory,

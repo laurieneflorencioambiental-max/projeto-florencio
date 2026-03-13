@@ -342,7 +342,6 @@ export default function KanbanCard({
     return `PTC-FLO-${acronym.toUpperCase()}-${serviceCode}-${paddedNum}.${version}`;
   };
 
-  // Garante que o motivo da perda seja exibido imediatamente se o status for de perda
   const isLostStatus = lead.status === 'Rejeitado' || lead.status === 'Desistência';
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
 
     const reasonCounts = lostLeads.reduce(
       (acc, lead) => {
-        const reason = lead.rejectionReason || 'Motivo não especificado';
+        const reason = (lead.rejectionReason as string).trim();
         acc[reason] = (acc[reason] || 0) + 1;
         return acc;
       },
@@ -98,11 +98,11 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Usamos o length do chartData como key para forçar o re-render imediato ao mudar dados */}
+        {/* Usamos o length do chartData e o timestamp atual como key para forçar o re-render imediato ao mudar dados */}
         <ChartContainer
-          key={`chart-container-${chartData.length}-${leads.length}`}
+          key={`chart-container-${chartData.length}-${JSON.stringify(chartData)}`}
           config={chartConfig}
-          className="max-h-[300px] h-full w-full"
+          className="min-h-[300px] h-full w-full"
         >
           <BarChart
             accessibilityLayer
@@ -110,23 +110,23 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
             layout="vertical"
             margin={{
               left: 10,
-              right: 10,
+              right: 30,
             }}
           >
+            <CartesianGrid horizontal={false} />
             <YAxis
               dataKey="reason"
               type="category"
               tickLine={false}
               axisLine={false}
-              className="text-xs"
+              className="text-[10px] font-medium"
               interval={0}
-              width={150}
-              tick={{ transform: 'translate(-10, 0)' }}
+              width={120}
             />
             <XAxis dataKey="count" type="number" hide />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent labelKey="reason" hideIndicator />}
+              content={<ChartTooltipContent hideIndicator />}
             />
             <Bar dataKey="count" layout="vertical" radius={5} />
           </BarChart>
