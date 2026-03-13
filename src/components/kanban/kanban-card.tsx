@@ -342,6 +342,9 @@ export default function KanbanCard({
     return `PTC-FLO-${acronym.toUpperCase()}-${serviceCode}-${paddedNum}.${version}`;
   };
 
+  // Garante que o motivo da perda seja exibido imediatamente se o status for de perda
+  const isLostStatus = lead.status === 'Rejeitado' || lead.status === 'Desistência';
+
   return (
     <>
       <TooltipProvider>
@@ -454,7 +457,7 @@ export default function KanbanCard({
                 </p>
               </div>
               
-              {(lead.status === 'Rejeitado' || lead.status === 'Desistência') && lead.rejectionReason && (
+              {isLostStatus && lead.rejectionReason && (
                 <div className="flex items-start gap-2 p-2 bg-destructive/5 rounded-md border border-destructive/10 animate-in fade-in slide-in-from-top-1 duration-300">
                   <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                   <div className="flex-1">

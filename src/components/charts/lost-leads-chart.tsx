@@ -34,7 +34,7 @@ const chartConfig = {
 export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
   const chartData = useMemo(() => {
     // Filtra leads que estão em status de perda e que possuem um motivo válido (string não vazia)
-    const lostLeads = leads.filter(
+    const lostLeads = (leads || []).filter(
       lead =>
         (lead.status === 'Desistência' || lead.status === 'Rejeitado') &&
         typeof lead.rejectionReason === 'string' &&
@@ -98,7 +98,9 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Usamos o length do chartData como key para forçar o re-render imediato ao mudar dados */}
         <ChartContainer
+          key={`chart-container-${chartData.length}-${leads.length}`}
           config={chartConfig}
           className="max-h-[300px] h-full w-full"
         >

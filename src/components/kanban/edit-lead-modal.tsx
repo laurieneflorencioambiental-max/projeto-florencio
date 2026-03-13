@@ -77,6 +77,7 @@ export default function EditLeadModal({
         createdAt: toDate(lead.createdAt), 
         versionHistory: processedHistory,
         budgetDate: lead.budgetDate || (toDate(lead.createdAt)?.toISOString().split('T')[0]),
+        rejectionReason: lead.rejectionReason || null,
       });
     }
   }, [lead, form]);
@@ -97,15 +98,20 @@ export default function EditLeadModal({
 
     const newHistory = [...(values.versionHistory || []), newHistoryEntry];
     
-    // Assegura que o rejectionReason seja enviado (mesmo que null) para persistência correta
+    // Força o envio do motivo da perda de forma limpa para garantir atualização imediata no card/gráfico
+    const finalRejectionReason = (values.status === 'Rejeitado' || values.status === 'Desistência') 
+      ? (values.rejectionReason || null) 
+      : null;
+
     onSave({ 
       ...lead, 
       ...values, 
-      rejectionReason: values.rejectionReason || null,
+      rejectionReason: finalRejectionReason,
       editCount: (lead.editCount || 0) + 1,
       proposalVersion: newVersionNumber,
       versionHistory: newHistory,
     });
+    
     onOpenChange(false);
     toast({
       title: 'Lead Atualizado!',
@@ -114,6 +120,7 @@ export default function EditLeadModal({
   };
 
   const contactSource = form.watch('contactSource.source');
+  const currentStatus = form.watch('status');
   const activeAreas = useMemo(() => proposalAreas.filter(a => a.active || a.acronym === lead.proposalArea), [proposalAreas, lead.proposalArea]);
 
   return (
@@ -172,6 +179,49 @@ export default function EditLeadModal({
                   />
                 </div>
                 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status Atual</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Novos">Novos</SelectItem>
+                            <SelectItem value="Pendente/Em negociação">Pendente/Em negociação</SelectItem>
+                            <SelectItem value="Aprovado">Aprovado</SelectItem>
+                            <SelectItem value="Desistência">Desistência</SelectItem>
+                            <SelectItem value="Rejeitado">Rejeitado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="value"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Valor do Orçamento</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
+                            <Input type="number" step="0.01" placeholder="0,00" {...field} className="pl-9" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="company"
@@ -261,22 +311,6 @@ export default function EditLeadModal({
                       <FormLabel>Resumo da Proposta</FormLabel>
                       <FormControl>
                         <Textarea placeholder="Descreva o serviço oferecido" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="value"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor do Orçamento</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">R$</span>
-                          <Input type="number" step="0.01" placeholder="0,00" {...field} className="pl-9" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -385,32 +419,35 @@ export default function EditLeadModal({
                     )}
                   />
                 )}
-                 <FormField
-                  control={form.control}
-                  name="rejectionReason"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Motivo da Perda (se aplicável)</FormLabel>
-                       <Select 
-                        onValueChange={value => field.onChange(value === 'none' ? null : value)} 
-                        value={field.value || 'none'}
-                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o motivo da perda" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {rejectionReasons.map(reason => (
-                            <SelectItem key={reason} value={reason}>{reason}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
+                {(currentStatus === 'Rejeitado' || currentStatus === 'Desistência') && (
+                  <FormField
+                    control={form.control}
+                    name="rejectionReason"
+                    render={({ field }) => (
+                      <FormItem className="animate-in fade-in slide-in-from-left-2 duration-300">
+                        <FormLabel className="text-destructive font-bold">Motivo da Perda</FormLabel>
+                        <Select 
+                          onValueChange={value => field.onChange(value === 'none' ? null : value)} 
+                          value={field.value || 'none'}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="border-destructive/50 focus:ring-destructive">
+                              <SelectValue placeholder="Selecione o motivo da perda" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="none">Selecione um motivo...</SelectItem>
+                            {rejectionReasons.map(reason => (
+                              <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             </ScrollArea>
             <DialogFooter className="pt-6">
