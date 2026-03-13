@@ -33,9 +33,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { ListFilter, PlusCircle, Search, User, Briefcase, Loader2 } from 'lucide-react';
 import AddLeadModal from '@/components/kanban/add-lead-modal';
-import LeadsStatusChart from '@/components/charts/leads-status-chart';
-import LostLeadsChart from '@/components/charts/lost-leads-chart';
-import ContactSourceChart from '@/components/charts/contact-source-chart';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, doc, serverTimestamp, setDoc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
@@ -471,11 +468,7 @@ export default function BudgetsPage() {
         currentSeller={selectedSeller?.name || ''}
         proposalAreas={proposalAreas || []}
       />
-      <div className='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
-        <LeadsStatusChart leads={filteredLeads} />
-        <LostLeadsChart leads={filteredLeads} />
-        <ContactSourceChart leads={filteredLeads} />
-      </div>
+      
       <AddLeadModal
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}

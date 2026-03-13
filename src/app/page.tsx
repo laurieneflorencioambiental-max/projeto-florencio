@@ -71,6 +71,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import LeadsStatusChart from '@/components/charts/leads-status-chart';
+import LostLeadsChart from '@/components/charts/lost-leads-chart';
+import ContactSourceChart from '@/components/charts/contact-source-chart';
 
 type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'specific_month';
 
@@ -517,6 +520,12 @@ export default function DashboardPage() {
         ) : isAdmin && (
             <OnlineUsersCard />
         )}
+      </div>
+
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+        <LeadsStatusChart leads={filteredLeads} />
+        <LostLeadsChart leads={filteredLeads} />
+        <ContactSourceChart leads={filteredLeads} />
       </div>
 
        <AddLeadModal
