@@ -39,8 +39,7 @@ export default function LostLeadsChart({ leads }: LostLeadsChartProps) {
         lead =>
           (lead.status === 'Desistência' || lead.status === 'Rejeitado') &&
           typeof lead.rejectionReason === 'string' &&
-          lead.rejectionReason.trim().length > 0 &&
-          lead.rejectionReason !== 'none'
+          lead.rejectionReason.trim().length > 0
       );
 
       if (lostLeads.length === 0) return [];
