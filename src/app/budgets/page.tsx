@@ -167,13 +167,16 @@ export default function BudgetsPage() {
         proposalSummary: values.proposalSummary,
         value: values.value,
         paymentMethods: values.paymentMethods,
-        contactSource: values.contactSource,
+        contactSource: {
+            source: values.contactSource.source,
+            indicatedBy: values.contactSource.indicatedBy ?? null,
+        },
         email: values.email,
         whatsapp: values.whatsapp,
-        rejectionReason: values.rejectionReason || null,
-        selectedTemplateId: values.selectedTemplateId || null,
+        rejectionReason: values.rejectionReason ?? null,
+        selectedTemplateId: values.selectedTemplateId ?? null,
         budgetDate: values.budgetDate || new Date().toISOString().split('T')[0],
-        proposalArea: values.proposalArea || null,
+        proposalArea: values.proposalArea ?? null,
         id: newDocRef.id,
         status: 'Novos' as Status,
         createdBy: selectedSeller.name,
@@ -209,7 +212,22 @@ export default function BudgetsPage() {
   const handleUpdateLead = (updatedLead: Lead) => {
       if (!user || !firestore) return;
       const leadRef = doc(firestore, 'budgets', updatedLead.id);
-      setDoc(leadRef, updatedLead, { merge: true })
+      
+      // Firestore does not accept 'undefined'. We must ensure no root-level fields are undefined.
+      const sanitizedData = Object.entries(updatedLead).reduce((acc, [key, value]) => {
+        acc[key] = value === undefined ? null : value;
+        return acc;
+      }, {} as any);
+
+      // Deeply sanitize nested objects if necessary
+      if (sanitizedData.contactSource && typeof sanitizedData.contactSource === 'object') {
+          sanitizedData.contactSource = {
+              ...sanitizedData.contactSource,
+              indicatedBy: sanitizedData.contactSource.indicatedBy ?? null
+          };
+      }
+
+      setDoc(leadRef, sanitizedData, { merge: true })
         .then(() => {
           if (auth) logClientEvent('Edição de Orçamento', auth, `Empresa: ${updatedLead.company}`);
         })
@@ -217,7 +235,7 @@ export default function BudgetsPage() {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: leadRef.path,
             operation: 'update',
-            requestResourceData: updatedLead,
+            requestResourceData: sanitizedData,
           }));
         });
   };
