@@ -1,0 +1,113 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // Check a user's document in the 'users' collection for an 'isAdmin' flag.
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
+    // User profiles
+    match /users/{userId} {
+      // Admins can read any user profile for management.
+      // A regular user can only read their own profile.
+      allow get: if isAdmin() || isOwner(userId);
+
+      // Only Admins can list all users (e.g., for analytics or user management).
+      allow list: if isAdmin();
+      
+      // A user can update their own profile (displayName, photoURL, presence).
+      // An admin can update any user's profile (e.g., to grant admin rights).
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Disallow client-side creation or deletion of user profiles to maintain integrity.
+      allow create, delete: if false;
+    }
+
+    // Budgets (Leads)
+    match /budgets/{budgetId} {
+      // An admin can get any budget. A user can only get a budget they created.
+      allow get: if isSignedIn() && (isAdmin() || resource.data.createdByUid == request.auth.uid);
+      
+      // Admins can list all budgets. Users must filter to their own budgets in the query.
+      allow list: if isSignedIn(); 
+
+      // Any authenticated user can create a budget.
+      allow create: if isSignedIn();
+
+      // An admin or the creator of the budget can update or delete it.
+      allow update, delete: if isSignedIn() && (isAdmin() || resource.data.createdByUid == request.auth.uid);
+    }
+    
+    // Services in the catalog
+    match /services/{serviceId} {
+        // Admins can manage the service catalog.
+        allow write: if isAdmin();
+        // Any authenticated user can read the catalog.
+        allow read: if isSignedIn();
+    }
+
+    // Templates for proposals, pricing, and commissions
+    match /proposal-templates/{templateId} {
+        allow write: if isAdmin();
+        allow read: if isSignedIn();
+    }
+    match /pricing-templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
+    match /commission-templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // Publicly sharable documents
+    match /proposals/{proposalId} {
+      allow get: if true; // Anyone with the link can view.
+      allow create: if isSignedIn();
+      allow list, update, delete: if false;
+    }
+    match /partnerships/{partnershipId} {
+        allow get: if true; // Anyone with the link can view.
+        allow create: if isAdmin();
+        allow list, update, delete: if false;
+    }
+
+    // Global application settings
+    match /app-settings/global {
+      allow get: if true; // Readable by anyone for UI config (logos, etc.).
+      allow write: if isAdmin(); // Writable only by admins.
+    }
+    
+    // Marketing related collections
+    match /marketing-roi-entries/{entryId} { allow read, write: if isAdmin(); }
+    match /marketing-actions/{actionId} { allow read, write: if isAdmin(); }
+    match /marketing-tools/{toolId} { allow read, write: if isAdmin(); }
+
+    // Audit logs
+    match /audit-logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Written by Cloud Function only.
+    }
+
+    // Proposal Areas Configuration
+    match /proposal-areas/{areaId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

@@ -1,0 +1,14 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Allow read access to anyone, required for images to be displayed.
+      allow read: if true;
+
+      // Allow write access (upload, update, delete) only to authenticated users.
+      // This is the definitive rule to solve the permission issue.
+      allow write: if request.auth != null;
+    }
+  }
+}

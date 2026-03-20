@@ -1,0 +1,1031 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { initializeFirebase, useUser, useFirestore } from '@/firebase';
+import { doc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { useParams } from 'next/navigation';
+import type { PartnershipDocument, AppSettings, ProposalData } from '@/lib/types';
+import {
+  Loader2,
+  Leaf,
+  Goal,
+  Eye,
+  Settings,
+  HardHat,
+  Calendar as CalendarIcon,
+  Gem,
+  ShieldCheck,
+  Table as TableIcon
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import '../../globals.css';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+function ProposalPageContent({ proposalData }: { proposalData: ProposalData }) {
+  const {
+    lead,
+    proposalState,
+    fullProposalNumber,
+    logoUrl,
+    proposalCoverUrl,
+    proposalLocationUrl,
+    proposalClosingUrl,
+  } = proposalData;
+  const [mediaConsent, setMediaConsent] = useState<'yes' | 'no' | undefined>(
+    undefined
+  );
+  const [approvalDate, setApprovalDate] = useState<Date>();
+  const [isClient, setIsClient] = useState(false);
+
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const [hasTracked, setHasTracked] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Tracking effect: Registers view only for external (unauthenticated) users
+  useEffect(() => {
+    if (isClient && !isUserLoading && !user && !hasTracked && firestore && lead.id) {
+      setHasTracked(true);
+      
+      const budgetRef = doc(firestore, 'budgets', lead.id);
+      
+      updateDoc(budgetRef, {
+        proposalViewCount: increment(1),
+        proposalLastViewedAt: serverTimestamp(),
+        proposalViewed: true,
+        // Only set the initial viewed timestamp if it's the very first view reported by this lead object
+        ...(lead.proposalViewed ? {} : { proposalViewedAt: serverTimestamp() })
+      }).catch(err => {
+        // Silently fail or log to console, but don't disrupt user experience
+        console.error("Failed to track external view:", err);
+      });
+    }
+  }, [isClient, isUserLoading, user, hasTracked, firestore, lead.id, lead.proposalViewed]);
+
+  const formatCurrency = (value: number) => {
+    if (!value) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const serviceAreas = [
+    { label: 'Saúde e Segurança do Trabalho', icon: HardHat },
+    { label: 'Meio Ambiente', icon: Leaf },
+    { label: 'eSocial SST', icon: Settings },
+    { label: 'Auditorias e Inspeções', icon: Eye },
+  ];
+
+  const renderBudgetDate = () => {
+    if (!isClient) return '...';
+    if (lead.budgetDate) {
+      const parts = lead.budgetDate.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
+    return proposalData.createdAt?.toDate
+      ? proposalData.createdAt.toDate().toLocaleDateString('pt-BR')
+      : 'Data Indisponível';
+  };
+
+  return (
+    <main className="bg-gray-100 dark:bg-gray-900 p-4 sm:p-8 flex flex-col items-center gap-8">
+      {proposalCoverUrl && (
+        <div className="a4-page shadow-lg" style={{ padding: 0 }}>
+          <img
+            src={proposalCoverUrl}
+            alt="Capa da Proposta"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      <div
+        className="a4-page p-8 text-sm bg-white shadow-lg"
+        style={{ color: '#596371', minHeight: '297mm' }}
+      >
+        {/* Header */}
+        <header className="flex justify-between items-center pb-4 border-b">
+          <div>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Logo da Empresa"
+                className="h-16 w-auto object-contain"
+              />
+            ) : (
+              <h1 className="text-2xl font-bold" style={{ color: '#1b7689' }}>
+                Grupo Florencio
+              </h1>
+            )}
+            <p className="text-sm">Saúde Ocupacional Estratégica</p>
+            <p className="text-xs">CNPJ: 35.041.385/0001-10</p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-xl font-semibold">Proposta Comercial</h2>
+            <p className="text-sm">{fullProposalNumber}</p>
+            <p className="text-sm">
+              Data do Orçamento: {renderBudgetDate()}
+            </p>
+          </div>
+        </header>
+
+        <p className="text-xs italic text-center text-muted-foreground pt-2">
+          Esta proposta comercial detalha o escopo e os valores dos serviços, não substituindo um contrato formal. Caso necessário, um contrato de prestação de serviços será elaborado em etapa posterior.
+        </p>
+
+        <Alert className="my-6 print:hidden">
+          <Leaf className="h-4 w-4" />
+          <AlertDescription>
+            Para um processo mais ágil e sustentável, sugerimos que você salve
+            esta proposta como PDF (use <strong>Ctrl+P</strong> ou{' '}
+            <strong>Cmd+P</strong>) e utilize a assinatura digital do{' '}
+            <a
+              href="https://www.gov.br/pt-br/servicos/assinatura-eletronica"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline"
+            >
+              GOV.BR
+            </a>
+            . Assim, você economiza papel e contribui com o meio ambiente.
+          </AlertDescription>
+        </Alert>
+
+        {/* Client info */}
+        <section className="my-8">
+          <h3 className="text-lg font-semibold mb-2 border-b pb-2">Para:</h3>
+          <p className="font-bold">{lead.company}</p>
+          <p>
+            A/C: {lead.name}
+            {lead.role && `, ${lead.role}`}
+          </p>
+          <p>CNPJ: {lead.cnpj}</p>
+          <p>Email: {lead.email}</p>
+          <p>WhatsApp: {lead.whatsapp}</p>
+        </section>
+
+        <div className="border-b my-8"></div>
+
+        {/* About us */}
+        <section className="my-8">
+          <h3 className="text-lg font-semibold mb-2">Sobre nós</h3>
+          <p className="text-sm leading-relaxed mt-4">
+            Somos apaixonados há mais de uma década por transformar ambientes de
+            trabalho. O Grupo Florêncio se consolidou como referência em Saúde e
+            Segurança do Trabalho. Nossa equipe, especializada e eficiente, atua
+            com cuidado e comprometimento para criar espaços corporativos mais
+            seguros, sustentáveis e alinhados às Normas Regulamentadoras. Com
+            transparência e expertise, proporcionamos a confiança que sua empresa
+            precisa para elevar seus padrões de segurança e eficiência. Confie em
+            nossa experiência para alcançar resultados valiosos e duradouros.
+          </p>
+          <blockquote
+            className="border-l-4 pl-4 py-2 my-4"
+            style={{ borderColor: '#1b7689' }}
+          >
+            <p className="text-sm italic">
+              "Nossos serviços são investimentos, onde trazemos benefícios que
+              superam qualquer custo, pois não é sobre preço, é sobre entregar
+              resultados valiosos. Comprometemo-nos integralmente a proporcionar
+              excelência em Saúde e Segurança do Trabalho, impulsionados pela
+              nossa especialização e dedicação incansável.”
+            </p>
+            <footer className="text-right text-xs font-medium mt-2">
+              Grupo Florêncio
+            </footer>
+          </blockquote>
+          <div className="mt-8 mb-8 p-4 border border-green-200 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-start gap-4">
+            <Leaf className="h-8 w-8 text-green-600 flex-shrink-0 mt-1" />
+            <div>
+              <h4 className="font-bold text-green-700 dark:text-green-300">Parceria ESG e Sustentabilidade</h4>
+              <p className="text-sm leading-relaxed mt-1 text-green-800 dark:text-green-400">
+                O Grupo Florencio é um forte aliado das práticas de ESG (Ambiental, Social e Governança). Priorizamos a sustentabilidade em todos os nossos processos. Por isso, incentivamos o uso de propostas digitais e assinaturas eletrônicas, como a do GOV.BR, para reduzir o consumo de papel e minimizar nosso impacto ambiental. Juntos, podemos construir um futuro mais verde e responsável.
+              </p>
+            </div>
+          </div>
+          <div className="my-8">
+            <div className="grid md:grid-cols-3 gap-8 text-center">
+              <div className="flex flex-col items-center">
+                <Goal className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>
+                  Missão
+                </h4>
+                <p className="text-sm leading-relaxed mt-2 text-left">
+                  Nossa missão é disponibilizar serviços da Qualidade, Saúde, Meio
+                  Ambiente & Segurança do Trabalho em prol do uso adequado dos
+                  recursos naturais, aumento da produtividade e bem-estar social,
+                  superando as expectativas de nossos clientes e agregando valores
+                  para a sociedade.
+                </p>
+              </div>
+              <div className="flex flex-col items-center">
+                <Eye className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>
+                  Visão
+                </h4>
+                <p className="text-sm leading-relaxed mt-2 text-left">
+                  Sermos reconhecidos pela excelência dos nossos serviços, de de
+                  forma a garantir qualidade, satisfação do cliente exercendo papel
+                  estratégico na execução de todos os trabalhos prestados.
+                </p>
+              </div>
+              <div className="flex flex-col items-center">
+                <Gem className="h-10 w-10 mb-2" style={{ color: '#1b7689' }} />
+                <h4 className="font-bold text-lg" style={{ color: '#1b7689' }}>
+                  Valores
+                </h4>
+                <p className="text-sm leading-relaxed mt-2 text-left">
+                  Dedicação aos nossos clientes, Honestidade, Ética, Transparência,
+                  Comprometimento Socio ambiental.
+                </p>
+              </div>
+            </div>
+          </div>
+          <h4 className="text-md font-semibold text-center mt-6">
+            Temos uma equipe especializada para oferecer as melhores soluções em:
+          </h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center my-6">
+            {serviceAreas.map((area, index) => (
+              <div
+                key={index}
+                className="flex flex-col items-center justify-center p-4 bg-primary/10 rounded-lg"
+              >
+                <area.icon
+                  className="h-8 w-8 mb-2"
+                  style={{ color: '#1b7689' }}
+                />
+                <span
+                  className="font-semibold text-sm text-center"
+                  style={{ color: '#1b7689' }}
+                >
+                  {area.label}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="border-b"></div>
+
+          <h3 className="text-lg font-semibold mt-6">Objetivo</h3>
+          <p className="text-sm leading-relaxed mt-4">
+            Temos por objetivo o compromisso em oferecer serviços de Saúde
+            Ocupacional e Segurança do Trabalho com excelência e em conformidade
+            with a legislação, promovendo ambientes corporativos seguros,
+            saudáveis e produtivos.
+          </p>
+          <div className="border-b my-6"></div>
+          <p className="text-sm leading-relaxed">
+            Esta Proposta Comercial está com valores compatíveis de Negociação
+            para o atendimento da Prestação de Serviços de QSMS - Qualidade,
+            Segurança, Meio Ambiente e Saúde. Gostaríamos de salientar o grande
+            interesse que temos em trabalhar em parceria com a sua empresa, pois a
+            nossa missão é oferecer serviços em gestão através de uma visão
+            estratégica buscando a satisfação do cliente e melhorias para a
+            sociedade.
+          </p>
+          <p className="text-sm leading-relaxed mt-4">
+            Para tal, encaminhamos ao V. Sr. (a)., a presente Proposta de Preços
+            para a realização dos serviços conforme descritos, de acordo com as
+            diretrizes técnicas, para esta conceituada empresa.
+          </p>
+        </section>
+
+        {/* Dynamic content sections */}
+        <section className="my-8 space-y-6">
+          {proposalState.proposalObject?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Objeto da Proposta
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.proposalObject.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.serviceScope?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Escopo do Serviço
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.serviceScope.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.methodology?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Metodologia
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.methodology.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.psychosocialTools?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Ferramentas de avaliação dos Fatores psicossociais
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.psychosocialTools.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.lgpdSecurity?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Segurança LGPD
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.lgpdSecurity.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.contractorResponsibilities?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Da Contratada
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.contractorResponsibilities.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.clientResponsibilities?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Da Contratante
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.clientResponsibilities.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.preliminaryErgonomicAnalysis?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Análise Ergonômica Preliminar
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.preliminaryErgonomicAnalysis.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.postErgonomicImplementation?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Roteiro pós implementação da análise Ergonômica (não inclusa nesta proposta técnica)
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.postErgonomicImplementation.replace(
+                        /\n/g,
+                        '<br />'
+                    ),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    São considerados Contratos de Baixa Complexidade, Média Complexidade, Alta Complexidade:
+                </h3>
+                <p className="text-sm italic mb-4">As opções de planos são de acordo com a estratégia financeira da sua empresa.</p>
+                <div className="grid gap-4">
+                    {proposalState.complexityDefinitions.map((def) => (
+                        <div key={def.id} className="p-4 border rounded-lg bg-blue-50/20">
+                            <div className="flex items-center gap-2 mb-2">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                                <h4 className="font-bold text-base text-primary">{def.title}</h4>
+                            </div>
+                            <div
+                                className="prose prose-sm dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{
+                                __html: def.description.replace(/\n/g, '<br />'),
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 italic">
+                    Abaixo seguem as opções dos Planos, de acordo com a estratégia financeira da sua empresa. Investimento - Opções - Baixa Complexidade, Média Complexidade, Alta Complexidade:
+                </p>
+              </>
+          )}
+
+          {proposalState.planStructure && proposalState.planStructure.length > 0 && (
+              <div className="my-8 overflow-hidden rounded-lg border border-[#1b7689]">
+                  <div className="bg-[#1b7689] p-3 text-center text-white font-bold uppercase tracking-wider text-base">
+                      ESTRUTURA DOS PLANOS
+                  </div>
+                  <div className="bg-[#1b7689] p-2 text-center text-white text-xs border-t border-white/20 italic">
+                      Avalie o plano que melhor se adequa a estrutura organizacional da sua empresa hoje:
+                  </div>
+                  <table className="w-full border-collapse">
+                      <thead>
+                          <tr className="bg-[#8ec7d1] text-[#1b7689]">
+                              <th className="p-3 border-r border-[#1b7689] text-sm font-bold text-left">PLANO</th>
+                              <th className="p-3 border-r border-[#1b7689] text-sm font-bold text-left">PERFIL</th>
+                              <th className="p-3 text-sm font-bold text-left">OBJETIVO</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {proposalState.planStructure.map((item) => (
+                              <tr key={item.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689]">
+                                  <td className="p-3 border-r border-[#1b7689] text-xs font-semibold" dangerouslySetInnerHTML={{ __html: item.plan }} />
+                                  <td className="p-3 border-r border-[#1b7689] text-xs" dangerouslySetInnerHTML={{ __html: item.profile }} />
+                                  <td className="p-3 text-xs" dangerouslySetInnerHTML={{ __html: item.objective }} />
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+          )}
+
+          {proposalState.deadline?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Prazo para Realização dos Serviços
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.deadline.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+
+          {proposalState.strategicVision?.trim() && (
+              <>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Nossa Visão Estratégica
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.strategicVision.replace(/\n/g, '<br />'),
+                    }}
+                />
+              </>
+          )}
+        </section>
+
+        {/* Investment */}
+        <section className="my-8">
+          <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+            Investimentos - abaixo seguem as opções dos serviços, de acordo com a estratégia financeira da sua empresa.
+          </h3>
+          
+          {proposalState.investment?.trim() && (
+            <div
+              className="prose dark:prose-invert max-w-none p-2 mt-8"
+              dangerouslySetInnerHTML={{ __html: proposalState.investment }}
+            />
+          )}
+
+          {proposalState.plans && proposalState.plans.length > 0 && (
+            <div className="mt-12 space-y-8">
+              <h3 className="text-lg font-bold border-b pb-2 mb-4">Planos de Investimento</h3>
+              {proposalState.plans.map((plan) => (
+                <div key={plan.id} className="border rounded-lg overflow-hidden shadow-sm">
+                  <div className="p-3 text-white font-bold flex justify-between items-center" style={{ backgroundColor: '#1b7689' }}>
+                    <span>{plan.name}</span>
+                    <span className="text-xs uppercase opacity-90">
+                        Modelo: {
+                            plan.paymentType === 'unique' ? 'Único' : 
+                            plan.paymentType === 'monthly' ? 'Mensal' : 
+                            'Por Contrato ativo, mensal.'
+                        }
+                    </span>
+                  </div>
+                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/20">
+                    <div className="space-y-4">
+                      {plan.purpose?.trim() && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Finalidade</p>
+                          <div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.purpose }} />
+                        </div>
+                      )}
+                      {plan.differentiator?.trim() && (
+                        <div className="space-y-1 border-t border-primary/10 pt-3">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Diferencial</p>
+                          <div className="text-sm leading-tight whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: plan.differentiator }} />
+                        </div>
+                      )}
+                      {plan.focus?.trim() && (
+                        <div className="space-y-1 border-t border-primary/10 pt-3">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Foco</p>
+                          <p className="text-sm leading-tight">{plan.focus}</p>
+                        </div>
+                      )}
+                      {plan.employeeRange?.trim() && (
+                        <div className="space-y-1 border-t border-primary/10 pt-3">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Faixa de Funcionários</p>
+                          <p className="text-sm leading-tight">{plan.employeeRange}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      {plan.servicesIncluded?.trim() && (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.servicesIncluded }} />
+                          </div>
+                      )}
+                      {plan.auditSupport?.trim() && (
+                          <div className="space-y-1 border-t border-primary/10 pt-3">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Suporte em auditorias e fiscalizações</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.auditSupport }} />
+                          </div>
+                      )}
+                      {plan.strategicManagement?.trim() && (
+                          <div className="space-y-1 border-t border-primary/10 pt-3">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão Estratégica</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.strategicManagement }} />
+                          </div>
+                      )}
+                      {plan.specificManagement?.trim() && (
+                          <div className="space-y-1 border-t border-primary/10 pt-3">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Gestão específica por contrato</p>
+                            <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: plan.specificManagement }} />
+                          </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {plan.investments && plan.investments.length > 0 && (
+                    <div className="p-4 bg-white border-t border-dashed">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Composição do Investimento</p>
+                        <div className="space-y-1">
+                            {plan.investments.map((inv, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-50 last:border-0">
+                                    <span>{inv.label}</span>
+                                    <span className="font-semibold text-foreground">{formatCurrency(inv.value)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  )}
+
+                  {plan.extraServices && plan.extraServices.length > 0 && (
+                    <div className="p-4 border-t border-dashed bg-white">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Serviços Adicionais</p>
+                      <div className="grid grid-cols-1 gap-1">
+                        {plan.extraServices.map((es, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-sm py-1.5 border-b border-gray-100 last:border-0">
+                            <span>{es.name}</span>
+                            <span className="font-semibold text-foreground">{formatCurrency(es.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {(!plan.investments || plan.investments.length === 0) && (
+                    <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
+                      <span className="font-bold text-sm">Investimento do Plano:</span>
+                      <span className="text-xl font-bold text-primary">
+                          {formatCurrency(plan.investment || 0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {proposalState.investmentOptions && proposalState.investmentOptions.length > 0 && (
+              <div className="space-y-10 mt-12">
+                  <div className="flex items-center gap-2 border-b pb-2 mb-4">
+                      <TableIcon className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-bold">Opções de Investimento Customizáveis</h3>
+                  </div>
+                  {proposalState.investmentOptions.map((opt) => (
+                      <div key={opt.id} className="space-y-4">
+                          <h4 className="font-bold text-[#1b7689] text-base" dangerouslySetInnerHTML={{ __html: opt.title }} />
+                          <div className="overflow-hidden rounded-lg border border-[#8ec7d1]">
+                              <table className="w-full border-collapse">
+                                  <thead>
+                                      <tr className="bg-[#8ec7d1] text-[#1b7689]">
+                                          <th className="p-3 border-r border-[#8ec7d1] text-sm font-bold text-left w-3/4">Serviço</th>
+                                          <th className="p-3 text-sm font-bold text-center">Investimento</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      {opt.items.map((item) => (
+                                          <tr key={item.id} className="border-t border-[#8ec7d1] bg-white">
+                                              <td className="p-3 border-r border-[#8ec7d1] text-xs leading-relaxed whitespace-pre-wrap">
+                                                  {item.service}
+                                              </td>
+                                              <td className="p-3 text-center text-xs font-bold text-[#1b7689]">
+                                                  {item.value}
+                                              </td>
+                                          </tr>
+                                      ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                          {opt.observations?.trim() && (
+                              <div className="p-3 bg-gray-50 border border-[#8ec7d1] rounded-lg">
+                                  <div className="text-xs italic leading-relaxed" dangerouslySetInnerHTML={{ __html: opt.observations }} />
+                              </div>
+                          )}
+                      </div>
+                  ))}
+              </div>
+          )}
+
+          {proposalState.diverseServices && proposalState.diverseServices.length > 0 && (
+              <div className="space-y-8 mt-12">
+                  <div className="flex items-center gap-2 border-b pb-2 mb-4">
+                      <TableIcon className="h-5 w-5 text-primary" /> 
+                      <h3 className="text-lg font-bold">Opções de Investimento - Serviços Diversos</h3>
+                  </div>
+                  <div className="overflow-x-auto border border-[#1b7689] rounded-lg">
+                      <table className="w-full border-collapse min-w-[800px]">
+                          <thead>
+                              <tr className="bg-[#1b7689] text-white">
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[60px]">Item</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[120px]">Faixa de Funcionários</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-left">Serviços Inclusos</th>
+                                  <th className="p-3 border-r border-white/20 text-xs font-bold text-center w-[150px]">Investimento</th>
+                                  <th className="p-3 text-xs font-bold text-center w-[100px]">Por demanda</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {proposalState.diverseServices.map((ds) => (
+                                  <tr key={ds.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689]">
+                                      <td className="p-3 border-r border-[#1b7689] text-center text-xs">{ds.item}</td>
+                                      <td className="p-3 border-r border-[#1b7689] text-center text-xs">{ds.employeeRange}</td>
+                                      <td className="p-3 border-r border-[#1b7689] text-xs whitespace-pre-wrap">{ds.servicesIncluded}</td>
+                                      <td className="p-3 border-r border-[#1b7689] text-center text-xs font-bold">{ds.investment}</td>
+                                      <td className="p-3 text-center text-xs">{ds.onDemand}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          )}
+
+          {proposalState.exams && proposalState.exams.length > 0 && (
+            <div className="mt-8">
+              <p className="text-sm mb-4 font-semibold">
+                Investimentos Adicionais - Exames/Serviços Avulsos (Gerais)
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr
+                      style={{ backgroundColor: '#1b7689' }}
+                      className="text-white"
+                    >
+                      <th className="p-3 text-left font-semibold">Serviço</th>
+                      <th className="p-3 text-left font-semibold">Descrição</th>
+                      <th className="p-3 text-left font-semibold">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proposalState.exams.map((exam: any, index: number) => (
+                      <tr
+                        key={exam.id}
+                        className={cn(
+                          'border-b',
+                          index % 2 === 0 ? 'bg-blue-50' : 'bg-blue-100'
+                        )}
+                        style={{ borderColor: 'rgba(27, 118, 137, 0.2)' }}
+                      >
+                        <td className="p-3 align-top">{exam.service}</td>
+                        <td className="p-3 align-top">{exam.description}</td>
+                        <td className="p-3 align-top">
+                          {formatCurrency(exam.value)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Condições de Pagamento */}
+        <section className="my-8">
+          <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+            Condições de Pagamento
+          </h3>
+          <ul className="list-disc list-inside space-y-2">
+            {lead.paymentMethods.map((pm, index) => (
+              <li key={index}>{pm.method.replace(/\s\(.*\)/, '')}</li>
+            ))}
+          </ul>
+        </section>
+
+        {proposalState.paymentTerms?.trim() && (
+            <section className="my-8">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                    Condições de Pagamento Adicionais
+                </h3>
+                <div
+                    className="prose dark:prose-invert max-w-none p-2"
+                    dangerouslySetInnerHTML={{
+                    __html: proposalState.paymentTerms.replace(/\n/g, '<br />'),
+                    }}
+                />
+            </section>
+        )}
+
+        <div className="border-b my-8"></div>
+
+        {/* Termo de Aprovação */}
+        <section className="my-8" style={{ breakBefore: 'page' }}>
+          <h3 className="text-lg font-semibold mb-4">Termo de aprovação:</h3>
+
+          <div
+            className="p-4 rounded-lg border"
+            style={{
+              backgroundColor: 'rgba(27, 118, 137, 0.1)',
+              borderColor: 'rgba(27, 118, 137, 0.2)',
+            }}
+          >
+            <h4
+              className="font-bold text-center mb-2"
+              style={{ color: '#1b7689' }}
+            >
+              Aprovação do Serviço
+            </h4>
+            <p className="text-center text-xs">
+              Esta Proposta Técnica Comercial será APROVADA, mediante a sua
+              devolução via e-mail, assinada e datada por pessoa responsável da
+              CONTRATANTE.
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">De acordo em:</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-[240px] justify-start text-left font-normal print:border-none print:shadow-none',
+                        !approvalDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {approvalDate ? (
+                        format(approvalDate, 'PPP', { locale: ptBR })
+                      ) : (
+                        <span>Escolha uma data</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-0 print:hidden"
+                    align="start"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={approvalDate}
+                      onSelect={setApprovalDate}
+                      initialFocus
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <p className="text-sm text-destructive print:hidden -ml-2">
+                (Preencha a data antes de assinar)
+              </p>
+            </div>
+            <p>
+              Nome do Aprovador:
+              ____________________________________________________
+            </p>
+          </div>
+
+          <div className="mt-8 border rounded-lg p-4 space-y-4">
+            <p className="font-semibold">Prezado cliente,</p>
+            <p>
+              Em nossa busca contínua em promover práticas de Segurança do
+              Trabalho e Sustentabilidade, gostaríamos de propor uma
+              parceria em nossas mídias sociais. Caso tenhamos a honra de
+              realizar este projeto with a sua empresa, gostaríamos de saber
+              se podemos divulgar nosso trabalho realizado nas suas
+              instalações em nossas plataformas digitais, como Instagram,
+              Linkedin, Site, YouTube?
+            </p>
+            <p>
+              Acreditamos que essa parceria poderá beneficiar a imagem positiva
+              da sua empresa no compromisso com a Segurança do Trabalho e Meio
+              Ambiente.
+            </p>
+            <p className="text-sm text-destructive">
+              Para assinalar sua preferência, por favor, clique em uma das
+              opções abaixo:
+            </p>
+            <RadioGroup
+              className="space-y-2"
+              value={mediaConsent}
+              onValueChange={(value: 'yes' | 'no') => setMediaConsent(value)}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="yes" id="consent-yes" />
+                <Label htmlFor="consent-yes">Sim</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no" id="consent-no" />
+                <Label htmlFor="consent-no">Não</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="text-center pt-8 border-t mt-8">
+          <p className="font-bold" style={{ color: '#1b7689' }}>
+            Grupo Florencio
+          </p>
+          <p className="text-xs">
+            comercial@grupoflorencio.com.br | +55 (21) 96453-9493 | @grupoflorencio
+          </p>
+          <p className="text-xs">www.grupoflorencio.com.br</p>
+        </footer>
+      </div>
+      {proposalLocationUrl && (
+        <div className="a4-page shadow-lg mt-8" style={{ padding: 0 }}>
+          <img
+            src={proposalLocationUrl}
+            alt="Nossa Localização Estratégica"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      {proposalClosingUrl && (
+        <div className="a4-page shadow-lg mt-8" style={{ padding: 0 }}>
+          <img
+            src={proposalClosingUrl}
+            alt="Página de Encerramento da Proposta"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+    </main>
+  );
+}
+
+
+export default function ProposalViewerPage() {
+    const params = useParams();
+    const [proposalData, setProposalData] = useState<ProposalData | null>(null);
+    const [appSettings, setAppSettings] = useState<Partial<AppSettings>>({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const id = params.id as string;
+
+    useEffect(() => {
+        if (!id) {
+          setIsLoading(false);
+          setError('ID da parceria não encontrado.');
+          return;
+        }
+
+        const fetchProposalAndSettings = async () => {
+          setIsLoading(true);
+          try {
+            const { firestore } = initializeFirebase();
+            if (!firestore) {
+              setIsLoading(false);
+              return;
+            }
+
+            const proposalRef = doc(firestore, 'proposals', id);
+            const proposalSnap = await getDoc(proposalRef);
+
+            if (!proposalSnap.exists()) {
+              setError('Proposta não encontrada.');
+              setIsLoading(false);
+              return;
+            }
+
+            const fetchedProposalData = proposalSnap.data() as ProposalData;
+
+            const settingsRef = doc(firestore, 'app-settings', 'global');
+            const settingsSnap = await getDoc(settingsRef);
+
+            const settings = settingsSnap.exists()
+              ? (settingsSnap.data() as AppSettings)
+              : {};
+
+            setProposalData({
+              ...fetchedProposalData,
+              logoUrl: fetchedProposalData.logoUrl ?? settings.proposalLogoUrl,
+              proposalCoverUrl:
+                fetchedProposalData.proposalCoverUrl ?? settings.proposalCoverUrl,
+              proposalLocationUrl:
+                fetchedProposalData.proposalLocationUrl ?? settings.proposalLocationUrl,
+              proposalClosingUrl:
+                fetchedProposalData.proposalClosingUrl ??
+                settings.proposalClosingUrl,
+            });
+          } catch (err) {
+            console.error('Error fetching data:', err);
+            setError('Ocorreu um erro ao carregar a proposta.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchProposalAndSettings();
+    }, [id]);
+
+    if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center text-destructive bg-background">
+        {error}
+      </div>
+    );
+  }
+
+  if (!proposalData) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        Nenhuma proposta para exibir.
+      </div>
+    );
+  }
+
+  return <ProposalPageContent proposalData={proposalData} />;
+}
