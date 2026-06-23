@@ -43,6 +43,7 @@ body {
     --sidebar-ring: 180 52% 50%;
     --proposal-text-secondary: 215 12% 39%;
   }
+
   .dark {
     --background: 216 10% 15%;
     --foreground: 0 0% 98%;
@@ -84,6 +85,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -102,33 +104,74 @@ body {
   list-style-type: disc;
   padding-left: 1.5rem;
 }
+
 .prose ol {
   list-style-type: decimal;
   padding-left: 1.5rem;
 }
+
 .prose p {
   margin-bottom: 0.5rem;
 }
+
 .prose strong {
   font-weight: bold;
 }
+
 .prose em {
   font-style: italic;
 }
+
 .prose u {
   text-decoration: underline;
 }
 
 @media print {
+  @page {
+    size: A4;
+    margin: 8mm 0;
+  }
+
+  html,
   body {
+    width: 210mm;
+    margin: 0;
+    padding: 0;
+    background: white;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
   .a4-page {
-    height: 297mm;
-    min-height: 0;
-    margin: 0;
-    box-shadow: none;
-    border: none;
+    width: 210mm;
+    min-height: 297mm;
+    height: auto !important;
+    margin: 0 auto !important;
+    padding: 14mm 12mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: always;
+    break-after: page;
+    overflow: visible !important;
   }
+}
+
+.a4-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+section,
+table,
+tr,
+td,
+th,
+.rounded-lg,
+.border {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print\:hidden {
+  display: none !important;
 }

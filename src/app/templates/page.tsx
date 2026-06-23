@@ -1,29 +1,29 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { 
-  ProposalTemplate, 
-  Plan, 
-  Service, 
-  ComplexityDefinition, 
-  PlanStructureItem, 
-  InvestmentOption, 
+import type {
+  ProposalTemplate,
+  Plan,
+  Service,
+  ComplexityDefinition,
+  PlanStructureItem,
+  InvestmentOption,
   InvestmentOptionItem,
   DiverseServiceItem,
-  UserProfile 
+  UserProfile
 } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Trash2, 
-  PlusCircle, 
-  Save, 
-  Pencil, 
-  X, 
-  Loader2, 
-  Plus, 
+import {
+  Trash2,
+  PlusCircle,
+  Save,
+  Pencil,
+  X,
+  Loader2,
+  Plus,
   ShieldCheck,
   LayoutDashboard,
   Coins,
@@ -77,7 +77,7 @@ export default function TemplatesPage() {
   const [strategicVision, setStrategicVision] = useState('');
   const [investment, setInvestment] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
-  
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [complexityDefinitions, setComplexityDefinitions] = useState<ComplexityDefinition[]>([]);
   const [planStructure, setPlanStructure] = useState<PlanStructureItem[]>([]);
@@ -89,10 +89,20 @@ export default function TemplatesPage() {
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [selectedCatalogIds, setSelectedCatalogIds] = useState<string[]>([]);
-
+  const [templateSearch, setTemplateSearch] = useState('');
   const templatesRef = useMemoFirebase(() => firestore ? collection(firestore, 'proposal-templates') : null, [firestore]);
   const { data: templates, isLoading: areTemplatesLoading } = useCollection<ProposalTemplate>(templatesRef);
+  const filteredTemplates = useMemo(() => {
+    if (!templates) return [];
 
+    const search = templateSearch.trim().toLowerCase();
+
+    if (!search) return templates;
+
+    return templates.filter((template) =>
+      template.name?.toLowerCase().includes(search)
+    );
+  }, [templates, templateSearch]);
   const servicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
   const { data: servicesCatalog, isLoading: areServicesLoading } = useCollection<Service>(servicesRef);
 
@@ -102,7 +112,7 @@ export default function TemplatesPage() {
 
   const filteredCatalog = useMemo(() => {
     if (!servicesCatalog) return [];
-    return servicesCatalog.filter(s => 
+    return servicesCatalog.filter(s =>
       s.service.toLowerCase().includes(catalogSearch.toLowerCase()) ||
       s.description.toLowerCase().includes(catalogSearch.toLowerCase())
     );
@@ -217,7 +227,7 @@ export default function TemplatesPage() {
 
   const handleDuplicate = (template: ProposalTemplate) => {
     if (!firestore || !isAdmin) return;
-    
+
     const newDocRef = doc(collection(firestore, 'proposal-templates'));
     const duplicatedData: ProposalTemplate = {
       ...template,
@@ -242,7 +252,7 @@ export default function TemplatesPage() {
   const handleDelete = (id: string) => {
     if (!firestore || !isAdmin) return;
     const templateRef = doc(firestore, 'proposal-templates', id);
-    
+
     deleteDoc(templateRef)
       .then(() => {
         toast({ title: 'Removido', description: 'Modelo excluído com sucesso.' });
@@ -273,11 +283,11 @@ export default function TemplatesPage() {
   const addPlan = () => {
     setPlans(prev => [
       ...prev,
-      { 
-        id: `plan-${Date.now()}`, 
-        name: '', 
-        employeeRange: '', 
-        servicesIncluded: '', 
+      {
+        id: `plan-${Date.now()}`,
+        name: '',
+        employeeRange: '',
+        servicesIncluded: '',
         paymentType: 'unique',
         investments: [],
         investment: 0,
@@ -302,13 +312,13 @@ export default function TemplatesPage() {
   const addDiverseServiceItem = () => {
     setDiverseServices(prev => [
       ...prev,
-      { 
-        id: `ds-${Date.now()}`, 
-        item: (prev.length + 1).toString(), 
-        employeeRange: '', 
-        servicesIncluded: '', 
-        investment: '', 
-        onDemand: '' 
+      {
+        id: `ds-${Date.now()}`,
+        item: (prev.length + 1).toString(),
+        employeeRange: '',
+        servicesIncluded: '',
+        investment: '',
+        onDemand: ''
       }
     ]);
   };
@@ -316,15 +326,15 @@ export default function TemplatesPage() {
   const handleAddFromCatalog = () => {
     if (!servicesCatalog) return;
     const selectedServices = servicesCatalog.filter(s => selectedCatalogIds.includes(s.id));
-    
+
     const newExams = [...exams];
     selectedServices.forEach(s => {
-        newExams.push({
-            id: `copy-${Date.now()}-${s.id}`,
-            service: s.service,
-            description: s.description,
-            value: s.value
-        });
+      newExams.push({
+        id: `copy-${Date.now()}-${s.id}`,
+        service: s.service,
+        description: s.description,
+        value: s.value
+      });
     });
 
     setExams(newExams);
@@ -416,15 +426,15 @@ export default function TemplatesPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => addComplexity('Baixa')}><Plus className="mr-2 h-4 w-4"/> Baixa</Button>
-                  <Button variant="outline" size="sm" onClick={() => addComplexity('Média')}><Plus className="mr-2 h-4 w-4"/> Média</Button>
-                  <Button variant="outline" size="sm" onClick={() => addComplexity('Alta')}><Plus className="mr-2 h-4 w-4"/> Alta</Button>
+                  <Button variant="outline" size="sm" onClick={() => addComplexity('Baixa')}><Plus className="mr-2 h-4 w-4" /> Baixa</Button>
+                  <Button variant="outline" size="sm" onClick={() => addComplexity('Média')}><Plus className="mr-2 h-4 w-4" /> Média</Button>
+                  <Button variant="outline" size="sm" onClick={() => addComplexity('Alta')}><Plus className="mr-2 h-4 w-4" /> Alta</Button>
                 </div>
                 <div className="space-y-3">
                   {complexityDefinitions.map((def, idx) => (
                     <div key={def.id} className="p-3 border rounded-md bg-background relative group">
-                      <Input 
-                        value={def.title} 
+                      <Input
+                        value={def.title}
                         onChange={e => {
                           const newDefs = [...complexityDefinitions];
                           newDefs[idx].title = e.target.value;
@@ -432,7 +442,7 @@ export default function TemplatesPage() {
                         }}
                         className="mb-2 font-bold"
                       />
-                      <RichTextEditor 
+                      <RichTextEditor
                         value={def.description}
                         onChange={val => {
                           const newDefs = [...complexityDefinitions];
@@ -441,13 +451,13 @@ export default function TemplatesPage() {
                         }}
                         minHeight="min-h-[60px]"
                       />
-                      <Button 
-                        variant="destructive" 
-                        size="icon" 
+                      <Button
+                        variant="destructive"
+                        size="icon"
                         className="absolute -right-2 -top-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => setComplexityDefinitions(prev => prev.filter(d => d.id !== def.id))}
                       >
-                        <Trash2 className="h-3 w-3"/>
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}
@@ -480,24 +490,24 @@ export default function TemplatesPage() {
                           const newS = [...planStructure];
                           newS[idx].plan = e.target.value;
                           setPlanStructure(newS);
-                        }} className="border-none bg-transparent shadow-none"/></TableCell>
+                        }} className="border-none bg-transparent shadow-none" /></TableCell>
                         <TableCell><Input value={item.profile} onChange={e => {
                           const newS = [...planStructure];
                           newS[idx].profile = e.target.value;
                           setPlanStructure(newS);
-                        }} className="border-none bg-transparent shadow-none"/></TableCell>
+                        }} className="border-none bg-transparent shadow-none" /></TableCell>
                         <TableCell><Input value={item.objective} onChange={e => {
                           const newS = [...planStructure];
                           newS[idx].objective = e.target.value;
                           setPlanStructure(newS);
-                        }} className="border-none bg-transparent shadow-none"/></TableCell>
-                        <TableCell><Button variant="ghost" size="icon" onClick={() => setPlanStructure(prev => prev.filter(s => s.id !== item.id))}><Trash2 className="h-4 w-4 text-destructive"/></Button></TableCell>
+                        }} className="border-none bg-transparent shadow-none" /></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" onClick={() => setPlanStructure(prev => prev.filter(s => s.id !== item.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 <Button variant="outline" size="sm" className="mt-4 w-full border-dashed" onClick={addPlanStructureItem}>
-                  <PlusCircle className="mr-2 h-4 w-4"/> Adicionar Linha à Estrutura
+                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Linha à Estrutura
                 </Button>
               </CardContent>
             </Card>
@@ -519,10 +529,10 @@ export default function TemplatesPage() {
 
             <div className="space-y-4 border-t pt-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold flex items-center gap-2"><LayoutDashboard className="h-5 w-5 text-primary"/> Planos de Investimento</h3>
-                <Button onClick={addPlan} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Novo Plano</Button>
+                <h3 className="text-xl font-bold flex items-center gap-2"><LayoutDashboard className="h-5 w-5 text-primary" /> Planos de Investimento</h3>
+                <Button onClick={addPlan} variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Novo Plano</Button>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-6">
                 {plans.map((plan, pIdx) => (
                   <Card key={plan.id} className="border-l-4 border-l-primary">
@@ -534,12 +544,12 @@ export default function TemplatesPage() {
                             const newP = [...plans];
                             newP[pIdx].name = e.target.value;
                             setPlans(newP);
-                          }} placeholder="Ex: Plano Essencial"/>
+                          }} placeholder="Ex: Plano Essencial" />
                         </div>
                         <div className="space-y-1">
                           <Label>Modelo de Contratação</Label>
-                          <Select 
-                            value={plan.paymentType} 
+                          <Select
+                            value={plan.paymentType}
                             onValueChange={(v: any) => {
                               const newP = [...plans];
                               newP[pIdx].paymentType = v;
@@ -555,7 +565,7 @@ export default function TemplatesPage() {
                           </Select>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => setPlans(prev => prev.filter(p => p.id !== plan.id))} className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" onClick={() => setPlans(prev => prev.filter(p => p.id !== plan.id))} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-3">
@@ -626,15 +636,15 @@ export default function TemplatesPage() {
                           }} minHeight="min-h-[60px]" />
                         </div>
                       </div>
-                      
+
                       <div className="col-span-full border-t pt-4">
                         <div className="flex justify-between items-center mb-2">
-                          <Label className="font-bold flex items-center gap-2"><Coins className="h-4 w-4"/> Composição do Investimento</Label>
+                          <Label className="font-bold flex items-center gap-2"><Coins className="h-4 w-4" /> Composição do Investimento</Label>
                           <Button variant="outline" size="sm" onClick={() => {
                             const newP = [...plans];
                             newP[pIdx].investments = [...(newP[pIdx].investments || []), { label: '', value: 0 }];
                             setPlans(newP);
-                          }}><Plus className="h-3 w-3 mr-1"/> Adicionar Item</Button>
+                          }}><Plus className="h-3 w-3 mr-1" /> Adicionar Item</Button>
                         </div>
                         <div className="space-y-2">
                           {plan.investments?.map((inv, invIdx) => (
@@ -656,7 +666,7 @@ export default function TemplatesPage() {
                                 const newP = [...plans];
                                 newP[pIdx].investments = newP[pIdx].investments!.filter((_, i) => i !== invIdx);
                                 setPlans(newP);
-                              }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                              }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>
                           ))}
                         </div>
@@ -669,7 +679,7 @@ export default function TemplatesPage() {
                             const newP = [...plans];
                             newP[pIdx].extraServices = [...(newP[pIdx].extraServices || []), { name: '', value: 0 }];
                             setPlans(newP);
-                          }}><Plus className="h-3 w-3 mr-1"/> Adicionar Serviço</Button>
+                          }}><Plus className="h-3 w-3 mr-1" /> Adicionar Serviço</Button>
                         </div>
                         <div className="space-y-2">
                           {plan.extraServices?.map((es, esIdx) => (
@@ -691,7 +701,7 @@ export default function TemplatesPage() {
                                 const newP = [...plans];
                                 newP[pIdx].extraServices = newP[pIdx].extraServices!.filter((_, i) => i !== esIdx);
                                 setPlans(newP);
-                              }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                              }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                             </div>
                           ))}
                         </div>
@@ -705,11 +715,11 @@ export default function TemplatesPage() {
             <div className="space-y-4 border-t pt-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold flex items-center gap-2">
-                  <TableIcon className="h-5 w-5 text-primary" /> 
+                  <TableIcon className="h-5 w-5 text-primary" />
                   Opções de Investimento Customizáveis
                 </h3>
                 <Button onClick={addInvestmentOption} variant="outline" size="sm">
-                  <PlusCircle className="mr-2 h-4 w-4" /> 
+                  <PlusCircle className="mr-2 h-4 w-4" />
                   Nova Tabela
                 </Button>
               </div>
@@ -722,7 +732,7 @@ export default function TemplatesPage() {
                         newO[optIdx].title = e.target.value;
                         setInvestmentOptions(newO);
                       }} className="font-bold max-w-sm" />
-                      <Button variant="ghost" size="icon" onClick={() => setInvestmentOptions(prev => prev.filter(o => o.id !== opt.id))} className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" onClick={() => setInvestmentOptions(prev => prev.filter(o => o.id !== opt.id))} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <Table>
@@ -745,12 +755,12 @@ export default function TemplatesPage() {
                                 const newO = [...investmentOptions];
                                 newO[optIdx].items[itemIdx].value = e.target.value;
                                 setInvestmentOptions(newO);
-                              }} placeholder="Ex: R$ 120,00" className="text-center font-bold text-[#1b7689] border-none shadow-none focus-visible:ring-0"/></TableCell>
+                              }} placeholder="Ex: R$ 120,00" className="text-center font-bold text-[#1b7689] border-none shadow-none focus-visible:ring-0" /></TableCell>
                               <TableCell><Button variant="ghost" size="icon" onClick={() => {
                                 const newO = [...investmentOptions];
                                 newO[optIdx].items = newO[optIdx].items.filter((_, i) => i !== itemIdx);
                                 setInvestmentOptions(newO);
-                              }}><Trash2 className="h-4 w-4 text-destructive"/></Button></TableCell>
+                              }}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -777,11 +787,11 @@ export default function TemplatesPage() {
             <div className="space-y-4 border-t pt-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold flex items-center gap-2">
-                  <TableIcon className="h-5 w-5 text-primary" /> 
+                  <TableIcon className="h-5 w-5 text-primary" />
                   Opções de Investimento - Serviços Diversos
                 </h3>
                 <Button onClick={addDiverseServiceItem} variant="outline" size="sm">
-                  <PlusCircle className="mr-2 h-4 w-4" /> 
+                  <PlusCircle className="mr-2 h-4 w-4" />
                   Adicionar Linha
                 </Button>
               </div>
@@ -854,84 +864,84 @@ export default function TemplatesPage() {
             <div className="space-y-4 border-t pt-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold flex items-center gap-2">
-                  <BookMarked className="h-5 w-5 text-primary" /> 
+                  <BookMarked className="h-5 w-5 text-primary" />
                   Investimentos Adicionais - Exames/Serviços Avulsos
                 </h3>
                 <div className="flex gap-2">
-                    <Button onClick={() => setIsCatalogModalOpen(true)} variant="outline" size="sm">
-                        <Search className="mr-2 h-4 w-4" /> 
-                        Buscar do Catálogo
-                    </Button>
-                    <Button onClick={() => setExams(prev => [...prev, { id: `manual-${Date.now()}`, service: '', description: '', value: 0 }])} variant="outline" size="sm">
-                        <Plus className="mr-2 h-4 w-4" /> 
-                        Inserir Manualmente
-                    </Button>
+                  <Button onClick={() => setIsCatalogModalOpen(true)} variant="outline" size="sm">
+                    <Search className="mr-2 h-4 w-4" />
+                    Buscar do Catálogo
+                  </Button>
+                  <Button onClick={() => setExams(prev => [...prev, { id: `manual-${Date.now()}`, service: '', description: '', value: 0 }])} variant="outline" size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Inserir Manualmente
+                  </Button>
                 </div>
               </div>
-              
+
               {exams.length > 0 && (
                 <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-primary/5">
-                                <TableHead>Serviço</TableHead>
-                                <TableHead>Descrição</TableHead>
-                                <TableHead className="w-[150px]">Valor</TableHead>
-                                <TableHead className="w-[50px]"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {exams.map((exam, idx) => (
-                                <TableRow key={exam.id}>
-                                    <TableCell>
-                                        <Input 
-                                            value={exam.service} 
-                                            onChange={e => {
-                                                const newExams = [...exams];
-                                                newExams[idx].service = e.target.value;
-                                                setExams(newExams);
-                                            }} 
-                                            placeholder="Nome do serviço..."
-                                            className="h-8 text-sm"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Input 
-                                            value={exam.description} 
-                                            onChange={e => {
-                                                const newExams = [...exams];
-                                                newExams[idx].description = e.target.value;
-                                                setExams(newExams);
-                                            }} 
-                                            placeholder="Notas/Unidade..."
-                                            className="h-8 text-sm"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="relative">
-                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                                            <Input 
-                                                type="number" 
-                                                step="0.01" 
-                                                value={exam.value} 
-                                                onChange={e => {
-                                                    const newExams = [...exams];
-                                                    newExams[idx].value = parseFloat(e.target.value) || 0;
-                                                    setExams(newExams);
-                                                }} 
-                                                className="h-8 text-sm pl-7"
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button variant="ghost" size="icon" onClick={() => setExams(prev => prev.filter((_, i) => i !== idx))}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-primary/5">
+                        <TableHead>Serviço</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="w-[150px]">Valor</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {exams.map((exam, idx) => (
+                        <TableRow key={exam.id}>
+                          <TableCell>
+                            <Input
+                              value={exam.service}
+                              onChange={e => {
+                                const newExams = [...exams];
+                                newExams[idx].service = e.target.value;
+                                setExams(newExams);
+                              }}
+                              placeholder="Nome do serviço..."
+                              className="h-8 text-sm"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={exam.description}
+                              onChange={e => {
+                                const newExams = [...exams];
+                                newExams[idx].description = e.target.value;
+                                setExams(newExams);
+                              }}
+                              placeholder="Notas/Unidade..."
+                              className="h-8 text-sm"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={exam.value}
+                                onChange={e => {
+                                  const newExams = [...exams];
+                                  newExams[idx].value = parseFloat(e.target.value) || 0;
+                                  setExams(newExams);
+                                }}
+                                className="h-8 text-sm pl-7"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => setExams(prev => prev.filter((_, i) => i !== idx))}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>
@@ -943,9 +953,9 @@ export default function TemplatesPage() {
           </div>
 
           <div className="flex justify-end gap-2 pt-6">
-            {editingId && <Button variant="ghost" onClick={resetForm}><X className="mr-2 h-4 w-4"/> Cancelar</Button>}
+            {editingId && <Button variant="ghost" onClick={resetForm}><X className="mr-2 h-4 w-4" /> Cancelar</Button>}
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {editingId ? 'Atualizar Modelo' : 'Salvar Novo Modelo'}
             </Button>
           </div>
@@ -954,8 +964,24 @@ export default function TemplatesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Modelos Salvos</CardTitle>
-          <CardDescription>Lista de todos os modelos de proposta configurados no sistema.</CardDescription>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Modelos Salvos</CardTitle>
+              <CardDescription>
+                Lista de todos os modelos de proposta configurados no sistema.
+              </CardDescription>
+            </div>
+
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={templateSearch}
+                onChange={(e) => setTemplateSearch(e.target.value)}
+                placeholder="Buscar modelo..."
+                className="pl-9"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -967,8 +993,8 @@ export default function TemplatesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {templates && templates.length > 0 ? (
-                templates.map(t => (
+              {filteredTemplates.length > 0 ? (
+                filteredTemplates.map(t => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.name}</TableCell>
                     <TableCell>
@@ -980,11 +1006,11 @@ export default function TemplatesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} title="Editar"><Pencil className="h-4 w-4"/></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDuplicate(t)} title="Duplicar"><Copy className="h-4 w-4"/></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDuplicate(t)} title="Duplicar"><Copy className="h-4 w-4" /></Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive" title="Excluir"><Trash2 className="h-4 w-4"/></Button>
+                          <Button variant="ghost" size="icon" className="text-destructive" title="Excluir"><Trash2 className="h-4 w-4" /></Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
@@ -1002,7 +1028,7 @@ export default function TemplatesPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">Nenhum modelo cadastrado.</TableCell>
+                  <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">{templateSearch ? 'Nenhum modelo encontrado para essa busca.' : 'Nenhum modelo cadastrado.'}Nenhum modelo cadastrado.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -1013,97 +1039,97 @@ export default function TemplatesPage() {
       {/* Catalog Selector Modal */}
       <Dialog open={isCatalogModalOpen} onOpenChange={setIsCatalogModalOpen}>
         <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
-            <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                    <BookMarked className="h-5 w-5" />
-                    Catálogo de Serviços
-                </DialogTitle>
-                <DialogDescription>
-                    Pesquise e selecione serviços para adicionar a este modelo de proposta.
-                </DialogDescription>
-            </DialogHeader>
-            
-            <div className="relative my-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                    placeholder="Pesquisar por nome ou descrição..." 
-                    className="pl-9"
-                    value={catalogSearch}
-                    onChange={e => setCatalogSearch(e.target.value)}
-                />
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookMarked className="h-5 w-5" />
+              Catálogo de Serviços
+            </DialogTitle>
+            <DialogDescription>
+              Pesquise e selecione serviços para adicionar a este modelo de proposta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="relative my-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar por nome ou descrição..."
+              className="pl-9"
+              value={catalogSearch}
+              onChange={e => setCatalogSearch(e.target.value)}
+            />
+          </div>
+
+          <ScrollArea className="flex-1 border rounded-md">
+            {areServicesLoading ? (
+              <div className="flex flex-col items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground mt-2">Carregando catálogo...</p>
+              </div>
+            ) : filteredCatalog.length > 0 ? (
+              <div className="p-0">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead>Serviço</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="text-right">Valor Padrão</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCatalog.map(service => (
+                      <TableRow
+                        key={service.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedCatalogIds(prev =>
+                            prev.includes(service.id)
+                              ? prev.filter(id => id !== service.id)
+                              : [...prev, service.id]
+                          );
+                        }}
+                      >
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedCatalogIds.includes(service.id)}
+                            onCheckedChange={() => {
+                              setSelectedCatalogIds(prev =>
+                                prev.includes(service.id)
+                                  ? prev.filter(id => id !== service.id)
+                                  : [...prev, service.id]
+                              );
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{service.service}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{service.description}</TableCell>
+                        <TableCell className="text-right font-semibold text-primary">{formatCurrency(service.value)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="p-12 text-center text-muted-foreground">
+                Nenhum serviço encontrado no catálogo para "{catalogSearch}".
+              </div>
+            )}
+          </ScrollArea>
+
+          <DialogFooter className="pt-4 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {selectedCatalogIds.length} item(ns) selecionado(s)
             </div>
-
-            <ScrollArea className="flex-1 border rounded-md">
-                {areServicesLoading ? (
-                    <div className="flex flex-col items-center justify-center p-12">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-sm text-muted-foreground mt-2">Carregando catálogo...</p>
-                    </div>
-                ) : filteredCatalog.length > 0 ? (
-                    <div className="p-0">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-background z-10">
-                                <TableRow>
-                                    <TableHead className="w-[50px]"></TableHead>
-                                    <TableHead>Serviço</TableHead>
-                                    <TableHead>Descrição</TableHead>
-                                    <TableHead className="text-right">Valor Padrão</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredCatalog.map(service => (
-                                    <TableRow 
-                                        key={service.id} 
-                                        className="cursor-pointer hover:bg-muted/50"
-                                        onClick={() => {
-                                            setSelectedCatalogIds(prev => 
-                                                prev.includes(service.id) 
-                                                ? prev.filter(id => id !== service.id) 
-                                                : [...prev, service.id]
-                                            );
-                                        }}
-                                    >
-                                        <TableCell onClick={e => e.stopPropagation()}>
-                                            <Checkbox 
-                                                checked={selectedCatalogIds.includes(service.id)} 
-                                                onCheckedChange={() => {
-                                                    setSelectedCatalogIds(prev => 
-                                                        prev.includes(service.id) 
-                                                        ? prev.filter(id => id !== service.id) 
-                                                        : [...prev, service.id]
-                                                    );
-                                                }}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="font-medium">{service.service}</TableCell>
-                                        <TableCell className="text-xs text-muted-foreground">{service.description}</TableCell>
-                                        <TableCell className="text-right font-semibold text-primary">{formatCurrency(service.value)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <div className="p-12 text-center text-muted-foreground">
-                        Nenhum serviço encontrado no catálogo para "{catalogSearch}".
-                    </div>
-                )}
-            </ScrollArea>
-
-            <DialogFooter className="pt-4 flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                    {selectedCatalogIds.length} item(ns) selecionado(s)
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => {
-                        setIsCatalogModalOpen(false);
-                        setSelectedCatalogIds([]);
-                    }}>Cancelar</Button>
-                    <Button onClick={handleAddFromCatalog} disabled={selectedCatalogIds.length === 0}>
-                        Adicionar ao Modelo
-                    </Button>
-                </div>
-            </DialogFooter>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => {
+                setIsCatalogModalOpen(false);
+                setSelectedCatalogIds([]);
+              }}>Cancelar</Button>
+              <Button onClick={handleAddFromCatalog} disabled={selectedCatalogIds.length === 0}>
+                Adicionar ao Modelo
+              </Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -135,7 +135,7 @@ export default function ProposalModal({
     investmentOptions: [],
     diverseServices: [],
   });
-  
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -148,7 +148,7 @@ export default function ProposalModal({
     setSelectedTemplateId(actualId);
 
     const template = proposalTemplates.find(t => t.id === actualId);
-    
+
     setProposalState({
       proposalObject: template?.proposalObject || lead.proposalSummary,
       serviceScope: template?.serviceScope || 'A ser definido na proposta.',
@@ -170,7 +170,7 @@ export default function ProposalModal({
       investmentOptions: template?.investmentOptions || [],
       diverseServices: template?.diverseServices || [],
     });
-    
+
     setIsDirty(true);
     setCurrentLink(null);
   };
@@ -191,7 +191,7 @@ export default function ProposalModal({
     const acronym = (lead.proposalAreaAcronym || lead.proposalArea || selectedAreaAcronym).toUpperCase();
     const area = proposalAreas.find(a => a.acronym === acronym);
     if (area) return area;
-    
+
     // Fallback para mapeamento fixo legados
     if (acronym === 'MA') return { acronym: 'MA', serviceCode: '002' };
     return { acronym: 'SST', serviceCode: '001' };
@@ -202,21 +202,21 @@ export default function ProposalModal({
 
     const acronym = currentAreaInfo.acronym;
     const serviceCode = currentAreaInfo.serviceCode;
-    
+
     let num = lead.proposalNumber;
-    
+
     if (!num) {
-        const areaLeads = allLeads.filter(l => (l.proposalAreaAcronym || l.proposalArea || 'SST').toUpperCase() === acronym);
-        const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
-        num = maxNum + 1;
+      const areaLeads = allLeads.filter(l => (l.proposalAreaAcronym || l.proposalArea || 'SST').toUpperCase() === acronym);
+      const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
+      num = maxNum + 1;
     }
 
     const paddedNumber = String(num).padStart(3, '0');
     let displayVersion = lead.proposalVersion ?? 0;
     if (lead.proposalNumber && isDirty) {
-        displayVersion = (lead.proposalVersion ?? 0) + 1;
+      displayVersion = (lead.proposalVersion ?? 0) + 1;
     }
-    
+
     const proposalId = `PTC-FLO-${acronym}-${serviceCode}-${paddedNumber}.${displayVersion}`;
     setFullProposalNumber(proposalId);
   }, [currentAreaInfo, lead.proposalNumber, lead.proposalVersion, allLeads, isOpen, isDirty]);
@@ -246,17 +246,17 @@ export default function ProposalModal({
     try {
       const finalAcronym = currentAreaInfo.acronym;
       const finalServiceCode = currentAreaInfo.serviceCode;
-      
+
       let finalNum = lead.proposalNumber;
       let newVersion = lead.proposalVersion ?? 0;
 
       if (!finalNum) {
-          const areaLeads = allLeads.filter(l => (l.proposalAreaAcronym || l.proposalArea || 'SST').toUpperCase() === finalAcronym);
-          const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
-          finalNum = maxNum + 1;
-          newVersion = 0;
+        const areaLeads = allLeads.filter(l => (l.proposalAreaAcronym || l.proposalArea || 'SST').toUpperCase() === finalAcronym);
+        const maxNum = Math.max(0, ...areaLeads.map(l => l.proposalNumber || 0));
+        finalNum = maxNum + 1;
+        newVersion = 0;
       } else if (isDirty) {
-          newVersion = (lead.proposalVersion ?? 0) + 1;
+        newVersion = (lead.proposalVersion ?? 0) + 1;
       }
 
       const finalFullCode = `PTC-FLO-${finalAcronym}-${finalServiceCode}-${String(finalNum).padStart(3, '0')}.${newVersion}`;
@@ -265,12 +265,12 @@ export default function ProposalModal({
 
       const proposalData: Omit<ProposalData, 'id'> = {
         lead: {
-            ...leadWithoutInternalValue,
-            proposalNumber: finalNum,
-            proposalArea: finalAcronym,
-            proposalAreaAcronym: finalAcronym,
-            proposalServiceCode: finalServiceCode,
-            proposalVersion: newVersion,
+          ...leadWithoutInternalValue,
+          proposalNumber: finalNum,
+          proposalArea: finalAcronym,
+          proposalAreaAcronym: finalAcronym,
+          proposalServiceCode: finalServiceCode,
+          proposalVersion: newVersion,
         } as Lead,
         proposalState: proposalState,
         fullProposalNumber: finalFullCode,
@@ -283,7 +283,7 @@ export default function ProposalModal({
 
       const docRef = doc(collection(firestore, 'proposals'));
       await setDoc(docRef, proposalData);
-      
+
       onUpdateLead({
         ...lead,
         proposalGeneratedCount: (lead.proposalGeneratedCount || 0) + 1,
@@ -308,7 +308,7 @@ export default function ProposalModal({
 
   const replaceVariables = (template: string, link: string) => {
     if (!template) return '';
-    
+
     const formattedValue = formatCurrency(lead.value);
     const formattedDate = lead.budgetDate ? lead.budgetDate.split('-').reverse().join('/') : (isClient ? new Date().toLocaleDateString('pt-BR') : '');
     const formattedPayments = lead.paymentMethods.map(m => m.method.split(' (')[0]).join(', ');
@@ -338,10 +338,10 @@ export default function ProposalModal({
   ) => {
     let proposalLink = currentLink;
     if (!proposalLink) {
-        proposalLink = await createAndShareProposalLink();
-        if (proposalLink) setCurrentLink(proposalLink);
+      proposalLink = await createAndShareProposalLink();
+      if (proposalLink) setCurrentLink(proposalLink);
     }
-    
+
     if (!proposalLink) return;
 
     if (platform === 'copy') {
@@ -361,42 +361,47 @@ export default function ProposalModal({
         ...lead,
         whatsappSentCount: (lead.whatsappSentCount || 0) + 1,
       });
-      
+
       const defaultWATemplate = `Prezado(a) {{name}},\n\nSegue o link da sua proposta comercial nº {{fullProposalNumber}} referente à empresa {{company}}.\n\n{{proposalLink}}\n\nPermaneço à disposição para quaisquer esclarecimentos.\n\nAtenciosamente,\n{{createdBy}}\nGrupo Florêncio`;
       const template = appSettings?.whatsappTemplate || defaultWATemplate;
       const message = replaceVariables(template, proposalLink);
-      
+
       const url = `https://wa.me/${lead.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
       window.open(url, '_blank');
     } else if (platform === 'email') {
       const defaultSubject = `Proposta Comercial {{fullProposalNumber}} - {{company}}`;
       const defaultBody = `Prezado(a) {{name}},\n\nEncaminhamos o link da sua proposta comercial nº {{fullProposalNumber}}, elaborada para a empresa {{company}}.\n\nAcesse pelo link abaixo:\n{{proposalLink}}\n\nEm caso de dúvidas, permanecemos à disposição.\n\nAtenciosamente,\n{{createdBy}}\nGrupo Florêncio`;
-      
+
       const subjectTemplate = appSettings?.emailSubjectTemplate || defaultSubject;
       const bodyTemplate = appSettings?.emailBodyTemplate || defaultBody;
-      
+
       const subject = replaceVariables(subjectTemplate, proposalLink);
       const body = replaceVariables(bodyTemplate, proposalLink);
-      
+
       const url = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(url, '_blank');
     }
   };
-  
+
   const handleDownloadPdf = async () => {
-    const element = document.getElementById('proposal-container');
-    if (!element) return;
     setIsGeneratingPdf(true);
+
     try {
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4', true);
-        pdf.addImage(imgData, 'PNG', 0, 0, 210, (canvas.height * 210) / canvas.width);
-        pdf.save(`Proposta-${lead.company}-${fullProposalNumber}.pdf`);
+      await handleShare('open');
+
+      toast({
+        title: 'Proposta aberta',
+        description: 'Na nova aba, pressione Ctrl+P ou Cmd+P no Mac e selecione "Salvar como PDF".',
+      });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Erro ao gerar PDF' });
+      console.error('Erro ao abrir proposta para PDF:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao abrir proposta',
+        description: 'Não foi possível abrir a proposta para salvar em PDF.',
+      });
     } finally {
-        setIsGeneratingPdf(false);
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -420,45 +425,45 @@ export default function ProposalModal({
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
       const content = e.currentTarget.innerHTML;
       if (path) {
-          const parts = path.split('.');
-          if (parts[0] === 'plans') {
-              const index = parseInt(parts[1]);
-              const fieldKey = parts[2] as keyof Plan;
-              setProposalState(prev => {
-                  const newPlans = [...prev.plans];
-                  newPlans[index] = { ...newPlans[index], [fieldKey]: content };
-                  return { ...prev, plans: newPlans };
-              });
-          } else if (parts[0] === 'complexityDefinitions') {
-              const index = parseInt(parts[1]);
-              const fieldKey = parts[2] as keyof ComplexityDefinition;
-              setProposalState(prev => {
-                  const newDefs = [...(prev.complexityDefinitions || [])];
-                  newDefs[index] = { ...newDefs[index], [fieldKey]: content };
-                  return { ...prev, complexityDefinitions: newDefs };
-              });
-          } else if (parts[0] === 'planStructure') {
-              const index = parseInt(parts[1]);
-              const fieldKey = parts[2] as keyof PlanStructureItem;
-              setProposalState(prev => {
-                  const newStruct = [...(prev.planStructure || [])];
-                  newStruct[index] = { ...newStruct[index], [fieldKey]: content };
-                  return { ...prev, planStructure: newStruct };
-              });
-          } else if (parts[0] === 'investmentOptions') {
-              const index = parseInt(parts[1]);
-              const fieldKey = parts[2] as keyof InvestmentOption;
-              setProposalState(prev => {
-                  const newOptions = [...(prev.investmentOptions || [])];
-                  newOptions[index] = { ...newOptions[index], [fieldKey]: content };
-                  return { ...prev, investmentOptions: newOptions };
-              });
-          }
+        const parts = path.split('.');
+        if (parts[0] === 'plans') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof Plan;
+          setProposalState(prev => {
+            const newPlans = [...prev.plans];
+            newPlans[index] = { ...newPlans[index], [fieldKey]: content };
+            return { ...prev, plans: newPlans };
+          });
+        } else if (parts[0] === 'complexityDefinitions') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof ComplexityDefinition;
+          setProposalState(prev => {
+            const newDefs = [...(prev.complexityDefinitions || [])];
+            newDefs[index] = { ...newDefs[index], [fieldKey]: content };
+            return { ...prev, complexityDefinitions: newDefs };
+          });
+        } else if (parts[0] === 'planStructure') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof PlanStructureItem;
+          setProposalState(prev => {
+            const newStruct = [...(prev.planStructure || [])];
+            newStruct[index] = { ...newStruct[index], [fieldKey]: content };
+            return { ...prev, planStructure: newStruct };
+          });
+        } else if (parts[0] === 'investmentOptions') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof InvestmentOption;
+          setProposalState(prev => {
+            const newOptions = [...(prev.investmentOptions || [])];
+            newOptions[index] = { ...newOptions[index], [fieldKey]: content };
+            return { ...prev, investmentOptions: newOptions };
+          });
+        }
       } else {
-          setProposalState(prevState => ({
-            ...prevState,
-            [field]: content,
-          }));
+        setProposalState(prevState => ({
+          ...prevState,
+          [field]: content,
+        }));
       }
       setIsDirty(true);
       setCurrentLink(null);
@@ -467,62 +472,62 @@ export default function ProposalModal({
     const execCommand = (cmd: string, val?: string) => document.execCommand(cmd, false, val);
 
     const getInitialContent = () => {
-        if (path) {
-            const parts = path.split('.');
-            if (parts[0] === 'plans') {
-                const index = parseInt(parts[1]);
-                const fieldKey = parts[2] as keyof Plan;
-                return String(proposalState.plans[index]?.[fieldKey] || '');
-            } else if (parts[0] === 'complexityDefinitions') {
-                const index = parseInt(parts[1]);
-                const fieldKey = parts[2] as keyof ComplexityDefinition;
-                return String(proposalState.complexityDefinitions?.[index]?.[fieldKey] || '');
-            } else if (parts[0] === 'planStructure') {
-                const index = parseInt(parts[1]);
-                const fieldKey = parts[2] as keyof PlanStructureItem;
-                return String(proposalState.planStructure?.[index]?.[fieldKey] || '');
-            } else if (parts[0] === 'investmentOptions') {
-                const index = parseInt(parts[1]);
-                const fieldKey = parts[2] as keyof InvestmentOption;
-                return String((proposalState.investmentOptions?.[index] as any)?.[fieldKey] || '');
-            }
+      if (path) {
+        const parts = path.split('.');
+        if (parts[0] === 'plans') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof Plan;
+          return String(proposalState.plans[index]?.[fieldKey] || '');
+        } else if (parts[0] === 'complexityDefinitions') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof ComplexityDefinition;
+          return String(proposalState.complexityDefinitions?.[index]?.[fieldKey] || '');
+        } else if (parts[0] === 'planStructure') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof PlanStructureItem;
+          return String(proposalState.planStructure?.[index]?.[fieldKey] || '');
+        } else if (parts[0] === 'investmentOptions') {
+          const index = parseInt(parts[1]);
+          const fieldKey = parts[2] as keyof InvestmentOption;
+          return String((proposalState.investmentOptions?.[index] as any)?.[fieldKey] || '');
         }
-        return String((proposalState as any)[field] || '');
+      }
+      return String((proposalState as any)[field] || '');
     };
 
     return (
       <div className="relative group">
         <div className="absolute -top-10 left-0 hidden group-focus-within:flex items-center gap-1 p-1 bg-white border rounded shadow-md z-50 flex-wrap max-w-[300px]">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('bold'); }}><Bold className="h-4 w-4"/></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('italic'); }}><Italic className="h-4 w-4"/></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('underline'); }}><Underline className="h-4 w-4"/></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('insertUnorderedList'); }}><List className="h-4 w-4"/></Button>
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()}><Smile className="h-4 w-4"/></Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" onOpenAutoFocus={e => e.preventDefault()}>
-                    <div className="grid grid-cols-6 gap-1">
-                        {COMMON_EMOJIS.map(emoji => (
-                            <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onMouseDown={(e) => { e.preventDefault(); document.execCommand('insertText', false, emoji); }}>
-                                {emoji}
-                            </Button>
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('bold'); }}><Bold className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('italic'); }}><Italic className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('underline'); }}><Underline className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={(e) => { e.preventDefault(); execCommand('insertUnorderedList'); }}><List className="h-4 w-4" /></Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onMouseDown={e => e.preventDefault()}><Smile className="h-4 w-4" /></Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" onOpenAutoFocus={e => e.preventDefault()}>
+              <div className="grid grid-cols-6 gap-1">
+                {COMMON_EMOJIS.map(emoji => (
+                  <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg" onMouseDown={(e) => { e.preventDefault(); document.execCommand('insertText', false, emoji); }}>
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <div
-            contentEditable={!isGenerating}
-            suppressContentEditableWarning
-            className={cn(
+          contentEditable={!isGenerating}
+          suppressContentEditableWarning
+          className={cn(
             'focus:outline-none focus:ring-2 focus:ring-primary p-1 rounded-sm min-h-[1.5rem]',
             className
-            )}
-            onBlur={handleBlur}
-            dangerouslySetInnerHTML={{
+          )}
+          onBlur={handleBlur}
+          dangerouslySetInnerHTML={{
             __html: getInitialContent().replace(/\n/g, '<br />'),
-            }}
+          }}
         ></div>
       </div>
     );
@@ -536,10 +541,10 @@ export default function ProposalModal({
         <DialogHeader className="pt-4 flex-wrap justify-between items-center gap-4">
           <div className="flex flex-col gap-1">
             <DialogTitle className="font-headline">
-                Gerador de Proposta
+              Gerador de Proposta
             </DialogTitle>
             <DialogDescription>
-                Visualize, edite e envie a proposta para {lead.company}.
+              Visualize, edite e envie a proposta para {lead.company}.
             </DialogDescription>
           </div>
           <div className="flex gap-2 items-center flex-wrap justify-end">
@@ -549,7 +554,7 @@ export default function ProposalModal({
               disabled={isGeneratingPdf || isGenerating}
             >
               {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-              Salvar como PDF
+              Abrir para salvar em PDF
             </Button>
             <Button
               onClick={() => handleShare('open')}
@@ -591,12 +596,12 @@ export default function ProposalModal({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 mb-4">
           <div className="space-y-2">
             <Label htmlFor="proposal-area">Área da Proposta</Label>
-            <Select 
-              value={selectedAreaAcronym} 
+            <Select
+              value={selectedAreaAcronym}
               onValueChange={(v: string) => {
-                  setSelectedAreaAcronym(v);
-                  setIsDirty(true);
-                  setCurrentLink(null);
+                setSelectedAreaAcronym(v);
+                setIsDirty(true);
+                setCurrentLink(null);
               }}
               disabled={isGenerating || !!lead.proposalNumber}
             >
@@ -715,98 +720,98 @@ export default function ProposalModal({
 
               <section className="my-8 space-y-6">
                 {proposalState.proposalObject?.trim() && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Objeto da Proposta
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="proposalObject" />
-                        </div>
-                    </>
+                  <>
+                    <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                      Objeto da Proposta
+                    </h3>
+                    <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <EditableDiv field="proposalObject" />
+                    </div>
+                  </>
                 )}
 
                 {proposalState.serviceScope?.trim() && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Escopo do Serviço
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="serviceScope" />
-                        </div>
-                    </>
+                  <>
+                    <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                      Escopo do Serviço
+                    </h3>
+                    <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <EditableDiv field="serviceScope" />
+                    </div>
+                  </>
                 )}
 
                 {proposalState.methodology?.trim() && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Metodologia
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="methodology" />
-                        </div>
-                    </>
+                  <>
+                    <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                      Metodologia
+                    </h3>
+                    <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <EditableDiv field="methodology" />
+                    </div>
+                  </>
                 )}
 
                 {proposalState.complexityDefinitions && proposalState.complexityDefinitions.length > 0 && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                            São considerados Contratos de Baixa Complexidade, Média Complexidade, Alta Complexidade:
-                        </h3>
-                        <div className="space-y-4">
-                            {proposalState.complexityDefinitions.map((def, index) => (
-                                <div key={def.id} className="p-4 border rounded-lg bg-blue-50/30">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <ShieldCheck className="h-5 w-5 text-primary" />
-                                        <EditableDiv field="dummy" path={`complexityDefinitions.${index}.title`} className="font-bold text-base" />
-                                    </div>
-                                    <EditableDiv field="dummy" path={`complexityDefinitions.${index}.description`} className="text-sm leading-relaxed" />
-                                </div>
-                            ))}
+                  <>
+                    <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                      São considerados Contratos de Baixa Complexidade, Média Complexidade, Alta Complexidade:
+                    </h3>
+                    <div className="space-y-4">
+                      {proposalState.complexityDefinitions.map((def, index) => (
+                        <div key={def.id} className="p-4 border rounded-lg bg-blue-50/30">
+                          <div className="flex items-center gap-2 mb-2">
+                            <ShieldCheck className="h-5 w-5 text-primary" />
+                            <EditableDiv field="dummy" path={`complexityDefinitions.${index}.title`} className="font-bold text-base" />
+                          </div>
+                          <EditableDiv field="dummy" path={`complexityDefinitions.${index}.description`} className="text-sm leading-relaxed" />
                         </div>
-                    </>
+                      ))}
+                    </div>
+                  </>
                 )}
 
                 {proposalState.planStructure && proposalState.planStructure.length > 0 && (
-                    <div className="my-8 overflow-hidden rounded-lg border border-[#1b7689]">
-                        <div className="bg-[#1b7689] p-3 text-center text-white font-bold uppercase tracking-wider">
-                            ESTRUTURA DOS PLANOS
-                        </div>
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="bg-[#8ec7d1] text-[#1b7689]">
-                                    <th className="p-2 border-r border-[#1b7689] text-sm font-bold">PLANO</th>
-                                    <th className="p-2 border-r border-[#1b7689] text-sm font-bold">PERFIL</th>
-                                    <th className="p-2 text-sm font-bold">OBJETIVO</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {proposalState.planStructure.map((item, index) => (
-                                    <tr key={item.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689]">
-                                        <td className="p-2 border-r border-[#1b7689] text-xs">
-                                            <EditableDiv field="dummy" path={`planStructure.${index}.plan`} />
-                                        </td>
-                                        <td className="p-2 border-r border-[#1b7689] text-xs">
-                                            <EditableDiv field="dummy" path={`planStructure.${index}.profile`} />
-                                        </td>
-                                        <td className="p-2 text-xs">
-                                            <EditableDiv field="dummy" path={`planStructure.${index}.objective`} />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                  <div className="my-8 overflow-hidden rounded-lg border border-[#1b7689]">
+                    <div className="bg-[#1b7689] p-3 text-center text-white font-bold uppercase tracking-wider">
+                      ESTRUTURA DOS PLANOS
                     </div>
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-[#8ec7d1] text-[#1b7689]">
+                          <th className="p-2 border-r border-[#1b7689] text-sm font-bold">PLANO</th>
+                          <th className="p-2 border-r border-[#1b7689] text-sm font-bold">PERFIL</th>
+                          <th className="p-2 text-sm font-bold">OBJETIVO</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {proposalState.planStructure.map((item, index) => (
+                          <tr key={item.id} className="bg-[#d4e9ee] text-[#1b7689] border-t border-[#1b7689]">
+                            <td className="p-2 border-r border-[#1b7689] text-xs">
+                              <EditableDiv field="dummy" path={`planStructure.${index}.plan`} />
+                            </td>
+                            <td className="p-2 border-r border-[#1b7689] text-xs">
+                              <EditableDiv field="dummy" path={`planStructure.${index}.profile`} />
+                            </td>
+                            <td className="p-2 text-xs">
+                              <EditableDiv field="dummy" path={`planStructure.${index}.objective`} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
 
                 {proposalState.deadline?.trim() && (
-                    <>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-2">
-                        Prazo para Realização dos Serviços
-                        </h3>
-                        <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                        <EditableDiv field="deadline" />
-                        </div>
-                    </>
+                  <>
+                    <h3 className="text-lg font-semibold mb-2 border-b pb-2">
+                      Prazo para Realização dos Serviços
+                    </h3>
+                    <div className="prose dark:prose-invert max-w-none p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <EditableDiv field="deadline" />
+                    </div>
+                  </>
                 )}
               </section>
 
@@ -814,7 +819,7 @@ export default function ProposalModal({
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">
                   Investimentos
                 </h3>
-                
+
                 <div className="prose dark:prose-invert max-w-none p-2 rounded-md mt-8">
                   <EditableDiv field="investment" />
                 </div>
@@ -827,9 +832,9 @@ export default function ProposalModal({
                           <span>{plan.name}</span>
                           <span className="text-xs uppercase opacity-90">
                             Modelo: {
-                                plan.paymentType === 'unique' ? 'Único' : 
-                                plan.paymentType === 'monthly' ? 'Mensal' : 
-                                'Por Contrato ativo, mensal.'
+                              plan.paymentType === 'unique' ? 'Único' :
+                                plan.paymentType === 'monthly' ? 'Mensal' :
+                                  'Por Contrato ativo, mensal.'
                             }
                           </span>
                         </div>
@@ -842,14 +847,14 @@ export default function ProposalModal({
                               </div>
                             )}
                             {plan.servicesIncluded?.trim() && (
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
-                                    <EditableDiv field="dummy" path={`plans.${index}.servicesIncluded`} className="text-sm leading-relaxed bg-white/50" />
-                                </div>
+                              <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Serviços Inclusos</p>
+                                <EditableDiv field="dummy" path={`plans.${index}.servicesIncluded`} className="text-sm leading-relaxed bg-white/50" />
+                              </div>
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="p-4 bg-primary/5 border-t flex justify-between items-center">
                           <span className="font-bold text-sm">Investimento do Plano:</span>
                           <span className="text-xl font-bold text-primary">
