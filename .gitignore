@@ -48,3 +48,4 @@ firestore-debug.log
 
 # firebase functions dependencies
 /functions/node_modules/
+/functions/
