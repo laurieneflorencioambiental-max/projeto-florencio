@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
     if (body?.action !== 'complete' || body.event !== 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING' ||
         typeof body.code !== 'string' || !body.code || body.code.length > 8192 ||
         typeof body.accountId !== 'string' || !/^\d+$/.test(body.accountId) ||
-        typeof body.phoneNumberId !== 'string' || !/^\d+$/.test(body.phoneNumberId)) return reply(400, { status: 'invalid_request' });
+        (body.phoneNumberId !== undefined && (typeof body.phoneNumberId !== 'string' || !/^\d+$/.test(body.phoneNumberId)))) return reply(400, { status: 'invalid_request' });
     const nonce = validateSignupSession(body.state, uid);
     await consumeSignupSession(nonce, uid);
     const token = await exchangeEmbeddedSignupCode(body.code);
-    await verifyWhatsAppAsset({ accountId: body.accountId, phoneNumberId: body.phoneNumberId, accessToken: token.accessToken });
-    await persistPendingWhatsAppConnection({ accountId: body.accountId, phoneNumberId: body.phoneNumberId, administratorUid: uid, businessToken: token.accessToken });
+    const phoneNumberId = await verifyWhatsAppAsset({ accountId: body.accountId, phoneNumberId: body.phoneNumberId, accessToken: token.accessToken });
+    await persistPendingWhatsAppConnection({ accountId: body.accountId, phoneNumberId, administratorUid: uid, businessToken: token.accessToken });
     return reply(200, { status: 'pending_activation' });
   } catch {
     return reply(400, { status: 'signup_not_completed' });
