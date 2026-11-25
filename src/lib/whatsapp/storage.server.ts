@@ -39,7 +39,7 @@ export async function persistPendingWhatsAppConnection(input: {
   const sealed = sealBusinessToken(input.businessToken, input.accountId);
   try {
     const token = await accessToken(request, cfg);
-    const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/(default)/documents/whatsapp-private-connections');
+    const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/crm-whatsapp/documents/whatsapp-private-connections');
     url.searchParams.set('documentId', input.accountId);
     const response = await request(url, {
       method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -62,7 +62,7 @@ export async function consumeSignupSession(nonce: string, uid: string, request: 
   if (!/^[a-f0-9]{64}$/.test(nonce) || !uid) throw new Error('SIGNUP_SESSION_INVALID');
   const cfg = config();
   const token = await accessToken(request, cfg);
-  const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/(default)/documents/whatsapp-private-sessions');
+  const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/crm-whatsapp/documents/whatsapp-private-sessions');
   url.searchParams.set('documentId', nonce);
   const response = await request(url, {
     method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
