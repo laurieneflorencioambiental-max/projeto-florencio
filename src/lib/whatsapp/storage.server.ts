@@ -56,3 +56,18 @@ export async function persistPendingWhatsAppConnection(input: {
     if (!response.ok) throw new Error('WHATSAPP_STORAGE_WRITE_FAILED');
   } catch { throw new Error('WHATSAPP_STORAGE_UNAVAILABLE'); }
 }
+
+/** Create a one-time marker atomically. Existing markers are rejected. */
+export async function consumeSignupSession(nonce: string, uid: string, request: typeof fetch = fetch): Promise<void> {
+  if (!/^[a-f0-9]{64}$/.test(nonce) || !uid) throw new Error('SIGNUP_SESSION_INVALID');
+  const cfg = config();
+  const token = await accessToken(request, cfg);
+  const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/(default)/documents/whatsapp-private-sessions');
+  url.searchParams.set('documentId', nonce);
+  const response = await request(url, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { uid: { stringValue: uid }, consumedAt: { timestampValue: new Date().toISOString() } } }),
+    cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) throw new Error('SIGNUP_SESSION_UNAVAILABLE_OR_USED');
+}
