@@ -37,7 +37,13 @@ export async function POST(request: NextRequest) {
     body = JSON.parse(raw);
   } catch { return reply(400, { status: 'invalid_request' }); }
   try {
-    if (body?.action === 'start') return reply(200, { state: issueSignupSession(uid) });
+    if (body?.action === 'start') {
+      const required = ['META_APP_ID', 'META_APP_SECRET', 'META_GRAPH_API_VERSION', 'WHATSAPP_EXPECTED_PHONE_DIGITS',
+        'WHATSAPP_FIRESTORE_PROJECT_ID', 'WHATSAPP_FIRESTORE_CLIENT_EMAIL', 'WHATSAPP_FIRESTORE_PRIVATE_KEY',
+        'WHATSAPP_TOKEN_ENCRYPTION_KEY', 'WHATSAPP_SIGNUP_STATE_KEY'];
+      if (required.some(name => !process.env[name])) return reply(503, { status: 'configuration_incomplete' });
+      return reply(200, { state: issueSignupSession(uid) });
+    }
     if (body?.action !== 'complete' || body.event !== 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING' ||
         typeof body.code !== 'string' || !body.code || body.code.length > 8192 ||
         typeof body.accountId !== 'string' || !/^\d+$/.test(body.accountId) ||
