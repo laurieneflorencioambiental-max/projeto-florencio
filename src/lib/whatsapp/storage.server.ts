@@ -1,0 +1,58 @@
+import 'server-only';
+import { createSign } from 'node:crypto';
+import { sealBusinessToken } from './token-vault.server';
+
+function config() {
+  const project = process.env.WHATSAPP_FIRESTORE_PROJECT_ID;
+  const email = process.env.WHATSAPP_FIRESTORE_CLIENT_EMAIL;
+  const key = process.env.WHATSAPP_FIRESTORE_PRIVATE_KEY;
+  if (!project || !/^[a-z][a-z0-9-]{4,62}$/.test(project) || !email || !key)
+    throw new Error('WHATSAPP_STORAGE_CONFIGURATION_MISSING');
+  return { project, email, key: key.replace(/\\n/g, '\n') };
+}
+
+async function accessToken(request: typeof fetch, cfg: ReturnType<typeof config>) {
+  const now = Math.floor(Date.now() / 1000);
+  const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const claim = encode({ alg: 'RS256', typ: 'JWT' }) + '.' + encode({
+    iss: cfg.email, scope: 'https://www.googleapis.com/auth/datastore',
+    aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 300,
+  });
+  const signature = createSign('RSA-SHA256').update(claim).sign(cfg.key).toString('base64url');
+  const response = await request('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: claim + '.' + signature }),
+    cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) throw new Error('WHATSAPP_STORAGE_AUTH_FAILED');
+  const json = await response.json();
+  if (typeof json.access_token !== 'string' || !json.access_token) throw new Error('WHATSAPP_STORAGE_AUTH_FAILED');
+  return json.access_token as string;
+}
+
+export async function persistPendingWhatsAppConnection(input: {
+  accountId: string; phoneNumberId: string; administratorUid: string; businessToken: string;
+}, request: typeof fetch = fetch): Promise<void> {
+  if (!/^\d+$/.test(input.accountId) || !/^\d+$/.test(input.phoneNumberId) || !input.administratorUid)
+    throw new Error('WHATSAPP_STORAGE_INPUT_INVALID');
+  const cfg = config();
+  const sealed = sealBusinessToken(input.businessToken, input.accountId);
+  try {
+    const token = await accessToken(request, cfg);
+    const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/(default)/documents/whatsapp-private-connections');
+    url.searchParams.set('documentId', input.accountId);
+    const response = await request(url, {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: {
+        accountId: { stringValue: input.accountId },
+        phoneNumberId: { stringValue: input.phoneNumberId },
+        administratorUid: { stringValue: input.administratorUid },
+        tokenCiphertext: { stringValue: sealed },
+        status: { stringValue: 'pending_activation' },
+        createdAt: { timestampValue: new Date().toISOString() },
+      }}),
+      cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error('WHATSAPP_STORAGE_WRITE_FAILED');
+  } catch { throw new Error('WHATSAPP_STORAGE_UNAVAILABLE'); }
+}
