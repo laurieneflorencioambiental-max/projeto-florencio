@@ -8,7 +8,10 @@ export async function requireWhatsAppAdministrator(
   const adminUids = (process.env.WHATSAPP_ADMIN_UIDS ?? '').split(',').map(s => s.trim()).filter(Boolean);
   const match = /^Bearer ([^\s]+)$/.exec(authorization ?? '');
   if (!apiKey || !adminUids.length) throw new Error('ADMIN_CONFIGURATION_MISSING');
-  if (!match || match[1].length > 8192) throw new Error('ADMIN_UNAUTHORIZED');
+  if (!match || match[1].length > 8192) {
+    console.warn('[whatsapp-auth] missing_or_invalid_bearer');
+    throw new Error('ADMIN_UNAUTHORIZED');
+  }
   const url = new URL('https://identitytoolkit.googleapis.com/v1/accounts:lookup');
   url.searchParams.set('key', apiKey);
   let response: Response;
@@ -21,14 +24,27 @@ export async function requireWhatsAppAdministrator(
   } catch {
     throw new Error('ADMIN_VERIFICATION_UNAVAILABLE');
   }
-  if (!response.ok) throw new Error('ADMIN_UNAUTHORIZED');
+  if (!response.ok) {
+    console.warn('[whatsapp-auth] firebase_lookup_failed', response.status);
+    throw new Error('ADMIN_UNAUTHORIZED');
+  }
   let uid: unknown;
   try {
     const payload = await response.json();
     if (Array.isArray(payload.users) && payload.users.length === 1 && !payload.users[0].disabled) {
       uid = payload.users[0].localId;
     }
-  } catch { throw new Error('ADMIN_UNAUTHORIZED'); }
-  if (typeof uid !== 'string' || !adminUids.includes(uid)) throw new Error('ADMIN_UNAUTHORIZED');
+  } catch {
+    console.warn('[whatsapp-auth] invalid_lookup_response');
+    throw new Error('ADMIN_UNAUTHORIZED');
+  }
+  if (typeof uid !== 'string') {
+    console.warn('[whatsapp-auth] user_not_active');
+    throw new Error('ADMIN_UNAUTHORIZED');
+  }
+  if (!adminUids.includes(uid)) {
+    console.warn('[whatsapp-auth] administrator_not_listed');
+    throw new Error('ADMIN_UNAUTHORIZED');
+  }
   return uid;
 }
