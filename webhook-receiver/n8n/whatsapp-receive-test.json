@@ -1,0 +1,71 @@
+{
+  "name": "CRM Florencio - Recebimento WhatsApp teste",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-florencio-whatsapp-teste",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "03f11770-7be4-4aff-b181-aab2a2e88551",
+      "name": "Receber evento autorizado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "dc8879ca-393d-4a61-ba8d-0c9d43b6a1d3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7b24fe58-2799-4f81-a498-f6f1ae4b9c47",
+              "name": "status",
+              "value": "received_test_only",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "bcc03132-35f4-4532-b53b-ffb88a877f83",
+      "name": "Confirmar sem preservar conteúdo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Receber evento autorizado": {
+      "main": [
+        [
+          {
+            "node": "Confirmar sem preservar conteúdo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false
+  },
+  "pinData": {},
+  "tags": []
+}
