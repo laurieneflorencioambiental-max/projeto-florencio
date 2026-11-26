@@ -28,7 +28,26 @@ async function boundedBody(request) {
   return Buffer.concat(chunks,size);
 }
 
-async function saveReceipt(raw, messages, statuses, secret) {
+// Preliminary, deterministic categories. Not a clinical assessment or an automatic reply.
+// Unknown, ambiguous, non-text and health-related requests go to human review.
+function classifyTestMessage(message) {
+  if (message?.type !== 'text' || typeof message.text?.body !== 'string') return 'triagem_manual';
+  const t = message.text.body.slice(0,4000).normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if (/\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico)\b/.test(t)) return 'triagem_manual';
+  const rules = [
+    ['agendamento', /\b(agend\w*|remarc\w*|marcar|horario|vaga|consulta|admissional|demissional|periodico|retorno ao trabalho)\b/],
+    ['documentos', /\b(aso|documentos?|certificados?|laudos?|segunda via|ppra|pgr|pcmso)\b/],
+    ['financeiro', /\b(boleto|pix|pagamento|fatura|nota fiscal|cobranca|vencimento|comprovante)\b/],
+    ['comercial', /\b(orcamento|cotacao|proposta|contrato|plano|preco|valor|contratacao)\b/],
+  ];
+  const matches=rules.filter(([,pattern])=>pattern.test(t));
+  if (matches.length===1) return matches[0][0];
+  if (!matches.length && /^(oi|ola|bom dia|boa tarde|boa noite)[.!?\s]*$/.test(t.trim())) return 'recepcao';
+  return 'triagem_manual';
+}
+
+async function saveReceipt(raw, messages, statuses, secret, triageCounts) {
   const key = process.env.WHATSAPP_FIRESTORE_PRIVATE_KEY;
   if (!key) throw new Error('configuration');
   const now = Math.floor(Date.now()/1000);
@@ -53,7 +72,8 @@ async function saveReceipt(raw, messages, statuses, secret) {
     method:'POST',headers:{authorization:'Bearer '+access_token,'content-type':'application/json'},
     body:JSON.stringify({fields:{
       messages:{integerValue:String(messages)},statuses:{integerValue:String(statuses)},
-      receivedAt:{timestampValue:new Date().toISOString()},environment:{stringValue:'test'}
+      receivedAt:{timestampValue:new Date().toISOString()},environment:{stringValue:'test'},
+      triageCounts:{mapValue:{fields:Object.fromEntries(Object.entries(triageCounts).map(([name,count])=>[name,{integerValue:String(count)}]))}}
     }}),redirect:'error',signal:AbortSignal.timeout(8000)
   });
   if (!result.ok && result.status !== 409) throw new Error('storage');
@@ -107,16 +127,24 @@ async function handler(request) {
   try { payload = JSON.parse(raw.toString('utf8')); } catch { return reply(400,'invalid_request'); }
   if (payload?.object !== 'whatsapp_business_account' || !Array.isArray(payload.entry)) return reply(400,'invalid_request');
   let messages=0,statuses=0;
+  const triageCounts = Object.create(null);
   for (const entry of payload.entry) {
     if (entry?.id !== testWaba || !Array.isArray(entry.changes)) continue;
     for (const change of entry.changes) {
       if (change?.field !== 'messages' || change.value?.metadata?.phone_number_id !== testPhone) continue;
-      messages += Array.isArray(change.value.messages) ? change.value.messages.length : 0;
+      if (Array.isArray(change.value.messages)) {
+        for (const message of change.value.messages) {
+          messages++;
+          const category = classifyTestMessage(message);
+          triageCounts[category] = (triageCounts[category] ?? 0) + 1;
+        }
+      }
       statuses += Array.isArray(change.value.statuses) ? change.value.statuses.length : 0;
     }
   }
   if (!messages && !statuses) { console.info('[WhatsApp test] signed notification outside test assets or empty, ignored'); return reply(200,'ignored'); }
-  try { await saveReceipt(raw,messages,statuses,secret); console.info('[WhatsApp test] receipt stored'); }
+  try { await saveReceipt(raw,messages,statuses,secret,triageCounts); console.info('[WhatsApp test] receipt stored');
+    if (messages) console.info('[WhatsApp test] preliminary categories '+JSON.stringify(triageCounts)); }
   catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
   // Test workflow only acknowledges metadata. Do not cause Meta retries when
   // the temporary local tunnel is offline; receipts remain available.
