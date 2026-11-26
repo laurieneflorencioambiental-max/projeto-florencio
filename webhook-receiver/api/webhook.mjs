@@ -31,20 +31,20 @@ async function boundedBody(request) {
 // Preliminary, deterministic categories. Not a clinical assessment or an automatic reply.
 // Unknown, ambiguous, non-text and health-related requests go to human review.
 function classifyTestMessage(message) {
-  if (message?.type !== 'text' || typeof message.text?.body !== 'string') return 'triagem_manual';
+  if (message?.type !== 'text' || typeof message.text?.body !== 'string') return 'central_relacionamento';
   const t = message.text.body.slice(0,4000).normalize('NFD')
     .replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  if (/\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico)\b/.test(t)) return 'triagem_manual';
+  if (/\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico)\b/.test(t)) return 'central_relacionamento';
   const rules = [
     ['agendamento', /\b(agend\w*|remarc\w*|marcar|horario|vaga|consulta|admissional|demissional|periodico|retorno ao trabalho)\b/],
-    ['documentos', /\b(aso|documentos?|certificados?|laudos?|segunda via|ppra|pgr|pcmso)\b/],
+    ['documentos', /\b(aso|documentos?|certificados?|laudos?|segunda via)\b/],
+    ['area_tecnica', /\b(pgr|pcmso|ltcat|ppra|esocial|e-social|sst|treinamentos?|normas? regulamentadoras?|nr[- ]?\d{1,2})\b/],
     ['financeiro', /\b(boleto|pix|pagamento|fatura|nota fiscal|cobranca|vencimento|comprovante)\b/],
     ['comercial', /\b(orcamento|cotacao|proposta|contrato|plano|preco|valor|contratacao)\b/],
   ];
   const matches=rules.filter(([,pattern])=>pattern.test(t));
   if (matches.length===1) return matches[0][0];
-  if (!matches.length && /^(oi|ola|bom dia|boa tarde|boa noite)[.!?\s]*$/.test(t.trim())) return 'recepcao';
-  return 'triagem_manual';
+  return 'central_relacionamento';
 }
 
 async function saveReceipt(raw, messages, statuses, secret, triageCounts) {
