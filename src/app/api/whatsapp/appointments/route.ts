@@ -13,7 +13,12 @@ async function guard(req:NextRequest,mutating:boolean) {
   if (mutating && (!process.env.WHATSAPP_SIGNUP_ORIGIN || req.headers.get('origin')!==process.env.WHATSAPP_SIGNUP_ORIGIN))
     return reply(403,{status:'forbidden'});
   try { await requireWhatsAppAdministrator(req.headers.get('authorization')); }
-  catch { return reply(403,{status:'forbidden'}); }
+  catch (error) {
+    const reason=error instanceof Error ? error.message : '';
+    const unavailable=['ADMIN_CONFIGURATION_MISSING','ADMIN_VERIFICATION_UNAVAILABLE'].includes(reason);
+    console.warn('[whatsapp-appointments] '+(unavailable?'authorization_unavailable':'authorization_denied'));
+    return unavailable?reply(503,{status:'unavailable'}):reply(403,{status:'forbidden'});
+  }
   return null;
 }
 async function bodyOf(req:NextRequest):Promise<Record<string,unknown>> {
