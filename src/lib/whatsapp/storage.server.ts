@@ -1,6 +1,7 @@
 import 'server-only';
 import { createSign } from 'node:crypto';
 import { sealBusinessToken } from './token-vault.server';
+import { parseAppointmentInput, parseAppointmentStatus, type Appointment, type AppointmentInput, type AppointmentStatus } from './appointment-intake';
 
 function config() {
   const project = process.env.WHATSAPP_FIRESTORE_PROJECT_ID;
@@ -96,4 +97,75 @@ export async function persistTestWebhookReceipt(input: {
   });
   // A retried delivery is already recorded; no duplicate receipt is created.
   if (!response.ok && response.status !== 409) throw new Error('WHATSAPP_RECEIPT_WRITE_FAILED');
+}
+
+const appointmentCollection = 'whatsapp-test-appointment-requests';
+function appointmentUrl(project:string): URL {
+  return new URL('https://firestore.googleapis.com/v1/projects/'+project+'/databases/crm-whatsapp/documents/'+appointmentCollection);
+}
+const appointmentIdPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+function mapAppointment(doc:unknown): Appointment {
+  if (!doc || typeof doc!=='object') throw new Error('INVALID_APPOINTMENT_RECORD');
+  const d=doc as {name?:string;fields?:Record<string,{stringValue?:string;integerValue?:string;timestampValue?:string}>};
+  const f=d.fields;
+  const id=d.name?.split('/').pop() ?? '';
+  if (!f || !appointmentIdPattern.test(id) || f.environment?.stringValue!=='test') throw new Error('INVALID_APPOINTMENT_RECORD');
+  return {
+    id,...parseAppointmentInput({company:f.company?.stringValue,examType:f.examType?.stringValue,
+      employeeCount:Number(f.employeeCount?.integerValue),preferredDate:f.preferredDate?.stringValue}),
+    status:parseAppointmentStatus(f.status?.stringValue),
+    createdAt:f.createdAt?.timestampValue ?? '',lastInteractionAt:f.lastInteractionAt?.timestampValue ?? '',
+    updatedAt:f.updatedAt?.timestampValue ?? '',
+  };
+}
+export async function createTestAppointment(id:string, input:AppointmentInput, request:typeof fetch=fetch):Promise<Appointment> {
+  if (!appointmentIdPattern.test(id)) throw new Error('INVALID_APPOINTMENT');
+  const valid=parseAppointmentInput(input);
+  const cfg=config(), token=await accessToken(request,cfg);
+  const url=appointmentUrl(cfg.project);
+  url.searchParams.set('documentId',id);
+  const now=new Date().toISOString();
+  const response=await request(url,{
+    method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({fields:{
+      company:{stringValue:valid.company},examType:{stringValue:valid.examType},employeeCount:{integerValue:String(valid.employeeCount)},
+      preferredDate:{stringValue:valid.preferredDate},status:{stringValue:'pendente'},sector:{stringValue:'agendamento'},
+      environment:{stringValue:'test'},source:{stringValue:'admin_test'},createdAt:{timestampValue:now},
+      lastInteractionAt:{timestampValue:now},updatedAt:{timestampValue:now}
+    }}),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)
+  });
+  if (response.status===409) throw new Error('APPOINTMENT_ALREADY_EXISTS');
+  if (!response.ok) throw new Error('APPOINTMENT_STORAGE_FAILED');
+  return mapAppointment(await response.json());
+}
+export async function listTestAppointments(request:typeof fetch=fetch):Promise<{items:Appointment[];hasMore:boolean}> {
+  const cfg=config(),token=await accessToken(request,cfg);const url=appointmentUrl(cfg.project);
+  url.searchParams.set('pageSize','50');url.searchParams.set('orderBy','createdAt desc');
+  const response=await request(url,{headers:{Authorization:'Bearer '+token},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
+  if (!response.ok) throw new Error('APPOINTMENT_STORAGE_FAILED');
+  const data=await response.json();
+  if (data.documents!==undefined && !Array.isArray(data.documents)) throw new Error('APPOINTMENT_STORAGE_FAILED');
+  return {items:(data.documents??[]).map(mapAppointment),hasMore:typeof data.nextPageToken==='string' && !!data.nextPageToken};
+}
+export async function updateTestAppointmentStatus(id:string,status:AppointmentStatus,request:typeof fetch=fetch):Promise<Appointment> {
+  if (!appointmentIdPattern.test(id)) throw new Error('INVALID_APPOINTMENT');
+  const valid=parseAppointmentStatus(status);
+  const cfg=config(),token=await accessToken(request,cfg);
+  const url=new URL(appointmentUrl(cfg.project).href+'/'+id);
+  // First verify it is a test record; conditional version prevents concurrent overwrite.
+  const existing=await request(url,{headers:{Authorization:'Bearer '+token},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
+  if (existing.status===404) throw new Error('APPOINTMENT_NOT_FOUND');
+  if (!existing.ok) throw new Error('APPOINTMENT_STORAGE_FAILED');
+  const doc=await existing.json();mapAppointment(doc);
+  if (typeof doc.updateTime!=='string') throw new Error('APPOINTMENT_STORAGE_FAILED');
+  url.searchParams.append('updateMask.fieldPaths','status');
+  url.searchParams.append('updateMask.fieldPaths','updatedAt');
+  url.searchParams.set('currentDocument.updateTime',doc.updateTime);
+  const response=await request(url,{
+    method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({fields:{status:{stringValue:valid},updatedAt:{timestampValue:new Date().toISOString()}}}),
+    cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)
+  });
+  if (!response.ok) throw new Error('APPOINTMENT_STORAGE_FAILED');
+  return mapAppointment(await response.json());
 }
