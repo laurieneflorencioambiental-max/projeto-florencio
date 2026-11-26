@@ -9,6 +9,8 @@ async function main() {
   }
   const fixture = require('node:child_process').spawnSync(process.execPath, [require('node:path').join(__dirname, 'whatsapp-webhook.cjs')], {stdio:'inherit'});
   if (fixture.status !== 0) throw new Error('WEBHOOK_FIXTURE_FAILED');
+  const appointments = require('node:child_process').spawnSync(process.execPath, [require('node:path').join(__dirname, 'whatsapp-appointments.cjs')], {stdio:'inherit'});
+  if (appointments.status !== 0) throw new Error('APPOINTMENT_FIXTURE_FAILED');
   const project = process.env.WHATSAPP_FIRESTORE_PROJECT_ID;
   const email = process.env.WHATSAPP_FIRESTORE_CLIENT_EMAIL;
   const key = process.env.WHATSAPP_FIRESTORE_PRIVATE_KEY;
@@ -61,7 +63,7 @@ async function main() {
   }
 }
 main().catch(err=>{
-  const code = typeof err?.message === 'string' && /^(WEBHOOK_FIXTURE_FAILED|CONFIGURATION_MISSING_OR_UNEXPECTED|PRIVATE_KEY_FORMAT_INVALID|GOOGLE_AUTH_HTTP_\d{3}|GOOGLE_AUTH_TOKEN_MISSING|FIRESTORE_(READ|CREATE|VERIFY|CLEANUP)_HTTP_\d{3}|FIRESTORE_VERIFY_MISMATCH)$/.test(err.message) ? err.message : 'NETWORK_OR_UNEXPECTED_ERROR';
+  const code = typeof err?.message === 'string' && /^(WEBHOOK_FIXTURE_FAILED|APPOINTMENT_FIXTURE_FAILED|CONFIGURATION_MISSING_OR_UNEXPECTED|PRIVATE_KEY_FORMAT_INVALID|GOOGLE_AUTH_HTTP_\d{3}|GOOGLE_AUTH_TOKEN_MISSING|FIRESTORE_(READ|CREATE|VERIFY|CLEANUP)_HTTP_\d{3}|FIRESTORE_VERIFY_MISMATCH)$/.test(err.message) ? err.message : 'NETWORK_OR_UNEXPECTED_ERROR';
   console.error('[WhatsApp Firestore] '+code);
   process.exitCode=1;
 });
