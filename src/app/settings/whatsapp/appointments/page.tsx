@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { examTypes, appointmentStatuses, isOverdue, type Appointment, type ExamType, type AppointmentStatus } from '@/lib/whatsapp/appointment-intake';
 
 const examLabels:Record<ExamType,string>={admissional:'Admissional',demissional:'Demissional',periodico:'Periódico',retorno_ao_trabalho:'Retorno ao trabalho',mudanca_de_risco:'Mudança de risco ocupacional',outro:'Outro'};
@@ -10,7 +11,11 @@ const button='rounded-md border px-4 py-2 font-medium disabled:opacity-50';
 const field='w-full rounded-md border bg-background p-2 text-sm';
 
 export default function AppointmentTestPage() {
-  const {user}=useUser();
+  const {user,isUserLoading}=useUser();
+  const auth=useAuth();
+  const [authorized,setAuthorized]=useState(false);
+  const [authBusy,setAuthBusy]=useState(false);
+  const [authMessage,setAuthMessage]=useState('');
   const [items,setItems]=useState<Appointment[]>([]);
   const [hasMore,setHasMore]=useState(false);
   const [company,setCompany]=useState('');
@@ -32,15 +37,25 @@ export default function AppointmentTestPage() {
     setItems(Array.isArray(data.items)?data.items:[]);setHasMore(Boolean(data.hasMore));
   }
   useEffect(()=>{
-    setItems([]);setHasMore(false);
+    setItems([]);setHasMore(false);setAuthorized(false);setAuthMessage('');
     if(!user)return;
     const abort=new AbortController();
-    refresh(abort.signal).catch(()=>{if(!abort.signal.aborted)setMessage('Fila indisponível ou acesso não autorizado.');});
+    refresh(abort.signal).then(()=>{if(!abort.signal.aborted)setAuthorized(true);}).catch((error)=>{if(!abort.signal.aborted)setAuthMessage(error instanceof Error && ['401','403'].includes(error.message)?'Esta conta não tem autorização para a fila de testes.':'Não foi possível verificar o acesso à fila. Atualize a página e tente novamente.');});
     return ()=>abort.abort();
   },[user]);
   useEffect(()=>{const interval=setInterval(()=>setNow(Date.now()),60000);return ()=>clearInterval(interval);},[]);
+  async function login(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault();if(!auth||authBusy)return;
+    const form=event.currentTarget;
+    const values=new FormData(form);
+    setAuthBusy(true);setAuthMessage('');
+    try{await signInWithEmailAndPassword(auth,String(values.get('email')??'').trim(),String(values.get('password')??''));form.reset();}
+    catch{setAuthMessage('Não foi possível entrar. Confira o e-mail e a senha da sua conta autorizada do CRM.');}
+    finally{setAuthBusy(false);}
+  }
+  async function logout(){if(!auth||authBusy)return;setAuthBusy(true);try{await signOut(auth);setAuthorized(false);setItems([]);setMessage('');}catch{setAuthMessage('Não foi possível sair. Tente novamente.');}finally{setAuthBusy(false);}}
   async function submit(event:FormEvent) {
-    event.preventDefault();if(busy||!user)return;
+    event.preventDefault();if(busy||!user||!authorized)return;
     setBusy(true);setMessage('');
     try {
       nextId.current??=crypto.randomUUID();
@@ -53,7 +68,7 @@ export default function AppointmentTestPage() {
     }finally{setBusy(false);}
   }
   async function changeStatus(id:string,status:AppointmentStatus) {
-    if(busy)return;setBusy(true);setMessage('');
+    if(busy||!authorized)return;setBusy(true);setMessage('');
     try {await call('PATCH',{id,status});await refresh();setMessage('Situação atualizada.');}
     catch{setMessage('Não foi possível alterar a situação.');}
     finally{setBusy(false);}
@@ -65,7 +80,17 @@ export default function AppointmentTestPage() {
       <p className="text-sm text-muted-foreground">Fila de solicitações para a equipe. Não confirma horários e não armazena o histórico de mensagens.</p>
       <p className="rounded-md border p-3 text-sm">Utilize somente dados fictícios nesta fase. Não informe nomes de funcionários, resultados de exames ou documentos.</p>
     </header>
-    {!user?<p>Entre com sua conta autorizada para acessar a fila.</p>:<>
+    {user&&<div className="flex flex-wrap items-center justify-between gap-3 border rounded-lg p-3 text-sm"><span>Conta conectada: {user.email}</span><button className={button} disabled={authBusy} onClick={logout}>Sair</button></div>}
+    {authMessage&&<p role="alert" className="rounded-md border p-3 text-sm">{authMessage}</p>}
+    {isUserLoading?<p>Verificando sessão...</p>:!user?<section className="max-w-md rounded-lg border p-5 space-y-4">
+      <h2 className="text-xl font-semibold">Entrar no ambiente de testes</h2>
+      <p className="text-sm text-muted-foreground">Use a conta autorizada do CRM Grupo Florencio.</p>
+      <form onSubmit={login} className="grid gap-4">
+        <label className="space-y-1 text-sm">E-mail<input className={field} type="email" name="email" autoComplete="username" required/></label>
+        <label className="space-y-1 text-sm">Senha<input className={field} type="password" name="password" autoComplete="current-password" required/></label>
+        <button className={button+' bg-primary text-primary-foreground'} type="submit" disabled={authBusy||!auth}>{authBusy?'Entrando...':'Entrar'}</button>
+      </form>
+    </section>:!authorized?<p>{authMessage?'A fila está indisponível para esta sessão.':'Verificando autorização para a fila de testes...'}</p>:<>
       <section className="rounded-lg border p-5 space-y-4">
         <h2 className="text-lg font-semibold">Nova solicitação de teste</h2>
         <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
