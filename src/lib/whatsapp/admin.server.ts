@@ -25,7 +25,17 @@ export async function requireWhatsAppAdministrator(
     throw new Error('ADMIN_VERIFICATION_UNAVAILABLE');
   }
   if (!response.ok) {
-    console.warn('[whatsapp-auth] firebase_lookup_failed', response.status);
+    let category='other';
+    try {
+      const body=await response.json();
+      const error=body?.error;
+      const details=Array.isArray(error?.details)?error.details:[];
+      const reasons=details.map((detail:{reason?:unknown})=>detail?.reason);
+      if (reasons.includes('API_KEY_HTTP_REFERRER_BLOCKED') || reasons.includes('API_KEY_IP_ADDRESS_BLOCKED') || reasons.includes('API_KEY_SERVICE_BLOCKED')) category='api_key_restricted';
+      else if (reasons.includes('API_KEY_INVALID')) category='api_key_invalid';
+      else if (['INVALID_ID_TOKEN','TOKEN_EXPIRED','USER_DISABLED','USER_NOT_FOUND'].includes(error?.message)) category='token_or_account_invalid';
+    } catch { /* Never log the upstream response or token. */ }
+    console.warn('[whatsapp-auth] firebase_lookup_failed', response.status, category);
     throw new Error('ADMIN_UNAUTHORIZED');
   }
   let uid: unknown;
