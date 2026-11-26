@@ -59,6 +59,28 @@ async function saveReceipt(raw, messages, statuses, secret) {
   if (!result.ok && result.status !== 409) throw new Error('storage');
 }
 
+// Optional metadata-only forwarding to the approved local test workflow.
+// No customer identifier, message body, attachment, or token is written to logs.
+async function forwardTestMetadata(messages,statuses) {
+  const target = process.env.WHATSAPP_N8N_WEBHOOK_URL;
+  if (!target) return;
+  const key = process.env.WHATSAPP_N8N_WEBHOOK_TOKEN;
+  if (!key || !/^[0-9a-f]{64}$/i.test(key)) throw new Error('invalid_bridge_configuration');
+  const url = new URL(target);
+  if (url.protocol !== 'https:' || !/^[a-z0-9-]+\.trycloudflare\.com$/.test(url.hostname) ||
+      url.pathname !== '/webhook/crm-florencio-whatsapp-teste' ||
+      url.port || url.search || url.hash || url.username || url.password)
+    throw new Error('invalid_bridge_destination');
+  const response = await fetch(url,{
+    method:'POST',headers:{'content-type':'application/json','x-florencio-webhook-token':key},
+    body:JSON.stringify({environment:'test',messages,statuses}),
+    redirect:'error',signal:AbortSignal.timeout(8000)
+  });
+  if (!response.ok || (await response.json())?.status !== 'received_test_only')
+    throw new Error('workflow_not_confirmed');
+  console.info('[WhatsApp test] N8N metadata acknowledged');
+}
+
 async function handler(request) {
   if (process.env.WHATSAPP_WEBHOOK_TEST_ENABLED !== 'true') return reply(503,'disabled');
   const verify = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
@@ -94,7 +116,12 @@ async function handler(request) {
     }
   }
   if (!messages && !statuses) { console.info('[WhatsApp test] signed notification outside test assets or empty, ignored'); return reply(200,'ignored'); }
-  try { await saveReceipt(raw,messages,statuses,secret); console.info('[WhatsApp test] receipt stored'); return reply(200,'ok'); }
+  try { await saveReceipt(raw,messages,statuses,secret); console.info('[WhatsApp test] receipt stored'); }
   catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
+  // Test workflow only acknowledges metadata. Do not cause Meta retries when
+  // the temporary local tunnel is offline; receipts remain available.
+  try { await forwardTestMetadata(messages,statuses); }
+  catch { console.warn('[WhatsApp test] N8N metadata delivery not confirmed'); }
+  return reply(200,'ok');
 }
 export default {fetch:handler};
