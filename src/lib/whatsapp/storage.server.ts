@@ -71,3 +71,29 @@ export async function consumeSignupSession(nonce: string, uid: string, request: 
   });
   if (!response.ok) throw new Error('SIGNUP_SESSION_UNAVAILABLE_OR_USED');
 }
+
+/** Store only aggregate test metadata, never message content or sender details. */
+export async function persistTestWebhookReceipt(input: {
+  digest: string; messages: number; statuses: number;
+}, request: typeof fetch = fetch): Promise<void> {
+  if (!/^[a-f0-9]{64}$/.test(input.digest) ||
+      !Number.isSafeInteger(input.messages) || input.messages < 0 ||
+      !Number.isSafeInteger(input.statuses) || input.statuses < 0)
+    throw new Error('WHATSAPP_RECEIPT_INVALID');
+  const cfg = config();
+  const token = await accessToken(request, cfg);
+  const url = new URL('https://firestore.googleapis.com/v1/projects/' + cfg.project + '/databases/crm-whatsapp/documents/whatsapp-test-webhook-receipts');
+  url.searchParams.set('documentId', input.digest);
+  const response = await request(url, {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: {
+      messages: { integerValue: String(input.messages) },
+      statuses: { integerValue: String(input.statuses) },
+      receivedAt: { timestampValue: new Date().toISOString() },
+      environment: { stringValue: 'test' },
+    }}),
+    cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(10000),
+  });
+  // A retried delivery is already recorded; no duplicate receipt is created.
+  if (!response.ok && response.status !== 409) throw new Error('WHATSAPP_RECEIPT_WRITE_FAILED');
+}
