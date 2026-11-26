@@ -4,7 +4,7 @@ export async function requireWhatsAppAdministrator(
   authorization: string | null,
   request: typeof fetch = fetch,
 ): Promise<string> {
-  const apiKey = process.env.FIREBASE_AUTH_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const apiKey = (process.env.FIREBASE_AUTH_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '').trim();
   const adminUids = (process.env.WHATSAPP_ADMIN_UIDS ?? '').split(',').map(s => s.trim()).filter(Boolean);
   const match = /^Bearer ([^\s]+)$/.exec(authorization ?? '');
   if (!apiKey || !adminUids.length) throw new Error('ADMIN_CONFIGURATION_MISSING');
