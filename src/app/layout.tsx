@@ -22,6 +22,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
+  const isWhatsAppAppointmentTest = pathname === '/settings/whatsapp/appointments';
   const isProposalPage = pathname.startsWith('/proposal/');
   const isPartnershipPage = pathname.startsWith('/partnership/');
 
@@ -88,8 +89,8 @@ export default function RootLayout({
           <MaintenancePage />
         ) : (
           <FirebaseClientProvider>
-            <DynamicFavicon />
-            {isLoginPage || isProposalPage || isPartnershipPage ? (
+            {!isWhatsAppAppointmentTest && <DynamicFavicon />}
+            {isLoginPage || isProposalPage || isPartnershipPage || isWhatsAppAppointmentTest ? (
               children
             ) : (
               <AppLayout>{children}</AppLayout>
