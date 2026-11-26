@@ -70,15 +70,17 @@ async function handler(request) {
     if (p.get('hub.mode') !== 'subscribe' ||
         !equal(Buffer.from(p.get('hub.verify_token') ?? ''),Buffer.from(verify)) ||
         !/^\d{1,128}$/.test(challenge)) return reply(403,'forbidden');
+    console.info('[WhatsApp test] verification accepted');
     return reply(200,challenge);
   }
   if (request.method !== 'POST') return reply(405,'method_not_allowed');
   const signature = request.headers.get('x-hub-signature-256') ?? '';
-  if (!/^sha256=[0-9a-f]{64}$/i.test(signature)) return reply(403,'forbidden');
+  if (!/^sha256=[0-9a-f]{64}$/i.test(signature)) { console.info('[WhatsApp test] rejected signature format'); return reply(403,'forbidden'); }
   let raw;
   try { raw = await boundedBody(request); } catch { return reply(413,'invalid_request'); }
   const expected = createHmac('sha256',secret).update(raw).digest();
-  if (!equal(expected,Buffer.from(signature.slice(7),'hex'))) return reply(403,'forbidden');
+  if (!equal(expected,Buffer.from(signature.slice(7),'hex'))) { console.info('[WhatsApp test] rejected signature'); return reply(403,'forbidden'); }
+  console.info('[WhatsApp test] signed notification received');
   let payload;
   try { payload = JSON.parse(raw.toString('utf8')); } catch { return reply(400,'invalid_request'); }
   if (payload?.object !== 'whatsapp_business_account' || !Array.isArray(payload.entry)) return reply(400,'invalid_request');
@@ -91,8 +93,8 @@ async function handler(request) {
       statuses += Array.isArray(change.value.statuses) ? change.value.statuses.length : 0;
     }
   }
-  if (!messages && !statuses) return reply(200,'ignored');
-  try { await saveReceipt(raw,messages,statuses,secret); return reply(200,'ok'); }
-  catch { return reply(503,'retry'); }
+  if (!messages && !statuses) { console.info('[WhatsApp test] signed notification outside test assets or empty, ignored'); return reply(200,'ignored'); }
+  try { await saveReceipt(raw,messages,statuses,secret); console.info('[WhatsApp test] receipt stored'); return reply(200,'ok'); }
+  catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
 }
 export default {fetch:handler};
