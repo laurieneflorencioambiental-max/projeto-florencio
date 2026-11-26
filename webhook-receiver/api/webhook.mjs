@@ -47,7 +47,33 @@ function classifyTestMessage(message) {
   return 'central_relacionamento';
 }
 
-async function saveReceipt(raw, messages, statuses, secret, triageCounts) {
+// Strict synthetic test format; never store arbitrary free text or a sender identifier.
+function parseTestAppointment(message) {
+  if (message?.type !== 'text' || typeof message.text?.body !== 'string' || typeof message.id !== 'string' || !/^wamid\.[A-Za-z0-9_+=/-]{1,300}$/.test(message.id)) return null;
+  const match = /^AGENDAMENTO TESTE \| Empresa Exemplo \| (ADMISSIONAL|DEMISSIONAL|PERIODICO|RETORNO_AO_TRABALHO|MUDANCA_DE_RISCO|OUTRO) \| ([1-9]\d{0,2}|1000) \| (\d{2})\/(\d{2})\/(\d{4})$/.exec(message.text.body.trim());
+  if (!match) return null;
+  const date = `${match[5]}-${match[4]}-${match[3]}`;
+  const parsed = new Date(date+'T00:00:00Z');
+  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0,10)!==date) return null;
+  return {messageId:message.id,company:'Empresa Exemplo',examType:match[1].toLowerCase(),employeeCount:Number(match[2]),preferredDate:date};
+}
+
+function appointmentId(messageId,secret) {
+  const hex = createHmac('sha256',secret).update('appointment:').update(messageId).digest('hex');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-4${hex.slice(13,16)}-8${hex.slice(17,20)}-${hex.slice(20,32)}`;
+}
+
+async function saveTestAppointment(input,accessToken,secret) {
+  const url=new URL('https://firestore.googleapis.com/v1/projects/'+project+'/databases/crm-whatsapp/documents/whatsapp-test-appointment-requests');
+  url.searchParams.set('documentId',appointmentId(input.messageId,secret));
+  const now=new Date().toISOString();
+  const result=await fetch(url,{method:'POST',headers:{authorization:'Bearer '+accessToken,'content-type':'application/json'},body:JSON.stringify({fields:{
+    company:{stringValue:input.company},examType:{stringValue:input.examType},employeeCount:{integerValue:String(input.employeeCount)},preferredDate:{stringValue:input.preferredDate},status:{stringValue:'pendente'},sector:{stringValue:'agendamento'},environment:{stringValue:'test'},source:{stringValue:'whatsapp_test'},createdAt:{timestampValue:now},lastInteractionAt:{timestampValue:now},updatedAt:{timestampValue:now}
+  }}),redirect:'error',signal:AbortSignal.timeout(8000)});
+  if (!result.ok && result.status!==409) throw new Error('appointment_storage');
+}
+
+async function saveReceipt(raw, messages, statuses, secret, triageCounts, appointments) {
   const key = process.env.WHATSAPP_FIRESTORE_PRIVATE_KEY;
   if (!key) throw new Error('configuration');
   const now = Math.floor(Date.now()/1000);
@@ -77,6 +103,8 @@ async function saveReceipt(raw, messages, statuses, secret, triageCounts) {
     }}),redirect:'error',signal:AbortSignal.timeout(8000)
   });
   if (!result.ok && result.status !== 409) throw new Error('storage');
+  for (const appointment of appointments) await saveTestAppointment(appointment,access_token,secret);
+  if (appointments.length) console.info('[WhatsApp test] structured appointments confirmed',appointments.length);
 }
 
 // Optional metadata-only forwarding to the approved local test workflow.
@@ -128,6 +156,7 @@ async function handler(request) {
   if (payload?.object !== 'whatsapp_business_account' || !Array.isArray(payload.entry)) return reply(400,'invalid_request');
   let messages=0,statuses=0;
   const triageCounts = Object.create(null);
+  const appointments=[];
   for (const entry of payload.entry) {
     if (entry?.id !== testWaba || !Array.isArray(entry.changes)) continue;
     for (const change of entry.changes) {
@@ -137,13 +166,15 @@ async function handler(request) {
           messages++;
           const category = classifyTestMessage(message);
           triageCounts[category] = (triageCounts[category] ?? 0) + 1;
+          const appointment=parseTestAppointment(message);
+          if (appointment) appointments.push(appointment);
         }
       }
       statuses += Array.isArray(change.value.statuses) ? change.value.statuses.length : 0;
     }
   }
   if (!messages && !statuses) { console.info('[WhatsApp test] signed notification outside test assets or empty, ignored'); return reply(200,'ignored'); }
-  try { await saveReceipt(raw,messages,statuses,secret,triageCounts); console.info('[WhatsApp test] receipt stored');
+  try { await saveReceipt(raw,messages,statuses,secret,triageCounts,appointments); console.info('[WhatsApp test] receipt stored');
     if (messages) console.info('[WhatsApp test] preliminary categories '+JSON.stringify(triageCounts)); }
   catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
   // Test workflow only acknowledges metadata. Do not cause Meta retries when
