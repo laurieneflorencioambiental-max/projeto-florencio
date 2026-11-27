@@ -1,0 +1,10 @@
+export type Sector = 'agendamento'|'documentos'|'comercial'|'financeiro'|'area_tecnica'|'central_relacionamento';
+export type RuleEntry = {id:string;title:string;keywords:string[];response:string;enabled:boolean};
+export type SystemReplies = {asoForm:string;serviceInfo:string;addressReply:string;handoffReply:string};
+export type Knowledge = {schemaVersion:1;context:string;systemReplies:SystemReplies;sectors:Record<Sector,{context:string;entries:RuleEntry[]}>};
+export type ConversationState = 'new'|'address_answered'|'human_active';
+export type Simulation = {sector:Sector;body:string|null;source:string;entryId?:string;title?:string;nextState:ConversationState};
+export const SECTORS:Sector[];
+export function defaultKnowledge():Knowledge;
+export function validateKnowledge(value:unknown):Knowledge;
+export function simulateKnowledge(text:string,knowledge:Knowledge,state?:ConversationState):Simulation;
