@@ -1,7 +1,7 @@
 // Offline test of the actual receiver; all network calls are mocked.
 import assert from 'node:assert/strict';
 import {createHmac,generateKeyPairSync} from 'node:crypto';
-import receiver, {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO} from '../api/webhook.mjs';
+import receiver, {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY} from '../api/webhook.mjs';
 const key = generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({type:'pkcs8',format:'pem'});
 Object.assign(process.env,{
  WHATSAPP_WEBHOOK_TEST_ENABLED:'true',WHATSAPP_WEBHOOK_VERIFY_TOKEN:'fixture',
@@ -9,7 +9,7 @@ Object.assign(process.env,{
  WHATSAPP_N8N_WEBHOOK_URL:'https://fixture.trycloudflare.com/webhook/crm-florencio-whatsapp-teste',
  WHATSAPP_N8N_WEBHOOK_TOKEN:'a'.repeat(64)
 });
-let saved, forwarded; const appointments=new Map(); const attempts=new Map(); const sends=[]; let graphOutcome='accepted';
+let saved, forwarded; const appointments=new Map(); const attempts=new Map(); const handoffs=new Map(); const sends=[]; let graphOutcome='accepted';
 globalThis.fetch=async(url,opts)=>{
   const u=String(url);
   if(u.startsWith('https://oauth2.googleapis.com/')) return Response.json({access_token:'fixture'});
@@ -21,6 +21,12 @@ globalThis.fetch=async(url,opts)=>{
     return Response.json({messages:[{id:'wamid.outbound.mock'}]});
   }
   if(u.startsWith('https://firestore.googleapis.com/')) {
+    if(u.includes('/whatsapp-test-human-handoffs')) {
+      const target=new URL(u); const id=opts.method==='POST'?target.searchParams.get('documentId'):target.pathname.split('/').pop();
+      if(opts.method==='POST') {if(handoffs.has(id))return new Response('',{status:409});handoffs.set(id,{fields:JSON.parse(opts.body).fields,updateTime:'2026-11-27T10:00:00Z'});return Response.json({});}
+      if(opts.method==='PATCH') {handoffs.set(id,{fields:{...handoffs.get(id).fields,...JSON.parse(opts.body).fields},updateTime:'2026-11-27T10:01:00Z'});return Response.json({});}
+      return handoffs.has(id)?Response.json(handoffs.get(id)):new Response('',{status:404});
+    }
     if(u.includes('/whatsapp-test-reply-attempts')) {
       const target=new URL(u); const id=opts.method==='POST'?target.searchParams.get('documentId'):target.pathname.split('/').pop();
       if(opts.method==='POST') {if(attempts.has(id))return new Response('',{status:409});attempts.set(id,JSON.parse(opts.body));return Response.json({});}
@@ -130,7 +136,7 @@ const serviceMessage=body=>({type:'text',text:{body}});
 for (const body of ['Quero agendar um ASO','Preciso gerar um ASO','Gostaria de emitir um atestado de saúde ocupacional','Quero fazer exame admissional','Preciso agendar dois exames periódicos','Gostaria de marcar exames demissionais','Preciso fazer ASO de mudança de riscos ocupacionais','Quero tirar um ASO']) {
  assert.equal(serviceReply(serviceMessage(body)),ASO_FORM,body);
 }
-for (const body of ['Qual o local de atendimento?','Quais os horários de atendimento?','Onde fica a clínica?','Me informa os endereços das clínicas','Horário','Que horas atende?']) {
+for (const body of ['Qual o local de atendimento?','Quais os horários de atendimento?','Onde fica a clínica?','Horário','Que horas atende?']) {
  assert.equal(serviceReply(serviceMessage(body)),SERVICE_INFO,body);
 }
 for (const body of ['Preciso da segunda via do ASO','Quero cancelar um ASO','Já fiz o ASO e quero o resultado','Não quero agendar um ASO','Preciso de orçamento para um ASO','Estou com dor urgente e quero agendar ASO','CPF: fictício RG: fictício ASO admissional']) {
@@ -157,3 +163,28 @@ assert.equal(sends.length,previousSends+3);
 assert(!JSON.stringify(saved).includes('FILLED-FIXTURE'));
 assert(!JSON.stringify([...attempts.values()]).includes('FILLED-FIXTURE'));
 console.log('PASS: ASO generation form, locations and hours, combined questions, existing documents, no filled-form persistence');
+
+
+for(const body of ['Qual o endereço completo?','Me informa os endereços das clínicas','Qual a rua da clínica?','Me passa o CEP','Como chegar na clínica?']) assert.equal(serviceReply(serviceMessage(body)),ADDRESS_REPLY,body);
+assert.equal(serviceReply(serviceMessage('Quero falar com um atendente humano')),HANDOFF_REPLY);
+const beforeHandoff=sends.length;
+const address1={...current('Qual o endereço completo da clínica?'),id:'wamid.handoff-1'};
+assert.equal((await receiver.fetch(replySigned(address1))).status,200);assert.equal(sends.length,beforeHandoff+1);assert.equal(sends.at(-1).text.body,ADDRESS_REPLY);
+assert.equal((await receiver.fetch(replySigned(address1))).status,200);assert.equal(sends.length,beforeHandoff+1);
+const [handoffId, record]=[...handoffs.entries()][0];
+assert.equal(record.fields.status.stringValue,'endereco_informado');
+const address2={...current('Preciso do endereço agora, já pedi.'),id:'wamid.handoff-2'};
+assert.equal((await receiver.fetch(replySigned(address2))).status,200);assert.equal(sends.length,beforeHandoff+2);assert.equal(sends.at(-1).text.body,HANDOFF_REPLY);
+assert.equal(handoffs.get(handoffId).fields.status.stringValue,'pendente');
+assert.equal(handoffs.get(handoffId).fields.reason.stringValue,'address_insistence');
+assert.equal((await receiver.fetch(replySigned(address2))).status,200);assert.equal(sends.length,beforeHandoff+2);
+assert.equal((await receiver.fetch(replySigned({...current('Qual o horário de atendimento?'),id:'wamid.handoff-3'}))).status,200);assert.equal(sends.length,beforeHandoff+2);
+handoffs.get(handoffId).fields.status.stringValue='em_atendimento';
+assert.equal((await receiver.fetch(replySigned({...current('Quero agendar ASO'),id:'wamid.handoff-4'}))).status,200);assert.equal(sends.length,beforeHandoff+2);
+handoffs.get(handoffId).fields.status.stringValue='resolvido';
+assert.equal((await receiver.fetch(replySigned({...current('Qual o horário de atendimento?'),id:'wamid.handoff-5'}))).status,200);assert.equal(sends.length,beforeHandoff+3);
+assert.equal((await receiver.fetch(replySigned({...current('Quero falar com um atendente'),id:'wamid.handoff-6'}))).status,200);assert.equal(sends.length,beforeHandoff+4);
+assert.equal(handoffs.get(handoffId).fields.reason.stringValue,'human_requested');
+const handoffData=JSON.stringify([...handoffs.entries()]);
+for(const value of [allowed,'wamid.handoff-1','Preciso do endereço agora','Qual o endereço completo']) assert(!handoffData.includes(value));
+console.log('PASS: address policy, repeat escalation, human queue, suppression, resumption and privacy');
