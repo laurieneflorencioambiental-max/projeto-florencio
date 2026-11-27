@@ -31,7 +31,7 @@ export async function getTestKnowledge(request:typeof fetch=fetch):Promise<{draf
   return {draft:draft.version,published:published.version};
 }
 export async function saveTestKnowledge(value:unknown,expectedRevision:number,request:typeof fetch=fetch):Promise<KnowledgeVersion>{
-  const knowledge=validateKnowledge(value),cfg=config(),token=await accessToken(request,cfg);
+  const knowledge=validateKnowledge(value),{project,token}=await getTestStorageContext(request);
   const current=await readKnowledgeDoc('draft',project,token,request);
   if(current.version.revision!==expectedRevision)throw Error('KNOWLEDGE_CONFLICT');
   return writeKnowledgeDoc('draft',current,knowledge,project,token,request);
