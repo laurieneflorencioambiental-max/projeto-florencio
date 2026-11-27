@@ -1,7 +1,7 @@
 // Offline test of the actual receiver; all network calls are mocked.
 import assert from 'node:assert/strict';
 import {createHmac,generateKeyPairSync} from 'node:crypto';
-import receiver, {analyzeNaturalAppointment,replyCandidate} from '../api/webhook.mjs';
+import receiver, {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO} from '../api/webhook.mjs';
 const key = generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({type:'pkcs8',format:'pem'});
 Object.assign(process.env,{
  WHATSAPP_WEBHOOK_TEST_ENABLED:'true',WHATSAPP_WEBHOOK_VERIFY_TOKEN:'fixture',
@@ -107,11 +107,11 @@ assert.equal((await receiver.fetch(replySigned(request,'other-phone'))).status,2
 assert.equal((await receiver.fetch(replySigned({...request,from:'5511999990001'}))).status,200);assert.equal(sends.length,0);
 assert.equal((await receiver.fetch(replySigned({...request,timestamp:String(Number(now)-86400)}))).status,200);assert.equal(sends.length,0);
 assert.equal((await receiver.fetch(replySigned(request))).status,200);assert.equal(sends.length,1);
-assert.equal(sends[0].to,allowed);assert.equal(sends[0].type,'text');assert.match(sends[0].text.body,/analisar a disponibilidade/);
+assert.equal(sends[0].to,allowed);assert.equal(sends[0].type,'text');assert.equal(sends[0].text.body,ASO_FORM);
 assert.equal((await receiver.fetch(replySigned(request))).status,200);assert.equal(sends.length,1);
 const incomplete={...current('Gostaria de agendar dois exames admissionais para amanhã.'),id:'wamid.reply-2'};
 assert.equal((await receiver.fetch(replySigned(incomplete))).status,200);assert.equal(sends.length,2);
-assert.match(sends[1].text.body,/empresa de teste/);assert.match(sends[1].text.body,/reenvie o pedido completo/);
+assert.equal(sends[1].text.body,ASO_FORM);
 const unsafe={...current('Quero agendar e estou com dor urgente.'),id:'wamid.reply-urgent'};
 assert.equal((await receiver.fetch(replySigned(unsafe))).status,200);assert.equal(sends.length,2);
 graphOutcome='rejected';const rejected={...incomplete,id:'wamid.reply-3'};
@@ -124,3 +124,36 @@ assert.deepEqual([...attempts.values()].map(x=>x.fields.state.stringValue),['acc
 const serialized=JSON.stringify([...attempts.entries()]);
 for(const value of [allowed,'wamid.reply-1','fixture-graph-token',sends[0].text.body])assert(!serialized.includes(value));
 console.log('PASS: opt-in outbound, authorized test number, 24h gate, duplicate prevention, missing data response, failures and privacy');
+
+
+const serviceMessage=body=>({type:'text',text:{body}});
+for (const body of ['Quero agendar um ASO','Preciso gerar um ASO','Gostaria de emitir um atestado de saúde ocupacional','Quero fazer exame admissional','Preciso agendar dois exames periódicos','Gostaria de marcar exames demissionais','Preciso fazer ASO de mudança de riscos ocupacionais','Quero tirar um ASO']) {
+ assert.equal(serviceReply(serviceMessage(body)),ASO_FORM,body);
+}
+for (const body of ['Qual o local de atendimento?','Quais os horários de atendimento?','Onde fica a clínica?','Me informa os endereços das clínicas','Horário','Que horas atende?']) {
+ assert.equal(serviceReply(serviceMessage(body)),SERVICE_INFO,body);
+}
+for (const body of ['Preciso da segunda via do ASO','Quero cancelar um ASO','Já fiz o ASO e quero o resultado','Não quero agendar um ASO','Preciso de orçamento para um ASO','Estou com dor urgente e quero agendar ASO','CPF: fictício RG: fictício ASO admissional']) {
+ assert.equal(serviceReply(serviceMessage(body)),null,body);
+}
+assert.equal(serviceReply(serviceMessage('Quero gerar um ASO e quais os locais de atendimento?')),ASO_FORM+'\n\n'+SERVICE_INFO);
+for(const field of ['Nome da empresa:','CNPJ:','Nome completo do funcionário:','Tipo de exame','RG:','CPF:','Setor:','Função + CBO:','Data de nascimento:','Local da Clínica:','Data do atendimento:','Número do celular do funcionário: (21)','E-mail da empresa:','Faz trabalho em altura?','Faz trabalho em Espaço Confinado?','Físico:','Químico:','Biológico:','Ergonômico:','Acidentes:','Nome do médico coordenador do PCMSO:','CRM:','Não nos responsabilizamos','SMS']) assert(ASO_FORM.includes(field),field);
+for(const city of ['Centro do Rio de Janeiro','Nova Iguaçu','Duque de Caxias','Vila Kosmos / Vila da Penha','Niterói','Macaé','Guapimirim','8h às 11h']) assert(SERVICE_INFO.includes(city),city);
+graphOutcome='accepted';
+const previousSends=sends.length;
+for(const [index,body,expected] of [
+ [1,'Quero agendar um ASO',ASO_FORM],
+ [2,'Onde fica a clínica e qual o horário?',SERVICE_INFO],
+ [3,'Quero gerar um ASO e quais os locais de atendimento?',ASO_FORM+'\n\n'+SERVICE_INFO],
+ [4,'Preciso da segunda via do ASO',null],
+ [5,'CPF: FILLED-FIXTURE RG: FILLED-FIXTURE Quero agendar ASO',null],
+]) {
+ const before=sends.length;
+ assert.equal((await receiver.fetch(replySigned({...current(body),id:'wamid.service-'+index}))).status,200);
+ assert.equal(sends.length,before+(expected?1:0),body);
+ if(expected)assert.equal(sends.at(-1).text.body,expected);
+}
+assert.equal(sends.length,previousSends+3);
+assert(!JSON.stringify(saved).includes('FILLED-FIXTURE'));
+assert(!JSON.stringify([...attempts.values()]).includes('FILLED-FIXTURE'));
+console.log('PASS: ASO generation form, locations and hours, combined questions, existing documents, no filled-form persistence');
