@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import type { TestHandoff } from '@/lib/whatsapp/storage.server';
@@ -99,7 +100,7 @@ export default function AppointmentTestPage() {
   return <main className="mx-auto max-w-5xl space-y-6 p-6">
     <header className="space-y-2">
       <p className="text-sm font-medium text-muted-foreground">WhatsApp • Ambiente de testes</p>
-      <h1 className="text-3xl font-semibold">Solicitações de agendamento</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-3xl font-semibold">Solicitações de agendamento</h1><Link href="/settings/whatsapp/training" className={button}>Central de treinamento</Link></div>
       <p className="text-sm text-muted-foreground">Fila de solicitações para a equipe. Não confirma horários e não armazena o histórico de mensagens.</p>
       <p className="rounded-md border p-3 text-sm">Utilize somente dados fictícios nesta fase. Não informe nomes de funcionários, resultados de exames ou documentos.</p>
     </header>
