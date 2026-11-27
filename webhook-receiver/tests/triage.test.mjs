@@ -1,5 +1,6 @@
 // Offline test of the actual receiver; all network calls are mocked.
 import assert from 'node:assert/strict';
+import {defaultKnowledge,validateKnowledge,simulateKnowledge} from '../lib/training.mjs';
 import {createHmac,generateKeyPairSync} from 'node:crypto';
 import receiver, {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY,normalizeTestRecipient} from '../api/webhook.mjs';
 const key = generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({type:'pkcs8',format:'pem'});
@@ -9,7 +10,7 @@ Object.assign(process.env,{
  WHATSAPP_N8N_WEBHOOK_URL:'https://fixture.trycloudflare.com/webhook/crm-florencio-whatsapp-teste',
  WHATSAPP_N8N_WEBHOOK_TOKEN:'a'.repeat(64)
 });
-let saved, forwarded; const appointments=new Map(); const attempts=new Map(); const handoffs=new Map(); const sends=[]; let graphOutcome='accepted';
+let saved, forwarded; const appointments=new Map(); const attempts=new Map(); const handoffs=new Map(); let publishedKnowledge=null; const sends=[]; let graphOutcome='accepted';
 globalThis.fetch=async(url,opts)=>{
   const u=String(url);
   if(u.startsWith('https://oauth2.googleapis.com/')) return Response.json({access_token:'fixture'});
@@ -21,6 +22,7 @@ globalThis.fetch=async(url,opts)=>{
     return Response.json({messages:[{id:'wamid.outbound.mock'}]});
   }
   if(u.startsWith('https://firestore.googleapis.com/')) {
+    if(u.includes('/whatsapp-test-agent-knowledge/published'))return publishedKnowledge?Response.json({fields:{environment:{stringValue:'test'},knowledgeJson:{stringValue:JSON.stringify(publishedKnowledge)}}}):new Response('',{status:404});
     if(u.includes('/whatsapp-test-human-handoffs')) {
       const target=new URL(u); const id=opts.method==='POST'?target.searchParams.get('documentId'):target.pathname.split('/').pop();
       if(opts.method==='POST') {if(handoffs.has(id))return new Response('',{status:409});handoffs.set(id,{fields:JSON.parse(opts.body).fields,updateTime:'2026-11-27T10:00:00Z'});return Response.json({});}
@@ -200,3 +202,29 @@ assert.equal((await receiver.fetch(replySigned({...current('Quero agendar ASO'),
 assert.equal(sends.length,beforeFormatted+1);assert.equal(sends.at(-1).to,allowed);
 assert.equal((await receiver.fetch(replySigned({...current('Quero agendar ASO'),from:'5511999990001',id:'wamid.formatted-other'}))).status,200);assert.equal(sends.length,beforeFormatted+1);
 console.log('PASS: formatted test recipient normalized; other recipient still rejected');
+
+
+let knowledge=defaultKnowledge();
+knowledge.sectors.financeiro.entries.push({id:'test-1',title:'Boleto',keywords:['segunda via de boleto'],response:'Resposta aprovada do financeiro.',enabled:true});
+knowledge.sectors.comercial.entries.push({id:'test-2',title:'Orçamento',keywords:['orçamento personalizado'],response:'Resposta comercial.',enabled:true});
+knowledge.systemReplies.serviceInfo='Locais e horários atualizados no teste.';
+knowledge.context='Contexto interno fictício.';
+knowledge=validateKnowledge(knowledge);
+assert.equal(simulateKnowledge('Quero segunda via de boleto',knowledge).body,'Resposta aprovada do financeiro.');
+assert.equal(simulateKnowledge('Quero segunda via de boleto',knowledge).sector,'financeiro');
+assert.equal(simulateKnowledge('Quais os locais de atendimento?',knowledge).body,'Locais e horários atualizados no teste.');
+assert.equal(simulateKnowledge('Qual o endereço completo?',knowledge,'address_answered').source,'handoff');
+assert.equal(simulateKnowledge('Qual o horário de atendimento?',knowledge,'human_active').body,null);
+assert.equal(simulateKnowledge('Estou com dor urgente e quero segunda via de boleto',knowledge).body,null);
+assert.throws(()=>validateKnowledge({...knowledge,context:'x'.repeat(8001)}));
+handoffs.get(handoffId).fields.status.stringValue='resolvido';
+process.env.WHATSAPP_TEST_RECIPIENT_DIGITS=allowed;
+publishedKnowledge=knowledge;
+const trainingBefore=sends.length;
+assert.equal((await receiver.fetch(replySigned({...current('Quero segunda via de boleto'),id:'wamid.knowledge-1'}))).status,200);
+assert.equal(sends.length,trainingBefore+1);assert.equal(sends.at(-1).text.body,'Resposta aprovada do financeiro.');
+assert.equal(saved.fields.triageCounts.mapValue.fields.financeiro.integerValue,'1');
+assert.equal((await receiver.fetch(replySigned({...current('Quais os locais de atendimento?'),id:'wamid.knowledge-2'}))).status,200);
+assert.equal(sends.at(-1).text.body,'Locais e horários atualizados no teste.');
+assert(!JSON.stringify(saved).includes('Resposta aprovada do financeiro.'));
+console.log('PASS: published training knowledge affects actual receiver and simulation; protected flows remain');
