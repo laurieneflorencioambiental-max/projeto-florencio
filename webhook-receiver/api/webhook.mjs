@@ -83,28 +83,36 @@ Local de Atendimento - Medicina do Trabalho:
 
 🕚 Horário de atendimento da Medicina do Trabalho: de segunda a sexta, de 8h às 11h.`;
 
+const ADDRESS_REPLY = 'O endereço completo da clínica será informado no encaminhamento, que será enviado ao celular do funcionário por SMS e com cópia para o e-mail do gestor.';
+const HANDOFF_REPLY = 'Compreendo. Vou encaminhar seu atendimento a um atendente humano para que possa ajudá-lo. Por favor, aguarde.';
+
 function serviceIntent(message) {
-  if(message?.type!=='text' || typeof message.text?.body!=='string') return {aso:false,info:false};
+  if(message?.type!=='text' || typeof message.text?.body!=='string') return {aso:false,info:false,address:false,human:false,resistance:false};
   const t=normalize(message.text.body.trim());
   if(!t || t.length>4000 || t.startsWith('agendamento teste |') ||
-    /\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico|resultado de exame)\b/.test(t)) return {aso:false,info:false};
+    /\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico|resultado de exame)\b/.test(t)) return {aso:false,info:false,address:false,human:false,resistance:false};
   // Completed forms may contain identifying information. Never echo their fields.
-  if(/\bcpf\s*:/i.test(t) && /\brg\s*:/i.test(t)) return {aso:false,info:false};
+  if(/\bcpf\s*:/i.test(t) && /\brg\s*:/i.test(t)) return {aso:false,info:false,address:false,human:false,resistance:false};
   const existing=/\b(segunda via|2a via|2ª via|copia|reimprimir|baixar|resultado|pronto|laudo pronto|ja (?:fiz|realizei|agendei)|cancel\w*|remarc\w*|desmarc\w*|adiar)\b/.test(t);
   const other=/\b(boleto|pix|pagamento|fatura|nota fiscal|cobranca|orcamento|cotacao|preco|valor|proposta|contrato)\b/.test(t);
   const negated=/\bnao\s+(?:quero|preciso|gostaria|desejo|vou|pretendo|agend\w*|gerar|marcar|emitir|fazer)\b/.test(t);
   const asoSubject=/\b(?:asos?|atestado de saude ocupacional|exames? (?:ocupacionais?|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?)|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?|mudanca (?:de|do) riscos?(?: ocupacionais)?|retorno ao trabalho)\b/.test(t);
   const action=/\b(agend\w*|marcar|gerar|emitir|solicit\w*|encaminh\w*|preciso|gostaria|quero|desejo|fazer|realizar|providenciar|tirar)\b/.test(t);
   const aso=!existing && !other && !negated && asoSubject && action;
+  const human=/\b(?:atendente|atendimento humano|pessoa humana|falar com (?:uma pessoa|alguem|o responsavel)|transferir (?:para|o atendimento))\b/.test(t) && !/\bnao (?:quero|preciso) (?:de |falar com )?(?:um )?atendente\b/.test(t);
+  const address=!other && !existing && /\b(?:enderecos?|rua|logradouro|numero da clinica|cep|localizacao exata|local exato|ponto de referencia|como chegar|link do maps)\b/.test(t);
+  const resistance=/\b(?:insisto|ja pedi|ja perguntei|nao quero esperar|nao vou esperar|nao quero o encaminhamento|nao quero preencher|nao vou preencher|preciso agora|quero agora|me passa agora|me mande agora|mesmo assim|quero o endereco agora|preciso do endereco agora)\b/.test(t);
   const info=!existing && !other && !negated && (
     /\b(?:onde|qual|quais|como chegar|me informa|me informe|me passa|gostaria de saber)\b[\s\S]{0,70}\b(?:clinicas?|local|locais|enderecos?|unidades?|atendem|horarios?|horas?|funcionamento|fica|ficam)\b/.test(t) ||
     /\b(?:onde (?:e|sao|ocorre|ocorrem) (?:o |os )?atendimentos?|locais? de atendimento|horarios? de atendimento|horarios? da (?:clinica|medicina do trabalho)|horario de funcionamento|endereco da clinica|enderecos das clinicas|que horas (?:atende|atendem|abre|fecha))\b/.test(t) ||
     /^(?:local|locais|endereco|enderecos|horario|horarios)(?: de atendimento)?[?!.\s]*$/.test(t)
   );
-  return {aso,info};
+  return {aso,info,address,human,resistance};
 }
 function serviceReply(message) {
   const intent=serviceIntent(message);
+  if(intent.human) return HANDOFF_REPLY;
+  if(intent.address) return (intent.aso?ASO_FORM+'\n\n':'')+ADDRESS_REPLY;
   if(intent.aso && intent.info) return ASO_FORM+'\n\n'+SERVICE_INFO;
   if(intent.aso) return ASO_FORM;
   if(intent.info) return SERVICE_INFO;
@@ -119,7 +127,7 @@ function classifyTestMessage(message) {
     .replace(/[\u0300-\u036f]/g,'').toLowerCase();
   if (/\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico)\b/.test(t)) return 'central_relacionamento';
   const intent=serviceIntent(message);
-  if(intent.aso || intent.info) return 'agendamento';
+  if(intent.aso || intent.info || intent.address || intent.human || intent.resistance) return 'agendamento';
   const rules = [
     ['agendamento', /\b(agend\w*|remarc\w*|marcar|horario|vaga|consulta|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?|retorno ao trabalho|mudanca (?:de|do) risco)\b/],
     ['documentos', /\b(aso|documentos?|certificados?|laudos?|segunda via)\b/],
@@ -223,6 +231,53 @@ function replyCandidate(message,body,config,now=Date.now()) {
   if (elapsed<0 || elapsed>=24*60*60*1000) return null;
   return {id:message.id,body};
 }
+// Per-test-recipient coordination state, not conversation history.
+// The document key is an HMAC; never persist a phone, text, or message identifier.
+async function routeTestReply(candidate,config,accessToken,secret) {
+  const intent=candidate.intent??{};
+  const key=createHmac('sha256',secret).update('human-handoff:').update(config.recipient).digest('hex');
+  const event=createHmac('sha256',secret).update('human-handoff-event:').update(candidate.id).digest('hex');
+  const collection='https://firestore.googleapis.com/v1/projects/'+project+'/databases/crm-whatsapp/documents/whatsapp-test-human-handoffs';
+  const docUrl=collection+'/'+key;
+  const auth={authorization:'Bearer '+accessToken,'content-type':'application/json'};
+  for(let attempt=0;attempt<3;attempt++){
+    const response=await fetch(docUrl,{headers:auth,redirect:'error',signal:AbortSignal.timeout(8000)});
+    if(!response.ok && response.status!==404) throw new Error('handoff_read_failed');
+    const doc=response.ok?await response.json():null;
+    const f=doc?.fields??{};
+    const status=f.status?.stringValue;
+    if(doc && (f.environment?.stringValue!=='test' || !['endereco_informado','pendente','em_atendimento','resolvido'].includes(status) || typeof doc.updateTime!=='string')) throw new Error('handoff_invalid');
+    if(status==='pendente'||status==='em_atendimento'){
+      return status==='pendente' && f.lastEventDigest?.stringValue===event?HANDOFF_REPLY:null;
+    }
+    const last=Date.parse(f.lastAddressAt?.timestampValue??'');
+    const withinAddressWindow=status==='endereco_informado' && Number.isFinite(last) && Date.now()-last<24*60*60*1000;
+    const repeated=withinAddressWindow && f.lastEventDigest?.stringValue!==event;
+    const escalate=intent.human || (intent.address && (repeated || intent.resistance)) || (intent.resistance && withinAddressWindow);
+    if(!escalate && !intent.address) return candidate.body;
+    if(!escalate && withinAddressWindow && f.lastEventDigest?.stringValue===event) return candidate.body;
+    const now=new Date().toISOString();
+    const fields={
+      environment:{stringValue:'test'},sector:{stringValue:'agendamento'},
+      status:{stringValue:escalate?'pendente':'endereco_informado'},
+      reason:{stringValue:escalate?(intent.human?'human_requested':'address_insistence'):'address_info'},
+      lastEventDigest:{stringValue:event},lastAddressAt:{timestampValue:now},
+      createdAt:{timestampValue:now},updatedAt:{timestampValue:now}
+    };
+    const url=new URL(doc?docUrl:collection);
+    if(doc) {
+      url.searchParams.set('currentDocument.updateTime',doc.updateTime);
+      for(const field of Object.keys(fields)) url.searchParams.append('updateMask.fieldPaths',field);
+    } else url.searchParams.set('documentId',key);
+    const write=await fetch(url,{method:doc?'PATCH':'POST',headers:auth,body:JSON.stringify({fields}),redirect:'error',signal:AbortSignal.timeout(8000)});
+    if([409,412].includes(write.status)) continue;
+    if(!write.ok) throw new Error('handoff_write_failed');
+    if(escalate) console.info('[WhatsApp test] human handoff queued');
+    return escalate?HANDOFF_REPLY:candidate.body;
+  }
+  throw new Error('handoff_conflict');
+}
+
 async function sendTestReply(candidate,config,accessToken,secret) {
   const digest=createHmac('sha256',secret).update('reply:').update(candidate.id).digest('hex');
   const collection='https://firestore.googleapis.com/v1/projects/'+project+'/databases/crm-whatsapp/documents/whatsapp-test-reply-attempts';
@@ -384,7 +439,7 @@ async function handler(request) {
             const intent=serviceIntent(message);
             const formSubmission=message?.type==='text' && typeof message.text?.body==='string' &&
               /\bcpf\s*:/i.test(message.text.body) && /\brg\s*:/i.test(message.text.body);
-            const intake=formSubmission || (intent.info && !intent.aso) ? null : analyzeNaturalAppointment(message,category);
+            const intake=formSubmission || intent.human || intent.address || intent.resistance || (intent.info && !intent.aso) ? null : analyzeNaturalAppointment(message,category);
             if (intake?.appointment) {
               appointments.push(intake.appointment);
               countIntake('complete');
@@ -393,8 +448,9 @@ async function handler(request) {
               for (const field of intake.missing) countIntake('missing_'+field);
             }
             const service=serviceReply(message);
-            const candidate=replyCandidate(message,service ?? (intake?.appointment || intake?.missing.length ? intake.draftReply : null),outbound);
-            if (candidate) replies.push(candidate);
+            const body=service ?? (intake?.appointment || intake?.missing.length ? intake.draftReply : null);
+            const candidate=replyCandidate(message,body ?? (intent.resistance?'__handoff_check__':null),outbound);
+            if (candidate) replies.push({...candidate,body,intent});
           }
         }
       }
@@ -411,7 +467,7 @@ async function handler(request) {
   catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
   // At most one API attempt per incoming message. Keep receipt/appointment independent.
   for (const candidate of replies) {
-    try {await sendTestReply(candidate,outbound,accessToken,secret);}
+    try {const body=await routeTestReply(candidate,outbound,accessToken,secret);if(body)await sendTestReply({...candidate,body},outbound,accessToken,secret);}
     catch {console.warn('[WhatsApp test] reply attempt not confirmed; no automatic retry');}
   }
   // Test workflow only acknowledges metadata. Do not cause Meta retries when
@@ -420,5 +476,5 @@ async function handler(request) {
   catch { console.warn('[WhatsApp test] N8N metadata delivery not confirmed'); }
   return reply(200,'ok');
 }
-export {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO};
+export {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY};
 export default {fetch:handler};
