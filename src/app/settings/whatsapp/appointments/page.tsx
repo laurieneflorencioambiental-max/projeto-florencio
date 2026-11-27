@@ -2,11 +2,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import type { TestHandoff } from '@/lib/whatsapp/storage.server';
 import { examTypes, appointmentStatuses, isOverdue, type Appointment, type ExamType, type AppointmentStatus } from '@/lib/whatsapp/appointment-intake';
 
 const examLabels:Record<ExamType,string>={admissional:'Admissional',demissional:'Demissional',periodico:'Periódico',retorno_ao_trabalho:'Retorno ao trabalho',mudanca_de_risco:'Mudança de risco ocupacional',outro:'Outro'};
 const statusLabels:Record<AppointmentStatus,string>={pendente:'Pendente',em_atendimento:'Em atendimento',resolvido:'Resolvido',cancelado:'Cancelado'};
 const endpoint='/api/whatsapp/appointments';
+const handoffEndpoint='/api/whatsapp/handoffs';
 const button='rounded-md border px-4 py-2 font-medium disabled:opacity-50';
 const field='w-full rounded-md border bg-background p-2 text-sm';
 
@@ -17,6 +19,8 @@ export default function AppointmentTestPage() {
   const [authBusy,setAuthBusy]=useState(false);
   const [authMessage,setAuthMessage]=useState('');
   const [items,setItems]=useState<Appointment[]>([]);
+  const [handoffs,setHandoffs]=useState<TestHandoff[]>([]);
+  const [handoffMessage,setHandoffMessage]=useState('');
   const [hasMore,setHasMore]=useState(false);
   const [company,setCompany]=useState('');
   const [examType,setExamType]=useState<ExamType>('admissional');
@@ -26,18 +30,37 @@ export default function AppointmentTestPage() {
   const [message,setMessage]=useState('');
   const [now,setNow]=useState(Date.now());
   const nextId=useRef<string|null>(null);
-  async function call(method:string,body?:unknown,signal?:AbortSignal) {
+  async function call(method:string,body?:unknown,signal?:AbortSignal,path=endpoint) {
     if(!user) throw new Error('unauthorized');
-    const response=await fetch(endpoint,{method,headers:{Authorization:'Bearer '+await user.getIdToken(),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store',signal});
+    const response=await fetch(path,{method,headers:{Authorization:'Bearer '+await user.getIdToken(),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store',signal});
     if(!response.ok) throw new Error(String(response.status));
     return response.json();
   }
   async function refresh(signal?:AbortSignal) {
     const data=await call('GET',undefined,signal);
     setItems(Array.isArray(data.items)?data.items:[]);setHasMore(Boolean(data.hasMore));
+    await refreshHandoffs(signal);
+  }
+  async function refreshHandoffs(signal?:AbortSignal) {
+    try {
+      const result=await call('GET',undefined,signal,handoffEndpoint);
+      if(!signal?.aborted){setHandoffs(Array.isArray(result.items)?result.items:[]);setHandoffMessage('');}
+    } catch {if(!signal?.aborted)setHandoffMessage('Não foi possível atualizar a fila de atendimento humano.');}
+  }
+  async function changeHandoff(id:string,status:'em_atendimento'|'resolvido') {
+    if(busy||!authorized)return;setBusy(true);
+    try {await call('PATCH',{id,status},undefined,handoffEndpoint);await refreshHandoffs();setHandoffMessage(status==='em_atendimento'?'Atendimento assumido.':'Atendimento encerrado; o bot pode voltar a responder.');}
+    catch{setHandoffMessage('Não foi possível alterar o atendimento humano. Atualize a fila.');}
+    finally{setBusy(false);}
   }
   useEffect(()=>{
-    setItems([]);setHasMore(false);setAuthorized(false);setAuthMessage('');
+    if(!authorized||!user)return;
+    const abort=new AbortController();
+    const timer=setInterval(()=>{if(!busy)void refreshHandoffs(abort.signal);},30000);
+    return ()=>{clearInterval(timer);abort.abort();};
+  },[authorized,user,busy]);
+  useEffect(()=>{
+    setItems([]);setHandoffs([]);setHandoffMessage('');setHasMore(false);setAuthorized(false);setAuthMessage('');
     if(!user)return;
     const abort=new AbortController();
     refresh(abort.signal).then(()=>{if(!abort.signal.aborted)setAuthorized(true);}).catch((error)=>{if(!abort.signal.aborted)setAuthMessage(error instanceof Error && ['401','403'].includes(error.message)?'Esta conta não tem autorização para a fila de testes.':'Não foi possível verificar o acesso à fila. Atualize a página e tente novamente.');});
@@ -53,7 +76,7 @@ export default function AppointmentTestPage() {
     catch{setAuthMessage('Não foi possível entrar. Confira o e-mail e a senha da sua conta autorizada do CRM.');}
     finally{setAuthBusy(false);}
   }
-  async function logout(){if(!auth||authBusy)return;setAuthBusy(true);try{await signOut(auth);setAuthorized(false);setItems([]);setMessage('');}catch{setAuthMessage('Não foi possível sair. Tente novamente.');}finally{setAuthBusy(false);}}
+  async function logout(){if(!auth||authBusy)return;setAuthBusy(true);try{await signOut(auth);setAuthorized(false);setItems([]);setHandoffs([]);setHandoffMessage('');setMessage('');}catch{setAuthMessage('Não foi possível sair. Tente novamente.');}finally{setAuthBusy(false);}}
   async function submit(event:FormEvent) {
     event.preventDefault();if(busy||!user||!authorized)return;
     setBusy(true);setMessage('');
@@ -100,6 +123,21 @@ export default function AppointmentTestPage() {
           <label className="space-y-1 text-sm">Data de preferência<input className={field} type="date" required value={date} onChange={e=>{setDate(e.target.value);nextId.current=null;}}/></label>
           <div className="sm:col-span-2"><button className={button+' bg-primary text-primary-foreground'} disabled={busy} type="submit">Registrar solicitação</button></div>
         </form>
+      </section>
+      <section className="rounded-lg border p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Atendimento humano</h2>
+          <button className={button} disabled={busy} onClick={()=>void refreshHandoffs()}>Atualizar atendimentos</button>
+        </div>
+        <p className="text-sm text-muted-foreground">Solicitações para o setor de agendamento. O bot fica pausado enquanto um atendimento estiver pendente ou em andamento. Confira a conversa no WhatsApp de teste autorizado.</p>
+        <p className="text-sm font-medium" aria-live="polite">{handoffs.filter(item=>item.status==='pendente').length} pendente(s)</p>
+        {handoffMessage&&<p role="status" className="text-sm">{handoffMessage}</p>}
+        {handoffs.length===0?<p className="text-sm text-muted-foreground">Nenhum atendimento humano registrado.</p>:<div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-muted text-muted-foreground"><tr>{['Origem','Motivo','Situação','Ação'].map(h=><th key={h} className="p-3 font-medium">{h}</th>)}</tr></thead><tbody>{handoffs.map(item=><tr key={item.id} className="border-t">
+          <td className="p-3">WhatsApp de teste</td>
+          <td className="p-3">{item.reason==='address_insistence'?'Insistência pelo endereço':'Solicitou atendente humano'}</td>
+          <td className="p-3">{statusLabels[item.status]}</td>
+          <td className="p-3">{item.status==='pendente'?<button className={button} disabled={busy} onClick={()=>void changeHandoff(item.id,'em_atendimento')}>Assumir</button>:item.status==='em_atendimento'?<button className={button} disabled={busy} onClick={()=>void changeHandoff(item.id,'resolvido')}>Encerrar</button>:<span className="text-muted-foreground">Concluído</span>}</td>
+        </tr>)}</tbody></table></div>}
       </section>
       <section className="space-y-3">
         <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Fila de atendimento</h2><button className={button} disabled={busy} onClick={()=>{setBusy(true);refresh().catch(()=>setMessage('Fila indisponível.')).finally(()=>setBusy(false));}}>Atualizar</button></div>
