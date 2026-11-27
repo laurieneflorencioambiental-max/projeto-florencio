@@ -32,11 +32,22 @@ import {
 } from '@/components/ui/select';
 import type { Lead, ProposalTemplate, ProposalArea } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Calendar, Check, ChevronsUpDown, History, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { toDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+
+const normalizeTemplateSearch = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const filterTemplates = (value: string, search: string, keywords?: string[]) => {
+  const haystack = normalizeTemplateSearch((keywords || [value]).join(' '));
+  const terms = normalizeTemplateSearch(search).split(/\s+/);
+  return terms.every(term => haystack.includes(term)) ? 1 : 0;
+};
 
 const newLeadSchema = leadSchema.omit({
   id: true,
@@ -81,6 +92,11 @@ export default function AddLeadModal({
 }: AddLeadModalProps) {
   const { toast } = useToast();
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [templateSearchOpen, setTemplateSearchOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) setTemplateSearchOpen(false);
+  }, [isOpen]);
   
   const today = new Date().toISOString().split('T')[0];
 
@@ -396,22 +412,68 @@ export default function AddLeadModal({
                   render={({ field }) => (
                   <FormItem>
                       <FormLabel>Modelo de Proposta Padrão</FormLabel>
-                      <Select 
-                        onValueChange={value => field.onChange(value === 'none' ? null : value)} 
-                        value={field.value || 'none'}
-                      >
-                      <FormControl>
-                          <SelectTrigger>
-                          <SelectValue placeholder="Nenhum (usará proposta padrão)" />
-                          </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                          <SelectItem value="none">Nenhum (usará proposta padrão)</SelectItem>
-                          {proposalTemplates.map(template => (
-                              <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                          ))}
-                      </SelectContent>
-                      </Select>
+                      <Popover open={templateSearchOpen} onOpenChange={setTemplateSearchOpen} modal>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              ref={field.ref}
+                              className="w-full justify-between gap-2 bg-background px-3 font-normal"
+                            >
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                                <span className="truncate">
+                                  {field.value
+                                    ? proposalTemplates.find(template => template.id === field.value)?.name || 'Modelo indisponível'
+                                    : 'Nenhum (usará proposta padrão)'}
+                                </span>
+                              </span>
+                              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="start"
+                          className="w-[var(--radix-popover-trigger-width)] max-w-[var(--radix-popover-content-available-width)] p-0"
+                        >
+                          <Command label="Pesquisar modelos de proposta" filter={filterTemplates}>
+                            <CommandInput placeholder="Pesquisar por nome, código ou trecho..." />
+                            <CommandList className="max-h-[min(300px,calc(var(--radix-popover-content-available-height)-3rem))]">
+                              <CommandEmpty>Nenhum modelo encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  value="none"
+                                  keywords={['Nenhum (usará proposta padrão)']}
+                                  onSelect={() => {
+                                    field.onChange(null);
+                                    field.onBlur();
+                                    setTemplateSearchOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', !field.value ? 'opacity-100' : 'opacity-0')} aria-hidden="true" />
+                                  Nenhum (usará proposta padrão)
+                                </CommandItem>
+                                {proposalTemplates.map(template => (
+                                  <CommandItem
+                                    key={template.id}
+                                    value={`template:${template.id}`}
+                                    keywords={[template.name, template.id, template.proposalObject || '', template.serviceScope || '']}
+                                    onSelect={() => {
+                                      field.onChange(template.id);
+                                      field.onBlur();
+                                      setTemplateSearchOpen(false);
+                                    }}
+                                  >
+                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === template.id ? 'opacity-100' : 'opacity-0')} aria-hidden="true" />
+                                    <span className="min-w-0 break-words">{template.name}</span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                   </FormItem>
                   )}
