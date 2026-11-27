@@ -1,7 +1,7 @@
 // Offline test of the actual receiver; all network calls are mocked.
 import assert from 'node:assert/strict';
 import {createHmac,generateKeyPairSync} from 'node:crypto';
-import receiver, {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY} from '../api/webhook.mjs';
+import receiver, {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY,normalizeTestRecipient} from '../api/webhook.mjs';
 const key = generateKeyPairSync('rsa',{modulusLength:2048}).privateKey.export({type:'pkcs8',format:'pem'});
 Object.assign(process.env,{
  WHATSAPP_WEBHOOK_TEST_ENABLED:'true',WHATSAPP_WEBHOOK_VERIFY_TOKEN:'fixture',
@@ -188,3 +188,15 @@ assert.equal(handoffs.get(handoffId).fields.reason.stringValue,'human_requested'
 const handoffData=JSON.stringify([...handoffs.entries()]);
 for(const value of [allowed,'wamid.handoff-1','Preciso do endereço agora','Qual o endereço completo']) assert(!handoffData.includes(value));
 console.log('PASS: address policy, repeat escalation, human queue, suppression, resumption and privacy');
+
+
+assert.equal(normalizeTestRecipient(' +55 (11) 99999-0000 '),allowed);
+assert.equal(normalizeTestRecipient(allowed),allowed);
+for(const invalid of ['not-a-phone','+55 (11) 99999-0000; +55 11 99999-0001','55','1234567890123456','phone: 5511999990000'])assert.equal(normalizeTestRecipient(invalid),null);
+handoffs.get(handoffId).fields.status.stringValue='resolvido';
+process.env.WHATSAPP_TEST_RECIPIENT_DIGITS=' +55 (11) 99999-0000 ';
+const beforeFormatted=sends.length;
+assert.equal((await receiver.fetch(replySigned({...current('Quero agendar ASO'),id:'wamid.formatted-recipient'}))).status,200);
+assert.equal(sends.length,beforeFormatted+1);assert.equal(sends.at(-1).to,allowed);
+assert.equal((await receiver.fetch(replySigned({...current('Quero agendar ASO'),from:'5511999990001',id:'wamid.formatted-other'}))).status,200);assert.equal(sends.length,beforeFormatted+1);
+console.log('PASS: formatted test recipient normalized; other recipient still rejected');
