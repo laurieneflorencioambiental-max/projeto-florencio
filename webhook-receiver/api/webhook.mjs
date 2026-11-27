@@ -116,7 +116,64 @@ function analyzeNaturalAppointment(message,category) {
   const missing=Object.keys(input).filter(k=>input[k]===null);
   const validId=typeof message.id==='string' && /^wamid\.[A-Za-z0-9_+=/-]{1,300}$/.test(message.id);
   return {missing,appointment:missing.length===0 && validId?{messageId:message.id,...input}:null,
-    draftReply:missing.length?'Para encaminhar seu agendamento de teste, informe: '+missing.map(k=>missingLabels[k]).join(', ')+'.':'Recebemos sua solicitação de agendamento de teste. A equipe irá analisar a disponibilidade.'};
+    draftReply:missing.length?'Para encaminhar seu agendamento de teste, informe: '+missing.map(k=>missingLabels[k]).join(', ')+'. Por favor, reenvie o pedido completo com esses dados.':'Recebemos sua solicitação de agendamento de teste. A equipe irá analisar a disponibilidade.'};
+}
+
+// Outbound is opt-in, test account only, explicit verified recipient only.
+// A marker is claimed before the API call; ambiguous transport errors are not retried.
+function replyConfig() {
+  const token=process.env.WHATSAPP_TEST_ACCESS_TOKEN;
+  const recipient=process.env.WHATSAPP_TEST_RECIPIENT_DIGITS;
+  const version=process.env.WHATSAPP_TEST_GRAPH_VERSION;
+  if (process.env.WHATSAPP_TEST_REPLY_ENABLED!=='true' || !token ||
+      !/^\d{10,15}$/.test(recipient??'') || !/^v\d{1,2}\.\d+$/.test(version??'')) return null;
+  return {token,recipient,version};
+}
+function replyCandidate(message,body,config,now=Date.now()) {
+  if (!config || typeof body!=='string' || !body || message?.type!=='text' ||
+      typeof message.id!=='string' || !/^wamid\.[A-Za-z0-9_+=/-]{1,300}$/.test(message.id) ||
+      message.from!==config.recipient || typeof message.timestamp!=='string' ||
+      !/^\d{10}$/.test(message.timestamp)) return null;
+  const elapsed=now-Number(message.timestamp)*1000;
+  if (elapsed<0 || elapsed>=24*60*60*1000) return null;
+  return {id:message.id,body};
+}
+async function sendTestReply(candidate,config,accessToken,secret) {
+  const digest=createHmac('sha256',secret).update('reply:').update(candidate.id).digest('hex');
+  const collection='https://firestore.googleapis.com/v1/projects/'+project+'/databases/crm-whatsapp/documents/whatsapp-test-reply-attempts';
+  const url=new URL(collection);url.searchParams.set('documentId',digest);
+  const auth={authorization:'Bearer '+accessToken,'content-type':'application/json'};
+  const marker=await fetch(url,{method:'POST',headers:auth,body:JSON.stringify({fields:{
+    environment:{stringValue:'test'},state:{stringValue:'claimed'},createdAt:{timestampValue:new Date().toISOString()}
+  }}),redirect:'error',signal:AbortSignal.timeout(8000)});
+  if (marker.status===409) return;
+  if (!marker.ok) throw new Error('reply_claim_failed');
+  let state='uncertain';
+  try {
+    const response=await fetch('https://graph.facebook.com/'+config.version+'/'+testPhone+'/messages',{
+      method:'POST',headers:{authorization:'Bearer '+config.token,'content-type':'application/json'},
+      body:JSON.stringify({messaging_product:'whatsapp',recipient_type:'individual',to:config.recipient,type:'text',text:{preview_url:false,body:candidate.body}}),
+      redirect:'error',signal:AbortSignal.timeout(8000)
+    });
+    const result=await response.json();
+    const code=Number.isSafeInteger(result?.error?.code)?result.error.code:null;
+    if (response.ok && typeof result?.messages?.[0]?.id==='string') state='accepted';
+    else state='rejected';
+    console.info('[WhatsApp test] automated reply '+state+(code===null?'':' code='+code));
+  } catch { console.warn('[WhatsApp test] automated reply outcome uncertain; no automatic retry'); }
+  // Only technical outcome. No body, phone, message ID or API response is stored.
+  const outcome=new URL(collection+'/'+digest);
+  outcome.searchParams.append('updateMask.fieldPaths','state');
+  outcome.searchParams.append('updateMask.fieldPaths','updatedAt');
+  const saved=await fetch(outcome,{method:'PATCH',headers:auth,body:JSON.stringify({fields:{
+    state:{stringValue:state},updatedAt:{timestampValue:new Date().toISOString()}
+  }}),redirect:'error',signal:AbortSignal.timeout(8000)});
+  if (!saved.ok) console.warn('[WhatsApp test] reply outcome not persisted; no automatic retry');
+}
+function logTestDelivery(status,config) {
+  if (!config || status?.recipient_id!==config.recipient || !['sent','delivered','read','failed'].includes(status.status)) return;
+  const code=Number.isSafeInteger(status.errors?.[0]?.code)?status.errors[0].code:null;
+  console.info('[WhatsApp test] outbound status '+status.status+(code===null?'':' code='+code));
 }
 
 function appointmentId(messageId,secret) {
@@ -167,6 +224,7 @@ async function saveReceipt(raw, messages, statuses, secret, triageCounts, appoin
   if (!result.ok && result.status !== 409) throw new Error('storage');
   for (const appointment of appointments) await saveTestAppointment(appointment,access_token,secret);
   if (appointments.length) console.info('[WhatsApp test] structured appointments confirmed',appointments.length);
+  return access_token;
 }
 
 // Optional metadata-only forwarding to the approved local test workflow.
@@ -219,6 +277,8 @@ async function handler(request) {
   let messages=0,statuses=0;
   const triageCounts = Object.create(null);
   const appointments=[];
+  const replies=[];
+  const outbound=replyConfig();
   const intakeCounts=Object.create(null);
   const countIntake = key => {intakeCounts[key]=(intakeCounts[key]??0)+1;};
   for (const entry of payload.entry) {
@@ -231,8 +291,11 @@ async function handler(request) {
           const category = classifyTestMessage(message);
           triageCounts[category] = (triageCounts[category] ?? 0) + 1;
           const appointment=parseTestAppointment(message);
-          if (appointment) appointments.push(appointment);
-          else {
+          if (appointment) {
+            appointments.push(appointment);
+            const candidate=replyCandidate(message,'Recebemos sua solicitação de agendamento de teste. A equipe irá analisar a disponibilidade.',outbound);
+            if (candidate) replies.push(candidate);
+          } else {
             const intake=analyzeNaturalAppointment(message,category);
             if (intake?.appointment) {
               appointments.push(intake.appointment);
@@ -241,22 +304,32 @@ async function handler(request) {
               countIntake('incomplete');
               for (const field of intake.missing) countIntake('missing_'+field);
             }
-            // Draft replies are intentionally not sent, logged or persisted.
+            const candidate=replyCandidate(message,intake?.appointment || intake?.missing.length ? intake.draftReply : null,outbound);
+            if (candidate) replies.push(candidate);
           }
         }
       }
-      statuses += Array.isArray(change.value.statuses) ? change.value.statuses.length : 0;
+      if (Array.isArray(change.value.statuses)) {
+        statuses+=change.value.statuses.length;
+        for (const status of change.value.statuses) logTestDelivery(status,outbound);
+      }
     }
   }
   if (!messages && !statuses) { console.info('[WhatsApp test] signed notification outside test assets or empty, ignored'); return reply(200,'ignored'); }
-  try { await saveReceipt(raw,messages,statuses,secret,triageCounts,appointments,intakeCounts); console.info('[WhatsApp test] receipt stored');
+  let accessToken;
+  try { accessToken=await saveReceipt(raw,messages,statuses,secret,triageCounts,appointments,intakeCounts); console.info('[WhatsApp test] receipt stored');
     if (messages) console.info('[WhatsApp test] preliminary categories '+JSON.stringify(triageCounts)); }
   catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
+  // At most one API attempt per incoming message. Keep receipt/appointment independent.
+  for (const candidate of replies) {
+    try {await sendTestReply(candidate,outbound,accessToken,secret);}
+    catch {console.warn('[WhatsApp test] reply attempt not confirmed; no automatic retry');}
+  }
   // Test workflow only acknowledges metadata. Do not cause Meta retries when
   // the temporary local tunnel is offline; receipts remain available.
   try { await forwardTestMetadata(messages,statuses); }
   catch { console.warn('[WhatsApp test] N8N metadata delivery not confirmed'); }
   return reply(200,'ok');
 }
-export {analyzeNaturalAppointment};
+export {analyzeNaturalAppointment,replyCandidate};
 export default {fetch:handler};
