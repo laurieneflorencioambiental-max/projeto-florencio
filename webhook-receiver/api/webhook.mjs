@@ -36,7 +36,7 @@ function classifyTestMessage(message) {
     .replace(/[\u0300-\u036f]/g,'').toLowerCase();
   if (/\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico)\b/.test(t)) return 'central_relacionamento';
   const rules = [
-    ['agendamento', /\b(agend\w*|remarc\w*|marcar|horario|vaga|consulta|admissional|demissional|periodico|retorno ao trabalho)\b/],
+    ['agendamento', /\b(agend\w*|remarc\w*|marcar|horario|vaga|consulta|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?|retorno ao trabalho|mudanca (?:de|do) risco)\b/],
     ['documentos', /\b(aso|documentos?|certificados?|laudos?|segunda via)\b/],
     ['area_tecnica', /\b(pgr|pcmso|ltcat|ppra|esocial|e-social|sst|treinamentos?|normas? regulamentadoras?|nr[- ]?\d{1,2})\b/],
     ['financeiro', /\b(boleto|pix|pagamento|fatura|nota fiscal|cobranca|vencimento|comprovante)\b/],
@@ -58,6 +58,67 @@ function parseTestAppointment(message) {
   return {messageId:message.id,company:'Empresa Exemplo',examType:match[1].toLowerCase(),employeeCount:Number(match[2]),preferredDate:date};
 }
 
+// Natural-language test intake. Only the fictitious company is accepted.
+// Never persist the original message, sender, inferred names or medical details.
+const missingLabels = {company:'empresa de teste (Empresa Exemplo)',examType:'tipo de exame',employeeCount:'quantidade de funcionários',preferredDate:'data desejada'};
+const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const numberWords = {um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10};
+function localDay(timestamp) {
+  // Meta sends Unix seconds; use the message date, not the delivery/retry date.
+  if (typeof timestamp !== 'string' || !/^\d{10}$/.test(timestamp)) return null;
+  const parts = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(Number(timestamp)*1000));
+  const part = name => parts.find(p=>p.type===name)?.value;
+  return new Date(part('year')+'-'+part('month')+'-'+part('day')+'T00:00:00Z');
+}
+function validDate(year,month,day) {
+  const value = String(year).padStart(4,'0')+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+  const d=new Date(value+'T00:00:00Z');
+  return Number.isFinite(d.getTime()) && d.toISOString().slice(0,10)===value ? value : null;
+}
+function preferredDate(text,timestamp) {
+  const base=localDay(timestamp);
+  const candidates = [];
+  // Require an explicit year on numeric dates to avoid guessing.
+  for (const match of text.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g)) candidates.push(validDate(match[3],match[2],match[1]));
+  for (const match of text.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)) candidates.push(validDate(match[1],match[2],match[3]));
+  const relative=[...text.matchAll(/\b(hoje|amanha|segunda(?:-feira| feira)?|terca(?:-feira| feira)?|quarta(?:-feira| feira)?|quinta(?:-feira| feira)?|sexta(?:-feira| feira)?|sabado|domingo)\b/g)];
+  for (const match of relative) {
+    if (!base) {candidates.push(null);continue;}
+    const value=match[1].split(/[- ]/)[0];
+    const days={domingo:0,segunda:1,terca:2,quarta:3,quinta:4,sexta:5,sabado:6};
+    const offset=value==='hoje'?0:value==='amanha'?1:(days[value]-base.getUTCDay()+7)%7 || 7;
+    const date=new Date(base);date.setUTCDate(date.getUTCDate()+offset);
+    candidates.push(date.toISOString().slice(0,10));
+  }
+  const unique=[...new Set(candidates)];
+  if (unique.length!==1 || !unique[0] || (base && unique[0]<base.toISOString().slice(0,10))) return null;
+  return unique[0];
+}
+function analyzeNaturalAppointment(message,category) {
+  if (category!=='agendamento' || message?.type!=='text' || typeof message.text?.body!=='string') return null;
+  const t=normalize(message.text.body.trim());
+  if (!t || t.length>4000 || t.startsWith('agendamento teste |') ||
+      !/\b(agend\w*|marcar|solicit\w*|preciso|gostaria|quero)\b/.test(t) ||
+      /\b(cancel\w*|remarc\w*|desmarc\w*|nao|sem|talvez|adiar|duvida|sobre|confirmar)\b/.test(t)) return null;
+  const examPatterns=[
+    ['admissional',/\badmissiona(?:l|is)\b/],['demissional',/\bdemissiona(?:l|is)\b/],
+    ['periodico',/\bperiodic[oa]s?\b/],['retorno_ao_trabalho',/\bretorno ao trabalho\b/],
+    ['mudanca_de_risco',/\bmudanca (?:de|do) risco\b/]
+  ];
+  const exams=examPatterns.filter(([,p])=>p.test(t));
+  const quantities=[...t.matchAll(/\b(\d{1,4}|um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\s+(?:exames?|funcionari[oa]s?|colaborador(?:es|as)?|pessoas?)\b/g)].map(m=>numberWords[m[1]]??Number(m[1]));
+  const uniqueCounts=[...new Set(quantities)];
+  const company=/\bempresa exemplo\b/.test(t)?'Empresa Exemplo':null;
+  const examType=exams.length===1?exams[0][0]:null;
+  const employeeCount=uniqueCounts.length===1 && uniqueCounts[0]>=1 && uniqueCounts[0]<=1000?uniqueCounts[0]:null;
+  const date=preferredDate(t,message.timestamp);
+  const input={company,examType,employeeCount,preferredDate:date};
+  const missing=Object.keys(input).filter(k=>input[k]===null);
+  const validId=typeof message.id==='string' && /^wamid\.[A-Za-z0-9_+=/-]{1,300}$/.test(message.id);
+  return {missing,appointment:missing.length===0 && validId?{messageId:message.id,...input}:null,
+    draftReply:missing.length?'Para encaminhar seu agendamento de teste, informe: '+missing.map(k=>missingLabels[k]).join(', ')+'.':'Recebemos sua solicitação de agendamento de teste. A equipe irá analisar a disponibilidade.'};
+}
+
 function appointmentId(messageId,secret) {
   const hex = createHmac('sha256',secret).update('appointment:').update(messageId).digest('hex');
   return `${hex.slice(0,8)}-${hex.slice(8,12)}-4${hex.slice(13,16)}-8${hex.slice(17,20)}-${hex.slice(20,32)}`;
@@ -73,7 +134,7 @@ async function saveTestAppointment(input,accessToken,secret) {
   if (!result.ok && result.status!==409) throw new Error('appointment_storage');
 }
 
-async function saveReceipt(raw, messages, statuses, secret, triageCounts, appointments) {
+async function saveReceipt(raw, messages, statuses, secret, triageCounts, appointments, intakeCounts) {
   const key = process.env.WHATSAPP_FIRESTORE_PRIVATE_KEY;
   if (!key) throw new Error('configuration');
   const now = Math.floor(Date.now()/1000);
@@ -99,7 +160,8 @@ async function saveReceipt(raw, messages, statuses, secret, triageCounts, appoin
     body:JSON.stringify({fields:{
       messages:{integerValue:String(messages)},statuses:{integerValue:String(statuses)},
       receivedAt:{timestampValue:new Date().toISOString()},environment:{stringValue:'test'},
-      triageCounts:{mapValue:{fields:Object.fromEntries(Object.entries(triageCounts).map(([name,count])=>[name,{integerValue:String(count)}]))}}
+      triageCounts:{mapValue:{fields:Object.fromEntries(Object.entries(triageCounts).map(([name,count])=>[name,{integerValue:String(count)}]))}},
+      appointmentIntakeCounts:{mapValue:{fields:Object.fromEntries(Object.entries(intakeCounts).map(([name,count])=>[name,{integerValue:String(count)}]))}}
     }}),redirect:'error',signal:AbortSignal.timeout(8000)
   });
   if (!result.ok && result.status !== 409) throw new Error('storage');
@@ -157,6 +219,8 @@ async function handler(request) {
   let messages=0,statuses=0;
   const triageCounts = Object.create(null);
   const appointments=[];
+  const intakeCounts=Object.create(null);
+  const countIntake = key => {intakeCounts[key]=(intakeCounts[key]??0)+1;};
   for (const entry of payload.entry) {
     if (entry?.id !== testWaba || !Array.isArray(entry.changes)) continue;
     for (const change of entry.changes) {
@@ -168,13 +232,24 @@ async function handler(request) {
           triageCounts[category] = (triageCounts[category] ?? 0) + 1;
           const appointment=parseTestAppointment(message);
           if (appointment) appointments.push(appointment);
+          else {
+            const intake=analyzeNaturalAppointment(message,category);
+            if (intake?.appointment) {
+              appointments.push(intake.appointment);
+              countIntake('complete');
+            } else if (intake?.missing.length) {
+              countIntake('incomplete');
+              for (const field of intake.missing) countIntake('missing_'+field);
+            }
+            // Draft replies are intentionally not sent, logged or persisted.
+          }
         }
       }
       statuses += Array.isArray(change.value.statuses) ? change.value.statuses.length : 0;
     }
   }
   if (!messages && !statuses) { console.info('[WhatsApp test] signed notification outside test assets or empty, ignored'); return reply(200,'ignored'); }
-  try { await saveReceipt(raw,messages,statuses,secret,triageCounts,appointments); console.info('[WhatsApp test] receipt stored');
+  try { await saveReceipt(raw,messages,statuses,secret,triageCounts,appointments,intakeCounts); console.info('[WhatsApp test] receipt stored');
     if (messages) console.info('[WhatsApp test] preliminary categories '+JSON.stringify(triageCounts)); }
   catch { console.error('[WhatsApp test] receipt storage failed'); return reply(503,'retry'); }
   // Test workflow only acknowledges metadata. Do not cause Meta retries when
@@ -183,4 +258,5 @@ async function handler(request) {
   catch { console.warn('[WhatsApp test] N8N metadata delivery not confirmed'); }
   return reply(200,'ok');
 }
+export {analyzeNaturalAppointment};
 export default {fetch:handler};
