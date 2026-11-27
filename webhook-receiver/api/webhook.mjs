@@ -28,6 +28,89 @@ async function boundedBody(request) {
   return Buffer.concat(chunks,size);
 }
 
+// Approved Florêncio Ambiental service information. No submitted form text is stored here.
+const ASO_FORM = `🏥 Informações necessárias para o encaminhamento:
+
+Nome da empresa:
+CNPJ:
+Nome completo do funcionário:
+Tipo de exame (admissional, periódico, demissional, mudança de riscos ocupacionais):
+RG:
+CPF:
+Setor:
+Função + CBO:
+Data de nascimento:
+Local da Clínica:
+Data do atendimento:
+Número do celular do funcionário: (21)
+E-mail da empresa:
+
+Caso haja, preencha as informações abaixo:
+
+Faz trabalho em altura?
+Faz trabalho em Espaço Confinado?
+(necessário fazer exame complementar)
+
+Descreva os riscos:
+
+Físico:
+Químico:
+Biológico:
+Ergonômico:
+Acidentes:
+
+Nome do médico coordenador do PCMSO:
+CRM:
+
+Não nos responsabilizamos pelas informações não informadas; inclusões posteriores sujeitas a cobrança.
+
+✅ Favor preencher as informações acima, para enviarmos o encaminhamento.
+
+✅ Para agilizar o atendimento, favor #Não# enviar as informações separadas. Preencher tudo nesse formulário.
+
+✅ O encaminhamento irá para o celular do funcionário via SMS, com cópia para o e-mail do Gestor.`;
+
+const SERVICE_INFO = `🩺 Florêncio Ambiental:
+Local de Atendimento - Medicina do Trabalho:
+
+📍Centro do Rio de Janeiro
+📍Nova Iguaçu
+📍Duque de Caxias
+📍Vila Kosmos / Vila da Penha
+📍Niterói
+📍Macaé
+📍Guapimirim
+
+🕚 Horário de atendimento da Medicina do Trabalho: de segunda a sexta, de 8h às 11h.`;
+
+function serviceIntent(message) {
+  if(message?.type!=='text' || typeof message.text?.body!=='string') return {aso:false,info:false};
+  const t=normalize(message.text.body.trim());
+  if(!t || t.length>4000 || t.startsWith('agendamento teste |') ||
+    /\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico|resultado de exame)\b/.test(t)) return {aso:false,info:false};
+  // Completed forms may contain identifying information. Never echo their fields.
+  if(/\bcpf\s*:/i.test(t) && /\brg\s*:/i.test(t)) return {aso:false,info:false};
+  const existing=/\b(segunda via|2a via|2ª via|copia|reimprimir|baixar|resultado|pronto|laudo pronto|ja (?:fiz|realizei|agendei)|cancel\w*|remarc\w*|desmarc\w*|adiar)\b/.test(t);
+  const other=/\b(boleto|pix|pagamento|fatura|nota fiscal|cobranca|orcamento|cotacao|preco|valor|proposta|contrato)\b/.test(t);
+  const negated=/\bnao\s+(?:quero|preciso|gostaria|desejo|vou|pretendo|agend\w*|gerar|marcar|emitir|fazer)\b/.test(t);
+  const asoSubject=/\b(?:asos?|atestado de saude ocupacional|exames? (?:ocupacionais?|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?)|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?|mudanca (?:de|do) riscos?(?: ocupacionais)?|retorno ao trabalho)\b/.test(t);
+  const action=/\b(agend\w*|marcar|gerar|emitir|solicit\w*|encaminh\w*|preciso|gostaria|quero|desejo|fazer|realizar|providenciar|tirar)\b/.test(t);
+  const aso=!existing && !other && !negated && asoSubject && action;
+  const info=!existing && !other && !negated && (
+    /\b(?:onde|qual|quais|como chegar|me informa|me informe|me passa|gostaria de saber)\b[\s\S]{0,70}\b(?:clinicas?|local|locais|enderecos?|unidades?|atendem|horarios?|horas?|funcionamento|fica|ficam)\b/.test(t) ||
+    /\b(?:onde (?:e|sao|ocorre|ocorrem) (?:o |os )?atendimentos?|locais? de atendimento|horarios? de atendimento|horarios? da (?:clinica|medicina do trabalho)|horario de funcionamento|endereco da clinica|enderecos das clinicas|que horas (?:atende|atendem|abre|fecha))\b/.test(t) ||
+    /^(?:local|locais|endereco|enderecos|horario|horarios)(?: de atendimento)?[?!.\s]*$/.test(t)
+  );
+  return {aso,info};
+}
+function serviceReply(message) {
+  const intent=serviceIntent(message);
+  if(intent.aso && intent.info) return ASO_FORM+'\n\n'+SERVICE_INFO;
+  if(intent.aso) return ASO_FORM;
+  if(intent.info) return SERVICE_INFO;
+  return null;
+}
+
 // Preliminary, deterministic categories. Not a clinical assessment or an automatic reply.
 // Unknown, ambiguous, non-text and health-related requests go to human review.
 function classifyTestMessage(message) {
@@ -35,6 +118,8 @@ function classifyTestMessage(message) {
   const t = message.text.body.slice(0,4000).normalize('NFD')
     .replace(/[\u0300-\u036f]/g,'').toLowerCase();
   if (/\b(urgente|emergencia|acidente|dor|sintomas?|diagnostico|medicamento|inapto|resultado clinico)\b/.test(t)) return 'central_relacionamento';
+  const intent=serviceIntent(message);
+  if(intent.aso || intent.info) return 'agendamento';
   const rules = [
     ['agendamento', /\b(agend\w*|remarc\w*|marcar|horario|vaga|consulta|admissiona(?:l|is)|demissiona(?:l|is)|periodic[oa]s?|retorno ao trabalho|mudanca (?:de|do) risco)\b/],
     ['documentos', /\b(aso|documentos?|certificados?|laudos?|segunda via)\b/],
@@ -296,7 +381,10 @@ async function handler(request) {
             const candidate=replyCandidate(message,'Recebemos sua solicitação de agendamento de teste. A equipe irá analisar a disponibilidade.',outbound);
             if (candidate) replies.push(candidate);
           } else {
-            const intake=analyzeNaturalAppointment(message,category);
+            const intent=serviceIntent(message);
+            const formSubmission=message?.type==='text' && typeof message.text?.body==='string' &&
+              /\bcpf\s*:/i.test(message.text.body) && /\brg\s*:/i.test(message.text.body);
+            const intake=formSubmission || (intent.info && !intent.aso) ? null : analyzeNaturalAppointment(message,category);
             if (intake?.appointment) {
               appointments.push(intake.appointment);
               countIntake('complete');
@@ -304,7 +392,8 @@ async function handler(request) {
               countIntake('incomplete');
               for (const field of intake.missing) countIntake('missing_'+field);
             }
-            const candidate=replyCandidate(message,intake?.appointment || intake?.missing.length ? intake.draftReply : null,outbound);
+            const service=serviceReply(message);
+            const candidate=replyCandidate(message,service ?? (intake?.appointment || intake?.missing.length ? intake.draftReply : null),outbound);
             if (candidate) replies.push(candidate);
           }
         }
@@ -331,5 +420,5 @@ async function handler(request) {
   catch { console.warn('[WhatsApp test] N8N metadata delivery not confirmed'); }
   return reply(200,'ok');
 }
-export {analyzeNaturalAppointment,replyCandidate};
+export {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO};
 export default {fetch:handler};
