@@ -222,7 +222,25 @@ function replyConfig() {
       !/^\d{10,15}$/.test(recipient??'') || !/^v\d{1,2}\.\d+$/.test(version??'')) return null;
   return {token,recipient,version};
 }
+function logReplyEligibility(message,body,config) {
+  if(message?.type!=='text') return;
+  const recipient=process.env.WHATSAPP_TEST_RECIPIENT_DIGITS??'';
+  const sender=typeof message.from==='string'?message.from:'';
+  const epoch=typeof message.timestamp==='string' && /^\d{10}$/.test(message.timestamp)?Number(message.timestamp)*1000:NaN;
+  const elapsed=Date.now()-epoch;
+  const brazilCanonical=value=>/^55\d{2}9\d{8}$/.test(value)?value.slice(0,4)+value.slice(5):value;
+  console.info('[WhatsApp test] reply eligibility '+JSON.stringify({
+    enabled:process.env.WHATSAPP_TEST_REPLY_ENABLED==='true',configured:!!config,tokenPresent:!!process.env.WHATSAPP_TEST_ACCESS_TOKEN,
+    recipientFormat:/^\d{10,15}$/.test(recipient),versionFormat:/^v\d{1,2}\.\d+$/.test(process.env.WHATSAPP_TEST_GRAPH_VERSION??''),
+    senderExact:!!recipient && sender===recipient,
+    senderBrazilEquivalent:!!recipient && !!sender && brazilCanonical(sender)===brazilCanonical(recipient),
+    timestampWithinWindow:Number.isFinite(elapsed) && elapsed>=0 && elapsed<24*60*60*1000,
+    idValid:typeof message.id==='string' && /^wamid\.[A-Za-z0-9_+=/-]{1,300}$/.test(message.id),
+    hasReply:typeof body==='string' && !!body
+  }));
+}
 function replyCandidate(message,body,config,now=Date.now()) {
+  logReplyEligibility(message,body,config);
   if (!config || typeof body!=='string' || !body || message?.type!=='text' ||
       typeof message.id!=='string' || !/^wamid\.[A-Za-z0-9_+=/-]{1,300}$/.test(message.id) ||
       message.from!==config.recipient || typeof message.timestamp!=='string' ||
@@ -384,8 +402,8 @@ async function forwardTestMetadata(messages,statuses) {
     body:JSON.stringify({environment:'test',messages,statuses}),
     redirect:'error',signal:AbortSignal.timeout(8000)
   });
-  if (!response.ok || (await response.json())?.status !== 'received_test_only')
-    throw new Error('workflow_not_confirmed');
+  if (!response.ok) {console.warn('[WhatsApp test] N8N bridge HTTP '+response.status);throw new Error('workflow_not_confirmed');}
+  if ((await response.json())?.status !== 'received_test_only') throw new Error('workflow_not_confirmed');
   console.info('[WhatsApp test] N8N metadata acknowledged');
 }
 
