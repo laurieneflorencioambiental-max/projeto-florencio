@@ -169,3 +169,49 @@ export async function updateTestAppointmentStatus(id:string,status:AppointmentSt
   if (!response.ok) throw new Error('APPOINTMENT_STORAGE_FAILED');
   return mapAppointment(await response.json());
 }
+
+export type TestHandoffStatus = 'pendente'|'em_atendimento'|'resolvido';
+export type TestHandoff = {
+  id:string;status:TestHandoffStatus;reason:'address_insistence'|'human_requested';sector:'agendamento';createdAt:string;updatedAt:string;
+};
+const handoffIdPattern=/^[a-f0-9]{64}$/;
+function handoffUrl(project:string) {
+  return new URL('https://firestore.googleapis.com/v1/projects/'+project+'/databases/crm-whatsapp/documents/whatsapp-test-human-handoffs');
+}
+function mapHandoff(doc:unknown):TestHandoff|null {
+  if (!doc || typeof doc!=='object') throw new Error('HANDOFF_INVALID');
+  const d=doc as {name?:string;fields?:Record<string,{stringValue?:string;timestampValue?:string}>};
+  const f=d.fields,id=d.name?.split('/').pop()??'';
+  if(!f || !handoffIdPattern.test(id) || f.environment?.stringValue!=='test' || f.sector?.stringValue!=='agendamento') throw new Error('HANDOFF_INVALID');
+  const status=f.status?.stringValue;
+  if(status==='endereco_informado') return null;
+  const reason=f.reason?.stringValue;
+  if(!['pendente','em_atendimento','resolvido'].includes(status??'') || !['address_insistence','human_requested'].includes(reason??'')) throw new Error('HANDOFF_INVALID');
+  return {id,status:status as TestHandoffStatus,reason:reason as TestHandoff['reason'],sector:'agendamento',
+    createdAt:f.createdAt?.timestampValue??'',updatedAt:f.updatedAt?.timestampValue??''};
+}
+export async function listTestHandoffs(request:typeof fetch=fetch):Promise<TestHandoff[]> {
+  const cfg=config(),token=await accessToken(request,cfg);const url=handoffUrl(cfg.project);
+  url.searchParams.set('pageSize','50');url.searchParams.set('orderBy','updatedAt desc');
+  const response=await request(url,{headers:{Authorization:'Bearer '+token},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
+  if(!response.ok) throw new Error('HANDOFF_STORAGE_FAILED');
+  const data=await response.json();
+  if(data.documents!==undefined && !Array.isArray(data.documents)) throw new Error('HANDOFF_STORAGE_FAILED');
+  return (data.documents??[]).map(mapHandoff).filter((item:TestHandoff|null):item is TestHandoff=>item!==null);
+}
+export async function updateTestHandoffStatus(id:string,status:'em_atendimento'|'resolvido',request:typeof fetch=fetch):Promise<TestHandoff> {
+  if(!handoffIdPattern.test(id) || !['em_atendimento','resolvido'].includes(status)) throw new Error('HANDOFF_INVALID');
+  const cfg=config(),token=await accessToken(request,cfg);const url=new URL(handoffUrl(cfg.project).href+'/'+id);
+  const headers={Authorization:'Bearer '+token,'Content-Type':'application/json'};
+  const response=await request(url,{headers,cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
+  if(response.status===404) throw new Error('HANDOFF_NOT_FOUND');
+  if(!response.ok) throw new Error('HANDOFF_STORAGE_FAILED');
+  const doc=await response.json(),item=mapHandoff(doc);
+  if(!item || typeof doc.updateTime!=='string' || (item.status==='resolvido') || (status==='em_atendimento' && item.status!=='pendente') || (status==='resolvido' && item.status!=='em_atendimento')) throw new Error('HANDOFF_CONFLICT');
+  url.searchParams.set('currentDocument.updateTime',doc.updateTime);
+  url.searchParams.append('updateMask.fieldPaths','status');url.searchParams.append('updateMask.fieldPaths','updatedAt');
+  const update=await request(url,{method:'PATCH',headers,body:JSON.stringify({fields:{status:{stringValue:status},updatedAt:{timestampValue:new Date().toISOString()}}}),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000)});
+  if([409,412].includes(update.status)) throw new Error('HANDOFF_CONFLICT');
+  if(!update.ok) throw new Error('HANDOFF_STORAGE_FAILED');
+  const updated=mapHandoff(await update.json());if(!updated)throw new Error('HANDOFF_STORAGE_FAILED');return updated;
+}
