@@ -3,7 +3,7 @@
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useId, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,8 +32,6 @@ import {
 } from '@/components/ui/select';
 import type { Lead, ProposalTemplate, ProposalArea } from '@/lib/types';
 import { leadSchema, paymentMethods, contactSources, rejectionReasons } from '@/lib/types';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Calendar, Check, ChevronsUpDown, History, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -93,10 +91,44 @@ export default function AddLeadModal({
   const { toast } = useToast();
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [templateSearchOpen, setTemplateSearchOpen] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState('');
+  const templatePickerId = useId();
+  const templatePickerRef = useRef<HTMLDivElement>(null);
+  const templateTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const closeTemplateSearch = (restoreFocus = false) => {
+    setTemplateSearchOpen(false);
+    setTemplateSearch('');
+    if (restoreFocus) templateTriggerRef.current?.focus();
+  };
 
   useEffect(() => {
-    if (!isOpen) setTemplateSearchOpen(false);
+    if (!isOpen) {
+      setTemplateSearchOpen(false);
+      setTemplateSearch('');
+    }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!templateSearchOpen) return;
+    const handleOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !templatePickerRef.current?.contains(event.target)) {
+        setTemplateSearchOpen(false);
+        setTemplateSearch('');
+      }
+    };
+    document.addEventListener('pointerdown', handleOutside, true);
+    return () => document.removeEventListener('pointerdown', handleOutside, true);
+  }, [templateSearchOpen]);
+
+  const templateOptions = useMemo(() => [
+    { id: null, name: 'Nenhum (usará proposta padrão)', keywords: ['Nenhum (usará proposta padrão)'] },
+    ...proposalTemplates.map(template => ({
+      id: template.id,
+      name: template.name,
+      keywords: [template.name, template.id, template.proposalObject || '', template.serviceScope || ''],
+    })),
+  ].filter(option => filterTemplates(option.id || 'none', templateSearch, option.keywords)), [proposalTemplates, templateSearch]);
   
   const today = new Date().toISOString().split('T')[0];
 
@@ -207,7 +239,12 @@ export default function AddLeadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px]">
+      <DialogContent className="sm:max-w-[650px]" onEscapeKeyDown={event => {
+        if (templateSearchOpen) {
+          event.preventDefault();
+          closeTemplateSearch(true);
+        }
+      }}>
         <DialogHeader>
           <DialogTitle className="font-headline">Novo Orçamento</DialogTitle>
           <DialogDescription>
@@ -410,70 +447,95 @@ export default function AddLeadModal({
                   control={form.control}
                   name="selectedTemplateId"
                   render={({ field }) => (
-                  <FormItem>
+                  <FormItem ref={templatePickerRef}>
                       <FormLabel>Modelo de Proposta Padrão</FormLabel>
-                      <Popover open={templateSearchOpen} onOpenChange={setTemplateSearchOpen} modal>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              ref={field.ref}
-                              className="w-full justify-between gap-2 bg-background px-3 font-normal"
-                            >
-                              <span className="flex min-w-0 items-center gap-2">
-                                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                                <span className="truncate">
-                                  {field.value
-                                    ? proposalTemplates.find(template => template.id === field.value)?.name || 'Modelo indisponível'
-                                    : 'Nenhum (usará proposta padrão)'}
-                                </span>
-                              </span>
-                              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          align="start"
-                          className="w-[var(--radix-popover-trigger-width)] max-w-[var(--radix-popover-content-available-width)] p-0"
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          ref={element => {
+                            templateTriggerRef.current = element;
+                            field.ref(element);
+                          }}
+                          aria-expanded={templateSearchOpen}
+                          aria-controls={templateSearchOpen ? templatePickerId : undefined}
+                          onClick={() => {
+                            if (templateSearchOpen) closeTemplateSearch();
+                            else setTemplateSearchOpen(true);
+                          }}
+                          className="w-full justify-between gap-2 bg-background px-3 font-normal"
                         >
-                          <Command label="Pesquisar modelos de proposta" filter={filterTemplates}>
-                            <CommandInput placeholder="Pesquisar por nome, código ou trecho..." />
-                            <CommandList className="max-h-[min(300px,calc(var(--radix-popover-content-available-height)-3rem))]">
-                              <CommandEmpty>Nenhum modelo encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                <CommandItem
-                                  value="none"
-                                  keywords={['Nenhum (usará proposta padrão)']}
-                                  onSelect={() => {
-                                    field.onChange(null);
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                            <span className="truncate">
+                              {field.value
+                                ? proposalTemplates.find(template => template.id === field.value)?.name || 'Modelo indisponível'
+                                : 'Nenhum (usará proposta padrão)'}
+                            </span>
+                          </span>
+                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
+                        </Button>
+                      </FormControl>
+                      {templateSearchOpen && (
+                        <div
+                          id={templatePickerId}
+                          className="rounded-md border bg-popover text-popover-foreground shadow-md"
+                          onKeyDown={event => {
+                            const options = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[data-template-option]'));
+                            const current = options.indexOf(document.activeElement as HTMLButtonElement);
+                            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                              event.preventDefault();
+                              if (!options.length) return;
+                              const index = event.key === 'ArrowDown'
+                                ? (current + 1) % options.length
+                                : current <= 0 ? options.length - 1 : current - 1;
+                              options[index].focus();
+                            } else if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+                              event.preventDefault();
+                              options[0]?.click();
+                            }
+                          }}
+                        >
+                          <div className="relative border-b p-2">
+                            <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                            <Input
+                              autoFocus
+                              autoComplete="off"
+                              type="search"
+                              aria-label="Pesquisar modelos de proposta"
+                              placeholder="Pesquisar por nome, código ou trecho..."
+                              className="pl-9"
+                              value={templateSearch}
+                              onChange={event => setTemplateSearch(event.target.value)}
+                            />
+                          </div>
+                          <div className="max-h-[240px] overflow-y-auto p-1" role="group" aria-label="Modelos de proposta disponíveis">
+                            {templateOptions.length === 0 && (
+                              <p className="px-3 py-6 text-center text-sm text-muted-foreground" role="status">Nenhum modelo encontrado.</p>
+                            )}
+                            {templateOptions.map(option => {
+                              const selected = (field.value || null) === option.id;
+                              return (
+                                <button
+                                  key={option.id === null ? 'none' : `template:${option.id}`}
+                                  type="button"
+                                  data-template-option
+                                  aria-pressed={selected}
+                                  onClick={() => {
+                                    field.onChange(option.id);
                                     field.onBlur();
-                                    setTemplateSearchOpen(false);
+                                    closeTemplateSearch(true);
                                   }}
+                                  className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                                 >
-                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', !field.value ? 'opacity-100' : 'opacity-0')} aria-hidden="true" />
-                                  Nenhum (usará proposta padrão)
-                                </CommandItem>
-                                {proposalTemplates.map(template => (
-                                  <CommandItem
-                                    key={template.id}
-                                    value={`template:${template.id}`}
-                                    keywords={[template.name, template.id, template.proposalObject || '', template.serviceScope || '']}
-                                    onSelect={() => {
-                                      field.onChange(template.id);
-                                      field.onBlur();
-                                      setTemplateSearchOpen(false);
-                                    }}
-                                  >
-                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === template.id ? 'opacity-100' : 'opacity-0')} aria-hidden="true" />
-                                    <span className="min-w-0 break-words">{template.name}</span>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                                  <Check className={cn('h-4 w-4 shrink-0', selected ? 'opacity-100' : 'opacity-0')} aria-hidden="true" />
+                                  <span className="min-w-0 break-words">{option.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                       <FormMessage />
                   </FormItem>
                   )}
