@@ -215,3 +215,8 @@ export async function updateTestHandoffStatus(id:string,status:'em_atendimento'|
   if(!update.ok) throw new Error('HANDOFF_STORAGE_FAILED');
   const updated=mapHandoff(await update.json());if(!updated)throw new Error('HANDOFF_STORAGE_FAILED');return updated;
 }
+
+// Shared server-only connection for isolated WhatsApp test collections.
+export async function getTestStorageContext(request:typeof fetch=fetch):Promise<{project:string;token:string}>{
+  const cfg=config();return {project:cfg.project,token:await accessToken(request,cfg)};
+}
