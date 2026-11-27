@@ -79,3 +79,21 @@ Referências adicionais:
 - https://docs.n8n.io/workflows/settings/
 
 A versão de produção do CRM permanece inalterada.
+
+
+## Validação real — 27/11/2026 (horário de Brasília)
+
+Ambiente exclusivamente de testes: receptor independente, WABA e telefone Meta de teste, destinatário aprovado, banco nomeado crm-whatsapp e CRM Preview. A main, o número comercial e o banco padrão não foram alterados.
+
+| Cenário | Horário | Evidência |
+| --- | --- | --- |
+| Agendamento natural | 09:27 | Solicitação fictícia registrada e exibida no CRM, 2 admissionais, 30/11/2026. |
+| Formulário ASO | 15:39:57 | Resposta aceita pela Meta e entregue; usuária confirmou. |
+| Locais | 15:45:18 | Entrega confirmada pela Meta. |
+| Horário | 15:45:33 | Entrega confirmada pela Meta. |
+| Endereço completo | 15:45:47 | Entrega confirmada pela Meta. |
+| Insistência e transferência | 15:46:08 | Resposta entregue e pendência criada; visível na fila de atendimento humano. |
+| Assumir e pausar | 15:49:27 | Status em_atendimento; nova entrada registrada e reconhecida pelo n8n sem disparo de resposta. |
+| Encerrar e reativar | 15:54:34 | Status resolvido; próxima resposta aceita e entregue; usuária confirmou. |
+
+O receptor guarda somente dados estruturados de teste, recibos agregados, marcadores técnicos de idempotência e estado mínimo de atendimento. Não guarda corpo integral das mensagens, número do remetente ou histórico. O n8n confirmou os metadados nos testes finais; o túnel temporário pode expirar e deve ser revalidado antes de novas sessões. A credencial de envio é temporária e não deve entrar no Git. Os formulários e a fila de atendimento humano foram validados em test-only; coexistência com número comercial, administração da equipe real, política de retenção e publicação comercial continuam pendentes. Não misturar a branch com main antes da autorização de publicação.
