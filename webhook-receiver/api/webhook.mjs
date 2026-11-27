@@ -214,24 +214,33 @@ function analyzeNaturalAppointment(message,category) {
 
 // Outbound is opt-in, test account only, explicit verified recipient only.
 // A marker is claimed before the API call; ambiguous transport errors are not retried.
+// Accept display formatting but never accept additional digits or multiple destinations.
+function normalizeTestRecipient(value) {
+  if(typeof value!=='string') return null;
+  const trimmed=value.trim();
+  if(!/^\+?[\d\s().-]+$/.test(trimmed)) return null;
+  const digits=trimmed.replace(/\D/g,'');
+  return /^\d{10,15}$/.test(digits)?digits:null;
+}
 function replyConfig() {
-  const token=process.env.WHATSAPP_TEST_ACCESS_TOKEN;
-  const recipient=process.env.WHATSAPP_TEST_RECIPIENT_DIGITS;
+  const token=process.env.WHATSAPP_TEST_ACCESS_TOKEN?.trim();
+  const recipient=normalizeTestRecipient(process.env.WHATSAPP_TEST_RECIPIENT_DIGITS);
   const version=process.env.WHATSAPP_TEST_GRAPH_VERSION;
   if (process.env.WHATSAPP_TEST_REPLY_ENABLED!=='true' || !token ||
-      !/^\d{10,15}$/.test(recipient??'') || !/^v\d{1,2}\.\d+$/.test(version??'')) return null;
+      !recipient || !/^v\d{1,2}\.\d+$/.test(version??'')) return null;
   return {token,recipient,version};
 }
 function logReplyEligibility(message,body,config) {
   if(message?.type!=='text') return;
-  const recipient=process.env.WHATSAPP_TEST_RECIPIENT_DIGITS??'';
+  const rawRecipient=process.env.WHATSAPP_TEST_RECIPIENT_DIGITS??'';
+  const recipient=normalizeTestRecipient(rawRecipient)??'';
   const sender=typeof message.from==='string'?message.from:'';
   const epoch=typeof message.timestamp==='string' && /^\d{10}$/.test(message.timestamp)?Number(message.timestamp)*1000:NaN;
   const elapsed=Date.now()-epoch;
   const brazilCanonical=value=>/^55\d{2}9\d{8}$/.test(value)?value.slice(0,4)+value.slice(5):value;
   console.info('[WhatsApp test] reply eligibility '+JSON.stringify({
     enabled:process.env.WHATSAPP_TEST_REPLY_ENABLED==='true',configured:!!config,tokenPresent:!!process.env.WHATSAPP_TEST_ACCESS_TOKEN,
-    recipientFormat:/^\d{10,15}$/.test(recipient),versionFormat:/^v\d{1,2}\.\d+$/.test(process.env.WHATSAPP_TEST_GRAPH_VERSION??''),
+    recipientFormat:!!recipient,recipientRawDigits:/^\d{10,15}$/.test(rawRecipient),versionFormat:/^v\d{1,2}\.\d+$/.test(process.env.WHATSAPP_TEST_GRAPH_VERSION??''),
     senderExact:!!recipient && sender===recipient,
     senderBrazilEquivalent:!!recipient && !!sender && brazilCanonical(sender)===brazilCanonical(recipient),
     timestampWithinWindow:Number.isFinite(elapsed) && elapsed>=0 && elapsed<24*60*60*1000,
@@ -494,5 +503,5 @@ async function handler(request) {
   catch { console.warn('[WhatsApp test] N8N metadata delivery not confirmed'); }
   return reply(200,'ok');
 }
-export {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY};
+export {analyzeNaturalAppointment,replyCandidate,serviceIntent,serviceReply,ASO_FORM,SERVICE_INFO,ADDRESS_REPLY,HANDOFF_REPLY,normalizeTestRecipient};
 export default {fetch:handler};
